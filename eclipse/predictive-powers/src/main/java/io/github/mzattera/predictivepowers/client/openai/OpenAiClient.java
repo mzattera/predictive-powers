@@ -1,7 +1,7 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers.client;
+package io.github.mzattera.predictivepowers.client.openai;
 
 import java.io.IOException;
 import java.util.List;
@@ -12,7 +12,11 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
+import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsRequest;
+import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsResponse;
+import io.github.mzattera.predictivepowers.client.openai.models.Model;
 import io.reactivex.Single;
+import lombok.NonNull;
 import okhttp3.ConnectionPool;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
@@ -28,9 +32,14 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public class OpenAiClient {
+public final class OpenAiClient {
 
 	public final static String API_BASE_URL = "https://api.openai.com/v1/";
+
+	public final static int DEFAULT_READ_TIMEOUT_MIILLIS = 5 * 1000;
+
+	// OpenAI API defined with Retrofit
+	private final OpenAiApi api;
 
 	// Maps from-to POJO <-> JSON
 	private final static ObjectMapper mapper;
@@ -41,14 +50,16 @@ public class OpenAiClient {
 		mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 	}
 
-	// OpenAI API defined with Retrofit
-	private final OpenAiApi api;
-
-	public OpenAiClient(String apiKey) {
-		this(apiKey, 5000);
+	public OpenAiClient() {
+		this(System.getenv("OPENAI_API_KEY"), DEFAULT_READ_TIMEOUT_MIILLIS);
 	}
 
-	public OpenAiClient(String apiKey, int timeoutMillis) {
+	public OpenAiClient(@NonNull String apiKey) {
+		this(apiKey, DEFAULT_READ_TIMEOUT_MIILLIS);
+	}
+
+	// TODO expose other parameters
+	public OpenAiClient(@NonNull String apiKey, int timeoutMillis) {
 
 		OkHttpClient client = new OkHttpClient.Builder().connectionPool(new ConnectionPool(5, 3, TimeUnit.SECONDS))
 				.readTimeout(timeoutMillis, TimeUnit.MILLISECONDS).addInterceptor(new Interceptor() {
@@ -76,16 +87,23 @@ public class OpenAiClient {
 		return callApi(api.models(modelId));
 	}
 
+	public CompletionsResponse createCompletion(CompletionsRequest req) {
+		return callApi(api.createCompletion(req));
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////
+
 	private static <T> T callApi(Single<T> apiCall) {
 		try {
 			return apiCall.blockingGet();
 		} catch (HttpException e) {
+			OpenAiException oaie;
 			try {
-				throw mapper.readValue(e.response().errorBody().string(), OpenAiException.class);
+				oaie = new OpenAiException(mapper.readValue(e.response().errorBody().string(), OpenAiError.class), e);
 			} catch (Exception ex) {
-				// fallback
 				throw e;
 			}
+			throw oaie;
 		}
 	}
 }

@@ -3,13 +3,10 @@
  */
 package io.github.mzattera.predictivepowers;
 
-import java.util.List;
-
-import io.github.mzattera.predictivepowers.client.Model;
-import io.github.mzattera.predictivepowers.client.OpenAiClient;
+import io.github.mzattera.predictivepowers.client.openai.OpenAiClient;
+import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsParameters;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
 /**
  * This represents an OpenAI end point, from which APIs can be created.
@@ -17,19 +14,17 @@ import lombok.RequiredArgsConstructor;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-@RequiredArgsConstructor
 public class OpenAiEndpoint {
 
-	@NonNull
 	@Getter
-	private final String apiKey;
-
-	@NonNull
 	private final OpenAiClient client;
 
 	private OpenAiEndpoint(@NonNull String apiKey) {
-		this.apiKey = apiKey;
-		client = new OpenAiClient(apiKey);
+		this(new OpenAiClient(apiKey));
+	}
+	
+	private OpenAiEndpoint(@NonNull OpenAiClient client) {
+		this.client = client;
 	}
 
 	// TODO add configuration of API client (e.g. timeout)
@@ -49,15 +44,28 @@ public class OpenAiEndpoint {
 	 * 
 	 * @return An end point instance that uses given API key.
 	 */
-	public static OpenAiEndpoint getInstance(String apiKey) {
+	public static OpenAiEndpoint getInstance(@NonNull String apiKey) {
 		return new OpenAiEndpoint(apiKey);
 	}
 
-	public List<Model> listModels() {
-		return client.models();
+	/**
+	 * Create a new end point.
+	 * 
+	 * @return An end point instance that uses given API client.
+	 */
+	public static OpenAiEndpoint getInstance(@NonNull OpenAiClient client) {
+		return new OpenAiEndpoint(client);
 	}
-
-	public Model retrieveModel(String modelId) {
-		return client.models(modelId);
+	
+	public InventoryService getInventoryService() {
+		return new InventoryService(this);
+	}
+	
+	public CompletionService getCompletionService() {
+		return new CompletionService(this, new CompletionsParameters());
+	}
+	
+	public CompletionService getCompletionService(CompletionsParameters defaultParams) {
+		return new CompletionService(this, defaultParams);
 	}
 }

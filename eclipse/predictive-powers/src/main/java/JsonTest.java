@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsRequest;
-import io.github.mzattera.predictivepowers.client.openai.models.Model;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -24,7 +22,7 @@ public class JsonTest {
 
 		try {
 			OpenAiEndpoint oai = OpenAiEndpoint.getInstance();
-			
+
 //			CompletionsRequest r = new CompletionsRequest("davinci");
 //			System.out.println("[===\n"+mapper.writeValueAsString(r)+"\n===]");
 //			r.getLogitBias().put("fifio", 3);
@@ -34,7 +32,7 @@ public class JsonTest {
 //				System.out.println(m.getId());
 //			}
 
-			System.out.println(oai.getCompletionService().complete("How high is Mt. Everest?"));
+			System.out.println(oai.getChatService().oneTurn("How high is Mt. Everest?"));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

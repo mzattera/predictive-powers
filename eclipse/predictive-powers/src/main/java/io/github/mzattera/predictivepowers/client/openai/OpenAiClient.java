@@ -12,6 +12,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
+import io.github.mzattera.predictivepowers.client.openai.chatcompletion.ChatCompletionsRequest;
+import io.github.mzattera.predictivepowers.client.openai.chatcompletion.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsResponse;
 import io.github.mzattera.predictivepowers.client.openai.models.Model;
@@ -89,6 +91,10 @@ public final class OpenAiClient {
 
 	public CompletionsResponse createCompletion(CompletionsRequest req) {
 		return callApi(api.createCompletion(req));
+	}
+
+	public ChatCompletionsResponse createChatCompletion(ChatCompletionsRequest req) {
+		return callApi(api.createChatCompletion(req));
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////

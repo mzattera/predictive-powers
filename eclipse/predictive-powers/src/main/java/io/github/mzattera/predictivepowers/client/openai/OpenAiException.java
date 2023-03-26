@@ -2,7 +2,6 @@ package io.github.mzattera.predictivepowers.client.openai;
 
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.ToString;
 
 /**
  * Thjis exception is thrown when an error is returned by the OpenAI API in form
@@ -11,7 +10,6 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@ToString
 public class OpenAiException extends RuntimeException {
 
 	private static final long serialVersionUID = 2872745638990379630L;

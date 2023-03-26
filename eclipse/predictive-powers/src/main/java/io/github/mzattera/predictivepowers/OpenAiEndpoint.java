@@ -4,6 +4,7 @@
 package io.github.mzattera.predictivepowers;
 
 import io.github.mzattera.predictivepowers.client.openai.OpenAiClient;
+import io.github.mzattera.predictivepowers.client.openai.chatcompletion.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsRequest;
 import lombok.Getter;
 import lombok.NonNull;
@@ -62,10 +63,28 @@ public class OpenAiEndpoint {
 	}
 
 	public CompletionService getCompletionService() {
-		return new CompletionService(this, new CompletionsRequest());
+		return getCompletionService(new CompletionsRequest());
 	}
 
-	public CompletionService getCompletionService(CompletionsRequest defaultParams) {
-		return new CompletionService(this, defaultParams);
+	public CompletionService getCompletionService(CompletionsRequest defaultReq) {
+		return new CompletionService(this, defaultReq);
+	}
+
+	public ChatService getChatService() {
+		return getChatService(new ChatCompletionsRequest());
+	}
+
+	public ChatService getChatService(String personality) {
+		return getChatService(new ChatCompletionsRequest(), personality);
+	}
+
+	public ChatService getChatService(ChatCompletionsRequest defaultReq) {
+		return new ChatService(this, defaultReq);
+	}
+
+	public ChatService getChatService(ChatCompletionsRequest defaultReq, String personality) {
+		ChatService s = getChatService(defaultReq);
+		s.setPersonality(personality);
+		return s;
 	}
 }

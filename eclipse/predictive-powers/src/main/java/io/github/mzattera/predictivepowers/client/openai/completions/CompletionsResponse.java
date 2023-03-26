@@ -10,7 +10,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Response frpm /completions API.
+ * Response from /completions API.
  * 
  * @author Massimiliano "Maxi" Zattera.
  *

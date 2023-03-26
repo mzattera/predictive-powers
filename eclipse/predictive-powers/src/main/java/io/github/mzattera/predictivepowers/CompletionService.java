@@ -10,7 +10,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 /**
- * A class that exposes model inventory services.
+ * A class that exposes text completion services (prompt execution).
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -38,9 +38,9 @@ public class CompletionService {
 	public String complete(String prompt, CompletionsRequest params) {
 
 		CompletionsRequest req = (CompletionsRequest) defaultReq.clone();
-		req.setModel("text-davinci-003");
-		req.setMaxTokens(256);
 		req.setPrompt(prompt);
+
+		System.out.println(req.toString());
 
 		CompletionsResponse resp = ep.getClient().createCompletion(req);
 		if (resp.getChoices().size() == 0)

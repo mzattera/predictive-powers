@@ -1,8 +1,7 @@
-/**
- * 
- */
-package io.github.mzattera.predictivepowers.client.openai.completions;
+package io.github.mzattera.predictivepowers.client.openai.chatcompletion;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import lombok.AllArgsConstructor;
@@ -14,7 +13,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Parameters for a request to /completions API.
+ * Parameters for a request to /chat/completions API.
  * 
  * @author Massmiliano "Maxi" Zattera.
  *
@@ -25,26 +24,26 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class CompletionsRequest implements Cloneable {
+public class ChatCompletionsRequest implements Cloneable {
 	@NonNull
 	@Builder.Default
-	String model = "text-davinci-003";
+	String model = "gpt-3.5-turbo";
 
-	String prompt;
-	
+	@NonNull
 	@Builder.Default
-	Integer maxTokens = 256;
-	
+	List<ChatMessage> messages = new ArrayList<>();;
+
 	Double temperature;
 	Double topP;
 	Integer n;
 	final Boolean stream = false;
-	Integer logProbs;
-	Boolean echo;
-	String stop;
+	List<ChatMessage> stop;
+
+	@Builder.Default
+	Integer maxTokens = 256;
+
 	Double presencePenalty;
 	Double frequencyPenalty;
-	Integer bestOf;
 	Map<String, Integer> logitBias;
 	String user;
 

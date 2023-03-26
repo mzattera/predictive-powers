@@ -33,11 +33,15 @@ public class CompletionService {
 	private final CompletionsRequest defaultReq;
 
 	public TextResponse complete(String prompt) {
-		return complete(prompt, (CompletionsRequest) defaultReq.clone());
+		return complete(prompt, defaultReq);
 	}
 
 	public TextResponse complete(String prompt, CompletionsRequest req) {
+		req = (CompletionsRequest) req.clone();
 		req.setPrompt(prompt);
+
+		// Adjust token limit
+		req.setMaxTokens(req.getMaxTokens() - TokenCalculator.count(prompt) - 100);
 
 		// TODO is this error handling good? It should in principle as if we cannot get
 		// this text, something went wrong and we should react.

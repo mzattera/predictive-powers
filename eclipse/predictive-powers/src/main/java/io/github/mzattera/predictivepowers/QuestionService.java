@@ -9,9 +9,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
-import io.github.mzattera.predictivepowers.client.openai.chatcompletion.ChatCompletionChoice;
 import io.github.mzattera.predictivepowers.client.openai.chatcompletion.ChatCompletionsRequest;
-import io.github.mzattera.predictivepowers.client.openai.chatcompletion.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.client.openai.chatcompletion.ChatMessage;
 import lombok.Getter;
 import lombok.NonNull;
@@ -64,29 +62,28 @@ public class QuestionService {
 	/**
 	 * Extracts question/answer pairs from given text.
 	 */
-	public QnAPair[] getQuestions(String text) {
-		return getQuestions(text, (ChatCompletionsRequest) defaultReq.clone());
+	public List<QnAPair> getQuestions(String text) {
+		return getQuestions(text, defaultReq);
 	}
 
 	/**
-	 * Continues current chat, with the provided message.
-	 * 
-	 * The exchange is added to the conversation history.
+	 * Extracts question/answer pairs from given text.
 	 */
-	public QnAPair[] getQuestions(String text, ChatCompletionsRequest req) {
+	public List<QnAPair> getQuestions(String text, ChatCompletionsRequest req) {
+
+		req = (ChatCompletionsRequest) req.clone();
 
 		// Provides instructions and examples
-		List<ChatMessage> msg = new ArrayList<>();
-
-		msg.add(new ChatMessage("system",
+		List<ChatMessage> instructions = new ArrayList<>();
+		instructions.add(new ChatMessage("system",
 				"You are a teacher and you are preparing an assessment from some text materials."));
-		msg.add(new ChatMessage("user",
+		instructions.add(new ChatMessage("user",
 				"Given a context, extract a set of questions and corresponding answers, then format them as a JSON array. Some examples are provided below."));
-		msg.add(new ChatMessage("user", "Context:\n'''\n" //
+		instructions.add(new ChatMessage("user", "Context:\n'''\n" //
 				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China–Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1⁄2 in) was most recently established in 2020 by the Chinese and Nepali authorities.\n" //
 				+ "Mount Everest attracts many climbers, including highly experienced mountaineers. There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the \"standard route\") and the other from the north in Tibet. While not posing substantial technical climbing challenges on the standard route, Everest presents dangers such as altitude sickness, weather, and wind, as well as hazards from avalanches and the Khumbu Icefall. As of 2019, over 300 people have died on Everest, many of whose bodies remain on the mountain.\n" //
 				+ "'''"));
-		msg.add(new ChatMessage("assistant", "[\n" //
+		instructions.add(new ChatMessage("assistant", "[\n" //
 				+ "   {\n" //
 				+ "      \"question\":\"What is the highest mountain on Earth?\",\n" //
 				+ "      \"answer\":\"Mount Everest is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas.\"\n" //
@@ -100,35 +97,53 @@ public class QuestionService {
 				+ "      \"answer\":\"As of 2019, over 300 people have died on Everest.\"\n" //
 				+ "   }\n" //
 				+ "]"));
-		msg.add(new ChatMessage("user", "Context:\n'''\n" //
-				+ text //
-				+ "'''"));
-		req.setMessages(msg);
 
+		return getQuestions(instructions, text, req);
+	}
+
+	private List<QnAPair> getQuestions(List<ChatMessage> instructions, String text, ChatCompletionsRequest req) {
+
+		// Split text, based on prompt size
 		int tok = 0;
-		for (ChatMessage m : msg) {
+		for (ChatMessage m : instructions) {
 			tok += TokenCalculator.count(m);
 		}
-		req.setMaxTokens(4000 - tok);
+		int maxSize = req.getMaxTokens() - tok - 100;
 
-		System.out.println(req.getMessages().toString());
+		List<QnAPair> result = new ArrayList<>();
+		for (String t : LlmUtils.split(text, maxSize)) {
+			QnAPair[] questions = getQuestionsShort(instructions, t, req);
+			for (int i = 0; i < questions.length; ++i)
+				result.add(questions[i]);
+		}
 
-		// TODO is this error handling good? It should in principle as if we cannot get
-		// this text, something went wrong and we should react.
-		// TODO BETTER USE finish reason.
-		ChatCompletionsResponse resp = ep.getClient().createChatCompletion(req);
-		ChatCompletionChoice choice = resp.getChoices().get(0);
-		ChatMessage message = choice.getMessage();
+		return result;
+	}
 
+	private QnAPair[] getQuestionsShort(List<ChatMessage> instructions, String shortText, ChatCompletionsRequest req) {
+
+		List<ChatMessage> prompt = new ArrayList<>(instructions);
+		prompt.add(new ChatMessage("user", "Context:\n'''\n" //
+				+ shortText //
+				+ "'''"));
+
+		// Adjust token limit
+		int tok = 0;
+		for (ChatMessage m : prompt) {
+			tok += TokenCalculator.count(m);
+		}
+		req.setMaxTokens(req.getMaxTokens() - tok - 100);
+
+		String json = chat.complete(prompt, req).getText();
 		QnAPair[] result = new QnAPair[0];
 		try {
-			result = mapper.readValue(message.getContent(), QnAPair[].class);
+			result = mapper.readValue(json, QnAPair[].class);
 		} catch (JsonProcessingException e) {
 		}
 		for (QnAPair r : result) {
-			r.setContext(text);
+			r.setContext(shortText);
 		}
-		
+
 		return result;
 	}
 }

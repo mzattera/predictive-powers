@@ -107,7 +107,7 @@ public class ChatService {
 	 * The exchange is added to the conversation history.
 	 */
 	public TextResponse chat(String msg) {
-		return chat(msg, (ChatCompletionsRequest) defaultReq.clone());
+		return chat(msg, defaultReq);
 	}
 
 	/**
@@ -116,11 +116,17 @@ public class ChatService {
 	 * The exchange is added to the conversation history.
 	 */
 	public TextResponse chat(String msg, ChatCompletionsRequest req) {
+		req = (ChatCompletionsRequest) req.clone();
 
 		history.add(new ChatMessage("user", msg));
-		req.setMessages(trimChat(history));
+		List<ChatMessage> messages = trimChat(history);
+		req.setMessages(messages);
 
-		System.out.println(req.getMessages().toString());
+		// Adjust token limit
+		int tok = 0;
+		for (ChatMessage m : messages)
+			tok += TokenCalculator.count(m);
+		req.setMaxTokens(req.getMaxTokens() - tok - 100);
 
 		// TODO is this error handling good? It should in principle as if we cannot get
 		// this text, something went wrong and we should react.
@@ -173,7 +179,7 @@ public class ChatService {
 	 * Basically, this is using chat API as a text completion service.
 	 */
 	public TextResponse complete(String prompt) {
-		return complete(prompt, (ChatCompletionsRequest) defaultReq.clone());
+		return complete(prompt, defaultReq);
 	}
 
 	/**
@@ -200,8 +206,15 @@ public class ChatService {
 	 * 
 	 * Basically, this is using chat API as a text completion service.
 	 */
-	public TextResponse complete(List<ChatMessage> msg, ChatCompletionsRequest req) {
-		req.setMessages(msg);
+	public TextResponse complete(List<ChatMessage> messages, ChatCompletionsRequest req) {
+		req = (ChatCompletionsRequest) req.clone();
+		req.setMessages(messages);
+
+		// Adjust token limit
+		int tok = 0;
+		for (ChatMessage m : messages)
+			tok += TokenCalculator.count(m);
+		req.setMaxTokens(req.getMaxTokens() - tok - 100);
 
 		// TODO is this error handling good? It should in principle as if we cannot get
 		// this text, something went wrong and we should react.

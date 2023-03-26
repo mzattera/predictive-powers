@@ -31,10 +31,15 @@ public class CompletionsRequest implements Cloneable {
 	String model = "text-davinci-003";
 
 	String prompt;
-	
+
+	/**
+	 * This is the max_tokens parameter used by OpenAI API. Services typically
+	 * change this, lowering it if needed, based on model prompt Size, to avoid API
+	 * errors. If you use it for direct API calls, change it accordingly.
+	 */
 	@Builder.Default
-	Integer maxTokens = 1024;
-	
+	Integer maxTokens = 4096;
+
 	Double temperature;
 	Double topP;
 	Integer n;

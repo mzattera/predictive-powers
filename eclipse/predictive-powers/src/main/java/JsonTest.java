@@ -49,7 +49,7 @@ public class JsonTest {
 				 
 				 System.out.println(q.getQuestion());
 				 System.out.println(q.getAnswer());
-				 System.out.println(q.getContext());
+//				 System.out.println(q.getContext());
 			 }
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -4,7 +4,7 @@
 package io.github.mzattera.predictivepowers;
 
 import io.github.mzattera.predictivepowers.client.openai.OpenAiClient;
-import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsParameters;
+import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsRequest;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -22,7 +22,7 @@ public class OpenAiEndpoint {
 	private OpenAiEndpoint(@NonNull String apiKey) {
 		this(new OpenAiClient(apiKey));
 	}
-	
+
 	private OpenAiEndpoint(@NonNull OpenAiClient client) {
 		this.client = client;
 	}
@@ -56,16 +56,16 @@ public class OpenAiEndpoint {
 	public static OpenAiEndpoint getInstance(@NonNull OpenAiClient client) {
 		return new OpenAiEndpoint(client);
 	}
-	
+
 	public InventoryService getInventoryService() {
 		return new InventoryService(this);
 	}
-	
+
 	public CompletionService getCompletionService() {
-		return new CompletionService(this, new CompletionsParameters());
+		return new CompletionService(this, new CompletionsRequest());
 	}
-	
-	public CompletionService getCompletionService(CompletionsParameters defaultParams) {
+
+	public CompletionService getCompletionService(CompletionsRequest defaultParams) {
 		return new CompletionService(this, defaultParams);
 	}
 }

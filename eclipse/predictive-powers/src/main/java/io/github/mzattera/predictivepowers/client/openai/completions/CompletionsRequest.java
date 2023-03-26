@@ -3,54 +3,57 @@
  */
 package io.github.mzattera.predictivepowers.client.openai.completions;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import java.util.HashMap;
+import java.util.Map;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Request for /completions API.
+ * Parameters for a request to /completions API.
  * 
- * @author Massimiliano "Maxi" Zattera
+ * @author Massmiliano "Maxi" Zattera.
  *
  */
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @ToString
-public final class CompletionsRequest extends CompletionsParameters {
+public class CompletionsRequest implements Cloneable {
+	@NonNull
+	@Builder.Default
+	String model = "text-davinci-003";
 
-	private final static ObjectMapper mapper;
-	static {
-		mapper = new ObjectMapper();
-		mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
-	}
+	String prompt;
 
-	/**
-	 * ID of the model to use. You can use the List models API to see all of your
-	 * available models, or see our Model overview for descriptions of them.
-	 */	
-	@NonNull String model;
+	Integer maxTokens;
+	Double temperature;
+	Double topP;
+	Integer n;
+	final Boolean stream = false;
+	Integer logProbs;
+	Boolean echo;
+	String stop;
+	Double presencePenalty;
+	Double frequencyPenalty;
+	Integer bestOf;
 
-	/**
-	 * Defaults to <|endoftext|> The prompt(s) to generate completions for, encoded
-	 * as a string, array of strings, array of tokens, or array of token arrays.
-	 * 
-	 * Note that <|endoftext|> is the document separator that the model sees during
-	 * training, so if a prompt is not specified the model will generate as if from
-	 * the beginning of a new document.
-	 */
-	@NonNull String prompt;
+	@Builder.Default
+	Map<String, Integer> logitBias = new HashMap<>();
 
-	public static CompletionsRequest fromParameters(CompletionsParameters params) {
+	String user;
+
+	public Object clone() {
 		try {
-			return mapper.readValue(mapper.writeValueAsString(params), CompletionsRequest.class);
-		} catch (Exception e) {
+			return super.clone();
+		} catch (CloneNotSupportedException e) { // shall never happen
 			return null;
 		}
 	}

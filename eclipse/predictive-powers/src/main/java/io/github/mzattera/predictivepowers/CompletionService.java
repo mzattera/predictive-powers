@@ -3,7 +3,6 @@
  */
 package io.github.mzattera.predictivepowers;
 
-import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsParameters;
 import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsResponse;
 import lombok.Getter;
@@ -22,17 +21,23 @@ public class CompletionService {
 	@NonNull
 	private final OpenAiEndpoint ep;
 
+	/**
+	 * This request, with its parameters, is used as default setting for each call.
+	 * 
+	 * You can change any parameter to change these defaults (e.g. the model used)
+	 * and the change will apply to all subsequent calls.
+	 */
 	@Getter
 	@NonNull
-	private final CompletionsParameters defaultParams;
+	private final CompletionsRequest defaultReq;
 
 	public String complete(String prompt) {
-		return complete(prompt, defaultParams);
+		return complete(prompt, defaultReq);
 	}
 
-	public String complete(String prompt, CompletionsParameters params) {
+	public String complete(String prompt, CompletionsRequest params) {
 
-		CompletionsRequest req = CompletionsRequest.fromParameters(params);
+		CompletionsRequest req = (CompletionsRequest) defaultReq.clone();
 		req.setModel("text-davinci-003");
 		req.setMaxTokens(256);
 		req.setPrompt(prompt);

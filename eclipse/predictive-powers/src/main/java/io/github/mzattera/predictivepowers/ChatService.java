@@ -86,7 +86,7 @@ public class ChatService {
 	 * approximated.
 	 */
 	@Getter
-	private int maxConversationTokens = 4096;
+	private int maxConversationTokens = 3 * 1024;
 
 	public void setMaxConversationTokens(int n) {
 		if (n < 1)
@@ -188,6 +188,19 @@ public class ChatService {
 		if (personality != null)
 			msg.add(new ChatMessage("system", personality));
 		msg.add(new ChatMessage("user", prompt));
+
+		return complete(msg, req);
+	}
+
+	/**
+	 * Executes a one-turn interaction outside the current conversation.
+	 * 
+	 * Given list of messages is used as input of the API; agent personality is not
+	 * used in this case.
+	 * 
+	 * Basically, this is using chat API as a text completion service.
+	 */
+	public TextResponse complete(List<ChatMessage> msg, ChatCompletionsRequest req) {
 		req.setMessages(msg);
 
 		// TODO is this error handling good? It should in principle as if we cannot get

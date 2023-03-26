@@ -38,7 +38,7 @@ public final class OpenAiClient {
 
 	public final static String API_BASE_URL = "https://api.openai.com/v1/";
 
-	public final static int DEFAULT_READ_TIMEOUT_MIILLIS = 5 * 1000;
+	public final static int DEFAULT_READ_TIMEOUT_MIILLIS = 15 * 1000;
 
 	// OpenAI API defined with Retrofit
 	private final OpenAiApi api;
@@ -63,7 +63,8 @@ public final class OpenAiClient {
 	// TODO expose other parameters
 	public OpenAiClient(@NonNull String apiKey, int timeoutMillis) {
 
-		OkHttpClient client = new OkHttpClient.Builder().connectionPool(new ConnectionPool(5, 3, TimeUnit.SECONDS))
+		OkHttpClient client = new OkHttpClient.Builder()
+				.connectionPool(new ConnectionPool(5, DEFAULT_READ_TIMEOUT_MIILLIS, TimeUnit.MILLISECONDS))
 				.readTimeout(timeoutMillis, TimeUnit.MILLISECONDS).addInterceptor(new Interceptor() {
 					@Override
 					public Response intercept(Chain chain) throws IOException {

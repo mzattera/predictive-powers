@@ -87,4 +87,12 @@ public class OpenAiEndpoint {
 		s.setPersonality(personality);
 		return s;
 	}
+
+	public QuestionService getQuestionService() {
+		return getQuestionService(new ChatCompletionsRequest());
+	}
+
+	public QuestionService getQuestionService(@NonNull ChatCompletionsRequest defaultReq) {
+		return new QuestionService(this, defaultReq);
+	}
 }

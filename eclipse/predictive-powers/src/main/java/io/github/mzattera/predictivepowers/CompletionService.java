@@ -3,6 +3,7 @@
  */
 package io.github.mzattera.predictivepowers;
 
+import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsChoice;
 import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsResponse;
 import lombok.Getter;
@@ -31,21 +32,18 @@ public class CompletionService {
 	@NonNull
 	private final CompletionsRequest defaultReq;
 
-	public String complete(String prompt) {
-		return complete(prompt, defaultReq);
+	public TextResponse complete(String prompt) {
+		return complete(prompt, (CompletionsRequest) defaultReq.clone());
 	}
 
-	public String complete(String prompt, CompletionsRequest params) {
-
-		CompletionsRequest req = (CompletionsRequest) defaultReq.clone();
+	public TextResponse complete(String prompt, CompletionsRequest req) {
 		req.setPrompt(prompt);
 
-		System.out.println(req.toString());
-
+		// TODO is this error handling good? It should in principle as if we cannot get
+		// this text, something went wrong and we should react.
+		// TODO BETTER USE finish reason.
 		CompletionsResponse resp = ep.getClient().createCompletion(req);
-		if (resp.getChoices().size() == 0)
-			return "";
-
-		return resp.getChoices().get(0).getText().trim();
+		CompletionsChoice c = resp.getChoices().get(0);
+		return TextResponse.fromGptApi(c.getText().trim(), c.getFinishReason());
 	}
 }

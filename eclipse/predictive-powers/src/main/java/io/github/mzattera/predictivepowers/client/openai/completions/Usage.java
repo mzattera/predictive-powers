@@ -14,7 +14,7 @@ import lombok.ToString;
 @Setter
 @ToString
 public class Usage {
-    long promptTokens;
-    long completionTokens;
-    long totalTokens;
+    Long promptTokens;
+    Long completionTokens;
+    Long totalTokens;
 }

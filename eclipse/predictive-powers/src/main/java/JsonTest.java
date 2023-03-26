@@ -3,6 +3,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
+import io.github.mzattera.predictivepowers.ChatService;
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import lombok.Getter;
 import lombok.Setter;
@@ -32,7 +33,12 @@ public class JsonTest {
 //				System.out.println(m.getId());
 //			}
 
-			System.out.println(oai.getChatService().oneTurn("How high is Mt. Everest?"));
+//			System.out.println(oai.getCompletionService().complete("How high is Mt. Everest?").toString());
+
+			ChatService chat = oai.getChatService();
+//			for (int i=0; i<5;++i)
+//				chat.chat(i + "");
+			 System.out.println(chat.complete("Who was Alan Turing").toString());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

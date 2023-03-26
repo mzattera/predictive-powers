@@ -24,4 +24,6 @@ public class ChatMessage {
 
 	@NonNull
 	String content;
+	
+	String name;
 }

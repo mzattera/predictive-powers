@@ -25,7 +25,7 @@ public final class TokenCalculator {
 	 * @return Approximated number of tokens in given text.
 	 */
 	public static int count(@NonNull String text) {
-		return text.length() / 4;
+		return (text.length()+2) / 4;
 	}
 
 	/**

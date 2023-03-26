@@ -33,7 +33,7 @@ public class CompletionsRequest implements Cloneable {
 	String prompt;
 	
 	@Builder.Default
-	Integer maxTokens = 256;
+	Integer maxTokens = 1024;
 	
 	Double temperature;
 	Double topP;

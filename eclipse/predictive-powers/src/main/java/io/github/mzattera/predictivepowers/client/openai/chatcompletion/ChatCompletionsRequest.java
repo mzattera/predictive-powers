@@ -40,7 +40,7 @@ public class ChatCompletionsRequest implements Cloneable {
 	List<ChatMessage> stop;
 
 	@Builder.Default
-	Integer maxTokens = 256;
+	Integer maxTokens = 1024;
 
 	Double presencePenalty;
 	Double frequencyPenalty;

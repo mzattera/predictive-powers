@@ -27,4 +27,7 @@ public class QnAPair {
 
 	/** Context from which the pair was extracted, if any. */
 	private String context;
+
+	/** For 'multiple-choice' questions, this is the list of choices */
+	private String[] options;
 }

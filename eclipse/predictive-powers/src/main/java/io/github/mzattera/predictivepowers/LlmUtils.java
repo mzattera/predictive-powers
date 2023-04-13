@@ -20,16 +20,20 @@ public final class LlmUtils {
 	 * @param text      A text to be split.
 	 * @param maxTokens Maximum number of tokens in each piece of the split text.
 	 * @return Input text, split in parts smaller than given number of tokens.
+	 * As we do not have an exact way of calculating tokens, this is approximated.
 	 */
 	public static List<String> split(String text, int maxTokens) {
 
 		// Eliminate empty lines
-		text = text.replaceAll("[\\n]{2,}", "\n");
+//		text = text.replaceAll("[\\n]{2,}", "\n");
 
 		List<String> result = new ArrayList<>();
 		result.add(text);
+		if (TokenCalculator.count(text) <= maxTokens) { // s short enough it can be ignored
+			return result;
+		}
 
-		// Now split using decreasing string separators
+		// Now split using decreasing strong separators
 		result = split(result, maxTokens, "\n"); // newlines
 		result = split(result, maxTokens, "."); // full stop
 		result = split(result, maxTokens, ","); // other common separators

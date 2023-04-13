@@ -4,7 +4,6 @@
 package io.github.mzattera.predictivepowers.client.openai;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -12,11 +11,14 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
-import io.github.mzattera.predictivepowers.client.openai.chatcompletion.ChatCompletionsRequest;
-import io.github.mzattera.predictivepowers.client.openai.chatcompletion.ChatCompletionsResponse;
+import io.github.mzattera.predictivepowers.client.openai.chat.ChatCompletionsRequest;
+import io.github.mzattera.predictivepowers.client.openai.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsResponse;
+import io.github.mzattera.predictivepowers.client.openai.embeddings.EmbeddingsRequest;
+import io.github.mzattera.predictivepowers.client.openai.embeddings.EmbeddingsResponse;
 import io.github.mzattera.predictivepowers.client.openai.models.Model;
+import io.github.mzattera.predictivepowers.client.openai.models.ModelsResponse;
 import io.reactivex.Single;
 import lombok.NonNull;
 import okhttp3.ConnectionPool;
@@ -82,25 +84,29 @@ public final class OpenAiClient {
 
 	//////// API METHODS MAPPED INTO JAVA CALLS ////////////////////////////////////
 
-	public List<Model> models() {
-		return callApi(api.models()).data;
+	public ModelsResponse listModels() {
+		return callApi(api.models());
 	}
 
-	public Model models(String modelId) {
+	public Model retrieveModel(String modelId) {
 		return callApi(api.models(modelId));
 	}
 
 	public CompletionsResponse createCompletion(CompletionsRequest req) {
-		return callApi(api.createCompletion(req));
+		return callApi(api.completions(req));
 	}
 
 	public ChatCompletionsResponse createChatCompletion(ChatCompletionsRequest req) {
-		return callApi(api.createChatCompletion(req));
+		return callApi(api.chatCompletions(req));
+	}
+
+	public EmbeddingsResponse createEmbeddings(EmbeddingsRequest req) {
+		return callApi(api.embeddings(req));
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////
 
-	private static <T> T callApi(Single<T> apiCall) {
+	private <T> T callApi(Single<T> apiCall) {
 		try {
 			return apiCall.blockingGet();
 		} catch (HttpException e) {

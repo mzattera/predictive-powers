@@ -21,11 +21,11 @@ public class InventoryService {
 	@NonNull private final OpenAiEndpoint ep;
 	
 	public List<Model> listModels() {
-		return ep.getClient().models();
+		return ep.getClient().listModels().getData();
 	}
 
 	public Model retrieveModel(String modelId) {
-		return ep.getClient().models(modelId);
+		return ep.getClient().retrieveModel(modelId);
 	}
 
 }

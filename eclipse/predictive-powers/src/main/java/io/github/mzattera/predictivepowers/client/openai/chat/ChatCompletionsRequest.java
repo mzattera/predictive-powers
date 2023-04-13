@@ -1,4 +1,4 @@
-package io.github.mzattera.predictivepowers.client.openai.chatcompletion;
+package io.github.mzattera.predictivepowers.client.openai.chat;
 
 import java.util.ArrayList;
 import java.util.List;

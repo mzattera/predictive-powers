@@ -4,8 +4,9 @@
 package io.github.mzattera.predictivepowers;
 
 import io.github.mzattera.predictivepowers.client.openai.OpenAiClient;
-import io.github.mzattera.predictivepowers.client.openai.chatcompletion.ChatCompletionsRequest;
+import io.github.mzattera.predictivepowers.client.openai.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsRequest;
+import io.github.mzattera.predictivepowers.client.openai.embeddings.EmbeddingsRequest;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -94,5 +95,13 @@ public class OpenAiEndpoint {
 
 	public QuestionService getQuestionService(@NonNull ChatCompletionsRequest defaultReq) {
 		return new QuestionService(this, defaultReq);
+	}
+
+	public EmbeddingService getEmbeddingService() {
+		return getEmbeddingService(new EmbeddingsRequest());
+	}
+
+	public EmbeddingService getEmbeddingService(@NonNull EmbeddingsRequest defaultReq) {
+		return new EmbeddingService(this, defaultReq);
 	}
 }

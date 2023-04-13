@@ -3,7 +3,7 @@
  */
 package io.github.mzattera.predictivepowers;
 
-import io.github.mzattera.predictivepowers.client.openai.chatcompletion.ChatMessage;
+import io.github.mzattera.predictivepowers.client.openai.chat.ChatMessage;
 import lombok.NonNull;
 
 /**

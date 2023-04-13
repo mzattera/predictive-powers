@@ -9,8 +9,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
-import io.github.mzattera.predictivepowers.client.openai.chatcompletion.ChatCompletionsRequest;
-import io.github.mzattera.predictivepowers.client.openai.chatcompletion.ChatMessage;
+import io.github.mzattera.predictivepowers.client.openai.chat.ChatCompletionsRequest;
+import io.github.mzattera.predictivepowers.client.openai.chat.ChatMessage;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -109,6 +109,7 @@ public class QuestionService {
 	/**
 	 * Extracts true/false type of questions from given text.
 	 */
+	// TODO: check the answers are true/false
 	public List<QnAPair> getTFQuestions(String text, ChatCompletionsRequest req) {
 
 		// Provides instructions and examples
@@ -149,6 +150,7 @@ public class QuestionService {
 	/**
 	 * Extracts "fill the blank" type of questions from given text.
 	 */
+	// TODO: check there is one and only one ______ filler in questions. Check the answer is a single word.
 	public List<QnAPair> getFillQuestions(String text, ChatCompletionsRequest req) {
 
 		// Provides instructions and examples
@@ -189,6 +191,7 @@ public class QuestionService {
 	/**
 	 * Extracts multiple-choice questions from given text.
 	 */
+	// TODO: check the answer is a number that matches one of the options
 	public List<QnAPair> getMCQuestions(String text, ChatCompletionsRequest req) {
 
 		// Provides instructions and examples
@@ -204,36 +207,36 @@ public class QuestionService {
 		instructions.add(new ChatMessage("assistant", "[\n" //
 				+ "   {\n" //
 				+ "      \"question\":\"What is the highest mountain on Earth?\",\n" //
-				+ "      \"answer\":\"Mount Everest\",\n" //
 				+ "      \"options\":[\n" //
-				+ "         \"Mount Everest\",\n" //
-				+ "         \"K2\",\n" //
-				+ "         \"Mount Kilimanjaro\",\n" //
-				+ "         \"Mont Blanc\",\n" //
-				+ "         \"Denali (Mount McKinley)\"\n" //
-				+ "      ]\n" //
+				+ "         \"1. Mount Everest\",\n" //
+				+ "         \"2. K2\",\n" //
+				+ "         \"3. Mount Kilimanjaro\",\n" //
+				+ "         \"4. Mont Blanc\",\n" //
+				+ "         \"5. Denali (Mount McKinley)\"\n" //
+				+ "      ]," //
+				+ "      \"answer\":\"1\"\n" //
 				+ "   },\n" //
 				+ "   {\n" //
 				+ "      \"question\":\"How many people have died on Everest as of 2019?\",\n" //
-				+ "      \"answer\":\"Over 300\",\n" //
 				+ "      \"options\":[\n" //
-				+ "         \"Nobody died on Everest\",\n" //
-				+ "         \"Less than 10\",\n" //
-				+ "         \"Around 100\",\n" //
-				+ "         \"Over 300\",\n" //
-				+ "         \"The number is unknown\"\n" //
-				+ "      ]\n" //
+				+ "         \"1. Nobody died on Everest\",\n" //
+				+ "         \"2. Less than 10\",\n" //
+				+ "         \"3. Around 100\",\n" //
+				+ "         \"4. Over 300\",\n" //
+				+ "         \"5. The number is unknown\"\n" //
+				+ "      ],\n" //
+				+ "      \"answer\":\"4\"\n" //
 				+ "   },\n" //
 				+ "   {\n" //
 				+ "      \"question\":\"In which country is Mount Everest located?\",\n" //
-				+ "      \"answer\":\"On the China–Nepal border.\",\n" //
 				+ "      \"options\":[\n" //
-				+ "         \"In China\",\n" //
-				+ "         \"In India\",\n" //
-				+ "         \"On the China–Nepal border.\",\n" //
-				+ "         \"In Pakistan\",\n" //
-				+ "         \"On the China–Russia border.\"\n" //
-				+ "      ]\n" //
+				+ "         \"1. In China\",\n" //
+				+ "         \"2. In India\",\n" //
+				+ "         \"3. On the China–Nepal border.\",\n" //
+				+ "         \"4. In Pakistan\",\n" //
+				+ "         \"5. On the China–Russia border.\"\n" //
+				+ "      ],\n" //
+				+ "      \"answer\":\"3\"\n" //
 				+ "   }\n" //
 				+ "]"));
 
@@ -247,12 +250,10 @@ public class QuestionService {
 		for (ChatMessage m : instructions) {
 			tok += TokenCalculator.count(m);
 		}
-		int maxSize = req.getMaxTokens()/2 - tok;
-		System.out.println("  -> MAX " + maxSize);
+		int maxSize = req.getMaxTokens()*2/3 - tok;
 	
 		List<QnAPair> result = new ArrayList<>();
 		for (String t : LlmUtils.split(text, maxSize)) {
-			System.out.println("  -> " + TokenCalculator.count(t));
 			QnAPair[] questions = getQuestionsShort(instructions, t, req);
 			for (int i = 0; i < questions.length; ++i)
 				result.add(questions[i]);
@@ -273,6 +274,7 @@ public class QuestionService {
 		try {
 			result = mapper.readValue(json, QnAPair[].class);
 		} catch (JsonProcessingException e) {
+			// TODO do something here?
 			System.err.println(json);
 		}
 		for (QnAPair r : result) {

@@ -3,10 +3,10 @@ package io.github.mzattera.predictivepowers;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.github.mzattera.predictivepowers.client.openai.chatcompletion.ChatCompletionChoice;
-import io.github.mzattera.predictivepowers.client.openai.chatcompletion.ChatCompletionsRequest;
-import io.github.mzattera.predictivepowers.client.openai.chatcompletion.ChatCompletionsResponse;
-import io.github.mzattera.predictivepowers.client.openai.chatcompletion.ChatMessage;
+import io.github.mzattera.predictivepowers.client.openai.chat.ChatCompletionChoice;
+import io.github.mzattera.predictivepowers.client.openai.chat.ChatCompletionsRequest;
+import io.github.mzattera.predictivepowers.client.openai.chat.ChatCompletionsResponse;
+import io.github.mzattera.predictivepowers.client.openai.chat.ChatMessage;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -61,11 +61,13 @@ public class ChatService {
 	 * 
 	 * Notice this does NOT limit length of conversation history, which is
 	 * unlimited, but it limits the number of turns considered when calling the API,
-	 * thus limiting the agent memory. THis is needed to avoid exceeding prompt
+	 * thus limiting the agent memory. This is needed to avoid exceeding prompt
 	 * length when calling the API.
 	 */
 	@Getter
 	private int maxConversationLength = 14;
+
+	// TODO add max history length limits as well
 
 	public void setMaxConversationLengh(int l) {
 		if (l < 1)
@@ -148,12 +150,14 @@ public class ChatService {
 	private List<ChatMessage> trimChat(List<ChatMessage> messages) {
 		List<ChatMessage> result = new ArrayList<>(messages.size());
 
+		int numTokens = 0;
 		if (personality != null) {
-			result.add(new ChatMessage("system", personality));
+			ChatMessage m = new ChatMessage("system", personality);
+			result.add(m);
+			numTokens = TokenCalculator.count(m);
 		}
 
 		int numMsg = 0;
-		int numTokens = TokenCalculator.count(result.get(0));
 		for (int i = messages.size() - 1; i >= 0; --i) {
 			if (numMsg >= maxConversationLength)
 				break;

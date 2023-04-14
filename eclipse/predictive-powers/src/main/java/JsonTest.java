@@ -77,7 +77,7 @@ public class JsonTest {
 			EmbeddingService es = oai.getEmbeddingService();
 			String[] txt = new String[] {"Tanto va la gatta al largo",
 					"Tanto va la gatta al largo che la salva il bagnino",
-					"Tanto va la banana al largo", "La banana cresce sugli alberi"};
+					"Tanto va la banana al largo", "La banana cresce sugli alberi", "Entalpia crescente"};
 			List<EmbeddedText> embs = es.embed(txt);
 			for (EmbeddedText e:embs) {
 				System.out.print(e.getText()+" -> "+e.similarity(embs.get(0)));

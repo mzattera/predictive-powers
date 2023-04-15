@@ -1,10 +1,13 @@
-package io.github.mzattera.predictivepowers;
+package io.github.mzattera.predictivepowers.service;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import io.github.mzattera.predictivepowers.LlmUtils;
+import io.github.mzattera.predictivepowers.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.TokenCalculator;
 import io.github.mzattera.predictivepowers.client.openai.embeddings.Embedding;
 import io.github.mzattera.predictivepowers.client.openai.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.client.openai.embeddings.EmbeddingsResponse;

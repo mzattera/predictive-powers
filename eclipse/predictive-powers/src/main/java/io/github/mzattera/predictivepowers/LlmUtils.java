@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * Some utility methods.
+ * Some utility methods to deal with Large Language Models.
  * 
  * @author Massimiliano "Maxi" Zattera.
  *
@@ -34,6 +34,7 @@ public final class LlmUtils {
 		}
 
 		// Now split using decreasing strong separators
+		// TODO . and , can appear in numbers....work around that with a better regex
 		result = split(result, maxTokens, "\n"); // newlines
 		result = split(result, maxTokens, "."); // full stop
 		result = split(result, maxTokens, ","); // other common separators

@@ -1,4 +1,4 @@
-package io.github.mzattera.predictivepowers;
+package io.github.mzattera.predictivepowers.service;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +9,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
+import io.github.mzattera.predictivepowers.LlmUtils;
+import io.github.mzattera.predictivepowers.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.TokenCalculator;
 import io.github.mzattera.predictivepowers.client.openai.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.client.openai.chat.ChatMessage;
 import lombok.Getter;
@@ -150,7 +153,8 @@ public class QuestionService {
 	/**
 	 * Extracts "fill the blank" type of questions from given text.
 	 */
-	// TODO: check there is one and only one ______ filler in questions. Check the answer is a single word.
+	// TODO: check there is one and only one ______ filler in questions. Check the
+	// answer is a single word.
 	public List<QnAPair> getFillQuestions(String text, ChatCompletionsRequest req) {
 
 		// Provides instructions and examples
@@ -244,21 +248,21 @@ public class QuestionService {
 	}
 
 	private List<QnAPair> getQuestions(List<ChatMessage> instructions, String text, ChatCompletionsRequest req) {
-	
+
 		// Split text, based on prompt size
 		int tok = 0;
 		for (ChatMessage m : instructions) {
 			tok += TokenCalculator.count(m);
 		}
-		int maxSize = req.getMaxTokens()*2/3 - tok;
-	
+		int maxSize = req.getMaxTokens() * 2 / 3 - tok;
+
 		List<QnAPair> result = new ArrayList<>();
 		for (String t : LlmUtils.split(text, maxSize)) {
 			QnAPair[] questions = getQuestionsShort(instructions, t, req);
 			for (int i = 0; i < questions.length; ++i)
 				result.add(questions[i]);
 		}
-	
+
 		return result;
 	}
 
@@ -268,7 +272,7 @@ public class QuestionService {
 		prompt.add(new ChatMessage("user", "Context:\n'''\n" //
 				+ shortText //
 				+ "'''"));
-	
+
 		String json = chat.complete(prompt, req).getText();
 		QnAPair[] result = new QnAPair[0];
 		try {
@@ -280,7 +284,7 @@ public class QuestionService {
 		for (QnAPair r : result) {
 			r.setContext(shortText);
 		}
-	
+
 		return result;
 	}
 }

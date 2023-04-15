@@ -1,10 +1,11 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers;
+package io.github.mzattera.predictivepowers.service;
 
 import java.util.List;
 
+import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.client.openai.models.Model;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;

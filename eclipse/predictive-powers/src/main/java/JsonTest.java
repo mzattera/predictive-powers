@@ -5,10 +5,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
-import io.github.mzattera.predictivepowers.EmbeddedText;
-import io.github.mzattera.predictivepowers.EmbeddingService;
-import io.github.mzattera.predictivepowers.EmbeddingService;
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.service.EmbeddedText;
+import io.github.mzattera.predictivepowers.service.EmbeddingService;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -73,17 +72,17 @@ public class JsonTest {
 
 //				 System.out.println(q.getContext());
 //			}
-			
+
 			EmbeddingService es = oai.getEmbeddingService();
-			String[] txt = new String[] {"Tanto va la gatta al largo",
-					"Tanto va la gatta al largo che la salva il bagnino",
-					"Tanto va la banana al largo", "La banana cresce sugli alberi", "Entalpia crescente"};
+			String[] txt = new String[] { "Tanto va la gatta al largo",
+					"Tanto va la gatta al largo che la salva il bagnino", "Tanto va la banana al largo",
+					"La banana cresce sugli alberi", "Entalpia crescente" };
 			List<EmbeddedText> embs = es.embed(txt);
-			for (EmbeddedText e:embs) {
-				System.out.print(e.getText()+" -> "+e.similarity(embs.get(0)));
+			for (EmbeddedText e : embs) {
+				System.out.print(e.getText() + " -> " + e.similarity(embs.get(0)));
 				System.out.println();
 			}
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

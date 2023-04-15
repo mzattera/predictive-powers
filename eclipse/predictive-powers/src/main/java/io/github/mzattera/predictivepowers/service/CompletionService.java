@@ -1,8 +1,10 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers;
+package io.github.mzattera.predictivepowers.service;
 
+import io.github.mzattera.predictivepowers.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.TokenCalculator;
 import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsChoice;
 import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsResponse;

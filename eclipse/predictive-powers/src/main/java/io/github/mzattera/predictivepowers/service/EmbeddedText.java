@@ -1,4 +1,4 @@
-package io.github.mzattera.predictivepowers;
+package io.github.mzattera.predictivepowers.service;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

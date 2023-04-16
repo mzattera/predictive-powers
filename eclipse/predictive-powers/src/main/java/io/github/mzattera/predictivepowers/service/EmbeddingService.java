@@ -28,9 +28,9 @@ public class EmbeddingService {
 	/**
 	 * If a piece of text is longer than this number of tokens and no maximum text
 	 * length parameter is specified, it is split in chunks of at most this size
-	 * before embedding. For list of text, each element is split separately.
+	 * before embedding. For lists of text, each element is split separately.
 	 */
-	public static final int MAX_DEFAULT_TEXT_LENGTH = 1024;
+	public static final int MAX_DEFAULT_TEXT_LENGTH = 100;
 
 	/**
 	 * Maximum number of tokens to send for the embedding requests, this parameter
@@ -192,6 +192,7 @@ public class EmbeddingService {
 
 		List<EmbeddedText> result = new ArrayList<>();
 		EmbeddingsResponse res = ep.getClient().createEmbeddings(req);
+		
 		for (Embedding e : res.getData()) {
 			int index = e.getIndex();
 			EmbeddedText et = EmbeddedText.builder().text(req.getInput().get(index)).embedding(e.getEmbedding())

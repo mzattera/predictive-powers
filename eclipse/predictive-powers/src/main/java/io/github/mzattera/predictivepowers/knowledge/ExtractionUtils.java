@@ -6,7 +6,6 @@ package io.github.mzattera.predictivepowers.knowledge;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -32,14 +31,42 @@ public final class ExtractionUtils {
 	 * @throws TikaException
 	 */
 	public static String getText(String fileName) throws IOException, SAXException, TikaException {
-		AutoDetectParser parser = new AutoDetectParser();
-		BodyContentHandler handler = new BodyContentHandler();
-		Metadata metadata = new Metadata();
+		return getText(new File(fileName));
+	}
 
-		try (InputStream stream = new FileInputStream(new File(fileName))) {
-			parser.parse(stream, handler, metadata);
+	/**
+	 * 
+	 * @param file The file from where to get content.
+	 * @return The content of given file, as plain text.
+	 * 
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws TikaException
+	 */
+	public static String getText(File file) throws IOException, SAXException, TikaException {
+		if (!file.isFile() || !file.canRead()) {
+			throw new IOException("File cannot be read from: " + file.getCanonicalPath());
 		}
 
+		try (FileInputStream in = new FileInputStream(file)) {
+			return getText(in);
+		}
+	}
+
+	/**
+	 * 
+	 * @param stream Stream to read from.
+	 * @return The content of given stream, as plain text.
+	 * 
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws TikaException
+	 */
+	public static String getText(FileInputStream stream) throws IOException, SAXException, TikaException {
+		AutoDetectParser parser = new AutoDetectParser();
+		BodyContentHandler handler = new BodyContentHandler(-1);
+		Metadata metadata = new Metadata();
+		parser.parse(stream, handler, metadata);
 		return handler.toString();
 
 //			System.out.println("Contents of the document:" + handler.toString());

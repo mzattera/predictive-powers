@@ -1,5 +1,9 @@
 package io.github.mzattera.predictivepowers.service;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -8,7 +12,13 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * A piece of text that has been embedded.
+ * A text that has been embedded.
+ * 
+ * In addition to the text itself, and its embedding, a set of arbitrary
+ * properties can be attached to the embedded text.
+ * 
+ * Notice that two instances with same text are qual, regardless of their
+ * properties.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -23,22 +33,57 @@ public final class EmbeddedText {
 	/**
 	 * The piece of text that was embedded.
 	 */
+	@NonNull
 	String text;
 
 	/**
 	 * The actual embedding of the text.
 	 */
+	@NonNull
 	double[] embedding;
 
 	/**
 	 * Model used to embed the text.
 	 */
+	@NonNull
 	String model;
+
+	private final Map<String, Object> properties = new HashMap<>();
+
+	/**
+	 * 
+	 * @return Names of all properties for this embedded text.
+	 */
+	public Set<String> listProperties() {
+		return properties.keySet();
+	}
+
+	/**
+	 * 
+	 * @param pName Name of the property.
+	 * @return The value of given property (or null).
+	 */
+	public Object get(@NonNull String pName) {
+		return properties.get(pName);
+	}
+
+	/**
+	 * Sets a parameter for the property.
+	 * 
+	 * @param pName Name of the property.
+	 * @param v     Value of the property (can be null).
+	 * @return The value of the property.
+	 */
+	public Object set(@NonNull String pName, Object v) {
+		return properties.put(pName, v);
+	}
 
 	/**
 	 * 
 	 * @param other
-	 * @return cosine similarity between this embedding and other.
+	 * @throws IllegalArgumentException if the two embeddings were not created by
+	 *                                  using same model.
+	 * @return cosine similarity between two embeddings.
 	 */
 	public static double similarity(@NonNull EmbeddedText one, @NonNull EmbeddedText other) {
 		return one.similarity(other);
@@ -47,6 +92,8 @@ public final class EmbeddedText {
 	/**
 	 * 
 	 * @param other
+	 * @throws IllegalArgumentException if the two embeddings were not created by
+	 *                                  using same model.
 	 * @return cosine similarity between this embedding and other.
 	 */
 	public double similarity(@NonNull EmbeddedText other) {
@@ -65,5 +112,19 @@ public final class EmbeddedText {
 			return 0.0;
 
 		return similarity;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (o == null)
+			return false;
+		if (!(o instanceof EmbeddedText))
+			return false;
+		return ((EmbeddedText) o).text.equals(this.text);
+	}
+
+	@Override
+	public int hashCode() {
+		return text.hashCode();
 	}
 }

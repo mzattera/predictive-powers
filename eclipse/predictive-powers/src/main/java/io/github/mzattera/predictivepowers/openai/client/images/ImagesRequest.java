@@ -9,8 +9,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -24,10 +22,10 @@ import lombok.ToString;
 @Setter
 @Builder
 @NoArgsConstructor
-@RequiredArgsConstructor
+// @RequiredArgsConstructor
 @AllArgsConstructor
 @ToString
-public class ImagesGenerationsRequest {
+public class ImagesRequest {
 
 	/**
 	 * The size of the generated images. Must be one of "256x256", "512x512", or
@@ -36,19 +34,42 @@ public class ImagesGenerationsRequest {
 	public enum ImageSize {
 		_256x256("256x256"), _512x512("512x512"), _1024x1024("1024x1024");
 
-		@JsonValue
-		public final String label;
+		private final String label;
 
 		private ImageSize(String label) {
 			this.label = label;
 		}
+				
+		@Override
+		@JsonValue
+		public String toString() {
+			return label;
+		}
 	}
 
-	@NonNull
-	String prompt;
+	/**
+	 * The format in which the generated images are returned. Must be one of "url" or "b64_json".
+	 */
+	public enum ResponseFormat {
+		URL("url"), BASE_64("b64_json");
 
+		private final String label;
+
+		private ResponseFormat(String label) {
+			this.label = label;
+		}
+		
+		@Override
+		@JsonValue
+		public String toString() {
+			return label;
+		}
+	}
+
+	// Can be null for edits and variations
+	String prompt;
 	Integer n;
 	ImageSize size;
-	String responseFormat;
+	ResponseFormat responseFormat;
 	String user;
 }

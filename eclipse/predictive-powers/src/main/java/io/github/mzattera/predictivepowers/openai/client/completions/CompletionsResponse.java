@@ -3,8 +3,6 @@
  */
 package io.github.mzattera.predictivepowers.openai.client.completions;
 
-import java.util.List;
-
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -19,6 +17,7 @@ import lombok.ToString;
 @Setter
 @ToString
 public class CompletionsResponse {
+	
     String id;
     String object;
     long created;

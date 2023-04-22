@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.github.mzattera.predictivepowers.knowledge.TestKB;
-
 /**
  * Some utility methods to deal with Large Language Models.
  * 

@@ -5,12 +5,16 @@ package io.github.mzattera.predictivepowers.util;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 
 import javax.imageio.ImageIO;
 import javax.xml.bind.DatatypeConverter;
+
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
 
 /**
  * Image utilities to read and write images.
@@ -63,17 +67,18 @@ public final class ImageUtil {
 	}
 
 	/**
-	 * Write Java image into a file.
+	 * Write Java image into a file, then return a link to the file itself.
 	 */
-	public static void write(String fileName, BufferedImage image) throws IOException {
-		write(new File(fileName), image);
+	public static File toFile(String fileName, BufferedImage image) throws IOException {
+		return toFile(new File(fileName), image);
 	}
 
 	/**
 	 * Write Java image into a file.
 	 */
-	public static void write(File file, BufferedImage image) throws IOException {
+	public static File toFile(File file, BufferedImage image) throws IOException {
 		ImageIO.write(image, getExtension(file), file);
+		return file;
 	}
 
 	private static String getExtension(File f) {
@@ -82,5 +87,29 @@ public final class ImageUtil {
 		if ((p == -1) || (p == name.length() - 1))
 			return "";
 		return name.substring(p + 1);
+	}
+
+	/**
+	 * Write Java image into an HTTP request body.
+	 * 
+	 * @param ext   An extension specifying the format of the saved image (e.g.
+	 *              "jpg" or "png").
+	 * @param image
+	 */
+	public static RequestBody toRequestBody(String ext, BufferedImage image) throws IOException {
+		return RequestBody.create(MediaType.parse("image/" + ext), toBytes(ext, image));
+	}
+
+	/**
+	 * Write Java image into a byte[].
+	 * 
+	 * @param ext   An extension specifying the format of the saved image (e.g.
+	 *              "jpg" or "png").
+	 * @param image
+	 */
+	public static byte[] toBytes(String ext, BufferedImage image) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ImageIO.write(image, ext, baos);
+		return baos.toByteArray();
 	}
 }

@@ -11,7 +11,7 @@ import io.github.mzattera.predictivepowers.openai.client.edits.EditsRequest;
 import io.github.mzattera.predictivepowers.openai.client.edits.EditsResponse;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
-import io.github.mzattera.predictivepowers.openai.client.images.ImagesGenerationsRequest;
+import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesResponse;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.client.models.ModelsResponse;
@@ -47,7 +47,7 @@ public interface OpenAiApi {
 	Single<EditsResponse> edits(@Body EditsRequest req);
 
 	@POST("images/generations")
-	Single<ImagesResponse> imagesGenerations(@Body ImagesGenerationsRequest req);
+	Single<ImagesResponse> imagesGenerations(@Body ImagesRequest req);
 
 	@POST("images/edits")
 	Single<ImagesResponse> imagesEdits(@Body RequestBody req);

@@ -1,7 +1,5 @@
 package io.github.mzattera.predictivepowers.openai.client.chat;
 
-import java.util.List;
-
 import io.github.mzattera.predictivepowers.openai.client.completions.Usage;
 import lombok.Getter;
 import lombok.Setter;

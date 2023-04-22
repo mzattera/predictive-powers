@@ -68,26 +68,27 @@ public class Oracle {
 				kb.save(SAVED_KB_FILE);
 			}
 
-			Scanner console = new Scanner(System.in);
-			while (true) {
-				System.out.println("Your Question: ");
-				String question = console.nextLine();
+			try (Scanner console = new Scanner(System.in)) {
+				while (true) {
+					System.out.println("Your Question: ");
+					String question = console.nextLine();
 
-				// Fetch embeddings matching question and show them
-				System.out.println("===[ Context ]===================================== ");
-				List<Pair<EmbeddedText, Double>> context = kb.search(es.embed(question).get(0), 50, 0);
-				for (Pair<EmbeddedText, Double> p : context) {
-					System.out.println("---[" + p.getRight() + "]-----------------------------------");
-					System.out.println(p.getLeft().getText());
-					System.out.println();
+					// Fetch embeddings matching question and show them
+					System.out.println("===[ Context ]===================================== ");
+					List<Pair<EmbeddedText, Double>> context = kb.search(es.embed(question).get(0), 50, 0);
+					for (Pair<EmbeddedText, Double> p : context) {
+						System.out.println("---[" + p.getRight() + "]-----------------------------------");
+						System.out.println(p.getLeft().getText());
+						System.out.println();
+					}
+					System.out.println("===================================================\n ");
+
+					// Answer
+					System.out.println("My Answer: ");
+					QnAPair answer = as.answer(question, context);
+					System.out.println("My Answer: ");
+					System.out.println(answer.getAnswer() + "\n");
 				}
-				System.out.println("===================================================\n ");
-
-				// Answer
-				System.out.println("My Answer: ");
-				QnAPair answer = as.answer(question, context);
-				System.out.println("My Answer: ");
-				System.out.println(answer.getAnswer() + "\n");
 			}
 
 		} catch (Exception e) {

@@ -3,6 +3,7 @@
  */
 package io.github.mzattera.predictivepowers.openai.client;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
@@ -19,14 +20,17 @@ import io.github.mzattera.predictivepowers.openai.client.edits.EditsRequest;
 import io.github.mzattera.predictivepowers.openai.client.edits.EditsResponse;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
-import io.github.mzattera.predictivepowers.openai.client.images.ImagesGenerationsRequest;
+import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesResponse;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.client.models.ModelsResponse;
+import io.github.mzattera.predictivepowers.util.ImageUtil;
 import io.reactivex.Single;
 import lombok.NonNull;
 import okhttp3.ConnectionPool;
 import okhttp3.Interceptor;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
 import retrofit2.HttpException;
@@ -104,8 +108,59 @@ public final class OpenAiClient {
 		return callApi(api.chatCompletions(req));
 	}
 
-	public ImagesResponse createImage(ImagesGenerationsRequest req) {
+	public ImagesResponse createImage(ImagesRequest req) {
 		return callApi(api.imagesGenerations(req));
+	}
+
+	public ImagesResponse createImageEdit(ImagesRequest req, @NonNull BufferedImage image, BufferedImage mask)
+			throws IOException {
+
+		MultipartBody.Builder builder = new MultipartBody.Builder().setType(MediaType.get("multipart/form-data"))
+				.addFormDataPart("image", "", ImageUtil.toRequestBody("png", image));
+
+		if (req.getPrompt() != null) {
+			builder.addFormDataPart("prompt", req.getPrompt());
+		} else {
+			throw new IllegalArgumentException("Prompt cannot be null");
+		}
+		if (mask != null) {
+			builder.addFormDataPart("mask", "", ImageUtil.toRequestBody("png", mask));
+		}
+		if (req.getN() != null) {
+			builder.addFormDataPart("n", req.getN().toString());
+		}
+		if (req.getSize() != null) {
+			builder.addFormDataPart("size", req.getSize().toString());
+		}
+		if (req.getResponseFormat() != null) {
+			builder.addFormDataPart("response_format", req.getResponseFormat().toString());
+		}
+		if (req.getUser() != null) {
+			builder.addFormDataPart("user", req.getUser());
+		}
+
+		return callApi(api.imagesEdits(builder.build()));
+	}
+
+	public ImagesResponse createImageVariation(ImagesRequest req, @NonNull BufferedImage image) throws IOException {
+
+		MultipartBody.Builder builder = new MultipartBody.Builder().setType(MediaType.get("multipart/form-data"))
+				.addFormDataPart("image", "", ImageUtil.toRequestBody("png", image));
+
+		if (req.getN() != null) {
+			builder.addFormDataPart("n", req.getN().toString());
+		}
+		if (req.getSize() != null) {
+			builder.addFormDataPart("size", req.getSize().toString());
+		}
+		if (req.getResponseFormat() != null) {
+			builder.addFormDataPart("response_format", req.getResponseFormat().toString());
+		}
+		if (req.getUser() != null) {
+			builder.addFormDataPart("user", req.getUser());
+		}
+
+		return callApi(api.imagesVariations(builder.build()));
 	}
 
 	public EditsResponse createEdit(EditsRequest req) {

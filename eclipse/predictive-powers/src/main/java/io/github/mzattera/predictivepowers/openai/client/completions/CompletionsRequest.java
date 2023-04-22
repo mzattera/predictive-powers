@@ -5,7 +5,6 @@ package io.github.mzattera.predictivepowers.openai.client.completions;
 
 import java.util.Map;
 
-import io.github.mzattera.predictivepowers.openai.client.chat.ChatMessage;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

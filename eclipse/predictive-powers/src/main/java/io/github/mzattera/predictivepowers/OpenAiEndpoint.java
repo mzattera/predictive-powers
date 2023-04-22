@@ -5,8 +5,8 @@ package io.github.mzattera.predictivepowers;
 
 import io.github.mzattera.predictivepowers.client.openai.OpenAiClient;
 import io.github.mzattera.predictivepowers.client.openai.chat.ChatCompletionsRequest;
-import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.client.openai.embeddings.EmbeddingsRequest;
+import io.github.mzattera.predictivepowers.service.AnswerService;
 import io.github.mzattera.predictivepowers.service.ChatService;
 import io.github.mzattera.predictivepowers.service.CompletionService;
 import io.github.mzattera.predictivepowers.service.EmbeddingService;
@@ -69,10 +69,10 @@ public class OpenAiEndpoint {
 	}
 
 	public CompletionService getCompletionService() {
-		return getCompletionService(new CompletionsRequest());
+		return getCompletionService(new ChatCompletionsRequest());
 	}
 
-	public CompletionService getCompletionService(CompletionsRequest defaultReq) {
+	public CompletionService getCompletionService(ChatCompletionsRequest defaultReq) {
 		return new CompletionService(this, defaultReq);
 	}
 
@@ -95,11 +95,19 @@ public class OpenAiEndpoint {
 	}
 
 	public QuestionService getQuestionService() {
-		return getQuestionService(new ChatCompletionsRequest());
+		return getQuestionService(getCompletionService());
 	}
 
-	public QuestionService getQuestionService(@NonNull ChatCompletionsRequest defaultReq) {
-		return new QuestionService(this, defaultReq);
+	public QuestionService getQuestionService(@NonNull CompletionService cs) {
+		return new QuestionService(this, cs);
+	}
+
+	public AnswerService getAnswerService() {
+		return getAnswerService(getCompletionService());
+	}
+
+	public AnswerService getAnswerService(@NonNull CompletionService cs) {
+		return new AnswerService(this, cs);
 	}
 
 	public EmbeddingService getEmbeddingService() {

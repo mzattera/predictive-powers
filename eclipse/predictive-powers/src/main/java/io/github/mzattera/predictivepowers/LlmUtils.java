@@ -5,7 +5,10 @@ package io.github.mzattera.predictivepowers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import io.github.mzattera.predictivepowers.knowledge.TestKB;
 
 /**
  * Some utility methods to deal with Large Language Models.
@@ -19,13 +22,10 @@ public final class LlmUtils {
 	 * 
 	 * @param text      A text to be split.
 	 * @param maxTokens Maximum number of tokens in each piece of the split text.
-	 * @return Input text, split in parts smaller than given number of tokens.
-	 * As we do not have an exact way of calculating tokens, this is approximated.
+	 * @return Input text, split in parts smaller than given number of tokens. As we
+	 *         do not have an exact way of calculating tokens, this is approximated.
 	 */
 	public static List<String> split(String text, int maxTokens) {
-
-		// Eliminate empty lines
-//		text = text.replaceAll("[\\n]{2,}", "\n");
 
 		List<String> result = new ArrayList<>();
 		result.add(text);
@@ -33,30 +33,35 @@ public final class LlmUtils {
 			return result;
 		}
 
-		// Now split using decreasing strong separators
-		// TODO . and , can appear in numbers....work around that with a better regex
-		result = split(result, maxTokens, "\n"); // newlines
-		result = split(result, maxTokens, "."); // full stop
-		result = split(result, maxTokens, ","); // other common separators
-		result = split(result, maxTokens, ";");
-		result = split(result, maxTokens, ":");
-		result = split(result, maxTokens, "\t");
-		result = split(result, maxTokens, " "); // spaces
+		// Now split using decreasingly strong separators
+		result = split(result, maxTokens, "[\\n]{2,}"); // empty lines
+		result = split(result, maxTokens, "\\.[\\s]+"); // full stop (not in number)
+		result = split(result, maxTokens, "\\,[\\s]+"); // other common separators
+		result = split(result, maxTokens, ";[\\s]+");
+		result = split(result, maxTokens, ":[\\s]+");
+		result = split(result, maxTokens, "[\\s]+"); // spaces (including newlines)
 
 		// We might have broken up too much, re-join tiny pieces
-		return merge(result, maxTokens);
+		result = merge(result, maxTokens);
+
+		// trim
+		List<String> l = new ArrayList<>(result.size());
+		for (String s : result)
+			l.add(s.trim());
+		return l;
 	}
 
 	/**
-	 * Splits pieces bigger than max length into smaller, using given char as
+	 * Splits pieces bigger than max length into smaller pieces, using given regex as
 	 * separator. Notice pieces already small enough are not touched.
 	 * 
 	 * @param text
 	 * @param maxTokens
 	 * @return
 	 */
-	private static List<String> split(List<String> text, int maxTokens, String string) {
+	private static List<String> split(List<String> text, int maxTokens, String regex) {
 		List<String> result = new ArrayList<>();
+		Pattern p = Pattern.compile(regex);
 
 		for (String s : text) {
 			if (TokenCalculator.count(s) <= maxTokens) { // s short enough it can be ignored
@@ -65,12 +70,15 @@ public final class LlmUtils {
 			}
 
 			// Break down at given separator
-			String[] parts = s.split(Pattern.quote(string), -1); // keep empty strings when splitting
-			for (int i = 0; i < parts.length; ++i) {
-				if (i == parts.length - 1)
-					result.add(parts[i]);
-				else
-					result.add(parts[i] + string);
+			Matcher m = p.matcher(s);
+			int start = 0;
+			while (m.find()) {
+				// Found the separator
+				result.add(s.substring(start, m.start()) + m.group());
+				start = m.end();
+			}
+			if (start < s.length()) { // add last unmatched bit
+				result.add(s.substring(start));
 			}
 		}
 
@@ -111,10 +119,14 @@ public final class LlmUtils {
 	}
 
 	public static void main(String[] args) {
+//		String t = "nel mezzo del cammin di notstra vita, mi ritrovai in una selva\n oscura,, che la diritta viea era perduta. o qual cosa dura...";
 		String t = "nel mezzo del cammin di notstra vita, mi ritrovai in una selva\n oscura,, che la diritta viea era perduta. o qual cosa dura...";
+		t = t+"\n\n"+t+"\n\n"+t;
+		//		String t = TestKB.TEXT01;
 
+		System.out.println(t);
 		System.out.println("---------------------");
-		for (String s : split(t, 10)) {
+		for (String s : split(t, 20)) {
 			System.out.println(">" + s + "<");
 			System.out.println("---------------------");
 		}

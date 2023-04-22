@@ -1,9 +1,16 @@
 package io.github.mzattera.predictivepowers.service;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import org.apache.tika.exception.TikaException;
+import org.xml.sax.SAXException;
 
 import io.github.mzattera.predictivepowers.LlmUtils;
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
@@ -11,6 +18,7 @@ import io.github.mzattera.predictivepowers.TokenCalculator;
 import io.github.mzattera.predictivepowers.client.openai.embeddings.Embedding;
 import io.github.mzattera.predictivepowers.client.openai.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.client.openai.embeddings.EmbeddingsResponse;
+import io.github.mzattera.predictivepowers.knowledge.ExtractionUtils;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -24,13 +32,6 @@ import lombok.Setter;
  */
 @RequiredArgsConstructor
 public class EmbeddingService {
-
-	/**
-	 * If a piece of text is longer than this number of tokens and no maximum text
-	 * length parameter is specified, it is split in chunks of at most this size
-	 * before embedding. For lists of text, each element is split separately.
-	 */
-	public static final int MAX_DEFAULT_TEXT_LENGTH = 100;
 
 	/**
 	 * Maximum number of tokens to send for the embedding requests, this parameter
@@ -61,19 +62,7 @@ public class EmbeddingService {
 	 * and single embedding returned.
 	 */
 	public List<EmbeddedText> embed(String text) {
-		return embed(text, defaultReq, MAX_DEFAULT_TEXT_LENGTH);
-	}
-
-	/**
-	 * Create embeddings for given text.
-	 * 
-	 * As there is a maximum length for text, it might be split into several parts
-	 * and single embedding returned.
-	 */
-	public List<EmbeddedText> embed(String text, EmbeddingsRequest req) {
-		List<String> txt = new ArrayList<>();
-		txt.add(text);
-		return embed(txt, req, MAX_DEFAULT_TEXT_LENGTH);
+		return embed(text, maxTokens, defaultReq);
 	}
 
 	/**
@@ -85,10 +74,23 @@ public class EmbeddingService {
 	 * @param maxTextLength Maximum length of each piece of text to be embedded.
 	 *                      Text is split accordingly, if needed.
 	 */
-	public List<EmbeddedText> embed(String text, EmbeddingsRequest req, int maxTextLength) {
+	public List<EmbeddedText> embed(String text, int maxTextLength) {
+		return embed(text, maxTextLength, defaultReq);
+	}
+
+	/**
+	 * Create embeddings for given text.
+	 * 
+	 * As there is a maximum length for text, it might be split into several parts
+	 * and single embedding returned.
+	 * 
+	 * @param maxTextLength Maximum length of each piece of text to be embedded.
+	 *                      Text is split accordingly, if needed.
+	 */
+	public List<EmbeddedText> embed(String text, int maxTextLength, EmbeddingsRequest req) {
 		List<String> txt = new ArrayList<>();
 		txt.add(text);
-		return embed(txt, req, maxTextLength);
+		return embed(txt, maxTextLength, req);
 	}
 
 	/**
@@ -98,7 +100,7 @@ public class EmbeddingService {
 	 * several parts and single embedding returned.
 	 */
 	public List<EmbeddedText> embed(String[] txt) {
-		return embed(Arrays.asList(txt), defaultReq, MAX_DEFAULT_TEXT_LENGTH);
+		return embed(Arrays.asList(txt), maxTokens, defaultReq);
 	}
 
 	/**
@@ -106,9 +108,12 @@ public class EmbeddingService {
 	 * 
 	 * As there is a maximum length for text, each piece of text might be split into
 	 * several parts and single embedding returned.
+	 * 
+	 * @param maxTextLength Maximum length of each piece of text to be embedded.
+	 *                      Text is split accordingly, if needed.
 	 */
-	public List<EmbeddedText> embed(String[] txt, EmbeddingsRequest req) {
-		return embed(Arrays.asList(txt), req, MAX_DEFAULT_TEXT_LENGTH);
+	public List<EmbeddedText> embed(String[] txt, int maxTextLength) {
+		return embed(Arrays.asList(txt), maxTextLength, defaultReq);
 	}
 
 	/**
@@ -116,9 +121,12 @@ public class EmbeddingService {
 	 * 
 	 * As there is a maximum length for text, each piece of text might be split into
 	 * several parts and single embedding returned.
+	 * 
+	 * @param maxTextLength Maximum length of each piece of text to be embedded.
+	 *                      Text is split accordingly, if needed.
 	 */
-	public List<EmbeddedText> embed(String[] txt, EmbeddingsRequest req, int maxTextLength) {
-		return embed(Arrays.asList(txt), req, maxTextLength);
+	public List<EmbeddedText> embed(String[] txt, int maxTextLength, EmbeddingsRequest req) {
+		return embed(Arrays.asList(txt), maxTextLength, req);
 	}
 
 	/**
@@ -128,7 +136,7 @@ public class EmbeddingService {
 	 * several parts and single embedding returned.
 	 */
 	public List<EmbeddedText> embed(Collection<String> text) {
-		return embed(text, defaultReq, MAX_DEFAULT_TEXT_LENGTH);
+		return embed(text, maxTokens, defaultReq);
 	}
 
 	/**
@@ -136,9 +144,12 @@ public class EmbeddingService {
 	 * 
 	 * As there is a maximum length for text, each piece of text might be split into
 	 * several parts and single embedding returned.
+	 * 
+	 * @param maxTextLength Maximum length of each piece of text to be embedded.
+	 *                      Text is split accordingly, if needed.
 	 */
-	public List<EmbeddedText> embed(Collection<String> text, EmbeddingsRequest req) {
-		return embed(text, req, MAX_DEFAULT_TEXT_LENGTH);
+	public List<EmbeddedText> embed(Collection<String> text, int maxTextLength) {
+		return embed(text, maxTextLength, defaultReq);
 	}
 
 	/**
@@ -150,7 +161,7 @@ public class EmbeddingService {
 	 * @param maxTextLength Maximum length of each piece of text to be embedded (in
 	 *                      tokens). Text is split accordingly, if needed.
 	 */
-	public List<EmbeddedText> embed(Collection<String> text, EmbeddingsRequest req, int maxTextLength) {
+	public List<EmbeddedText> embed(Collection<String> text, int maxTextLength, EmbeddingsRequest req) {
 
 		req = (EmbeddingsRequest) req.clone();
 		req.setInput(new ArrayList<>());
@@ -192,7 +203,7 @@ public class EmbeddingService {
 
 		List<EmbeddedText> result = new ArrayList<>();
 		EmbeddingsResponse res = ep.getClient().createEmbeddings(req);
-		
+
 		for (Embedding e : res.getData()) {
 			int index = e.getIndex();
 			EmbeddedText et = EmbeddedText.builder().text(req.getInput().get(index)).embedding(e.getEmbedding())
@@ -202,4 +213,99 @@ public class EmbeddingService {
 
 		return result;
 	}
+
+	/**
+	 * Embeds content of given file.
+	 * 
+	 * @param fileName
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws TikaException
+	 */
+	public List<EmbeddedText> embedFile(String fileName) throws IOException, SAXException, TikaException {
+		return embedFile(new File(fileName));
+	}
+
+	/**
+	 * Embed content of given file.
+	 * 
+	 * @param file
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws TikaException
+	 */
+	public List<EmbeddedText> embedFile(File file) throws IOException, SAXException, TikaException {
+		String content = ExtractionUtils.getText(file);
+		return embed(content);
+	}
+
+	/**
+	 * Embed content of given file.
+	 * 
+	 * @param file
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws TikaException
+	 */
+	public List<EmbeddedText> embedFile(File file, int maxTextLength) throws IOException, SAXException, TikaException {
+		String content = ExtractionUtils.getText(file);
+		return embed(content, maxTextLength);
+	}
+
+	/**
+	 * Embeds all files in given folder, including contents of its sub-folders.
+	 * 
+	 * @param folderName
+	 * @return
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws TikaException
+	 * @returns A Map from each embedded file into its contents.
+	 */
+	public Map<File, List<EmbeddedText>> embedFolder(String folderName)
+			throws IOException, SAXException, TikaException {
+		return embedFolder(new File(folderName), maxTokens);
+	}
+
+	/**
+	 * Embeds all files in given folder, including contents of its sub-folders.
+	 * 
+	 * @param folderName
+	 * @return
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws TikaException
+	 * @returns A Map from each embedded file into its contents.
+	 */
+	public Map<File, List<EmbeddedText>> embedFolder(File folder) throws IOException, SAXException, TikaException {
+		return embedFolder(folder, maxTokens);
+	}
+
+	/**
+	 * Embeds all files in given folder, including contents of its sub-folders.
+	 * 
+	 * @param folderName
+	 * @return
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws TikaException
+	 * @returns A Map from each embedded file into its contents.
+	 */
+	public Map<File, List<EmbeddedText>> embedFolder(File folder, int maxTextLength)
+			throws IOException, SAXException, TikaException {
+		if (!folder.isDirectory() || !folder.canRead()) {
+			throw new IOException("Folder cannot be read from: " + folder.getCanonicalPath());
+		}
+
+		Map<File, List<EmbeddedText>> result = new HashMap<>();
+		for (File f : folder.listFiles()) {
+			if (f.isFile())
+				result.put(f, embedFile(f, maxTextLength));
+			else
+				result.putAll(embedFolder(f, maxTextLength));
+		}
+
+		return result;
+	}
+
 }

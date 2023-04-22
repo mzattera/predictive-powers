@@ -4,7 +4,13 @@
 package io.github.mzattera.predictivepowers.knowledge;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,11 +21,8 @@ import java.util.Set;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.tika.exception.TikaException;
-import org.xml.sax.SAXException;
 
 import io.github.mzattera.predictivepowers.service.EmbeddedText;
-import io.github.mzattera.predictivepowers.service.EmbeddingService;
 
 /**
  * A knowledge base contains information in form of embedded text that can be
@@ -36,7 +39,9 @@ import io.github.mzattera.predictivepowers.service.EmbeddingService;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-public class KnowledgeBase {
+public class KnowledgeBase implements Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	public static final String DEFAULT_DOMAIN = "_default";
 
@@ -44,6 +49,56 @@ public class KnowledgeBase {
 
 	public KnowledgeBase() {
 		createDomain(DEFAULT_DOMAIN);
+	}
+
+	/**
+	 * Stores this knowledge base in a file.
+	 * 
+	 * @param fileName
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
+	public void save(String fileName) throws FileNotFoundException, IOException {
+		save(new File(fileName));
+	}
+
+	/**
+	 * Stores this knowledge base in a file.
+	 * 
+	 * @param file
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
+	public void save(File file) throws FileNotFoundException, IOException {
+		try (FileOutputStream fos = new FileOutputStream(file); ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+			oos.writeObject(this);
+		}
+	}
+
+	/**
+	 * Reads a previously saved knowledge base from file.
+	 * 
+	 * @param fileName
+	 * @return
+	 * @throws IOException 
+	 * @throws ClassNotFoundException 
+	 */
+	public static KnowledgeBase load(String fileName) throws ClassNotFoundException, IOException {
+		return load(new File(fileName));
+	}
+
+	/**
+	 * Reads a previously saved knowledge base from file.
+	 * 
+	 * @param file
+	 * @return
+	 * @throws ClassNotFoundException
+	 * @throws IOException
+	 */
+	public static KnowledgeBase load(File file) throws ClassNotFoundException, IOException {
+		try (FileInputStream fis = new FileInputStream(file); ObjectInputStream ois = new ObjectInputStream(fis)) {
+			return (KnowledgeBase) ois.readObject();
+		}
 	}
 
 	/**
@@ -234,9 +289,9 @@ public class KnowledgeBase {
 	 * @param limit  Maximum number of results to return.
 	 * @param offset How many results to skip (for pagination).
 	 */
-	public List<Pair<EmbeddedText, Double>> search(String domain, EmbeddedText e, int limit, int offset) {
+	public List<Pair<EmbeddedText, Double>> search(String domain, EmbeddedText query, int limit, int offset) {
 		List<Pair<EmbeddedText, Double>> result = new ArrayList<>();
-		search(domains.get(domain), e, result, limit + offset);
+		search(domains.get(domain), query, result, limit + offset);
 		return skip(result, offset);
 	}
 
@@ -296,130 +351,5 @@ public class KnowledgeBase {
 		}
 
 		return result;
-	}
-
-	/**
-	 * Adds the content of given file to this knowledge base.
-	 * 
-	 * @param fileName
-	 * @param es       A service to use to create embeddings from the file content.
-	 * @throws IOException
-	 * @throws SAXException
-	 * @throws TikaException
-	 */
-	public void add(String fileName, EmbeddingService es) throws IOException, SAXException, TikaException {
-		add(DEFAULT_DOMAIN, new File(fileName), es);
-	}
-
-	/**
-	 * Adds the content of given file to this knowledge base.
-	 * 
-	 * @param file
-	 * @param es   A service to use to create embeddings from the file content.
-	 * @throws IOException
-	 * @throws SAXException
-	 * @throws TikaException
-	 */
-	public void add(File file, EmbeddingService es) throws IOException, SAXException, TikaException {
-		add(DEFAULT_DOMAIN, file, es);
-	}
-
-	/**
-	 * Adds the content of given file to given domain this knowledge base.
-	 * 
-	 * @param domain
-	 * @param fileName
-	 * @param es       A service to use to create embeddings from the file content.
-	 * @throws IOException
-	 * @throws SAXException
-	 * @throws TikaException
-	 */
-	public void add(String domain, String fileName, EmbeddingService es)
-			throws IOException, SAXException, TikaException {
-		add(domain, new File(fileName), es);
-	}
-
-	/**
-	 * Adds the content of given file to given domain in this knowledge base.
-	 * 
-	 * @param file
-	 * @param es   A service to use to create embeddings from the file content.
-	 * @throws IOException
-	 * @throws SAXException
-	 * @throws TikaException
-	 */
-	public void add(String domain, File file, EmbeddingService es) throws IOException, SAXException, TikaException {
-		String content = ExtractionUtils.getText(file);
-		for (EmbeddedText e : es.embed(content)) {
-			e.set("fileName", file.getName());
-			insert(domain, e);
-		}
-	}
-
-	/**
-	 * Adds the content of given folder and its sub-folders to this knowledge base.
-	 * 
-	 * @param folderName
-	 * @param es         A service to use to create embeddings from the file
-	 *                   content.
-	 * @throws IOException
-	 * @throws SAXException
-	 * @throws TikaException
-	 */
-	public void addFolder(String folderName, EmbeddingService es) throws IOException, SAXException, TikaException {
-		addFolder(DEFAULT_DOMAIN, new File(folderName), es);
-	}
-
-	/**
-	 * Adds the content of given folder and its sub-folders to given domain in this
-	 * knowledge base.
-	 * 
-	 * @param folderName
-	 * @param es         A service to use to create embeddings from the file
-	 *                   content.
-	 * @throws IOException
-	 * @throws SAXException
-	 * @throws TikaException
-	 */
-	public void addFolder(String domain, String folderName, EmbeddingService es)
-			throws IOException, SAXException, TikaException {
-		addFolder(domain, new File(folderName), es);
-	}
-
-	/**
-	 * Adds the content of given folder and its subfolders to this knowledge base.
-	 * 
-	 * @param folder
-	 * @param es     A service to use to create embeddings from the file content.
-	 * @throws IOException
-	 * @throws SAXException
-	 * @throws TikaException
-	 */
-	public void addFolder(File folder, EmbeddingService es) throws IOException, SAXException, TikaException {
-		addFolder(DEFAULT_DOMAIN, folder, es);
-	}
-
-	/**
-	 * Adds the content of given folder and its subfolders to given domain in this
-	 * knowledge base.
-	 * 
-	 * @param folder
-	 * @param es     A service to use to create embeddings from the file content.
-	 * @throws IOException
-	 * @throws SAXException
-	 * @throws TikaException
-	 */
-	public void addFolder(String domain, File folder, EmbeddingService es)
-			throws IOException, SAXException, TikaException {
-		if (!folder.isDirectory() || !folder.canRead()) {
-			throw new IOException("Folder cannot be read from: " + folder.getCanonicalPath());
-		}
-
-		for (File f : folder.listFiles()) {
-			if (f.isFile())
-				add(domain, f, es);
-			else
-				addFolder(domain, f, es);
-		}
 	}
 }

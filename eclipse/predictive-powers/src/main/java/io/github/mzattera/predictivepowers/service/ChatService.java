@@ -10,9 +10,6 @@ import io.github.mzattera.predictivepowers.client.openai.chat.ChatCompletionsReq
 import io.github.mzattera.predictivepowers.client.openai.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.client.openai.chat.ChatMessage;
 import lombok.Getter;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 
 /**
  * This class manages a chat with an agent through the /chat/completions API.
@@ -24,26 +21,7 @@ import lombok.Setter;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@RequiredArgsConstructor
-public class ChatService {
-
-	@NonNull
-	private final OpenAiEndpoint ep;
-
-	/**
-	 * This request, with its parameters, is used as default setting for each call.
-	 * 
-	 * You can change any parameter to change these defaults (e.g. the model used)
-	 * and the change will apply to all subsequent calls.
-	 */
-	@Getter
-	@NonNull
-	private final ChatCompletionsRequest defaultReq;
-
-	/** Personality of the agent. If null, agent has NO personality. */
-	@Getter
-	@Setter
-	private String personality = "You are a helpful assistant.";
+public class ChatService extends CompletionService {
 
 	/**
 	 * These are the messages exchanged in the current chat.
@@ -54,6 +32,7 @@ public class ChatService {
 	 * however are considered when calling the API (see
 	 * {@link maxConversationLength}).
 	 */
+	// TODO Size limit?
 	@Getter
 	private final List<ChatMessage> history = new ArrayList<>();
 
@@ -67,14 +46,14 @@ public class ChatService {
 	 * length when calling the API.
 	 */
 	@Getter
-	private int maxConversationLength = 14;
+	private int maxConversationSteps = 14;
 
 	// TODO add max history length limits as well
 
-	public void setMaxConversationLengh(int l) {
+	public void setMaxConversationSteps(int l) {
 		if (l < 1)
 			throw new IllegalArgumentException("Must keep at least 1 message.");
-		maxConversationLength = l;
+		maxConversationSteps = l;
 	}
 
 	/**
@@ -98,6 +77,10 @@ public class ChatService {
 		maxConversationTokens = n;
 	}
 
+	public ChatService(OpenAiEndpoint ep, ChatCompletionsRequest defaultReq) {
+		super(ep, defaultReq);
+	}
+
 	/**
 	 * Starts a new chat, clearing current conversation.
 	 */
@@ -111,7 +94,7 @@ public class ChatService {
 	 * The exchange is added to the conversation history.
 	 */
 	public TextResponse chat(String msg) {
-		return chat(msg, defaultReq);
+		return chat(msg, getDefaultReq());
 	}
 
 	/**
@@ -127,10 +110,11 @@ public class ChatService {
 		req.setMessages(messages);
 
 		// Adjust token limit
+		// TODO do we need to do this?
 		int tok = 0;
 		for (ChatMessage m : messages)
 			tok += TokenCalculator.count(m);
-		req.setMaxTokens(req.getMaxTokens() - tok - 100);
+		req.setMaxTokens(req.getMaxTokens() - tok);
 
 		// TODO is this error handling good? It should in principle as if we cannot get
 		// this text, something went wrong and we should react.
@@ -153,15 +137,15 @@ public class ChatService {
 		List<ChatMessage> result = new ArrayList<>(messages.size());
 
 		int numTokens = 0;
-		if (personality != null) {
-			ChatMessage m = new ChatMessage("system", personality);
+		if (getPersonality() != null) {
+			ChatMessage m = new ChatMessage("system", getPersonality());
 			result.add(m);
 			numTokens = TokenCalculator.count(m);
 		}
 
 		int numMsg = 0;
 		for (int i = messages.size() - 1; i >= 0; --i) {
-			if (numMsg >= maxConversationLength)
+			if (numMsg >= maxConversationSteps)
 				break;
 
 			ChatMessage msg = messages.get(i);
@@ -176,58 +160,4 @@ public class ChatService {
 
 		return result;
 	}
-
-	/**
-	 * Executes a one-turn interaction outside the current conversation. The agent
-	 * personality is still considered, but the current conversation is not
-	 * affected.
-	 * 
-	 * Basically, this is using chat API as a text completion service.
-	 */
-	public TextResponse complete(String prompt) {
-		return complete(prompt, defaultReq);
-	}
-
-	/**
-	 * Executes a one-turn interaction outside the current conversation. The agent
-	 * personality is still considered, but the current conversation is not
-	 * affected.
-	 * 
-	 * Basically, this is using chat API as a text completion service.
-	 */
-	public TextResponse complete(String prompt, ChatCompletionsRequest req) {
-		List<ChatMessage> msg = new ArrayList<>();
-		if (personality != null)
-			msg.add(new ChatMessage("system", personality));
-		msg.add(new ChatMessage("user", prompt));
-
-		return complete(msg, req);
-	}
-
-	/**
-	 * Executes a one-turn interaction outside the current conversation.
-	 * 
-	 * Given list of messages is used as input of the API; agent personality is not
-	 * used in this case.
-	 * 
-	 * Basically, this is using chat API as a text completion service.
-	 */
-	public TextResponse complete(List<ChatMessage> messages, ChatCompletionsRequest req) {
-		req = (ChatCompletionsRequest) req.clone();
-		req.setMessages(messages);
-
-		// Adjust token limit
-		int tok = 0;
-		for (ChatMessage m : messages)
-			tok += TokenCalculator.count(m);
-		req.setMaxTokens(req.getMaxTokens() - tok - 100);
-
-		// TODO is this error handling good? It should in principle as if we cannot get
-		// this text, something went wrong and we should react.
-		// TODO BETTER USE finish reason.
-		ChatCompletionsResponse resp = ep.getClient().createChatCompletion(req);
-		ChatCompletionChoice choice = resp.getChoices().get(0);
-		return TextResponse.fromGptApi(choice.getMessage().getContent(), choice.getFinishReason());
-	}
-
 }

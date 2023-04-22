@@ -34,19 +34,19 @@ public final class EmbeddedText {
 	 * The piece of text that was embedded.
 	 */
 	@NonNull
-	String text;
+	private String text;
 
 	/**
 	 * The actual embedding of the text.
 	 */
 	@NonNull
-	double[] embedding;
+	private double[] embedding;
 
 	/**
 	 * Model used to embed the text.
 	 */
 	@NonNull
-	String model;
+	private String model;
 
 	private final Map<String, Object> properties = new HashMap<>();
 

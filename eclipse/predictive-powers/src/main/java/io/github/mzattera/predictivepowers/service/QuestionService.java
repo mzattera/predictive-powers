@@ -16,6 +16,7 @@ import io.github.mzattera.predictivepowers.client.openai.chat.ChatCompletionsReq
 import io.github.mzattera.predictivepowers.client.openai.chat.ChatMessage;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
 /**
  * This class provides method to extract questions from a text, in different
@@ -24,8 +25,11 @@ import lombok.NonNull;
  * @author Massimiliano "Maxi" Zattera
  *
  */
+@RequiredArgsConstructor
 public class QuestionService {
 
+	// TODO with thsi pattern, you get the default service and if you configure it for the Questio
+	
 	// Maps from-to POJO <-> JSON
 	private final static ObjectMapper mapper;
 	static {
@@ -39,40 +43,16 @@ public class QuestionService {
 	private final OpenAiEndpoint ep;
 
 	/**
-	 * This request, with its parameters, is used as default setting for each call.
-	 * 
-	 * You can change any parameter to change these defaults (e.g. the model used)
-	 * and the change will apply to all subsequent calls.
-	 */
-	@Getter
-	@NonNull
-	private final ChatCompletionsRequest defaultReq;
-
-	/**
 	 * This underlying service is used for executing required prompts.
 	 */
 	@NonNull
-	private final ChatService chat;
-
-	public QuestionService(@NonNull OpenAiEndpoint ep, @NonNull ChatCompletionsRequest defaultReq) {
-		this.ep = ep;
-		this.defaultReq = defaultReq;
-
-		this.chat = this.ep.getChatService();
-		this.chat.setPersonality(null); // should not be necessary
-	}
+	@Getter
+	private final CompletionService completionService;
 
 	/**
 	 * Extracts question/answer pairs from given text.
 	 */
 	public List<QnAPair> getQuestions(String text) {
-		return getQuestions(text, defaultReq);
-	}
-
-	/**
-	 * Extracts question/answer pairs from given text.
-	 */
-	public List<QnAPair> getQuestions(String text, ChatCompletionsRequest req) {
 
 		// Provides instructions and examples
 		List<ChatMessage> instructions = new ArrayList<>();
@@ -99,21 +79,14 @@ public class QuestionService {
 				+ "   }\n" //
 				+ "]"));
 
-		return getQuestions(instructions, text, req);
+		return getQuestions(instructions, text);
 	}
 
 	/**
 	 * Extracts true/false type of questions from given text.
 	 */
 	public List<QnAPair> getTFQuestions(String text) {
-		return getTFQuestions(text, defaultReq);
-	}
-
-	/**
-	 * Extracts true/false type of questions from given text.
-	 */
 	// TODO: check the answers are true/false
-	public List<QnAPair> getTFQuestions(String text, ChatCompletionsRequest req) {
 
 		// Provides instructions and examples
 		List<ChatMessage> instructions = new ArrayList<>();
@@ -140,22 +113,15 @@ public class QuestionService {
 				+ "   }\n" //
 				+ "]"));
 
-		return getQuestions(instructions, text, req);
+		return getQuestions(instructions, text);
 	}
 
 	/**
 	 * Extracts "fill the blank" type of questions from given text.
 	 */
 	public List<QnAPair> getFillQuestions(String text) {
-		return getFillQuestions(text, defaultReq);
-	}
-
-	/**
-	 * Extracts "fill the blank" type of questions from given text.
-	 */
 	// TODO: check there is one and only one ______ filler in questions. Check the
 	// answer is a single word.
-	public List<QnAPair> getFillQuestions(String text, ChatCompletionsRequest req) {
 
 		// Provides instructions and examples
 		List<ChatMessage> instructions = new ArrayList<>();
@@ -182,21 +148,14 @@ public class QuestionService {
 				+ "   }\n" //
 				+ "]"));
 
-		return getQuestions(instructions, text, req);
+		return getQuestions(instructions, text);
 	}
 
 	/**
 	 * Extracts multiple-choice questions from given text.
 	 */
 	public List<QnAPair> getMCQuestions(String text) {
-		return getMCQuestions(text, defaultReq);
-	}
-
-	/**
-	 * Extracts multiple-choice questions from given text.
-	 */
 	// TODO: check the answer is a number that matches one of the options
-	public List<QnAPair> getMCQuestions(String text, ChatCompletionsRequest req) {
 
 		// Provides instructions and examples
 		List<ChatMessage> instructions = new ArrayList<>();
@@ -244,21 +203,21 @@ public class QuestionService {
 				+ "   }\n" //
 				+ "]"));
 
-		return getQuestions(instructions, text, req);
+		return getQuestions(instructions, text);
 	}
 
-	private List<QnAPair> getQuestions(List<ChatMessage> instructions, String text, ChatCompletionsRequest req) {
+	private List<QnAPair> getQuestions(List<ChatMessage> instructions, String text) {
 
 		// Split text, based on prompt size
 		int tok = 0;
 		for (ChatMessage m : instructions) {
 			tok += TokenCalculator.count(m);
 		}
-		int maxSize = req.getMaxTokens() * 2 / 3 - tok;
+		int maxSize = completionService.getDefaultReq().getMaxTokens() * 2 / 3 - tok;
 
 		List<QnAPair> result = new ArrayList<>();
 		for (String t : LlmUtils.split(text, maxSize)) {
-			QnAPair[] questions = getQuestionsShort(instructions, t, req);
+			QnAPair[] questions = getQuestionsShort(instructions, t);
 			for (int i = 0; i < questions.length; ++i)
 				result.add(questions[i]);
 		}
@@ -266,14 +225,14 @@ public class QuestionService {
 		return result;
 	}
 
-	private QnAPair[] getQuestionsShort(List<ChatMessage> instructions, String shortText, ChatCompletionsRequest req) {
+	private QnAPair[] getQuestionsShort(List<ChatMessage> instructions, String shortText) {
 
 		List<ChatMessage> prompt = new ArrayList<>(instructions);
 		prompt.add(new ChatMessage("user", "Context:\n'''\n" //
 				+ shortText //
 				+ "'''"));
 
-		String json = chat.complete(prompt, req).getText();
+		String json = completionService.complete(prompt).getText();
 		QnAPair[] result = new QnAPair[0];
 		try {
 			result = mapper.readValue(json, QnAPair[].class);
@@ -282,7 +241,7 @@ public class QuestionService {
 			System.err.println(json);
 		}
 		for (QnAPair r : result) {
-			r.setContext(shortText);
+			r.setSimpleContext(shortText);
 		}
 
 		return result;

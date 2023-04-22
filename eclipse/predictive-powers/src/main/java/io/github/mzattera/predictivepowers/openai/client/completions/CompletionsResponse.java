@@ -23,6 +23,6 @@ public class CompletionsResponse {
     String object;
     long created;
     String model;
-    Choice[] choices;
+    CompletionsChoice[] choices;
     Usage usage;
 }

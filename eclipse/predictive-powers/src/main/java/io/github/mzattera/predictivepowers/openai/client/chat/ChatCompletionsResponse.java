@@ -21,6 +21,6 @@ public class ChatCompletionsResponse {
 	String object;
 	long created;
 	String model;
-	ChatCompletionChoice[] choices;
+	ChatCompletionsChoice[] choices;
 	Usage usage;
 }

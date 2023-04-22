@@ -1,4 +1,4 @@
-package io.github.mzattera.predictivepowers.client.openai.completions;
+package io.github.mzattera.predictivepowers.openai.client.completions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.Models;
-import io.github.mzattera.predictivepowers.openai.client.completions.Choice;
+import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsChoice;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
 
@@ -50,7 +50,7 @@ class CompletionsTest {
 		assertEquals(resp.getChoices().length, 3);
 		assertEquals(resp.getChoices()[0].getFinishReason(), "stop");
 
-		for (Choice c : resp.getChoices()) {
+		for (CompletionsChoice c : resp.getChoices()) {
 			assertTrue(c.getText().contains("848"));
 		}
 	}

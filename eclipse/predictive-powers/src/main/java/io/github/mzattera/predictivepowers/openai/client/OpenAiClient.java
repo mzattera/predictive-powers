@@ -15,8 +15,12 @@ import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsReq
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
+import io.github.mzattera.predictivepowers.openai.client.edits.EditsRequest;
+import io.github.mzattera.predictivepowers.openai.client.edits.EditsResponse;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
+import io.github.mzattera.predictivepowers.openai.client.images.ImagesGenerationsRequest;
+import io.github.mzattera.predictivepowers.openai.client.images.ImagesResponse;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.client.models.ModelsResponse;
 import io.reactivex.Single;
@@ -98,6 +102,14 @@ public final class OpenAiClient {
 
 	public ChatCompletionsResponse createChatCompletion(ChatCompletionsRequest req) {
 		return callApi(api.chatCompletions(req));
+	}
+
+	public ImagesResponse createImage(ImagesGenerationsRequest req) {
+		return callApi(api.imagesGenerations(req));
+	}
+
+	public EditsResponse createEdit(EditsRequest req) {
+		return callApi(api.edits(req));
 	}
 
 	public EmbeddingsResponse createEmbeddings(EmbeddingsRequest req) {

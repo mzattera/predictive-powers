@@ -1,4 +1,4 @@
-package io.github.mzattera.predictivepowers.client.openai.chat;
+package io.github.mzattera.predictivepowers.openai.client.chat;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

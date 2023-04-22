@@ -13,7 +13,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class ChatCompletionChoice {
+public class ChatCompletionsChoice {
 	int index;
 	ChatMessage message;
 	String finishReason;

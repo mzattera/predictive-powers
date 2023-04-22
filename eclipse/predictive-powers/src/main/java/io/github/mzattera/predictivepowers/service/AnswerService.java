@@ -5,10 +5,10 @@ import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import io.github.mzattera.predictivepowers.LlmUtils;
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.TokenCalculator;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatMessage;
+import io.github.mzattera.predictivepowers.util.LlmUtil;
+import io.github.mzattera.predictivepowers.util.TokenCalculator;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -72,7 +72,7 @@ public class AnswerService {
 		instructions.add(new ChatMessage("user", "Context: Biglydoos are small rodent similar to mice."));
 		instructions.add(new ChatMessage("user", "Q: What color are biglydoos?"));
 		instructions.add(new ChatMessage("assistant", "A: I do not know."));
-		instructions.add(new ChatMessage("user", "Context: " + LlmUtils.split(question, maxContextTokens).get(0)));
+		instructions.add(new ChatMessage("user", "Context: " + LlmUtil.split(question, maxContextTokens).get(0)));
 		instructions.add(new ChatMessage("user", "Q: " + question));
 
 		TextResponse answer = completionService.complete(instructions);

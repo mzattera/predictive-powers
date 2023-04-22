@@ -16,7 +16,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class Choice {
+public class CompletionsChoice {
 	String text;
 	int index;
 	Logprob logprobs;

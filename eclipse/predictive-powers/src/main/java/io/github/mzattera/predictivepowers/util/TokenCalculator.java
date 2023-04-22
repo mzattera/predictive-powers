@@ -1,7 +1,7 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers;
+package io.github.mzattera.predictivepowers.util;
 
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatMessage;
 import lombok.NonNull;

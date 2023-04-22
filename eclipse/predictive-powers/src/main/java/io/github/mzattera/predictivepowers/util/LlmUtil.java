@@ -1,7 +1,7 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers;
+package io.github.mzattera.predictivepowers.util;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +16,7 @@ import io.github.mzattera.predictivepowers.knowledge.TestKB;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-public final class LlmUtils {
+public final class LlmUtil {
 
 	/**
 	 * 

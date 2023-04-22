@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.TokenCalculator;
 import io.github.mzattera.predictivepowers.openai.client.Models;
-import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionChoice;
+import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsChoice;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatMessage;
+import io.github.mzattera.predictivepowers.util.TokenCalculator;
 import lombok.Getter;
 
 /**
@@ -126,7 +126,7 @@ public class ChatService extends CompletionService {
 		// this text, something went wrong and we should react.
 		// TODO BETTER USE finish reason.
 		ChatCompletionsResponse resp = ep.getClient().createChatCompletion(req);
-		ChatCompletionChoice choice = resp.getChoices()[0];
+		ChatCompletionsChoice choice = resp.getChoices()[0];
 		ChatMessage message = choice.getMessage();
 		history.add(message);
 

@@ -9,11 +9,11 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
-import io.github.mzattera.predictivepowers.LlmUtils;
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.TokenCalculator;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatMessage;
+import io.github.mzattera.predictivepowers.util.LlmUtil;
+import io.github.mzattera.predictivepowers.util.TokenCalculator;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -216,7 +216,7 @@ public class QuestionService {
 		int maxSize = completionService.getDefaultReq().getMaxTokens() * 2 / 3 - tok;
 
 		List<QnAPair> result = new ArrayList<>();
-		for (String t : LlmUtils.split(text, maxSize)) {
+		for (String t : LlmUtil.split(text, maxSize)) {
 			QnAPair[] questions = getQuestionsShort(instructions, t);
 			for (int i = 0; i < questions.length; ++i)
 				result.add(questions[i]);

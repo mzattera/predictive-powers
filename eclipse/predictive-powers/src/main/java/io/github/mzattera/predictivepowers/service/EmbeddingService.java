@@ -12,13 +12,13 @@ import java.util.Map;
 import org.apache.tika.exception.TikaException;
 import org.xml.sax.SAXException;
 
-import io.github.mzattera.predictivepowers.LlmUtils;
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.TokenCalculator;
 import io.github.mzattera.predictivepowers.knowledge.ExtractionUtils;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.Embedding;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
+import io.github.mzattera.predictivepowers.util.LlmUtil;
+import io.github.mzattera.predictivepowers.util.TokenCalculator;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -171,7 +171,7 @@ public class EmbeddingService {
 		// Put all pieces of text to be embedded in a list
 		List<String> l = new ArrayList<>();
 		for (String s : text) {
-			l.addAll(LlmUtils.split(s, maxTokens));
+			l.addAll(LlmUtil.split(s, maxTokens));
 		}
 
 		// Embed as many pieces you can in a single call

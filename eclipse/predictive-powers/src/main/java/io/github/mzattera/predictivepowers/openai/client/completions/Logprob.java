@@ -1,7 +1,7 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers.client.openai.completions;
+package io.github.mzattera.predictivepowers.openai.client.completions;
 
 import java.util.List;
 import java.util.Map;
@@ -19,7 +19,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class LogProbResult {
+public class Logprob {
 	List<String> tokens;
 	List<Double> tokenLogprobs;
 	List<Map<String, Double>> topLogprobs;

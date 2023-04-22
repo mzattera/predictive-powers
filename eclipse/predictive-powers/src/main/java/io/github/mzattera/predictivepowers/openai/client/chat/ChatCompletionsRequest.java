@@ -1,4 +1,4 @@
-package io.github.mzattera.predictivepowers.client.openai.chat;
+package io.github.mzattera.predictivepowers.openai.client.chat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -22,36 +23,35 @@ import lombok.ToString;
 @Setter
 @Builder
 @NoArgsConstructor
+@RequiredArgsConstructor
 @AllArgsConstructor
 @ToString
 public class ChatCompletionsRequest implements Cloneable {
+
 	@NonNull
-	@Builder.Default
-	String model = "gpt-3.5-turbo";
+	String model;
 
 	@NonNull
 	@Builder.Default
-	List<ChatMessage> messages = new ArrayList<>();;
+	List<ChatMessage> messages = new ArrayList<>();
 
 	Double temperature;
 	Double topP;
 	Integer n;
-	final Boolean stream = false;
-	List<ChatMessage> stop;
 
-	@Builder.Default
-	Integer maxTokens = 4096;
+	// TODO: Add support
+	final boolean stream = false;
+
+	String[] stop;
+
+	/**
+	 * Capabilities in the library will try to calculate this automatically if it is
+	 * null when submitting a request.
+	 */
+	Integer maxTokens;
 
 	Double presencePenalty;
 	Double frequencyPenalty;
 	Map<String, Integer> logitBias;
 	String user;
-
-	public Object clone() {
-		try {
-			return super.clone();
-		} catch (CloneNotSupportedException e) { // shall never happen
-			return null;
-		}
-	}
 }

@@ -1,5 +1,11 @@
-package io.github.mzattera.predictivepowers.client.openai.chat;
+package io.github.mzattera.predictivepowers.openai.client.chat;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -15,10 +21,13 @@ import lombok.ToString;
  */
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @RequiredArgsConstructor
+@AllArgsConstructor
 @ToString
 public class ChatMessage {
+	
 	@NonNull
 	String role;
 

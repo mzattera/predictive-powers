@@ -1,7 +1,7 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers.client.openai.models;
+package io.github.mzattera.predictivepowers.openai.client.models;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -20,5 +20,5 @@ public final class Model {
 	String id;
 	String object;
 	String ownedBy;
-// TODO: Add permissions[]
+	// TODO add permissions
 }

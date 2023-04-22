@@ -1,7 +1,7 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers.client.openai.models;
+package io.github.mzattera.predictivepowers.openai.client.models;
 
 import java.util.List;
 

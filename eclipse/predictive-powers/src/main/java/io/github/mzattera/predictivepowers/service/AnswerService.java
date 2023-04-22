@@ -8,7 +8,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import io.github.mzattera.predictivepowers.LlmUtils;
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.TokenCalculator;
-import io.github.mzattera.predictivepowers.client.openai.chat.ChatMessage;
+import io.github.mzattera.predictivepowers.openai.client.chat.ChatMessage;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;

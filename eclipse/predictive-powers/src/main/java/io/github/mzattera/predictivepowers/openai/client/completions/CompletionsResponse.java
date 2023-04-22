@@ -1,11 +1,10 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers.client.openai.completions;
+package io.github.mzattera.predictivepowers.openai.client.completions;
 
 import java.util.List;
 
-import io.github.mzattera.predictivepowers.client.openai.Usage;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -22,8 +21,8 @@ import lombok.ToString;
 public class CompletionsResponse {
     String id;
     String object;
-    Long created;
+    long created;
     String model;
-    List<CompletionsChoice> choices;
+    Choice[] choices;
     Usage usage;
 }

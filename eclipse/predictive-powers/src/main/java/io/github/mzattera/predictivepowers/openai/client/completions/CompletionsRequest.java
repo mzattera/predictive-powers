@@ -1,15 +1,17 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers.client.openai.completions;
+package io.github.mzattera.predictivepowers.openai.client.completions;
 
 import java.util.Map;
 
+import io.github.mzattera.predictivepowers.openai.client.chat.ChatMessage;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -23,41 +25,36 @@ import lombok.ToString;
 @Setter
 @Builder
 @NoArgsConstructor
+@RequiredArgsConstructor
 @AllArgsConstructor
 @ToString
 public class CompletionsRequest implements Cloneable {
+
 	@NonNull
-	@Builder.Default
-	String model = "text-davinci-003";
+	String model;
 
 	String prompt;
+	String suffix;
 
 	/**
-	 * This is the max_tokens parameter used by OpenAI API. Services typically
-	 * change this, lowering it if needed, based on model prompt Size, to avoid API
-	 * errors. If you use it for direct API calls, change it accordingly.
+	 * Capabilities in the library will try to calculate this automatically if it is
+	 * null when submitting a request.
 	 */
-	@Builder.Default
-	Integer maxTokens = 4096;
+	Integer maxTokens;
 
 	Double temperature;
 	Double topP;
 	Integer n;
-	final Boolean stream = false;
-	Integer logProbs;
+
+	// TODO: add support for this
+	final boolean stream = false;
+
+	Integer logprobs;
 	Boolean echo;
-	String stop;
+	String[] stop;
 	Double presencePenalty;
 	Double frequencyPenalty;
 	Integer bestOf;
 	Map<String, Integer> logitBias;
 	String user;
-
-	public Object clone() {
-		try {
-			return super.clone();
-		} catch (CloneNotSupportedException e) { // shall never happen
-			return null;
-		}
-	}
 }

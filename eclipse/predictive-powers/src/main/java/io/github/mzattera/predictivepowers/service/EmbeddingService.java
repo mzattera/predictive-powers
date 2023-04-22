@@ -15,10 +15,10 @@ import org.xml.sax.SAXException;
 import io.github.mzattera.predictivepowers.LlmUtils;
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.TokenCalculator;
-import io.github.mzattera.predictivepowers.client.openai.embeddings.Embedding;
-import io.github.mzattera.predictivepowers.client.openai.embeddings.EmbeddingsRequest;
-import io.github.mzattera.predictivepowers.client.openai.embeddings.EmbeddingsResponse;
 import io.github.mzattera.predictivepowers.knowledge.ExtractionUtils;
+import io.github.mzattera.predictivepowers.openai.client.embeddings.Embedding;
+import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
+import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -34,13 +34,16 @@ import lombok.Setter;
 public class EmbeddingService {
 
 	/**
-	 * Maximum number of tokens to send for the embedding requests, this parameter
-	 * depends on the model you use and must be changed if you do not use the
-	 * default embedding model (text-embedding-ada-002);
+	 * Maximum number of tokens for each piece of text being embedded. If text is
+	 * bigger than this, it is split in multiple parts before embedding.
+	 * 
+	 * This is only a default value, that can be overwritten at each call.
+	 * 
+	 * Notice it is limited by the model context size.
 	 */
 	@Getter
 	@Setter
-	private int maxTokens = EmbeddingsRequest.MAX_DEFAULT_MODEL_TOKENS;
+	private int defaultMaxTokens = 75;
 
 	@NonNull
 	private final OpenAiEndpoint ep;
@@ -58,10 +61,23 @@ public class EmbeddingService {
 	/**
 	 * Create embeddings for given text.
 	 * 
-	 * As there is a maximum length for text, it might be split into several parts
+	 * As there is a default maximum length for text, it might be split into several parts
 	 * and single embedding returned.
 	 */
 	public List<EmbeddedText> embed(String text) {
+		return embed(text, defaultMaxTokens, defaultReq);
+	}
+
+	/**
+	 * Create embeddings for given text.
+	 * 
+	 * As there is a maximum length for text, it might be split into several parts
+	 * and single embedding returned.
+	 * 
+	 * @param maxTokens Maximum length in tokens of each piece of text to be embedded.
+	 *                      Text is split accordingly, if needed.
+	 */
+	public List<EmbeddedText> embed(String text, int maxTokens) {
 		return embed(text, maxTokens, defaultReq);
 	}
 
@@ -71,26 +87,23 @@ public class EmbeddingService {
 	 * As there is a maximum length for text, it might be split into several parts
 	 * and single embedding returned.
 	 * 
-	 * @param maxTextLength Maximum length of each piece of text to be embedded.
+	 * @param maxTokens Maximum length in tokens of each piece of text to be embedded.
 	 *                      Text is split accordingly, if needed.
 	 */
-	public List<EmbeddedText> embed(String text, int maxTextLength) {
-		return embed(text, maxTextLength, defaultReq);
+	public List<EmbeddedText> embed(String text, int maxTokens, EmbeddingsRequest req) {
+		List<String> txt = new ArrayList<>();
+		txt.add(text);
+		return embed(txt, maxTokens, req);
 	}
 
 	/**
 	 * Create embeddings for given text.
 	 * 
-	 * As there is a maximum length for text, it might be split into several parts
-	 * and single embedding returned.
-	 * 
-	 * @param maxTextLength Maximum length of each piece of text to be embedded.
-	 *                      Text is split accordingly, if needed.
+	 * As there is a default maximum length for text, each piece of text might be split into
+	 * several parts and single embedding returned.
 	 */
-	public List<EmbeddedText> embed(String text, int maxTextLength, EmbeddingsRequest req) {
-		List<String> txt = new ArrayList<>();
-		txt.add(text);
-		return embed(txt, maxTextLength, req);
+	public List<EmbeddedText> embed(String[] txt) {
+		return embed(Arrays.asList(txt), defaultMaxTokens, defaultReq);
 	}
 
 	/**
@@ -98,8 +111,11 @@ public class EmbeddingService {
 	 * 
 	 * As there is a maximum length for text, each piece of text might be split into
 	 * several parts and single embedding returned.
+	 * 
+	 * @param maxTokens Maximum length in tokens of each piece of text to be embedded.
+	 *                      Text is split accordingly, if needed.
 	 */
-	public List<EmbeddedText> embed(String[] txt) {
+	public List<EmbeddedText> embed(String[] txt, int maxTokens) {
 		return embed(Arrays.asList(txt), maxTokens, defaultReq);
 	}
 
@@ -109,33 +125,33 @@ public class EmbeddingService {
 	 * As there is a maximum length for text, each piece of text might be split into
 	 * several parts and single embedding returned.
 	 * 
-	 * @param maxTextLength Maximum length of each piece of text to be embedded.
+	 * @param maxTokens Maximum length in tokens of each piece of text to be embedded.
 	 *                      Text is split accordingly, if needed.
 	 */
-	public List<EmbeddedText> embed(String[] txt, int maxTextLength) {
-		return embed(Arrays.asList(txt), maxTextLength, defaultReq);
+	public List<EmbeddedText> embed(String[] txt, int maxTokens, EmbeddingsRequest req) {
+		return embed(Arrays.asList(txt), maxTokens, req);
 	}
 
 	/**
 	 * Create embeddings for given text.
 	 * 
-	 * As there is a maximum length for text, each piece of text might be split into
-	 * several parts and single embedding returned.
-	 * 
-	 * @param maxTextLength Maximum length of each piece of text to be embedded.
-	 *                      Text is split accordingly, if needed.
-	 */
-	public List<EmbeddedText> embed(String[] txt, int maxTextLength, EmbeddingsRequest req) {
-		return embed(Arrays.asList(txt), maxTextLength, req);
-	}
-
-	/**
-	 * Create embeddings for given text.
-	 * 
-	 * As there is a maximum length for text, each piece of text might be split into
+	 * As there is a default maximum length for text, each piece of text might be split into
 	 * several parts and single embedding returned.
 	 */
 	public List<EmbeddedText> embed(Collection<String> text) {
+		return embed(text, defaultMaxTokens, defaultReq);
+	}
+
+	/**
+	 * Create embeddings for given text.
+	 * 
+	 * As there is a maximum length for text, each piece of text might be split into
+	 * several parts and single embedding returned.
+	 * 
+	 * @param maxTokens Maximum length in tokens of each piece of text to be embedded.
+	 *                      Text is split accordingly, if needed.
+	 */
+	public List<EmbeddedText> embed(Collection<String> text, int maxTokens) {
 		return embed(text, maxTokens, defaultReq);
 	}
 
@@ -145,31 +161,17 @@ public class EmbeddingService {
 	 * As there is a maximum length for text, each piece of text might be split into
 	 * several parts and single embedding returned.
 	 * 
-	 * @param maxTextLength Maximum length of each piece of text to be embedded.
-	 *                      Text is split accordingly, if needed.
-	 */
-	public List<EmbeddedText> embed(Collection<String> text, int maxTextLength) {
-		return embed(text, maxTextLength, defaultReq);
-	}
-
-	/**
-	 * Create embeddings for given text.
-	 * 
-	 * As there is a maximum length for text, each piece of text might be split into
-	 * several parts and single embedding returned.
-	 * 
-	 * @param maxTextLength Maximum length of each piece of text to be embedded (in
+	 * @param maxTokens Maximum length in tokens of each piece of text to be embedded (in
 	 *                      tokens). Text is split accordingly, if needed.
 	 */
-	public List<EmbeddedText> embed(Collection<String> text, int maxTextLength, EmbeddingsRequest req) {
+	public List<EmbeddedText> embed(Collection<String> text, int maxTokens, EmbeddingsRequest req) {
 
-		req = (EmbeddingsRequest) req.clone();
-		req.setInput(new ArrayList<>());
+		req.getInput().clear();
 
 		// Put all pieces of text to be embedded in a list
 		List<String> l = new ArrayList<>();
 		for (String s : text) {
-			l.addAll(LlmUtils.split(s, Math.min(maxTextLength, maxTokens)));
+			l.addAll(LlmUtils.split(s, maxTokens));
 		}
 
 		// Embed as many pieces you can in a single call
@@ -179,7 +181,7 @@ public class EmbeddingService {
 			String s = l.remove(0);
 			int t = TokenCalculator.count(s);
 
-			if ((tok + t) > maxTokens) {
+			if ((tok + t) > defaultMaxTokens) {
 				// too many tokens, embed what you have
 				result.addAll(embed(req));
 				req.getInput().clear();
@@ -223,7 +225,7 @@ public class EmbeddingService {
 	 * @throws TikaException
 	 */
 	public List<EmbeddedText> embedFile(String fileName) throws IOException, SAXException, TikaException {
-		return embedFile(new File(fileName));
+		return embedFile(new File(fileName), defaultMaxTokens);
 	}
 
 	/**
@@ -235,8 +237,7 @@ public class EmbeddingService {
 	 * @throws TikaException
 	 */
 	public List<EmbeddedText> embedFile(File file) throws IOException, SAXException, TikaException {
-		String content = ExtractionUtils.getText(file);
-		return embed(content);
+		return embedFile(file, defaultMaxTokens);
 	}
 
 	/**
@@ -264,7 +265,7 @@ public class EmbeddingService {
 	 */
 	public Map<File, List<EmbeddedText>> embedFolder(String folderName)
 			throws IOException, SAXException, TikaException {
-		return embedFolder(new File(folderName), maxTokens);
+		return embedFolder(new File(folderName), defaultMaxTokens);
 	}
 
 	/**
@@ -278,7 +279,7 @@ public class EmbeddingService {
 	 * @returns A Map from each embedded file into its contents.
 	 */
 	public Map<File, List<EmbeddedText>> embedFolder(File folder) throws IOException, SAXException, TikaException {
-		return embedFolder(folder, maxTokens);
+		return embedFolder(folder, defaultMaxTokens);
 	}
 
 	/**

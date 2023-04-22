@@ -5,10 +5,11 @@ import java.util.List;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.TokenCalculator;
-import io.github.mzattera.predictivepowers.client.openai.chat.ChatCompletionChoice;
-import io.github.mzattera.predictivepowers.client.openai.chat.ChatCompletionsRequest;
-import io.github.mzattera.predictivepowers.client.openai.chat.ChatCompletionsResponse;
-import io.github.mzattera.predictivepowers.client.openai.chat.ChatMessage;
+import io.github.mzattera.predictivepowers.openai.client.Models;
+import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionChoice;
+import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
+import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
+import io.github.mzattera.predictivepowers.openai.client.chat.ChatMessage;
 import lombok.Getter;
 
 /**
@@ -22,6 +23,11 @@ import lombok.Getter;
  *
  */
 public class ChatService extends CompletionService {
+
+	// TODO: revert back to using completion not chat completion
+
+	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
+	// values from a Map
 
 	/**
 	 * These are the messages exchanged in the current chat.
@@ -103,24 +109,24 @@ public class ChatService extends CompletionService {
 	 * The exchange is added to the conversation history.
 	 */
 	public TextResponse chat(String msg, ChatCompletionsRequest req) {
-		req = (ChatCompletionsRequest) req.clone();
 
 		history.add(new ChatMessage("user", msg));
 		List<ChatMessage> messages = trimChat(history);
 		req.setMessages(messages);
 
-		// Adjust token limit
-		// TODO do we need to do this?
-		int tok = 0;
-		for (ChatMessage m : messages)
-			tok += TokenCalculator.count(m);
-		req.setMaxTokens(req.getMaxTokens() - tok);
+		// Adjust token limit if needed
+		if ((req.getMaxTokens() == null) && (Models.getContextSize(req.getModel()) != -1)) {
+			int tok = 0;
+			for (ChatMessage m : messages)
+				tok += TokenCalculator.count(m);
+			req.setMaxTokens(Models.getContextSize(req.getModel()) - tok);
+		}
 
 		// TODO is this error handling good? It should in principle as if we cannot get
 		// this text, something went wrong and we should react.
 		// TODO BETTER USE finish reason.
 		ChatCompletionsResponse resp = ep.getClient().createChatCompletion(req);
-		ChatCompletionChoice choice = resp.getChoices().get(0);
+		ChatCompletionChoice choice = resp.getChoices()[0];
 		ChatMessage message = choice.getMessage();
 		history.add(message);
 

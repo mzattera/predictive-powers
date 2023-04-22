@@ -1,7 +1,7 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers.client.openai;
+package io.github.mzattera.predictivepowers.openai.client;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -11,14 +11,14 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
-import io.github.mzattera.predictivepowers.client.openai.chat.ChatCompletionsRequest;
-import io.github.mzattera.predictivepowers.client.openai.chat.ChatCompletionsResponse;
-import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsRequest;
-import io.github.mzattera.predictivepowers.client.openai.completions.CompletionsResponse;
-import io.github.mzattera.predictivepowers.client.openai.embeddings.EmbeddingsRequest;
-import io.github.mzattera.predictivepowers.client.openai.embeddings.EmbeddingsResponse;
-import io.github.mzattera.predictivepowers.client.openai.models.Model;
-import io.github.mzattera.predictivepowers.client.openai.models.ModelsResponse;
+import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
+import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
+import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
+import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
+import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
+import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
+import io.github.mzattera.predictivepowers.openai.client.models.Model;
+import io.github.mzattera.predictivepowers.openai.client.models.ModelsResponse;
 import io.reactivex.Single;
 import lombok.NonNull;
 import okhttp3.ConnectionPool;

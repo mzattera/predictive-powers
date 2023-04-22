@@ -1,7 +1,7 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers.client.openai.completions;
+package io.github.mzattera.predictivepowers.openai.client.completions;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -16,9 +16,9 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class CompletionsChoice {
+public class Choice {
 	String text;
-	Integer index;
-	LogProbResult logprobs;
+	int index;
+	Logprob logprobs;
 	String finishReason;
 }

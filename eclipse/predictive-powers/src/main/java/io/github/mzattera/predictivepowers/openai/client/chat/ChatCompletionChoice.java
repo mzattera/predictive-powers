@@ -1,4 +1,4 @@
-package io.github.mzattera.predictivepowers.client.openai.chat;
+package io.github.mzattera.predictivepowers.openai.client.chat;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -14,7 +14,7 @@ import lombok.ToString;
 @Setter
 @ToString
 public class ChatCompletionChoice {
-	Integer index;
+	int index;
 	ChatMessage message;
 	String finishReason;
 }

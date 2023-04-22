@@ -3,9 +3,9 @@
  */
 package io.github.mzattera.predictivepowers;
 
-import io.github.mzattera.predictivepowers.client.openai.OpenAiClient;
-import io.github.mzattera.predictivepowers.client.openai.chat.ChatCompletionsRequest;
-import io.github.mzattera.predictivepowers.client.openai.embeddings.EmbeddingsRequest;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
+import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
+import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.service.AnswerService;
 import io.github.mzattera.predictivepowers.service.ChatService;
 import io.github.mzattera.predictivepowers.service.CompletionService;

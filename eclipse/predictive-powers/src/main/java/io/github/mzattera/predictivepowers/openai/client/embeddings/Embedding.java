@@ -1,4 +1,4 @@
-package io.github.mzattera.predictivepowers.client.openai.embeddings;
+package io.github.mzattera.predictivepowers.openai.client.embeddings;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -17,5 +17,5 @@ public class Embedding {
 
 	String object;
 	double[] embedding;
-	Integer index;
+	int index;
 }

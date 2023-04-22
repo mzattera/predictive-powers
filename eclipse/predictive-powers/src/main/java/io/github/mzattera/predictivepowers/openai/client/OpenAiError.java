@@ -1,4 +1,4 @@
-package io.github.mzattera.predictivepowers.client.openai;
+package io.github.mzattera.predictivepowers.openai.client;
 
 import lombok.Getter;
 import lombok.Setter;

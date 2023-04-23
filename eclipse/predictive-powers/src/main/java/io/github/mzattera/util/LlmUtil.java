@@ -1,7 +1,7 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers.util;
+package io.github.mzattera.util;
 
 import java.util.ArrayList;
 import java.util.List;

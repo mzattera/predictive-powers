@@ -5,8 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.edits.EditsRequest;
-import io.github.mzattera.predictivepowers.openai.client.edits.EditsResponse;
 
 class EditsTest {
 

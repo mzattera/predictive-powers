@@ -1,14 +1,14 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers.openai.client.models;
+package io.github.mzattera.predictivepowers.openai.client.files;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Response from /models API.
+ * Response from /files API.
  * 
  * @author Massimiliano "Maxi" Zattera.
  *
@@ -16,7 +16,8 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class ModelsResponse {
-	Model[] data;
-	String object;
+public class FilesResponse {
+	
+	File[] data;
+    String object;
 }

@@ -7,9 +7,6 @@ import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.Models;
-import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsChoice;
-import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
-import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
 
 class CompletionsTest {
 

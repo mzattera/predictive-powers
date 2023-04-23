@@ -1,13 +1,14 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers.util;
+package io.github.mzattera.util;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 
 import javax.imageio.ImageIO;
@@ -66,6 +67,20 @@ public final class ImageUtil {
 		return ImageIO.read(new ByteArrayInputStream(DatatypeConverter.parseBase64Binary(base64Image)));
 	}
 
+	/**
+	 * Reads Java image from a stream.
+	 */
+	public static BufferedImage fromBytes(InputStream rawImage) throws IOException {
+		return ImageIO.read(rawImage);
+	}
+
+	/**
+	 * Reads Java image from a byte[].
+	 */
+	public static BufferedImage fromBytes(byte[] rawImage) throws IOException {
+		return ImageIO.read(new ByteArrayInputStream(rawImage));
+	}
+	
 	/**
 	 * Write Java image into a file, then return a link to the file itself.
 	 */

@@ -4,7 +4,11 @@
 package io.github.mzattera.predictivepowers.openai.client;
 
 import java.awt.image.BufferedImage;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -12,6 +16,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
+import io.github.mzattera.predictivepowers.openai.client.audio.AudioRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
@@ -20,11 +25,12 @@ import io.github.mzattera.predictivepowers.openai.client.edits.EditsRequest;
 import io.github.mzattera.predictivepowers.openai.client.edits.EditsResponse;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
+import io.github.mzattera.predictivepowers.openai.client.files.File;
+import io.github.mzattera.predictivepowers.openai.client.files.FilesDeleteResponse;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesResponse;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
-import io.github.mzattera.predictivepowers.openai.client.models.ModelsResponse;
-import io.github.mzattera.predictivepowers.util.ImageUtil;
+import io.github.mzattera.util.ImageUtil;
 import io.reactivex.Single;
 import lombok.NonNull;
 import okhttp3.ConnectionPool;
@@ -32,6 +38,7 @@ import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
@@ -92,8 +99,8 @@ public final class OpenAiClient {
 
 	//////// API METHODS MAPPED INTO JAVA CALLS ////////////////////////////////////
 
-	public ModelsResponse listModels() {
-		return callApi(api.models());
+	public Model[] listModels() {
+		return callApi(api.models()).getData();
 	}
 
 	public Model retrieveModel(String modelId) {
@@ -108,15 +115,19 @@ public final class OpenAiClient {
 		return callApi(api.chatCompletions(req));
 	}
 
+	public EditsResponse createEdit(EditsRequest req) {
+		return callApi(api.edits(req));
+	}
+
 	public ImagesResponse createImage(ImagesRequest req) {
 		return callApi(api.imagesGenerations(req));
 	}
 
-	public ImagesResponse createImageEdit(ImagesRequest req, @NonNull BufferedImage image, BufferedImage mask)
+	public ImagesResponse createImageEdit(@NonNull BufferedImage image, ImagesRequest req, BufferedImage mask)
 			throws IOException {
 
 		MultipartBody.Builder builder = new MultipartBody.Builder().setType(MediaType.get("multipart/form-data"))
-				.addFormDataPart("image", "", ImageUtil.toRequestBody("png", image));
+				.addFormDataPart("image", "image", ImageUtil.toRequestBody("png", image));
 
 		if (req.getPrompt() != null) {
 			builder.addFormDataPart("prompt", req.getPrompt());
@@ -142,10 +153,10 @@ public final class OpenAiClient {
 		return callApi(api.imagesEdits(builder.build()));
 	}
 
-	public ImagesResponse createImageVariation(ImagesRequest req, @NonNull BufferedImage image) throws IOException {
+	public ImagesResponse createImageVariation(@NonNull BufferedImage image, ImagesRequest req) throws IOException {
 
 		MultipartBody.Builder builder = new MultipartBody.Builder().setType(MediaType.get("multipart/form-data"))
-				.addFormDataPart("image", "", ImageUtil.toRequestBody("png", image));
+				.addFormDataPart("image", "image", ImageUtil.toRequestBody("png", image));
 
 		if (req.getN() != null) {
 			builder.addFormDataPart("n", req.getN().toString());
@@ -163,12 +174,167 @@ public final class OpenAiClient {
 		return callApi(api.imagesVariations(builder.build()));
 	}
 
-	public EditsResponse createEdit(EditsRequest req) {
-		return callApi(api.edits(req));
-	}
-
 	public EmbeddingsResponse createEmbeddings(EmbeddingsRequest req) {
 		return callApi(api.embeddings(req));
+	}
+
+	public String createTranscription(@NonNull java.io.File audio, AudioRequest req) throws IOException {
+		try (InputStream is = new FileInputStream(audio)) {
+			return createTranscription(is, req);
+		}
+	}
+
+	public String createTranscription(@NonNull String fileName, AudioRequest req) throws IOException {
+		try (InputStream is = new FileInputStream(fileName)) {
+			return createTranscription(is, req);
+		}
+	}
+
+	public String createTranscription(@NonNull InputStream audio, AudioRequest req) throws IOException {
+		return createTranscription(audio.readAllBytes(), req);
+	}
+
+	public String createTranscription(@NonNull byte[] audio, AudioRequest req) {
+
+		MultipartBody.Builder builder = new MultipartBody.Builder().setType(MediaType.get("multipart/form-data"))
+				.addFormDataPart("file", "file", RequestBody.create(MediaType.parse("audio/*"), audio));
+
+		if (req.getModel() != null) {
+			builder.addFormDataPart("model", req.getModel());
+		} else {
+			throw new IllegalArgumentException("Model cannot be null");
+		}
+		if (req.getPrompt() != null) {
+			builder.addFormDataPart("prompt", req.getPrompt());
+		}
+		if (req.getResponseFormat() != null) {
+			builder.addFormDataPart("response_format", req.getResponseFormat().toString());
+		}
+		if (req.getTemperature() != null) {
+			builder.addFormDataPart("temperature", req.getTemperature().toString());
+		}
+		if (req.getLanguage() != null) {
+			builder.addFormDataPart("language", req.getLanguage());
+		}
+
+		return callApi(api.audioTranscriptions(builder.build())).getText();
+	}
+
+	public String createTranslation(@NonNull java.io.File audio, AudioRequest req) throws IOException {
+		try (InputStream is = new FileInputStream(audio)) {
+			return createTranslation(is, req);
+		}
+	}
+
+	public String createTranslation(@NonNull String fileName, AudioRequest req) throws IOException {
+		try (InputStream is = new FileInputStream(fileName)) {
+			return createTranslation(is, req);
+		}
+	}
+
+	public String createTranslation(@NonNull InputStream audio, AudioRequest req) throws IOException {
+		return createTranslation(audio.readAllBytes(), req);
+	}
+
+	public String createTranslation(@NonNull byte[] audio, AudioRequest req) {
+
+		MultipartBody.Builder builder = new MultipartBody.Builder().setType(MediaType.get("multipart/form-data"))
+				.addFormDataPart("file", "file", RequestBody.create(MediaType.parse("audio/*"), audio));
+
+		if (req.getModel() != null) {
+			builder.addFormDataPart("model", req.getModel());
+		} else {
+			throw new IllegalArgumentException("Model cannot be null");
+		}
+		if (req.getPrompt() != null) {
+			builder.addFormDataPart("prompt", req.getPrompt());
+		}
+		if (req.getResponseFormat() != null) {
+			builder.addFormDataPart("response_format", req.getResponseFormat().toString());
+		}
+		if (req.getTemperature() != null) {
+			builder.addFormDataPart("temperature", req.getTemperature().toString());
+		}
+
+		return callApi(api.audioTranscriptions(builder.build())).getText();
+	}
+
+	public File[] listFiles() {
+		return callApi(api.files()).getData();
+	}
+
+	public File uploadFile(@NonNull java.io.File jsonl, @NonNull String purpose) throws IOException {
+		try (InputStream is = new FileInputStream(jsonl)) {
+			return uploadFile(is, jsonl.getName(), purpose);
+		}
+	}
+
+	public File uploadFile(@NonNull String fileName, @NonNull String purpose) {
+
+		MultipartBody.Builder builder = new MultipartBody.Builder().setType(MediaType.get("multipart/form-data"))
+				.addFormDataPart("file", fileName, RequestBody.create(MediaType.parse("text/jsonl"), fileName))
+				.addFormDataPart("purpose", purpose);
+
+		return callApi(api.files(builder.build()));
+	}
+
+	public File uploadFile(@NonNull InputStream jsonl, @NonNull String fileName, @NonNull String purpose)
+			throws IOException {
+
+		return uploadFile(jsonl.readAllBytes(), fileName, purpose);
+	}
+
+	public File uploadFile(@NonNull byte[] jsonl, @NonNull String fileName, @NonNull String purpose) {
+
+		MultipartBody.Builder builder = new MultipartBody.Builder().setType(MediaType.get("multipart/form-data"))
+				.addFormDataPart("file", fileName, RequestBody.create(MediaType.parse("text/jsonl"), jsonl))
+				.addFormDataPart("purpose", purpose);
+
+		return callApi(api.files(builder.build()));
+	}
+
+	public FilesDeleteResponse deleteFile(@NonNull String fileId) {
+		return callApi(api.filesDelete(fileId));
+	}
+
+	public File retrieveFile(@NonNull String fileId) {
+		return callApi(api.files(fileId));
+	}
+
+	/**
+	 * Retrieves a file.
+	 * 
+	 * The file content is stored in memory, this might cause OutOfMemory errors if
+	 * the file is too big.
+	 * 
+	 * @param fileId Id of file to retrieve.
+	 * @throws IOException
+	 */
+	public byte[] retrieveFileContent(String fileId) throws IOException {
+		return callApi(api.filesContent(fileId)).bytes();
+	}
+
+	/**
+	 * Downloads a file.
+	 * 
+	 * @param fileId         Id of file to retrieve.
+	 * @param downloadedFile A File where the contents of retrieved file will be
+	 *                       stored.
+	 * @throws IOException
+	 * @throws FileNotFoundException
+	 */
+	public void retrieveFileContent(String fileId, java.io.File downloadedFile)
+			throws FileNotFoundException, IOException {
+
+		try (InputStream is = callApi(api.filesContent(fileId)).byteStream();
+				FileOutputStream os = new FileOutputStream(downloadedFile)) {
+
+			byte[] buffer = new byte[4096];
+			int lengthRead;
+			while ((lengthRead = is.read(buffer)) > 0) {
+				os.write(buffer, 0, lengthRead);
+			}
+		}
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////

@@ -10,10 +10,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatMessage;
-import io.github.mzattera.predictivepowers.util.LlmUtil;
-import io.github.mzattera.predictivepowers.util.TokenCalculator;
+import io.github.mzattera.util.LlmUtil;
+import io.github.mzattera.util.TokenCalculator;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +27,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class QuestionService {
 
-	// TODO with thsi pattern, you get the default service and if you configure it for the Questio
-	
 	// Maps from-to POJO <-> JSON
 	private final static ObjectMapper mapper;
 	static {
@@ -86,7 +83,7 @@ public class QuestionService {
 	 * Extracts true/false type of questions from given text.
 	 */
 	public List<QnAPair> getTFQuestions(String text) {
-	// TODO: check the answers are true/false
+		// TODO: check the answers are true/false
 
 		// Provides instructions and examples
 		List<ChatMessage> instructions = new ArrayList<>();
@@ -120,8 +117,8 @@ public class QuestionService {
 	 * Extracts "fill the blank" type of questions from given text.
 	 */
 	public List<QnAPair> getFillQuestions(String text) {
-	// TODO: check there is one and only one ______ filler in questions. Check the
-	// answer is a single word.
+		// TODO: check there is one and only one ______ filler in questions. Check the
+		// answer is a single word.
 
 		// Provides instructions and examples
 		List<ChatMessage> instructions = new ArrayList<>();
@@ -155,7 +152,7 @@ public class QuestionService {
 	 * Extracts multiple-choice questions from given text.
 	 */
 	public List<QnAPair> getMCQuestions(String text) {
-	// TODO: check the answer is a number that matches one of the options
+		// TODO: check the answer is a number that matches one of the options
 
 		// Provides instructions and examples
 		List<ChatMessage> instructions = new ArrayList<>();

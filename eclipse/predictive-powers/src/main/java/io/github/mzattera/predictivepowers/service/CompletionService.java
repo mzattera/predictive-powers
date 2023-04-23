@@ -9,7 +9,7 @@ import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsCho
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatMessage;
-import io.github.mzattera.predictivepowers.util.TokenCalculator;
+import io.github.mzattera.util.TokenCalculator;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;

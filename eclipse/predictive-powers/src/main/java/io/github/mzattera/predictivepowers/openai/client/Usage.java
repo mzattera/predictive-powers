@@ -1,4 +1,4 @@
-package io.github.mzattera.predictivepowers.openai.client.completions;
+package io.github.mzattera.predictivepowers.openai.client;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -14,7 +14,8 @@ import lombok.ToString;
 @Setter
 @ToString
 public class Usage {
-    Long promptTokens;
-    Long completionTokens;
-    Long totalTokens;
+	
+    long promptTokens;
+    long completionTokens;
+    long totalTokens;
 }

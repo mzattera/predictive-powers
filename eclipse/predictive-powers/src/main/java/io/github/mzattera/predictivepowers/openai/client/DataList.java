@@ -1,4 +1,7 @@
-package io.github.mzattera.predictivepowers.openai.client.embeddings;
+/**
+ * 
+ */
+package io.github.mzattera.predictivepowers.openai.client;
 
 import java.util.List;
 
@@ -7,7 +10,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * A single embedding from /embeddings API.
+ * Sometimes OpenAi API returns list of data i this format.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -15,9 +18,8 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class Embedding {
+public class DataList<T> {
 
 	String object;
-	List<Double> embedding;
-	int index;
+	List<T> data;
 }

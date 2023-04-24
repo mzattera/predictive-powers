@@ -126,7 +126,7 @@ public class ChatService extends CompletionService {
 		// this text, something went wrong and we should react.
 		// TODO BETTER USE finish reason.
 		ChatCompletionsResponse resp = ep.getClient().createChatCompletion(req);
-		ChatCompletionsChoice choice = resp.getChoices()[0];
+		ChatCompletionsChoice choice = resp.getChoices().get(0);
 		ChatMessage message = choice.getMessage();
 		history.add(message);
 

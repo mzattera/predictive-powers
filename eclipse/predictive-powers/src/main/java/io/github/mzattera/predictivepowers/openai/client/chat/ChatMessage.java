@@ -23,10 +23,10 @@ import lombok.ToString;
 @AllArgsConstructor
 @ToString
 public class ChatMessage {
-	
+
 	@NonNull
 	String role;
-
+	
 	@NonNull
 	String content;
 	

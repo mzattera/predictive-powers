@@ -20,6 +20,7 @@ import lombok.ToString;
 @Setter
 @ToString
 public class Logprob {
+
 	List<String> tokens;
 	List<Double> tokenLogprobs;
 	List<Map<String, Double>> topLogprobs;

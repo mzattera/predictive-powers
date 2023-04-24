@@ -13,12 +13,12 @@ import io.github.mzattera.predictivepowers.openai.client.edits.EditsResponse;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
-import io.github.mzattera.predictivepowers.openai.client.files.FilesDeleteResponse;
-import io.github.mzattera.predictivepowers.openai.client.files.FilesResponse;
+import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTune;
+import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTuneEvent;
+import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTunesRequest;
+import io.github.mzattera.predictivepowers.openai.client.images.Image;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
-import io.github.mzattera.predictivepowers.openai.client.images.ImagesResponse;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
-import io.github.mzattera.predictivepowers.openai.client.models.ModelsResponse;
 import io.reactivex.Single;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
@@ -37,10 +37,13 @@ import retrofit2.http.Path;
 public interface OpenAiApi {
 
 	@GET("models")
-	Single<ModelsResponse> models();
+	Single<DataList<Model>> models();
 
 	@GET("models/{model}")
 	Single<Model> models(@Path("model") String modelId);
+
+	@DELETE("models/{model}")
+	Single<DeleteResponse> modelsDelete(@Path("model") String model);
 
 	@POST("completions")
 	Single<CompletionsResponse> completions(@Body CompletionsRequest req);
@@ -52,13 +55,13 @@ public interface OpenAiApi {
 	Single<EditsResponse> edits(@Body EditsRequest req);
 
 	@POST("images/generations")
-	Single<ImagesResponse> imagesGenerations(@Body ImagesRequest req);
+	Single<DataList<Image>> imagesGenerations(@Body ImagesRequest req);
 
 	@POST("images/edits")
-	Single<ImagesResponse> imagesEdits(@Body RequestBody req);
+	Single<DataList<Image>> imagesEdits(@Body RequestBody req);
 
 	@POST("images/variations")
-	Single<ImagesResponse> imagesVariations(@Body RequestBody req);
+	Single<DataList<Image>> imagesVariations(@Body RequestBody req);
 
 	@POST("embeddings")
 	Single<EmbeddingsResponse> embeddings(@Body EmbeddingsRequest req);
@@ -70,17 +73,32 @@ public interface OpenAiApi {
 	Single<AudioResponse> audioTranslations(@Body RequestBody req);
 
 	@GET("files")
-	Single<FilesResponse> files();
+	Single<DataList<File>> files();
 
 	@POST("files")
 	Single<File> files(@Body RequestBody file);
 
 	@DELETE("files/{file_id}")
-	Single<FilesDeleteResponse> filesDelete(@Path("file_id") String fileId);
+	Single<DeleteResponse> filesDelete(@Path("file_id") String fileId);
 
 	@GET("files/{file_id}")
 	Single<File> files(@Path("file_id") String fileId);
 
 	@GET("files/{file_id}/content")
 	Single<ResponseBody> filesContent(@Path("file_id") String fileId);
+
+	@POST("fine-tunes")
+	Single<FineTune> fineTunesCreate(@Body FineTunesRequest request);
+
+	@GET("fine-tunes")
+	Single<DataList<FineTune>> fineTunes();
+
+	@GET("fine-tunes/{fine_tune_id}")
+	Single<FineTune> fineTunes(@Path("fine_tune_id") String fineTuneId);
+
+	@POST("fine-tunes/{fine_tune_id}/cancel")
+	Single<FineTune> fineTunesCancel(@Path("fine_tune_id") String fineTuneId);
+
+	@GET("fine-tunes/{fine_tune_id}/events")
+	Single<DataList<FineTuneEvent>> fineTunesEvents(@Path("fine_tune_id") String fineTuneId);
 }

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -26,11 +27,11 @@ class ImagesTest {
 		req.setPrompt(prompt);
 		req.setSize(ImageSize._256x256);
 
-		ImagesResponse resp = oai.getClient().createImage(req);
-		assertEquals(resp.getData().length, 1);
+		List<Image> images = oai.getClient().createImage(req);
+		assertEquals(images.size(), 1);
 
 		File tmp = File.createTempFile("createImage", ".png");
-		ImageUtil.toFile(tmp, ImageUtil.fromUrl(resp.getData()[0].getUrl()));
+		ImageUtil.toFile(tmp, ImageUtil.fromUrl(images.get(0).getUrl()));
 		System.out.println("Image saved as: " + tmp.getCanonicalPath());
 	}
 
@@ -42,12 +43,12 @@ class ImagesTest {
 		req.setSize(ImageSize._256x256);
 		req.setResponseFormat(ResponseFormat.BASE_64);
 
-		ImagesResponse resp = oai.getClient()
+		List<Image> images = oai.getClient()
 				.createImageVariation(ImageUtil.fromFile(ResourceUtil.getResourceFile("DALLE-2.png")), req);
-		assertEquals(resp.getData().length, 1);
+		assertEquals(images.size(), 1);
 
-		File tmp = File.createTempFile("createImage", ".png");
-		ImageUtil.toFile(tmp, ImageUtil.fromBase64(resp.getData()[0].getB64Json()));
+		File tmp = File.createTempFile("imageVariation", ".png");
+		ImageUtil.toFile(tmp, ImageUtil.fromBase64(images.get(0).getB64Json()));
 		System.out.println("Image saved as: " + tmp.getCanonicalPath());
 
 	}

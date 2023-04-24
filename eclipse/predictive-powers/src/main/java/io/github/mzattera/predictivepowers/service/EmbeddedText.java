@@ -1,6 +1,7 @@
 package io.github.mzattera.predictivepowers.service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -40,7 +41,7 @@ public final class EmbeddedText {
 	 * The actual embedding of the text.
 	 */
 	@NonNull
-	private double[] embedding;
+	private List<Double> embedding;
 
 	/**
 	 * Model used to embed the text.
@@ -101,10 +102,10 @@ public final class EmbeddedText {
 			throw new IllegalArgumentException("Embedding from twoi different models");
 
 		double a2 = 0.0, b2 = 0.0, ab = 0.0;
-		for (int i = 0; i < embedding.length; ++i) {
-			a2 += embedding[i] * embedding[i];
-			b2 += other.embedding[i] * other.embedding[i];
-			ab += embedding[i] * other.embedding[i];
+		for (int i = 0; i < embedding.size(); ++i) {
+			a2 += embedding.get(i) * embedding.get(i);
+			b2 += other.embedding.get(i) * other.embedding.get(i);
+			ab += embedding.get(i) * other.embedding.get(i);
 		}
 
 		double similarity = ab / Math.sqrt(a2 * b2);

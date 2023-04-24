@@ -18,10 +18,10 @@ import lombok.ToString;
 @ToString
 public final class File {
 
-    String id;
-    String object;
-    long bytes;
-    long createdAt;
-    String filename;
-    String purpose;
+	String id;
+	String object;
+	long bytes;
+	long createdAt;
+	String filename;
+	String purpose;
 }

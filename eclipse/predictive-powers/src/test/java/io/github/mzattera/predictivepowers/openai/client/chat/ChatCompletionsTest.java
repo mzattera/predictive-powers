@@ -3,6 +3,8 @@ package io.github.mzattera.predictivepowers.openai.client.chat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
+
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
@@ -20,14 +22,15 @@ class ChatCompletionsTest {
 		cr.setModel(model);
 		cr.getMessages().add(ChatMessage.builder().role("user").content(prompt).build());
 		cr.setMaxTokens(Models.getContextSize(model) - 15);
-		cr.setStop(new String[] { "feet" });
+		cr.setStop(new ArrayList<>());
+		cr.getStop().add("feet");
 
 		ChatCompletionsResponse resp = oai.getClient().createChatCompletion(cr);
 
-		assertEquals(resp.getChoices().length, 1);
-		assertEquals(resp.getChoices()[0].getFinishReason(), "stop");
-		assertTrue(resp.getChoices()[0].getMessage().getContent().contains("848")
-				|| resp.getChoices()[0].getMessage().getContent().contains("029 "));
-		assertTrue(resp.getChoices()[0].getMessage().getContent().endsWith("029 "));
+		assertEquals(resp.getChoices().size(), 1);
+		assertEquals(resp.getChoices().get(0).getFinishReason(), "stop");
+		assertTrue(resp.getChoices().get(0).getMessage().getContent().contains("848")
+				|| resp.getChoices().get(0).getMessage().getContent().contains("029 "));
+		assertTrue(resp.getChoices().get(0).getMessage().getContent().endsWith("029 "));
 	}
 }

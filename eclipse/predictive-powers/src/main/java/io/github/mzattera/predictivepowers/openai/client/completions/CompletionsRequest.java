@@ -3,6 +3,7 @@
  */
 package io.github.mzattera.predictivepowers.openai.client.completions;
 
+import java.util.List;
 import java.util.Map;
 
 import lombok.AllArgsConstructor;
@@ -31,13 +32,18 @@ public class CompletionsRequest implements Cloneable {
 
 	@NonNull
 	String model;
-
+	
 	String prompt;
+	
+	/**
+	 * This is used for Insert edits (part of the prompt following the insertion
+	 * point).
+	 */
 	String suffix;
 
 	/**
-	 * Capabilities in the library will try to calculate this automatically if it is
-	 * null when submitting a request.
+	 * Many functions in this library will try to calculate this automatically, if
+	 * it is null when submitting a request.
 	 */
 	Integer maxTokens;
 
@@ -50,7 +56,7 @@ public class CompletionsRequest implements Cloneable {
 
 	Integer logprobs;
 	Boolean echo;
-	String[] stop;
+	List<String> stop;
 	Double presencePenalty;
 	Double frequencyPenalty;
 	Integer bestOf;

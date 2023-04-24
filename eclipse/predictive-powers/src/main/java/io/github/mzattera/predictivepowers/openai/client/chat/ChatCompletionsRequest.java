@@ -42,7 +42,7 @@ public class ChatCompletionsRequest implements Cloneable {
 	// TODO: Add support
 	final boolean stream = false;
 
-	String[] stop;
+	List<String> stop;
 
 	/**
 	 * Capabilities in the library will try to calculate this automatically if it is

@@ -10,7 +10,6 @@ import io.github.mzattera.predictivepowers.service.AnswerService;
 import io.github.mzattera.predictivepowers.service.ChatService;
 import io.github.mzattera.predictivepowers.service.CompletionService;
 import io.github.mzattera.predictivepowers.service.EmbeddingService;
-import io.github.mzattera.predictivepowers.service.InventoryService;
 import io.github.mzattera.predictivepowers.service.QuestionService;
 import lombok.Getter;
 import lombok.NonNull;
@@ -62,10 +61,6 @@ public class OpenAiEndpoint {
 	 */
 	public static OpenAiEndpoint getInstance(@NonNull OpenAiClient client) {
 		return new OpenAiEndpoint(client);
-	}
-
-	public InventoryService getInventoryService() {
-		return new InventoryService(this);
 	}
 
 	public CompletionService getCompletionService() {

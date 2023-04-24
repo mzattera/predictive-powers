@@ -14,6 +14,7 @@ import lombok.ToString;
 @Setter
 @ToString
 public class ChatCompletionsChoice {
+	
 	int index;
 	ChatMessage message;
 	String finishReason;

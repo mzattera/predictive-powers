@@ -29,12 +29,12 @@ public class EditsRequest {
 
 	@NonNull
 	String model;
-
+	
 	String input;
-
+	
 	@NonNull
 	String instruction;
-
+	
 	Integer n;
 	Double temperature;
 	Double topP;

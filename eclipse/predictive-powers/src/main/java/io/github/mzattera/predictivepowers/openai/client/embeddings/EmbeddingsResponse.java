@@ -1,6 +1,8 @@
 package io.github.mzattera.predictivepowers.openai.client.embeddings;
 
-import io.github.mzattera.predictivepowers.openai.client.completions.Usage;
+import java.util.List;
+
+import io.github.mzattera.predictivepowers.openai.client.Usage;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -18,6 +20,6 @@ public class EmbeddingsResponse {
 
 	String model;
 	String object;
-	Embedding[] data;
+	List<Embedding> data;
 	Usage usage;
 }

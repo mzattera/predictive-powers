@@ -4,11 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.DeleteResponse;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.util.ResourceUtil;
 
@@ -22,8 +24,8 @@ class FilesTest {
 		OpenAiClient cli = oai.getClient();
 
 		// See how many files we have
-		File[] files = cli.listFiles();
-		int existing = files.length;
+		List<File> files = cli.listFiles();
+		int existing = files.size();
 
 		// Upload one
 		File uploaded = cli.uploadFile(ResourceUtil.getResourceFile(FILE), "fine-tune");
@@ -33,7 +35,7 @@ class FilesTest {
 
 		// Shall be there
 		files = cli.listFiles();
-		assertEquals(files.length, existing + 1);
+		assertEquals(files.size(), existing + 1);
 
 		// Compare content
 		File f = cli.retrieveFile(uploaded.getId());
@@ -45,7 +47,7 @@ class FilesTest {
 		// Delete file
 		while (true) {
 			try {
-				FilesDeleteResponse resp = cli.deleteFile(uploaded.getId());
+				DeleteResponse resp = cli.deleteFile(uploaded.getId());
 				assertTrue(resp.isDeleted());
 				break;
 			} catch (Exception e) {

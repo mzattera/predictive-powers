@@ -9,6 +9,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -26,9 +27,8 @@ import io.github.mzattera.predictivepowers.openai.client.edits.EditsResponse;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
-import io.github.mzattera.predictivepowers.openai.client.files.FilesDeleteResponse;
+import io.github.mzattera.predictivepowers.openai.client.images.Image;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
-import io.github.mzattera.predictivepowers.openai.client.images.ImagesResponse;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.util.ImageUtil;
 import io.reactivex.Single;
@@ -53,7 +53,7 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
  */
 public final class OpenAiClient {
 
-	public final static String API_BASE_URL = "https://api.openai.com/v1/";
+	private final static String API_BASE_URL = "https://api.openai.com/v1/";
 
 	public final static int DEFAULT_READ_TIMEOUT_MIILLIS = 30 * 1000;
 
@@ -99,7 +99,7 @@ public final class OpenAiClient {
 
 	//////// API METHODS MAPPED INTO JAVA CALLS ////////////////////////////////////
 
-	public Model[] listModels() {
+	public List<Model> listModels() {
 		return callApi(api.models()).getData();
 	}
 
@@ -119,11 +119,11 @@ public final class OpenAiClient {
 		return callApi(api.edits(req));
 	}
 
-	public ImagesResponse createImage(ImagesRequest req) {
-		return callApi(api.imagesGenerations(req));
+	public List<Image> createImage(ImagesRequest req) {
+		return callApi(api.imagesGenerations(req)).getData();
 	}
 
-	public ImagesResponse createImageEdit(@NonNull BufferedImage image, ImagesRequest req, BufferedImage mask)
+	public List<Image> createImageEdit(@NonNull BufferedImage image, ImagesRequest req, BufferedImage mask)
 			throws IOException {
 
 		MultipartBody.Builder builder = new MultipartBody.Builder().setType(MediaType.get("multipart/form-data"))
@@ -150,10 +150,10 @@ public final class OpenAiClient {
 			builder.addFormDataPart("user", req.getUser());
 		}
 
-		return callApi(api.imagesEdits(builder.build()));
+		return callApi(api.imagesEdits(builder.build())).getData();
 	}
 
-	public ImagesResponse createImageVariation(@NonNull BufferedImage image, ImagesRequest req) throws IOException {
+	public List<Image> createImageVariation(@NonNull BufferedImage image, ImagesRequest req) throws IOException {
 
 		MultipartBody.Builder builder = new MultipartBody.Builder().setType(MediaType.get("multipart/form-data"))
 				.addFormDataPart("image", "image", ImageUtil.toRequestBody("png", image));
@@ -171,7 +171,7 @@ public final class OpenAiClient {
 			builder.addFormDataPart("user", req.getUser());
 		}
 
-		return callApi(api.imagesVariations(builder.build()));
+		return callApi(api.imagesVariations(builder.build())).getData();
 	}
 
 	public EmbeddingsResponse createEmbeddings(EmbeddingsRequest req) {
@@ -259,7 +259,7 @@ public final class OpenAiClient {
 		return callApi(api.audioTranscriptions(builder.build())).getText();
 	}
 
-	public File[] listFiles() {
+	public List<File> listFiles() {
 		return callApi(api.files()).getData();
 	}
 
@@ -293,7 +293,7 @@ public final class OpenAiClient {
 		return callApi(api.files(builder.build()));
 	}
 
-	public FilesDeleteResponse deleteFile(@NonNull String fileId) {
+	public DeleteResponse deleteFile(@NonNull String fileId) {
 		return callApi(api.filesDelete(fileId));
 	}
 

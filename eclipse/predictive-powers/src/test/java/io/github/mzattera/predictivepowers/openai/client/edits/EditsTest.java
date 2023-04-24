@@ -21,13 +21,8 @@ class EditsTest {
 		req.setInput(input);
 		req.setTemperature(0.0);
 
-		System.out.println(req.toString());
-
 		EditsResponse resp = oai.getClient().createEdit(req);
-
-		System.out.println(resp.toString());
-
-		assertEquals(resp.getChoices().length, 1);
-		assertEquals(resp.getChoices()[0].getText().trim(), "HOW HIGH IS MT. EVEREST?");
+		assertEquals(resp.getChoices().size(), 1);
+		assertEquals(resp.getChoices().get(0).getText().trim(), "HOW HIGH IS MT. EVEREST?");
 	}
 }

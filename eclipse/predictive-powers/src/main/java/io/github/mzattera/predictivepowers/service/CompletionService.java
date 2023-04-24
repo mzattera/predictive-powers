@@ -104,7 +104,7 @@ public class CompletionService {
 		// this text, something went wrong and we should react.
 		// TODO BETTER USE finish reason.
 		ChatCompletionsResponse resp = ep.getClient().createChatCompletion(req);
-		ChatCompletionsChoice choice = resp.getChoices()[0];
+		ChatCompletionsChoice choice = resp.getChoices().get(0);
 		return TextResponse.fromGptApi(choice.getMessage().getContent(), choice.getFinishReason());
 	}
 

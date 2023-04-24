@@ -3,7 +3,9 @@
  */
 package io.github.mzattera.predictivepowers.openai.client.edits;
 
-import io.github.mzattera.predictivepowers.openai.client.completions.Usage;
+import java.util.List;
+
+import io.github.mzattera.predictivepowers.openai.client.Usage;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -19,8 +21,8 @@ import lombok.ToString;
 @ToString
 public class EditsResponse {
 
-    public String object;
-    public long created;
-    public EditsChoice[] choices;
-    public Usage usage;
+	public String object;
+	public long created;
+	public List<EditsChoice> choices;
+	public Usage usage;
 }

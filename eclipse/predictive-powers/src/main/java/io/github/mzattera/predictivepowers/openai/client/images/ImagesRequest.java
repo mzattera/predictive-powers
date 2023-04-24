@@ -39,7 +39,7 @@ public class ImagesRequest {
 		private ImageSize(String label) {
 			this.label = label;
 		}
-				
+
 		@Override
 		@JsonValue
 		public String toString() {
@@ -48,7 +48,8 @@ public class ImagesRequest {
 	}
 
 	/**
-	 * The format in which the generated images are returned. Must be one of "url" or "b64_json".
+	 * The format in which the generated images are returned. Must be one of "url"
+	 * or "b64_json".
 	 */
 	public enum ResponseFormat {
 		URL("url"), BASE_64("b64_json");
@@ -58,7 +59,7 @@ public class ImagesRequest {
 		private ResponseFormat(String label) {
 			this.label = label;
 		}
-		
+
 		@Override
 		@JsonValue
 		public String toString() {

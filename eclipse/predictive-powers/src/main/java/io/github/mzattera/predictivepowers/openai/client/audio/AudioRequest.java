@@ -29,9 +29,9 @@ import lombok.ToString;
 @ToString
 public class AudioRequest {
 
-
 	/**
-	 * 	The format of the transcript output, in one of these options: json, text, srt, verbose_json, or vtt.
+	 * The format of the transcript output, in one of these options: json, text,
+	 * srt, verbose_json, or vtt.
 	 */
 	public enum ResponseFormat {
 		JSON("json"), TEXT("text"), SRT("srt"), VERBOSE_JSON("verbose_json"), VTT("vtt");
@@ -41,7 +41,7 @@ public class AudioRequest {
 		private ResponseFormat(String label) {
 			this.label = label;
 		}
-		
+
 		@Override
 		@JsonValue
 		public String toString() {
@@ -49,7 +49,9 @@ public class AudioRequest {
 		}
 	}
 
-	@NonNull String model;
+	@NonNull
+	String model;
+	
 	String prompt;
 	ResponseFormat responseFormat;
 	Double temperature;

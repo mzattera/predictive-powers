@@ -12,7 +12,7 @@ import lombok.ToString;
 
 /**
  * A fine-tunes, as represented by OpenAi API.
- *  
+ * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
@@ -21,17 +21,19 @@ import lombok.ToString;
 @ToString
 public class FineTune {
 
-    String id;
-    String object;
-    String model;
-    long createdAt;
-    List<FineTuneEvent> events;
-    String fineTunedModel;
-    Hyperparams hyperparams;
-    String organizationId;
-    List<File> resultFiles;
-    String status;
-    List<File> validationFiles;
+	String id;
+	String object;
+	String model;
+	long createdAt;
+	List<FineTuneEvent> events;
+	String fineTunedModel;
+	Hyperparams hyperparams;
+	String organizationId;
+	List<File> resultFiles;
+
+	/** This goes: pending -> running -> succeeded (if all goes well). */
+	String status;
+	List<File> validationFiles;
 	List<File> trainingFiles;
-    long updatedAt;
+	long updatedAt;
 }

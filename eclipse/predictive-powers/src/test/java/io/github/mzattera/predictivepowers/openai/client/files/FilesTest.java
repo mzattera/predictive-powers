@@ -51,9 +51,10 @@ class FilesTest {
 				assertTrue(resp.isDeleted());
 				break;
 			} catch (Exception e) {
+				// TODO Why does it not work catching only OpenAIException?
 				System.out.println("Waiting for the file to be processed...");
 				try {
-					TimeUnit.SECONDS.sleep(30);
+					TimeUnit.SECONDS.sleep(10);
 				} catch (InterruptedException e1) {
 				}
 			}

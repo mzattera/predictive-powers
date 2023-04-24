@@ -2,7 +2,9 @@ package io.github.mzattera.predictivepowers.openai.client.models;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -11,18 +13,63 @@ import io.github.mzattera.predictivepowers.openai.client.Models;
 
 class ModelsTest {
 
+	private final static Set<String> oldModels = new HashSet<>();
+	static {
+		oldModels.add("babbage-code-search-code");
+		oldModels.add("text-davinci-001");
+		oldModels.add("babbage-code-search-text");
+		oldModels.add("babbage-similarity");
+		oldModels.add("whisper-1");
+		oldModels.add("curie-instruct-beta");
+		oldModels.add("ada-code-search-code");
+		oldModels.add("ada-similarity");
+		oldModels.add("davinci-search-document");
+		oldModels.add("ada-code-search-text");
+		oldModels.add("davinci-instruct-beta");
+		oldModels.add("ada-search-query");
+		oldModels.add("curie-search-query");
+		oldModels.add("davinci-search-query");
+		oldModels.add("babbage-search-document");
+		oldModels.add("ada-search-document");
+		oldModels.add("curie-search-document");
+		oldModels.add("babbage-search-query");
+		oldModels.add("curie-similarity");
+		oldModels.add("davinci-similarity");
+		oldModels.add("cushman:2020-05-03");
+		oldModels.add("ada:2020-05-03");
+		oldModels.add("babbage-search-query");
+		oldModels.add("babbage:2020-05-03");
+		oldModels.add("curie:2020-05-03");
+		oldModels.add("davinci:2020-05-03");
+		oldModels.add("if-davinci-v2");
+		oldModels.add("if-curie-v2");
+		oldModels.add("if-davinci:3.0.0");
+		oldModels.add("davinci-if:3.0.0");
+		oldModels.add("davinci-instruct-beta:2.0.0");
+		oldModels.add("text-ada:001");
+		oldModels.add("text-davinci:001");
+		oldModels.add("text-curie:001");
+		oldModels.add("text-babbage:001");
+	}
+
 	@Test
 	void test01() {
 		OpenAiEndpoint oai = OpenAiEndpoint.getInstance();
 		List<Model> models = oai.getClient().listModels();
 		assertTrue(models.size() > 0);
-		
+
 		for (Model m : models) {
+
+			if (m.getId().contains("-edit"))
+				continue; // Edits model do not need size
+			if (oldModels.contains(m.getId()))
+				continue; // Skip old models
+
 			int contextSize = Models.getContextSize(m.getId());
-			if (contextSize < 0) {
+			if (contextSize < 0)
 				System.out.println("No context size defined for model: " + m.getId());
-			}
+
 			assertTrue(contextSize > 0);
-		}		
+		}
 	}
 }

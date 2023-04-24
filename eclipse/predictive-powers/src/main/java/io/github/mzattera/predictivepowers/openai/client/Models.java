@@ -17,7 +17,6 @@ public final class Models {
 	private Models() {
 	}
 
-	// TODO add  code-davinci-edit-001	text-davinci-edit-001
 	private final static Map<String, Integer> contextSize = new HashMap<>();
 	static {
 		contextSize.put("ada", 2049);
@@ -33,6 +32,7 @@ public final class Models {
 		contextSize.put("curie", 2049);
 		contextSize.put("davinci", 2049);
 		contextSize.put("gpt-3.5-turbo", 4096);
+		contextSize.put("gpt-3.5-turbo-0301", 4096);
 		contextSize.put("gpt-4", 8192);
 		contextSize.put("gpt-4-32k", 32768);
 		contextSize.put("text-ada-001", 2049);

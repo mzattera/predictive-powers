@@ -19,6 +19,8 @@ import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTunesRequ
 import io.github.mzattera.predictivepowers.openai.client.images.Image;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
+import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsRequest;
+import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsResponse;
 import io.reactivex.Single;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
@@ -88,7 +90,7 @@ public interface OpenAiApi {
 	Single<ResponseBody> filesContent(@Path("file_id") String fileId);
 
 	@POST("fine-tunes")
-	Single<FineTune> fineTunesCreate(@Body FineTunesRequest request);
+	Single<FineTune> fineTunesCreate(@Body FineTunesRequest req);
 
 	@GET("fine-tunes")
 	Single<DataList<FineTune>> fineTunes();
@@ -101,4 +103,7 @@ public interface OpenAiApi {
 
 	@GET("fine-tunes/{fine_tune_id}/events")
 	Single<DataList<FineTuneEvent>> fineTunesEvents(@Path("fine_tune_id") String fineTuneId);
+
+	@POST("moderations")
+	Single<ModerationsResponse> moderations(@Body ModerationsRequest req);
 }

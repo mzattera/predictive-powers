@@ -27,9 +27,14 @@ import io.github.mzattera.predictivepowers.openai.client.edits.EditsResponse;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
+import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTune;
+import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTuneEvent;
+import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTunesRequest;
 import io.github.mzattera.predictivepowers.openai.client.images.Image;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
+import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsRequest;
+import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsResponse;
 import io.github.mzattera.util.ImageUtil;
 import io.reactivex.Single;
 import lombok.NonNull;
@@ -335,6 +340,34 @@ public final class OpenAiClient {
 				os.write(buffer, 0, lengthRead);
 			}
 		}
+	}
+
+	public FineTune createFineTune(FineTunesRequest req) {
+		return callApi(api.fineTunesCreate(req));
+	}
+
+	public List<FineTune> listFineTunes() {
+		return callApi(api.fineTunes()).getData();
+	}
+
+	public FineTune retrieveFineTune(String fineTuneId) {
+		return callApi(api.fineTunes(fineTuneId));
+	}
+
+	public FineTune cancelFineTune(String fineTuneId) {
+		return callApi(api.fineTunesCancel(fineTuneId));
+	}
+
+	public List<FineTuneEvent> listFineTuneEvents(String fineTuneId) {
+		return callApi(api.fineTunesEvents(fineTuneId)).getData();
+	}
+
+	public DeleteResponse deleteFineTuneModel(String model) {
+		return callApi(api.modelsDelete(model));
+	}
+
+	public ModerationsResponse createModeration(ModerationsRequest req) {
+		return callApi(api.moderations(req));
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////

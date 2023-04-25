@@ -14,6 +14,8 @@ import io.github.mzattera.util.ResourceUtil;
 
 class FineTunesTest {
 
+	// TODO add checks about events
+	
 	@Test
 	void test01() throws IOException {
 		OpenAiEndpoint oai = OpenAiEndpoint.getInstance();
@@ -42,7 +44,7 @@ class FineTunesTest {
 		}
 
 		// Give it a try
-		CompletionsRequest cReq = CompletionsRequest.builder().model(tuned.getFineTunedModel()).maxTokens(100)
+		CompletionsRequest cReq = CompletionsRequest.builder().model(tuned.getFineTunedModel()).maxTokens(1)
 				.prompt("I really like this movie!").logprobs(2).build();
 		CompletionsResponse resp = c.createCompletion(cReq);
 

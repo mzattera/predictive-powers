@@ -1,7 +1,7 @@
 /**
  * 
  */
-package io.github.mzattera.util;
+package io.github.mzattera.predictivepowers.openai.util;
 
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatMessage;
 import lombok.NonNull;
@@ -14,7 +14,7 @@ import lombok.NonNull;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public final class TokenCalculator {
+public final class TokenUtil {
 
 	// TODO improve using
 	// https://github.com/openai/openai-python/blob/main/chatml.md

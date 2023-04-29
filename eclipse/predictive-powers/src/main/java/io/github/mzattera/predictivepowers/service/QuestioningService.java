@@ -11,8 +11,8 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatMessage;
+import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
 import io.github.mzattera.util.LlmUtil;
-import io.github.mzattera.util.TokenCalculator;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-public class QuestionService {
+public class QuestioningService {
 
 	// Maps from-to POJO <-> JSON
 	private final static ObjectMapper mapper;
@@ -44,7 +44,7 @@ public class QuestionService {
 	 */
 	@NonNull
 	@Getter
-	private final CompletionService completionService;
+	private final ChatService completionService;
 
 	/**
 	 * Extracts question/answer pairs from given text.
@@ -208,7 +208,7 @@ public class QuestionService {
 		// Split text, based on prompt size
 		int tok = 0;
 		for (ChatMessage m : instructions) {
-			tok += TokenCalculator.count(m);
+			tok += TokenUtil.count(m);
 		}
 		int maxSize = completionService.getDefaultReq().getMaxTokens() * 2 / 3 - tok;
 

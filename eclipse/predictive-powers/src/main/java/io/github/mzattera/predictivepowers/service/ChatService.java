@@ -9,8 +9,11 @@ import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsCho
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatMessage;
-import io.github.mzattera.util.TokenCalculator;
+import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
 import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 /**
  * This class manages a chat with an agent through the /chat/completions API.
@@ -22,12 +25,21 @@ import lombok.Getter;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public class ChatService extends CompletionService {
+@RequiredArgsConstructor
+public class ChatService {
 
 	// TODO: revert back to using completion not chat completion
 
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
 	// values from a Map
+
+	// TODO: revert back to using completion not chat completion
+
+	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
+	// values from a Map
+
+	@NonNull
+	protected final OpenAiEndpoint ep;
 
 	/**
 	 * These are the messages exchanged in the current chat.
@@ -41,6 +53,21 @@ public class ChatService extends CompletionService {
 	// TODO Size limit?
 	@Getter
 	private final List<ChatMessage> history = new ArrayList<>();
+
+	/**
+	 * This request, with its parameters, is used as default setting for each call.
+	 * 
+	 * You can change any parameter to change these defaults (e.g. the model used)
+	 * and the change will apply to all subsequent calls.
+	 */
+	@Getter
+	@NonNull
+	private final ChatCompletionsRequest defaultReq;
+
+	/** Personality of the agent. If null, agent has NO personality. */
+	@Getter
+	@Setter
+	private String personality = "You are a helpful assistant.";
 
 	/**
 	 * Maximum number of steps in the conversation to consider when interacting with
@@ -83,8 +110,61 @@ public class ChatService extends CompletionService {
 		maxConversationTokens = n;
 	}
 
-	public ChatService(OpenAiEndpoint ep, ChatCompletionsRequest defaultReq) {
-		super(ep, defaultReq);
+	/**
+	 * Completes text (executes given prompt). The agent personality is considered,
+	 * if provided.
+	 */
+	public TextResponse complete(String prompt) {
+		return complete(prompt, defaultReq);
+	}
+
+	/**
+	 * Completes text (executes given prompt). The agent personality is considered,
+	 * if provided.
+	 */
+	public TextResponse complete(String prompt, ChatCompletionsRequest req) {
+		List<ChatMessage> msg = new ArrayList<>();
+		if (personality != null)
+			msg.add(new ChatMessage("system", personality));
+		msg.add(new ChatMessage("user", prompt));
+
+		return complete(msg, req);
+	}
+
+	/**
+	 * Completes given conversation.
+	 * 
+	 * The agent personality is NOT considered, but can be injected as first
+	 * message.
+	 */
+	public TextResponse complete(List<ChatMessage> messages) {
+		return complete(messages, defaultReq);
+	}
+
+	/**
+	 * Completes given conversation.
+	 * 
+	 * The agent personality is NOT considered, but can be injected as first
+	 * message.
+	 */
+	public TextResponse complete(List<ChatMessage> messages, ChatCompletionsRequest req) {
+
+		req.setMessages(messages);
+
+		// Adjust token limit if needed
+		if ((req.getMaxTokens() == null) && (Models.getContextSize(req.getModel()) != -1)) {
+			int tok = 0;
+			for (ChatMessage m : messages)
+				tok += TokenUtil.count(m);
+			req.setMaxTokens(Models.getContextSize(req.getModel()) - tok);
+		}
+
+		// TODO is this error handling good? It should in principle as if we cannot get
+		// this text, something went wrong and we should react.
+		// TODO BETTER USE finish reason.
+		ChatCompletionsResponse resp = ep.getClient().createChatCompletion(req);
+		ChatCompletionsChoice choice = resp.getChoices().get(0);
+		return TextResponse.fromGptApi(choice.getMessage().getContent(), choice.getFinishReason());
 	}
 
 	/**
@@ -118,7 +198,7 @@ public class ChatService extends CompletionService {
 		if ((req.getMaxTokens() == null) && (Models.getContextSize(req.getModel()) != -1)) {
 			int tok = 0;
 			for (ChatMessage m : messages)
-				tok += TokenCalculator.count(m);
+				tok += TokenUtil.count(m);
 			req.setMaxTokens(Models.getContextSize(req.getModel()) - tok);
 		}
 
@@ -146,7 +226,7 @@ public class ChatService extends CompletionService {
 		if (getPersonality() != null) {
 			ChatMessage m = new ChatMessage("system", getPersonality());
 			result.add(m);
-			numTokens = TokenCalculator.count(m);
+			numTokens = TokenUtil.count(m);
 		}
 
 		int numMsg = 0;
@@ -155,7 +235,7 @@ public class ChatService extends CompletionService {
 				break;
 
 			ChatMessage msg = messages.get(i);
-			int t = TokenCalculator.count(msg);
+			int t = TokenUtil.count(msg);
 			if ((numMsg > 0) && ((numTokens + t) > maxConversationTokens))
 				break;
 

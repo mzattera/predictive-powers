@@ -12,7 +12,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
-import io.github.mzattera.predictivepowers.service.AnswerService;
+import io.github.mzattera.predictivepowers.service.AnsweringService;
 import io.github.mzattera.predictivepowers.service.EmbeddedText;
 import io.github.mzattera.predictivepowers.service.EmbeddingService;
 import io.github.mzattera.predictivepowers.service.QnAPair;
@@ -45,7 +45,7 @@ public class Oracle {
 			// Make sure you specify your API key n OPENAI_KEY system environment variable.
 			OpenAiEndpoint ep = OpenAiEndpoint.getInstance();
 			EmbeddingService es = ep.getEmbeddingService();
-			AnswerService as = ep.getAnswerService();
+			AnsweringService as = ep.getAnswerService();
 
 			KnowledgeBase kb = new KnowledgeBase();
 			if (SAVED_KB_FILE.exists()) {

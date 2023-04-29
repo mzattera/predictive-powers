@@ -17,8 +17,8 @@ import io.github.mzattera.predictivepowers.knowledge.ExtractionUtils;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.Embedding;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
+import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
 import io.github.mzattera.util.LlmUtil;
-import io.github.mzattera.util.TokenCalculator;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -179,7 +179,7 @@ public class EmbeddingService {
 		int tok = 0;
 		while (l.size() > 0) {
 			String s = l.remove(0);
-			int t = TokenCalculator.count(s);
+			int t = TokenUtil.count(s);
 
 			if ((tok + t) > defaultMaxTokens) {
 				// too many tokens, embed what you have

@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
+
 /**
  * Some utility methods to deal with Large Language Models.
  * 
@@ -27,7 +29,7 @@ public final class LlmUtil {
 
 		List<String> result = new ArrayList<>();
 		result.add(text);
-		if (TokenCalculator.count(text) <= maxTokens) { // s short enough it can be ignored
+		if (TokenUtil.count(text) <= maxTokens) { // s short enough it can be ignored
 			return result;
 		}
 
@@ -62,7 +64,7 @@ public final class LlmUtil {
 		Pattern p = Pattern.compile(regex);
 
 		for (String s : text) {
-			if (TokenCalculator.count(s) <= maxTokens) { // s short enough it can be ignored
+			if (TokenUtil.count(s) <= maxTokens) { // s short enough it can be ignored
 				result.add(s);
 				continue;
 			}
@@ -89,7 +91,7 @@ public final class LlmUtil {
 		StringBuffer tmp = new StringBuffer();
 		int tok = 0;
 		for (String s : text) {
-			int t = TokenCalculator.count(s);
+			int t = TokenUtil.count(s);
 			if ((t + tok) > maxTokens) { // we are exceeding max length, output what we have so far
 				if (tmp.length() > 0) { // output any merged text
 					result.add(tmp.toString());

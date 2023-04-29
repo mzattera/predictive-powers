@@ -5,12 +5,13 @@ package io.github.mzattera.predictivepowers;
 
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
+import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
-import io.github.mzattera.predictivepowers.service.AnswerService;
+import io.github.mzattera.predictivepowers.service.AnsweringService;
 import io.github.mzattera.predictivepowers.service.ChatService;
 import io.github.mzattera.predictivepowers.service.CompletionService;
 import io.github.mzattera.predictivepowers.service.EmbeddingService;
-import io.github.mzattera.predictivepowers.service.QuestionService;
+import io.github.mzattera.predictivepowers.service.QuestioningService;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -21,6 +22,8 @@ import lombok.NonNull;
  *
  */
 public class OpenAiEndpoint {
+
+	// TODO add endpoint for Azure OpenAi Services
 
 	@Getter
 	private final OpenAiClient client;
@@ -64,10 +67,10 @@ public class OpenAiEndpoint {
 	}
 
 	public CompletionService getCompletionService() {
-		return getCompletionService(new ChatCompletionsRequest());
+		return getCompletionService(new CompletionsRequest());
 	}
 
-	public CompletionService getCompletionService(ChatCompletionsRequest defaultReq) {
+	public CompletionService getCompletionService(CompletionsRequest defaultReq) {
 		return new CompletionService(this, defaultReq);
 	}
 
@@ -89,20 +92,20 @@ public class OpenAiEndpoint {
 		return s;
 	}
 
-	public QuestionService getQuestionService() {
-		return getQuestionService(getCompletionService());
+	public QuestioningService getQuestionService() {
+		return getQuestionService(getChatService());
 	}
 
-	public QuestionService getQuestionService(@NonNull CompletionService cs) {
-		return new QuestionService(this, cs);
+	public QuestioningService getQuestionService(@NonNull ChatService cs) {
+		return new QuestioningService(this, cs);
 	}
 
-	public AnswerService getAnswerService() {
-		return getAnswerService(getCompletionService());
+	public AnsweringService getAnswerService() {
+		return getAnswerService(getChatService());
 	}
 
-	public AnswerService getAnswerService(@NonNull CompletionService cs) {
-		return new AnswerService(this, cs);
+	public AnsweringService getAnswerService(@NonNull ChatService cs) {
+		return new AnsweringService(this, cs);
 	}
 
 	public EmbeddingService getEmbeddingService() {

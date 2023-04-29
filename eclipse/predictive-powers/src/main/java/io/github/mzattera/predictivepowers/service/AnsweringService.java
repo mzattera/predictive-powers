@@ -7,8 +7,8 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatMessage;
+import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
 import io.github.mzattera.util.LlmUtil;
-import io.github.mzattera.util.TokenCalculator;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,19 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-public class AnswerService {
+public class AnsweringService {
+
+	// TODO
+	/*
+	 * Provide a ground truth for the API. If you provide the API with a body of
+	 * text to answer questions about (like a Wikipedia entry) it will be less
+	 * likely to confabulate a response.
+	 * 
+	 * Use a low probability and show the API how to say "I don't know". If the API
+	 * understands that in cases where it's less certain about a response that
+	 * saying "I don't know" or some variation is appropriate, it will be less
+	 * inclined to make up answers.
+	 */
 
 	@NonNull
 	private final OpenAiEndpoint ep;
@@ -32,7 +44,7 @@ public class AnswerService {
 	 */
 	@NonNull
 	@Getter
-	private final CompletionService completionService;
+	private final ChatService completionService;
 
 	/**
 	 * Maximum number of tokens to keep in the question context when answering.
@@ -61,7 +73,8 @@ public class AnswerService {
 	 * Answer a question, using only information from provided context.
 	 * 
 	 * @param context The information to be used to answer the question. Notice this
-	 *        is eventually truncated so at most maxContextTokens are considered.
+	 *                is eventually truncated so at most maxContextTokens are
+	 *                considered.
 	 */
 	public QnAPair answer(String question, String context) {
 
@@ -102,11 +115,11 @@ public class AnswerService {
 
 		int tok = 0;
 		for (ChatMessage m : instructions)
-			tok += TokenCalculator.count(m);
+			tok += TokenUtil.count(m);
 
 		for (Pair<EmbeddedText, Double> p : context) {
 			ChatMessage m = new ChatMessage("user", "Context: " + p.getLeft().getText());
-			tok += TokenCalculator.count(m);
+			tok += TokenUtil.count(m);
 			if (tok >= maxContextTokens)
 				break;
 			instructions.add(instructions.size() - 2, m);

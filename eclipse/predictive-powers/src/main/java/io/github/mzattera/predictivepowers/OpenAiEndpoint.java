@@ -7,11 +7,11 @@ import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
-import io.github.mzattera.predictivepowers.service.AnsweringService;
+import io.github.mzattera.predictivepowers.service.QuestionAnsweringService;
 import io.github.mzattera.predictivepowers.service.ChatService;
 import io.github.mzattera.predictivepowers.service.CompletionService;
 import io.github.mzattera.predictivepowers.service.EmbeddingService;
-import io.github.mzattera.predictivepowers.service.QuestioningService;
+import io.github.mzattera.predictivepowers.service.QuestionExtractionService;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -67,19 +67,29 @@ public class OpenAiEndpoint {
 	}
 
 	public CompletionService getCompletionService() {
-		return getCompletionService(new CompletionsRequest());
+		return new CompletionService(this);
 	}
 
 	public CompletionService getCompletionService(CompletionsRequest defaultReq) {
 		return new CompletionService(this, defaultReq);
 	}
 
+	public EmbeddingService getEmbeddingService() {
+		return new EmbeddingService(this);
+	}
+
+	public EmbeddingService getEmbeddingService(@NonNull EmbeddingsRequest defaultReq) {
+		return new EmbeddingService(this, defaultReq);
+	}
+
 	public ChatService getChatService() {
-		return getChatService(new ChatCompletionsRequest());
+		return new ChatService(this);
 	}
 
 	public ChatService getChatService(String personality) {
-		return getChatService(new ChatCompletionsRequest(), personality);
+		ChatService s = getChatService();
+		s.setPersonality(personality);
+		return s;
 	}
 
 	public ChatService getChatService(ChatCompletionsRequest defaultReq) {
@@ -92,27 +102,19 @@ public class OpenAiEndpoint {
 		return s;
 	}
 
-	public QuestioningService getQuestionService() {
-		return getQuestionService(getChatService());
+	public QuestionExtractionService getQuestionExtractionService() {
+		return new QuestionExtractionService(this);
 	}
 
-	public QuestioningService getQuestionService(@NonNull ChatService cs) {
-		return new QuestioningService(this, cs);
+	public QuestionExtractionService getQuestionExtractionService(@NonNull ChatService cs) {
+		return new QuestionExtractionService(this, cs);
 	}
 
-	public AnsweringService getAnswerService() {
-		return getAnswerService(getChatService());
+	public QuestionAnsweringService getQuestionAnsweringService() {
+		return new QuestionAnsweringService(this);
 	}
 
-	public AnsweringService getAnswerService(@NonNull ChatService cs) {
-		return new AnsweringService(this, cs);
-	}
-
-	public EmbeddingService getEmbeddingService() {
-		return getEmbeddingService(new EmbeddingsRequest());
-	}
-
-	public EmbeddingService getEmbeddingService(@NonNull EmbeddingsRequest defaultReq) {
-		return new EmbeddingService(this, defaultReq);
+	public QuestionAnsweringService getQuestionAnsweringService(@NonNull ChatService cs) {
+		return new QuestionAnsweringService(this, cs);
 	}
 }

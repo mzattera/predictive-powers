@@ -9,7 +9,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.Models;
+import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
 
 class ModelsTest {
 
@@ -65,7 +65,7 @@ class ModelsTest {
 			if (oldModels.contains(m.getId()))
 				continue; // Skip old models
 
-			int contextSize = Models.getContextSize(m.getId());
+			int contextSize = ModelUtil.getContextSize(m.getId());
 			if (contextSize < 0)
 				System.out.println("No context size defined for model: " + m.getId());
 

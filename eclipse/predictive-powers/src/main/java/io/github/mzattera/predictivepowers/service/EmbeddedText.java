@@ -1,5 +1,6 @@
 package io.github.mzattera.predictivepowers.service;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +9,7 @@ import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.ToString;
@@ -18,18 +20,21 @@ import lombok.ToString;
  * In addition to the text itself, and its embedding, a set of arbitrary
  * properties can be attached to the embedded text.
  * 
- * Notice that two instances with same text are qual, regardless of their
- * properties.
+ * Notice that two instances with same text are equal, regardless of their
+ * properties or embeddings.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
 @Getter
 @Setter
+@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @ToString
-public final class EmbeddedText {
+public class EmbeddedText implements Serializable {
+
+	private static final long serialVersionUID = -12432423425341702L;
 
 	/**
 	 * The piece of text that was embedded.

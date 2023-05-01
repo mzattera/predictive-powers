@@ -12,7 +12,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
-import io.github.mzattera.predictivepowers.service.AnsweringService;
+import io.github.mzattera.predictivepowers.service.QuestionAnsweringService;
 import io.github.mzattera.predictivepowers.service.EmbeddedText;
 import io.github.mzattera.predictivepowers.service.EmbeddingService;
 import io.github.mzattera.predictivepowers.service.QnAPair;
@@ -27,7 +27,7 @@ import io.github.mzattera.predictivepowers.service.QnAPair;
 public class Oracle {
 
 	/** Folder with the knowledge base data. */
-	private final static File KB_FOLDER = new File("D:\\KB\\PDF\\");
+	private final static File KB_FOLDER = new File("D:\\KB");
 
 	/**
 	 * File with a pre-saved knowledge base. If this file exists, the knowledge base
@@ -45,7 +45,7 @@ public class Oracle {
 			// Make sure you specify your API key n OPENAI_KEY system environment variable.
 			OpenAiEndpoint ep = OpenAiEndpoint.getInstance();
 			EmbeddingService es = ep.getEmbeddingService();
-			AnsweringService as = ep.getAnswerService();
+			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
 
 			KnowledgeBase kb = new KnowledgeBase();
 			if (SAVED_KB_FILE.exists()) {
@@ -57,7 +57,7 @@ public class Oracle {
 				System.out.println("Knowledge Base Folder: " + KB_FOLDER.getCanonicalPath());
 				
 				// Creates a KB out of the folder
-				for (Entry<File, List<EmbeddedText>> fileEmbeddings : es.embedFolder(KB_FOLDER, 100).entrySet()) {
+				for (Entry<File, List<EmbeddedText>> fileEmbeddings : es.embedFolder(KB_FOLDER).entrySet()) {
 					for (EmbeddedText embedding : fileEmbeddings.getValue()) {
 						embedding.set("file_name", fileEmbeddings.getKey().getName());
 						kb.insert(embedding);
@@ -70,7 +70,7 @@ public class Oracle {
 
 			try (Scanner console = new Scanner(System.in)) {
 				while (true) {
-					System.out.println("Your Question: ");
+					System.out.print("Your Question: ");
 					String question = console.nextLine();
 
 					// Fetch embeddings matching question and show them
@@ -85,8 +85,7 @@ public class Oracle {
 
 					// Answer
 					System.out.println("My Answer: ");
-					QnAPair answer = as.answer(question, context);
-					System.out.println("My Answer: ");
+					QnAPair answer = qas.answerWithEmbeddings(question, context);
 					System.out.println(answer.getAnswer() + "\n");
 				}
 			}

@@ -6,12 +6,11 @@ import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.chat.ChatMessage;
+import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
 import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
 import io.github.mzattera.util.LlmUtil;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
 /**
  * This class provides method to answer questions relying on a context that is
@@ -21,8 +20,21 @@ import lombok.RequiredArgsConstructor;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@RequiredArgsConstructor
-public class AnsweringService {
+public class QuestionAnsweringService {
+
+	public QuestionAnsweringService(OpenAiEndpoint ep) {
+		this(ep, ep.getChatService());
+
+		// TODO test best settings.
+		completionService.getDefaultReq().setTemperature(0.2);
+	}
+
+	public QuestionAnsweringService(OpenAiEndpoint ep, ChatService completionService) {
+		this.ep = ep;
+		this.completionService = completionService;
+		maxContextTokens = Math.max(ModelUtil.getContextSize(this.completionService.getDefaultReq().getModel()), 2046) * 3
+				/ 4;
+	}
 
 	// TODO
 	/*
@@ -66,7 +78,7 @@ public class AnsweringService {
 	 */
 	public QnAPair answer(String question) {
 		TextResponse answer = completionService.complete(question);
-		return QnAPair.builder().question(question).simpleContext("").answer(answer.getText()).build();
+		return QnAPair.builder().question(question).answer(answer.getText()).build();
 	}
 
 	/**
@@ -78,18 +90,10 @@ public class AnsweringService {
 	 */
 	public QnAPair answer(String question, String context) {
 
-		// Provides instructions and examples
-		List<ChatMessage> instructions = new ArrayList<>();
-		instructions.add(new ChatMessage("system",
-				"You are an assistant and you must respond to questions truthfully considering only the provided context. If the answer cannot be found in the context, reply with \"I do not know.\""));
-		instructions.add(new ChatMessage("user", "Context: Biglydoos are small rodent similar to mice."));
-		instructions.add(new ChatMessage("user", "Q: What color are biglydoos?"));
-		instructions.add(new ChatMessage("assistant", "A: I do not know."));
-		instructions.add(new ChatMessage("user", "Context: " + LlmUtil.split(question, maxContextTokens).get(0)));
-		instructions.add(new ChatMessage("user", "Q: " + question));
+		List<String> l = new ArrayList<>();
+		l.add(LlmUtil.split(context, maxContextTokens).get(0));
 
-		TextResponse answer = completionService.complete(instructions);
-		return QnAPair.builder().question(question).simpleContext(context).answer(answer.getText()).build();
+		return answer(question, l);
 	}
 
 	/**
@@ -98,11 +102,31 @@ public class AnsweringService {
 	 * Notice that context is shortened taking at most maxContextTokens as input,
 	 * starting from beginning of provided List.
 	 */
-	public QnAPair answer(String question, List<Pair<EmbeddedText, Double>> context) {
+	public QnAPair answerWithEmbeddings(String question, List<Pair<EmbeddedText, Double>> context) {
 
-		// TODO probably you do not need to write "Context" each time...it saves tokens.
+		List<String> l = new ArrayList<>(context.size());
+		for (Pair<EmbeddedText, Double> p : context)
+			l.add(p.getLeft().getText());
 
+		return answer(question, l);
+	}
+
+	/**
+	 * Answer a question, using only information from provided context.
+	 * 
+	 * Notice that context is shortened taking at most {@link #maxContextTokens} as
+	 * input, starting from beginning of provided List.
+	 */
+	public QnAPair answer(String question, List<String> context) {
+	
+		// Guard, should never happen
+		if (context.size() == 0)
+			return QnAPair.builder().question(question).answer("I don't know.").build();
+	
+		ChatMessage qMsg = new ChatMessage("user", "Q: " + question);
+	
 		// Provides instructions and examples
+		// TODO probably you do not need to write "Context" each time...it saves tokens.
 		List<ChatMessage> instructions = new ArrayList<>();
 		instructions.add(new ChatMessage("system",
 				"You are an assistant and you must respond to questions truthfully considering only the provided context. If the answer cannot be found in the context, reply with \"I do not know.\""));
@@ -110,22 +134,27 @@ public class AnsweringService {
 		instructions.add(new ChatMessage("user", "Context: Biglydoos eat cranberries."));
 		instructions.add(new ChatMessage("user", "Q: What color are biglydoos?"));
 		instructions.add(new ChatMessage("assistant", "A: I do not know."));
-		instructions.add(new ChatMessage("user", "Context: " + context.get(0).getLeft().getText()));
-		instructions.add(new ChatMessage("user", "Q: " + question));
-
-		int tok = 0;
-		for (ChatMessage m : instructions)
+		instructions.add(new ChatMessage("user", "Context: " + context.get(0)));
+	
+		int tok = TokenUtil.count(qMsg) + TokenUtil.count(instructions);
+	
+		// TODO it adds one too many
+		int i = 1;
+		for (; i < context.size(); ++i) {
+			ChatMessage m = new ChatMessage("user", "Context: " + context.get(i));
 			tok += TokenUtil.count(m);
-
-		for (Pair<EmbeddedText, Double> p : context) {
-			ChatMessage m = new ChatMessage("user", "Context: " + p.getLeft().getText());
-			tok += TokenUtil.count(m);
-			if (tok >= maxContextTokens)
+			if (tok > maxContextTokens)
 				break;
-			instructions.add(instructions.size() - 2, m);
+			instructions.add(m);
 		}
-
-		TextResponse answer = completionService.complete(instructions);
-		return QnAPair.builder().question(question).kbContext(context).answer(answer.getText()).build();
+		instructions.add(qMsg);
+	
+		QnAPair result = QnAPair.builder().question(question).answer(completionService.complete(instructions).getText())
+				.build();
+		for (int j = 0; j < i; ++j) {
+			result.getContext().add(context.get(j));
+		}
+	
+		return result;
 	}
 }

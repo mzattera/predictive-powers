@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import io.github.mzattera.predictivepowers.service.ChatMessage;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -45,7 +46,7 @@ public class ChatCompletionsRequest implements Cloneable {
 	List<String> stop;
 
 	/**
-	 * Capabilities in the library will try to calculate this automatically if it is
+	 * Higher-level functions in the library will try to calculate this automatically if it is
 	 * null when submitting a request.
 	 */
 	Integer maxTokens;

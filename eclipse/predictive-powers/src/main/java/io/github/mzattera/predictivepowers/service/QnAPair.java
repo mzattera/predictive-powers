@@ -3,9 +3,8 @@
  */
 package io.github.mzattera.predictivepowers.service;
 
+import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.commons.lang3.tuple.Pair;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -31,12 +30,11 @@ public class QnAPair {
 	@NonNull
 	private String answer;
 
-	/** Context from which the pair was extracted, if it was provided as a simple text. */
-	private String simpleContext;
-
-	/** Context from which the pair was extracted, if it was provided as a list of embeddings (typically from a knowledge base). */
-	private List<Pair<EmbeddedText, Double>> kbContext;
-
 	/** For 'multiple-choice' questions, this is the list of choices */
-	private String[] options;
+	private List<String> options;
+
+	/** Context from which the pair was created. */
+	@NonNull
+	@Builder.Default
+	private List<String> context = new ArrayList<>();
 }

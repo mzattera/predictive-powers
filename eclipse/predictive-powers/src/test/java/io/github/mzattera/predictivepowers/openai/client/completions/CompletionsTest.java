@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.Models;
+import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
 
 class CompletionsTest {
 
@@ -21,7 +21,7 @@ class CompletionsTest {
 
 		cr.setModel(model);
 		cr.setPrompt(prompt);
-		cr.setMaxTokens(Models.getContextSize(model) - 7);
+		cr.setMaxTokens(ModelUtil.getContextSize(model) - 7);
 		cr.setStop(new ArrayList<>());
 		cr.getStop().add("feet");
 
@@ -42,7 +42,7 @@ class CompletionsTest {
 
 		cr.setModel(model);
 		cr.setPrompt(prompt);
-		cr.setMaxTokens(Models.getContextSize(model) - 7);
+		cr.setMaxTokens(ModelUtil.getContextSize(model) - 7);
 		cr.setN(3);
 
 		CompletionsResponse resp = oai.getClient().createCompletion(cr);
@@ -64,7 +64,7 @@ class CompletionsTest {
 
 		cr.setModel(model);
 		cr.setPrompt(prompt);
-		cr.setMaxTokens(Models.getContextSize(model) - 7);
+		cr.setMaxTokens(ModelUtil.getContextSize(model) - 7);
 		cr.setLogprobs(2);
 
 		CompletionsResponse resp = oai.getClient().createCompletion(cr);

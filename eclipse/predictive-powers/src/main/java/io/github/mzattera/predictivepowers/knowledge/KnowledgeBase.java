@@ -28,9 +28,9 @@ import io.github.mzattera.predictivepowers.service.EmbeddedText;
  * A knowledge base contains information in form of embedded text that can be
  * easily searched (using text similarity).
  * 
- * Each knowledge base can be divided in domains, and operations limited
- * performed only to a single domain, to improve performance. By default, a
- * domain called "_default" is created inside each KnowledgeBase.
+ * Each knowledge base can be divided in domains, and operations performed only
+ * in a single domain, to improve performance. By default, a domain called
+ * "_default" is created inside each KnowledgeBase.
  * 
  * Notice that only one instance of embedded text can exist in a knowledge base.
  * That is same piece of embedded text (even if with different properties) can
@@ -40,6 +40,8 @@ import io.github.mzattera.predictivepowers.service.EmbeddedText;
  *
  */
 public class KnowledgeBase implements Serializable {
+
+	// TODO make it thread safe
 
 	private static final long serialVersionUID = 1L;
 
@@ -80,8 +82,8 @@ public class KnowledgeBase implements Serializable {
 	 * 
 	 * @param fileName
 	 * @return
-	 * @throws IOException 
-	 * @throws ClassNotFoundException 
+	 * @throws IOException
+	 * @throws ClassNotFoundException
 	 */
 	public static KnowledgeBase load(String fileName) throws ClassNotFoundException, IOException {
 		return load(new File(fileName));
@@ -303,7 +305,7 @@ public class KnowledgeBase implements Serializable {
 	 * @param query  Embedded text representing the search target.
 	 * @param result List of results, sorted by decreasing similarity. If this is
 	 *               not empty, result from the search will be merged with those
-	 *               provided.
+	 *               already already in the list.
 	 * @param limit  Maximum number of results to return.
 	 */
 	private static void search(Set<EmbeddedText> set, EmbeddedText query, List<Pair<EmbeddedText, Double>> result,
@@ -335,12 +337,19 @@ public class KnowledgeBase implements Serializable {
 			}
 
 			if ((result.size() < limit) && (i >= result.size())) {
-				// add to the bottom
+				// add to the end
 				result.add(new ImmutablePair<EmbeddedText, Double>(e, similarity));
 			}
 		} // for each embedding
 	}
 
+	/**
+	 * Skip results from top of the list, this is used for pagination.
+	 * 
+	 * @param result
+	 * @param offset
+	 * @return
+	 */
 	private static List<Pair<EmbeddedText, Double>> skip(List<Pair<EmbeddedText, Double>> result, int offset) {
 
 		if (result.size() <= offset) {

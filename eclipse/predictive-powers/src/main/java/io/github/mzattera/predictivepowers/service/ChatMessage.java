@@ -1,4 +1,6 @@
-package io.github.mzattera.predictivepowers.openai.client.chat;
+package io.github.mzattera.predictivepowers.service;
+
+import java.sql.Timestamp;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,7 +12,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * A single message in the /chat/completions API.
+ * A single message in a chat with an agent.
  * 
  * @author Massmiliano "Maxi" Zattera.
  *
@@ -29,6 +31,8 @@ public class ChatMessage {
 	
 	@NonNull
 	String content;
+
+	// TODO add a timestamp?
 	
 	String name;
 }

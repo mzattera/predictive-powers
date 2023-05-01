@@ -1,7 +1,7 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers.openai.client;
+package io.github.mzattera.predictivepowers.openai.util;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,9 +12,9 @@ import java.util.Map;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-public final class Models {
+public final class ModelUtil {
 
-	private Models() {
+	private ModelUtil() {
 	}
 
 	private final static Map<String, Integer> contextSize = new HashMap<>();
@@ -57,10 +57,10 @@ public final class Models {
 	
 	/**
 	 * 
-	 * @param gmodel
+	 * @param model
 	 * @return Context size in token for given model, or -1 if the size is unknown.
 	 */
-	public static int getContextSize(String gmodel) {
-		return contextSize.getOrDefault(gmodel, -1);
+	public static int getContextSize(String model) {
+		return contextSize.getOrDefault(model, -1);
 	}
 }

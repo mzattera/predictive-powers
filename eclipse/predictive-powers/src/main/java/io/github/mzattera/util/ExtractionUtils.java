@@ -1,7 +1,7 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers.knowledge;
+package io.github.mzattera.util;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -68,12 +68,5 @@ public final class ExtractionUtils {
 		Metadata metadata = new Metadata();
 		parser.parse(stream, handler, metadata);
 		return handler.toString();
-
-//			System.out.println("Contents of the document:" + handler.toString());
-//			System.out.println("Metadata of the document:");
-//			String[] metadataNames = metadata.names();
-//			for (String name : metadataNames) {
-//				System.out.println(name + " : " + metadata.get(name));
-//			}
 	}
 }

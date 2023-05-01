@@ -1,21 +1,22 @@
 package io.github.mzattera.predictivepowers.service;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.chat.ChatMessage;
+import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
 import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
 import io.github.mzattera.util.LlmUtil;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
 /**
  * This class provides method to extract questions from a text, in different
@@ -24,8 +25,21 @@ import lombok.RequiredArgsConstructor;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@RequiredArgsConstructor
-public class QuestioningService {
+public class QuestionExtractionService {
+
+	public QuestionExtractionService(OpenAiEndpoint ep) {
+		this(ep, ep.getChatService());
+
+		// TODO test best settings.
+		completionService.getDefaultReq().setTemperature(0.2);
+	}
+
+	public QuestionExtractionService(OpenAiEndpoint ep, ChatService completionService) {
+		this.ep = ep;
+		this.completionService = completionService;
+		maxContextTokens = Math.max(ModelUtil.getContextSize(this.completionService.getDefaultReq().getModel()), 2046) * 3
+				/ 4;
+	}
 
 	// Maps from-to POJO <-> JSON
 	private final static ObjectMapper mapper;
@@ -45,6 +59,21 @@ public class QuestioningService {
 	@NonNull
 	@Getter
 	private final ChatService completionService;
+
+	/**
+	 * Maximum number of tokens to keep in the context when extracting questions.
+	 * 
+	 * As there is no Java code available for an exact calculation, this is
+	 * approximated.
+	 */
+	@Getter
+	private int maxContextTokens;
+
+	public void setMaxContextTokens(int n) {
+		if (n < 1)
+			throw new IllegalArgumentException("Must keep at least 1 token.");
+		maxContextTokens = n;
+	}
 
 	/**
 	 * Extracts question/answer pairs from given text.
@@ -83,7 +112,6 @@ public class QuestioningService {
 	 * Extracts true/false type of questions from given text.
 	 */
 	public List<QnAPair> getTFQuestions(String text) {
-		// TODO: check the answers are true/false
 
 		// Provides instructions and examples
 		List<ChatMessage> instructions = new ArrayList<>();
@@ -110,7 +138,16 @@ public class QuestioningService {
 				+ "   }\n" //
 				+ "]"));
 
-		return getQuestions(instructions, text);
+		List<QnAPair> result = getQuestions(instructions, text);
+		Iterator<QnAPair> it = result.iterator();
+		while (it.hasNext()) {
+			QnAPair q = it.next();
+			q.setAnswer(q.getAnswer().trim().toLowerCase());
+			if (!q.getAnswer().equals("true") && !q.getAnswer().equals("false")) // bad result
+				it.remove();
+		}
+
+		return result;
 	}
 
 	/**
@@ -145,14 +182,32 @@ public class QuestioningService {
 				+ "   }\n" //
 				+ "]"));
 
-		return getQuestions(instructions, text);
+		List<QnAPair> result = getQuestions(instructions, text);
+		Iterator<QnAPair> it = result.iterator();
+		while (it.hasNext()) {
+			QnAPair q = it.next();
+			q.setAnswer(q.getAnswer().trim());
+
+			if (!q.getQuestion().contains("______")) {
+				it.remove();
+				continue;
+			}
+
+			// how many words in the answer? Not more than 2 per question (e.g. "Alan
+			// Turing").
+			if (q.getAnswer().split("\\s").length > 2) {
+				it.remove();
+				continue;
+			}
+		}
+
+		return result;
 	}
 
 	/**
 	 * Extracts multiple-choice questions from given text.
 	 */
 	public List<QnAPair> getMCQuestions(String text) {
-		// TODO: check the answer is a number that matches one of the options
 
 		// Provides instructions and examples
 		List<ChatMessage> instructions = new ArrayList<>();
@@ -200,29 +255,59 @@ public class QuestioningService {
 				+ "   }\n" //
 				+ "]"));
 
-		return getQuestions(instructions, text);
-	}
+		List<QnAPair> result = getQuestions(instructions, text);
+		Iterator<QnAPair> it = result.iterator();
+		while (it.hasNext()) {
+			QnAPair q = it.next();
+			q.setAnswer(q.getAnswer().trim());
 
-	private List<QnAPair> getQuestions(List<ChatMessage> instructions, String text) {
+			int c = -1;
+			try {
+				c = Integer.parseInt(q.getAnswer());
+			} catch (Exception e) {
+				it.remove();
+				continue;
+			}
 
-		// Split text, based on prompt size
-		int tok = 0;
-		for (ChatMessage m : instructions) {
-			tok += TokenUtil.count(m);
-		}
-		int maxSize = completionService.getDefaultReq().getMaxTokens() * 2 / 3 - tok;
-
-		List<QnAPair> result = new ArrayList<>();
-		for (String t : LlmUtil.split(text, maxSize)) {
-			QnAPair[] questions = getQuestionsShort(instructions, t);
-			for (int i = 0; i < questions.length; ++i)
-				result.add(questions[i]);
+			if ((c <= 0) || (c > q.getOptions().size())) {
+				it.remove();
+				continue;
+			}
 		}
 
 		return result;
 	}
 
-	private QnAPair[] getQuestionsShort(List<ChatMessage> instructions, String shortText) {
+	/**
+	 * Extract questions, following given instructions.
+	 * 
+	 * It also splits the input text in smaller chunks, if needed.
+	 * 
+	 * @param instructions
+	 * @param text
+	 * @return
+	 */
+	private List<QnAPair> getQuestions(List<ChatMessage> instructions, String text) {
+
+		// Split text, based on prompt size
+		int tok = TokenUtil.count(instructions);
+
+		List<QnAPair> result = new ArrayList<>();
+		for (String t : LlmUtil.split(text, maxContextTokens - tok - 10)) { // adding a message is additional tokens
+			result.addAll(getQuestionsShort(instructions, t));
+		}
+
+		return result;
+	}
+
+	/**
+	 * Extract questions, following given instructions.
+	 * 
+	 * @param instructions
+	 * @param text
+	 * @return
+	 */
+	private List<QnAPair> getQuestionsShort(List<ChatMessage> instructions, String shortText) {
 
 		List<ChatMessage> prompt = new ArrayList<>(instructions);
 		prompt.add(new ChatMessage("user", "Context:\n'''\n" //
@@ -230,15 +315,16 @@ public class QuestioningService {
 				+ "'''"));
 
 		String json = completionService.complete(prompt).getText();
-		QnAPair[] result = new QnAPair[0];
+		List<QnAPair> result = null;
 		try {
-			result = mapper.readValue(json, QnAPair[].class);
+			result = mapper.readValue(json, new TypeReference<List<QnAPair>>() {
+			});
 		} catch (JsonProcessingException e) {
 			// TODO do something here?
 			System.err.println(json);
 		}
 		for (QnAPair r : result) {
-			r.setSimpleContext(shortText);
+			r.getContext().add(shortText);
 		}
 
 		return result;

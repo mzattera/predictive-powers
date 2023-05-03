@@ -1,4 +1,4 @@
-package io.github.mzattera.predictivepowers.service;
+package io.github.mzattera.predictivepowers.services;
 
 import java.io.Serializable;
 import java.util.HashMap;

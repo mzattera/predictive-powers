@@ -1,7 +1,7 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers.service;
+package io.github.mzattera.predictivepowers.services;
 
 import lombok.Getter;
 import lombok.NonNull;

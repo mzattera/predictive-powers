@@ -7,11 +7,11 @@ import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
-import io.github.mzattera.predictivepowers.service.QuestionAnsweringService;
-import io.github.mzattera.predictivepowers.service.ChatService;
-import io.github.mzattera.predictivepowers.service.CompletionService;
-import io.github.mzattera.predictivepowers.service.EmbeddingService;
-import io.github.mzattera.predictivepowers.service.QuestionExtractionService;
+import io.github.mzattera.predictivepowers.services.ChatService;
+import io.github.mzattera.predictivepowers.services.CompletionService;
+import io.github.mzattera.predictivepowers.services.EmbeddingService;
+import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
+import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 import lombok.Getter;
 import lombok.NonNull;
 

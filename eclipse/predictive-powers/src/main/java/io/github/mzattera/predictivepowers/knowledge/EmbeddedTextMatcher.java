@@ -3,7 +3,7 @@
  */
 package io.github.mzattera.predictivepowers.knowledge;
 
-import io.github.mzattera.predictivepowers.service.EmbeddedText;
+import io.github.mzattera.predictivepowers.services.EmbeddedText;
 
 /**
  * This is used to define a matching rule for embedded text.

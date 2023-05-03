@@ -1,4 +1,4 @@
-package io.github.mzattera.predictivepowers.service;
+package io.github.mzattera.predictivepowers.services;
 
 import java.io.File;
 import java.io.IOException;
@@ -183,9 +183,6 @@ public class EmbeddingService {
 	}
 
 	private List<EmbeddedText> embed(EmbeddingsRequest req) {
-		
-		for (String s:req.getInput())
-			System.out.println("EMB ==> " + s);
 
 		List<EmbeddedText> result = new ArrayList<>(req.getInput().size());
 		EmbeddingsResponse res = ep.getClient().createEmbeddings(req);

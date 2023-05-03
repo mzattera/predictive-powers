@@ -12,10 +12,10 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
-import io.github.mzattera.predictivepowers.service.QuestionAnsweringService;
-import io.github.mzattera.predictivepowers.service.EmbeddedText;
-import io.github.mzattera.predictivepowers.service.EmbeddingService;
-import io.github.mzattera.predictivepowers.service.QnAPair;
+import io.github.mzattera.predictivepowers.services.EmbeddedText;
+import io.github.mzattera.predictivepowers.services.EmbeddingService;
+import io.github.mzattera.predictivepowers.services.QnAPair;
+import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
 
 /**
  * An Oracle ingests a knowledge base, in form of documents stored in a folder,
@@ -27,13 +27,13 @@ import io.github.mzattera.predictivepowers.service.QnAPair;
 public class Oracle {
 
 	/** Folder with the knowledge base data. */
-	private final static File KB_FOLDER = new File("D:\\KB");
+	private final static File KB_FOLDER = new File("D:\\KB\\TMP");
 
 	/**
 	 * File with a pre-saved knowledge base. If this file exists, the knowledge base
 	 * is read form there instead of reading from KB_FOLDER
 	 */
-	private final static File SAVED_KB_FILE = new File("D:\\kb.object");
+	private final static File SAVED_KB_FILE = new File("D:\\kb_banana.object");
 
 	/**
 	 * @param args

@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
+import io.github.mzattera.predictivepowers.services.CompletionService;
+import io.github.mzattera.predictivepowers.services.TextResponse;
 
 class CompletionsTest {
 
@@ -29,8 +31,6 @@ class CompletionsTest {
 
 		assertEquals(resp.getChoices().size(), 1);
 		assertEquals(resp.getChoices().get(0).getFinishReason(), "stop");
-		assertTrue(resp.getChoices().get(0).getText().contains("848"));
-		assertTrue(resp.getChoices().get(0).getText().trim().endsWith("029"));
 	}
 
 	@Test
@@ -71,5 +71,32 @@ class CompletionsTest {
 
 		assertEquals(resp.getChoices().size(), 1);
 		assertEquals(resp.getChoices().get(0).getFinishReason(), "stop");
+	}
+
+	@Test
+	void test04() {
+		OpenAiEndpoint oai = OpenAiEndpoint.getInstance();
+		CompletionService cs = oai.getCompletionService();
+
+		cs.getDefaultReq().setEcho(true);
+		cs.getDefaultReq().setTemperature(0.0);
+		String prompt = "Mt. Everest is";
+		TextResponse resp = cs.complete(prompt);
+		
+		assertTrue(resp.getText().startsWith(prompt));
+	}
+
+	@Test
+	void test05() {
+		OpenAiEndpoint oai = OpenAiEndpoint.getInstance();
+		CompletionService cs = oai.getCompletionService();
+
+		cs.getDefaultReq().setEcho(false);
+		cs.getDefaultReq().setTemperature(0.0);
+		String prompt = "Mt. Everest is";
+		String suffix = "meters high.";	
+		TextResponse resp = cs.insert(prompt, suffix);
+		
+		assertTrue(resp.getText().contains("8,848"));
 	}
 }

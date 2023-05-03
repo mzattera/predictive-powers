@@ -62,6 +62,8 @@ class ModelsTest {
 
 			if (m.getId().contains("-edit"))
 				continue; // Edits model do not need size
+			if (m.getId().contains("ft-personal"))
+				continue; // fine-tunes can be ignored
 			if (oldModels.contains(m.getId()))
 				continue; // Skip old models
 

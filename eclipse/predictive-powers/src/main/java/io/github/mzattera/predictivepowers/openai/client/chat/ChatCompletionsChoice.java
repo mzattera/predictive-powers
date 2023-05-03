@@ -1,6 +1,6 @@
 package io.github.mzattera.predictivepowers.openai.client.chat;
 
-import io.github.mzattera.predictivepowers.service.ChatMessage;
+import io.github.mzattera.predictivepowers.services.ChatMessage;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;

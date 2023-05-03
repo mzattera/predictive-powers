@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
-import io.github.mzattera.predictivepowers.service.ChatMessage;
+import io.github.mzattera.predictivepowers.services.ChatMessage;
 
 class ChatCompletionsTest {
 

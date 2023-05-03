@@ -1,4 +1,4 @@
-package io.github.mzattera.predictivepowers.service;
+package io.github.mzattera.predictivepowers.services;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -133,8 +133,6 @@ public class ChatService {
 
 		// Update history
 		history.add(new ChatMessage("user", msg));
-		while (history.size() > maxHistoryLength)
-			history.remove(0);
 
 		try {
 
@@ -148,6 +146,10 @@ public class ChatService {
 			history.remove(history.size() - 1);
 
 			throw e;
+		} finally {
+			// Make sure history is of desired length
+			while (history.size() > maxHistoryLength)
+				history.remove(0);
 		}
 	}
 
@@ -199,8 +201,10 @@ public class ChatService {
 	}
 
 	/**
-	 * Completes text (executes given prompt). The agent personality is considered,
-	 * if provided.
+	 * Completes text (executes given prompt).
+	 * 
+	 * Notice this does not consider or affects chat history but agent personality
+	 * is used, if provided.
 	 */
 	public TextResponse complete(String prompt, ChatCompletionsRequest req) {
 		List<ChatMessage> msg = new ArrayList<>();
@@ -214,8 +218,8 @@ public class ChatService {
 	/**
 	 * Completes given conversation.
 	 * 
-	 * The agent personality is NOT considered, but can be injected as first message
-	 * in the list.
+	 * Notice this does not consider or affects chat history but agent personality
+	 * is used, if provided.
 	 */
 	public TextResponse complete(List<ChatMessage> messages) {
 		return complete(messages, defaultReq);
@@ -224,8 +228,9 @@ public class ChatService {
 	/**
 	 * Completes given conversation.
 	 * 
-	 * The agent personality is NOT considered, but can be injected as first
-	 * message.
+	 * Notice this does not consider or affects chat history. In addition, agent
+	 * personality is NOT considered, but can be injected as first message in the
+	 * list.
 	 */
 	public TextResponse complete(List<ChatMessage> messages, ChatCompletionsRequest req) {
 		ChatCompletionsChoice choice = chatCompletion(messages, req);
@@ -235,8 +240,9 @@ public class ChatService {
 	/**
 	 * Completes given conversation.
 	 * 
-	 * The agent personality is NOT considered, but can be injected as first
-	 * message.
+	 * Notice this does not consider or affects chat history. In addition, agent
+	 * personality is NOT considered, but can be injected as first message in the
+	 * list.
 	 */
 	private ChatCompletionsChoice chatCompletion(List<ChatMessage> messages, ChatCompletionsRequest req) {
 

@@ -22,7 +22,7 @@ import java.util.Set;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
-import io.github.mzattera.predictivepowers.service.EmbeddedText;
+import io.github.mzattera.predictivepowers.services.EmbeddedText;
 
 /**
  * A knowledge base contains information in form of embedded text that can be

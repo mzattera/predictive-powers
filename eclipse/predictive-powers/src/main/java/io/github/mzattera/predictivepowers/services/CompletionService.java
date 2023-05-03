@@ -1,4 +1,4 @@
-package io.github.mzattera.predictivepowers.service;
+package io.github.mzattera.predictivepowers.services;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsChoice;
@@ -87,7 +87,7 @@ public class CompletionService {
 				int tok = TokenUtil.count(prompt);
 				if (suffix != null)
 					tok += TokenUtil.count(suffix);
-				req.setMaxTokens(ModelUtil.getContextSize(req.getModel()) - tok);
+				req.setMaxTokens(ModelUtil.getContextSize(req.getModel()) - tok -10);
 			}
 
 			// TODO: catch exception if maxToken is too high, parse prompt token length and

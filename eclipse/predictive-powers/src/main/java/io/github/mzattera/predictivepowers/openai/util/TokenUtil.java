@@ -5,7 +5,7 @@ package io.github.mzattera.predictivepowers.openai.util;
 
 import java.util.Collection;
 
-import io.github.mzattera.predictivepowers.service.ChatMessage;
+import io.github.mzattera.predictivepowers.services.ChatMessage;
 import lombok.NonNull;
 
 /**
@@ -31,7 +31,8 @@ public final class TokenUtil {
 	}
 
 	/**
-	 * If you have an entire conversation, please notice {@link TokenUtil#count(Collection)} is more suitable and returns more correct
+	 * If you have an entire conversation, please notice
+	 * {@link TokenUtil#count(Collection)} is more suitable and returns more correct
 	 * results.
 	 * 
 	 * @param text
@@ -39,9 +40,7 @@ public final class TokenUtil {
 	 */
 	public static int count(@NonNull ChatMessage msg) {
 		int c = count(msg.getContent());
-		if (msg.getName() != null)
-			c++;
-		return c + 4;
+		return c + 5; // Takes in account name and message formatting
 	}
 
 	/**
@@ -50,9 +49,9 @@ public final class TokenUtil {
 	 * @return Approximated number of tokens in given list of chat messages.
 	 */
 	public static int count(@NonNull Collection<ChatMessage> msgs) {
-		int c = 0;
+		int c = 3; // takes in account answer encoding
 		for (ChatMessage m : msgs)
 			c += count(m);
-		return c + 3;
+		return c;
 	}
 }

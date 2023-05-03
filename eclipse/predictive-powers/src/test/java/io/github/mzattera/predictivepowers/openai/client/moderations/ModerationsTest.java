@@ -23,7 +23,5 @@ class ModerationsTest {
 		assertEquals(resp.getResults().size(), 2);
 		assertTrue(resp.getResults().get(0).getCategories().isViolence());
 		assertTrue(resp.getResults().get(1).getCategories().isSelfHarm());
-
-		System.out.println(resp);
 	}
 }

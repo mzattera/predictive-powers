@@ -20,8 +20,6 @@ class AudioTest {
 		req.setResponseFormat(ResponseFormat.TEXT);
 		req.setLanguage("en");
 
-		System.out.println(req.toString());
-
 		String resp = oai.getClient().createTranscription(ResourceUtil.getResourceStream("Welcome.wav"), req);
 
 		System.out.println(resp.toString());
@@ -36,8 +34,6 @@ class AudioTest {
 		req.setModel(model);
 		req.setResponseFormat(ResponseFormat.TEXT);
 		req.setLanguage("en");
-
-		System.out.println(req.toString());
 
 		String resp = oai.getClient().createTranscription(ResourceUtil.getResourceStream("Welcome.wav"), req);
 

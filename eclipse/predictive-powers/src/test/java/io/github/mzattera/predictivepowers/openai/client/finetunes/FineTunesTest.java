@@ -42,13 +42,5 @@ class FineTunesTest {
 			status = tuned.getStatus();
 			System.out.println("Status=" + status);
 		}
-
-		// Give it a try
-		CompletionsRequest cReq = CompletionsRequest.builder().model(tuned.getFineTunedModel()).maxTokens(1)
-				.prompt("I really like this movie!").logprobs(2).build();
-		CompletionsResponse resp = c.createCompletion(cReq);
-
-		System.out.println(resp.toString());
-
 	}
 }

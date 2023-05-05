@@ -190,7 +190,7 @@ public class Chat {
 
 Below is an example of the code output; notice how conversation context is retained automatically through the conversation.
  
-![Example of a conversation with GPT-3](./Oracle.PNG)
+![Example of a conversation with GPT-3](./Chat.PNG)
  
  
  ### Knowing-all Oracle

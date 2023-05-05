@@ -6,6 +6,8 @@ package io.github.mzattera.util;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -19,7 +21,7 @@ import org.xml.sax.SAXException;
  * @author Massimiliano "maxi" Zattera
  *
  */
-public final class ExtractionUtils {
+public final class ExtractionUtil {
 
 	/**
 	 * 
@@ -30,8 +32,8 @@ public final class ExtractionUtils {
 	 * @throws SAXException
 	 * @throws TikaException
 	 */
-	public static String getText(String fileName) throws IOException, SAXException, TikaException {
-		return getText(new File(fileName));
+	public static String fromFile(String fileName) throws IOException, SAXException, TikaException {
+		return fromFile(new File(fileName));
 	}
 
 	/**
@@ -43,13 +45,41 @@ public final class ExtractionUtils {
 	 * @throws SAXException
 	 * @throws TikaException
 	 */
-	public static String getText(File file) throws IOException, SAXException, TikaException {
+	public static String fromFile(File file) throws IOException, SAXException, TikaException {
 		if (!file.isFile() || !file.canRead()) {
 			throw new IOException("File cannot be read from: " + file.getCanonicalPath());
 		}
 
 		try (FileInputStream in = new FileInputStream(file)) {
-			return getText(in);
+			return fromStream(in);
+		}
+	}
+
+	/**
+	 * 
+	 * @param url Web page URL.
+	 * @return The content of given web page.
+	 * 
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws TikaException
+	 */
+	public static String fromUrl(String url) throws IOException, SAXException, TikaException {
+		return fromUrl(new URL(url));
+	}
+
+	/**
+	 * 
+	 * @param url Web page URL.
+	 * @return The content of given web page.
+	 * 
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws TikaException
+	 */
+	public static String fromUrl(URL url) throws IOException, SAXException, TikaException {
+		try (InputStream in = url.openStream()) {
+			return fromStream(in);
 		}
 	}
 
@@ -62,7 +92,7 @@ public final class ExtractionUtils {
 	 * @throws SAXException
 	 * @throws TikaException
 	 */
-	public static String getText(FileInputStream stream) throws IOException, SAXException, TikaException {
+	public static String fromStream(InputStream stream) throws IOException, SAXException, TikaException {
 		AutoDetectParser parser = new AutoDetectParser();
 		BodyContentHandler handler = new BodyContentHandler(-1);
 		Metadata metadata = new Metadata();

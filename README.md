@@ -88,7 +88,7 @@ Once the endpoint is created, it can be used to access "services" which are high
   * `CompletionService` text completion (including insertions): basically, it executes given text prompt.
   * `EmbeddingService` embeds text and calculate semantic similarity; it takes care of automatically splitting text when needed, or if desired.
   * `QuestionAnsweringService` answers questions, using a user-provided context. The context can be a knowledge base (see below).
-  * 'QuestionExtractionService' extracts different kinds od questions from a text (e.g. true/false question, multiple choices quizzes, etc.). It automatically handles long texts.
+  * `QuestionExtractionService` extracts different kinds od questions from a text (e.g. true/false question, multiple choices quizzes, etc.). It automatically handles long texts.
   
 The below example shows how to get the `CompletionService` to complete a sentence.
 
@@ -204,8 +204,10 @@ public class Oracle {
 				String question = console.nextLine();
 
 				// Find similar text in the web page, to use as context
-				List<Pair<EmbeddedText, Double>> context = knowledgeBase.search(embeddingService.embed(question).get(0),
-						50, 0);
+				List<Pair<EmbeddedText, Double>> context = knowledgeBase.search(
+						embeddingService.embed(question).get(0),
+						50, 0
+					);
 
 				// Use the context when answering
 				QnAPair answer = questionAnswer.answerWithEmbeddings(question, context);
@@ -219,6 +221,6 @@ public class Oracle {
  
  This will produce the below output:
  
-![Example of a conversation with the oracle baout the city of Padua](./oracle.PNG)
+![Example of a conversation with the oracle baout the city of Padua](./Oracle.PNG)
  
  

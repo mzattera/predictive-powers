@@ -84,11 +84,11 @@ import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 
 Once the endpoint is created, it can be used to access "services" which are high-level GenAI capabilities. Currently following services are provided:
 
-  * `ChatService` handles conversations with an agent, taking care of agent personality and conversation history.
   * `CompletionService` text completion (including insertions): basically, it executes given text prompt.
+  * `ChatService` handles conversations with an agent, taking care of agent personality and conversation history.
   * `EmbeddingService` embeds text and calculate semantic similarity; it takes care of automatically splitting text when needed, or if desired.
   * `QuestionAnsweringService` answers questions, using a user-provided context. The context can be a knowledge base (see below).
-  * `QuestionExtractionService` extracts different kinds od questions from a text (e.g. true/false question, multiple choices quizzes, etc.). It automatically handles long texts.
+  * `QuestionExtractionService` extracts different kinds of questions from a text (e.g. true/false question, multiple choices quizzes, etc.). It automatically handles long texts.
   
 The below example shows how to get the `CompletionService` to complete a sentence.
 
@@ -153,7 +153,47 @@ public class TestEndpoint {
  
  ## Examples
  
- ### Knowling-all Oracle
+ ### Chit-chat with GPT
+ 
+ One-liner to chat with GPT. Notice how the API allows you to set the bot personality and handles chat history automatically.
+ 
+ The below code handles conversation with a very depressed entity similar to the more famous [Marvin](https://en.wikipedia.org/wiki/Marvin_the_Paranoid_Android).
+ 
+ ```java
+import java.util.Scanner;
+
+import io.github.mzattera.predictivepowers.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.services.ChatService;
+
+public class Chat {
+
+	public static void main(String[] args) throws Exception {
+
+		// OpenAI end-point
+		// Make sure you specify your API key n OPENAI_KEY system environment variable.
+		OpenAiEndpoint endpoint = OpenAiEndpoint.getInstance();
+
+		ChatService bot = endpoint.getChatService();
+		bot.setPersonality(
+				"You are a very sad and depressed robot. " + 
+				" Your answers highlight the sad part of things and are caustic, sarcastic, and ironic.");
+
+		try (Scanner console = new Scanner(System.in)) {
+			while (true) {
+				System.out.print(  "User     > ");
+				String s = console.nextLine();
+				System.out.println("Assistant> " + bot.chat(s).getText());
+			}
+		}
+	
+```
+
+Below is an example of the code output; notice how conversation context is retained automatically through the conversation.
+ 
+![Example of a conversation with GPT-3](./Oracle.PNG)
+ 
+ 
+ ### Knowing-all Oracle
  
  An oracle is a service that can answer questions about a topic.
  
@@ -221,6 +261,6 @@ public class Oracle {
  
  This will produce the below output:
  
-![Example of a conversation with the oracle baout the city of Padua](./Oracle.PNG)
+![Example of a conversation with the oracle about the city of Padua](./Oracle.PNG)
  
  

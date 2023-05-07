@@ -154,33 +154,31 @@ public class QuestionExtractionService {
 	 * Extracts "fill the blank" type of questions from given text.
 	 */
 	public List<QnAPair> getFillQuestions(String text) {
-		// TODO: check there is one and only one ______ filler in questions. Check the
-		// answer is a single word.
+		completionService.getDefaultReq().setTemperature(0.7);
 
 		// Provides instructions and examples
 		List<ChatMessage> instructions = new ArrayList<>();
 		instructions.add(new ChatMessage("system",
 				"You are a teacher and you are preparing an assessment from some text materials."));
 		instructions.add(new ChatMessage("user",
-				"Given a context, extract a set of 'fill the blank' exercises and corresponding fill-in word, then format them as a JSON array. Some examples are provided below."));
-		instructions.add(new ChatMessage("user", "Context:\n'''\n" //
-				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China–Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1⁄2 in) was most recently established in 2020 by the Chinese and Nepali authorities.\n" //
-				+ "Mount Everest attracts many climbers, including highly experienced mountaineers. There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the 'standard route') and the other from the north in Tibet. While not posing substantial technical climbing challenges on the standard route, Everest presents dangers such as altitude sickness, weather, and wind, as well as hazards from avalanches and the Khumbu Icefall. As of 2019, over 300 people have died on Everest, many of whose bodies remain on the mountain.\n" //
+				"Create 'fill the blank' exercises with corresponding fill words from the given context, and format them as a JSON array. Make sure to generate questions where a missing word is replaced with a blank, denoted as '______', and provide the missing word as the answer."));
+		instructions.add(new ChatMessage("user", "Context:\r\n" + "'''\r\n"
+				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China\u2013Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1\u20442 in) was most recently established in 2020 by the Chinese and Nepali authorities.\r\n"
 				+ "'''"));
-		instructions.add(new ChatMessage("assistant", "[\n" //
-				+ "   {\n" //
-				+ "      \"question\":\"Mount ______ is Earth's highest mountain above sea level.\",\n" //
-				+ "      \"answer\":\"Everest\"\n" //
-				+ "   },\n" //
-				+ "   {\n" //
-				+ "      \"question\":\"Mount Everest is located in the Mahalangur Himal sub-range of the ______.\",\n" //
-				+ "      \"answer\":\"Himalayas\"\n" //
-				+ "   },\n" //
-				+ "   {\n" //
-				+ "      \"question\":\"As of 2019, over ______ people have died on Everest.\",\n" //
-				+ "      \"answer\":\"300\"\n" //
-				+ "   }\n" //
+		instructions.add(new ChatMessage("assistant", "[\r\n"
+				+ "   {\r\n"
+				+ "      \"question\":\"Which is Earth's highest mountain above sea level?\",\r\n"
+				+ "      \"answer\":\"Mount Everest\"\r\n"
+				+ "   }\r\n"
 				+ "]"));
+		instructions.add(new ChatMessage("user", "This is wrong, this is not a  'fill the blank' exercises. Try again."));
+		instructions.add(new ChatMessage("assistant", "[\r\n"
+				+ "   {\r\n"
+				+ "      \"question\":\"Mount ______ is Earth's highest mountain above sea level.\",\r\n"
+				+ "      \"answer\":\"Everest\"\r\n"
+				+ "   }\r\n"
+				+ "]"));
+		instructions.add(new ChatMessage("user", "This is correct."));
 
 		List<QnAPair> result = getQuestions(instructions, text);
 		Iterator<QnAPair> it = result.iterator();
@@ -188,7 +186,7 @@ public class QuestionExtractionService {
 			QnAPair q = it.next();
 			q.setAnswer(q.getAnswer().trim());
 
-			if (!q.getQuestion().contains("______")) {
+			if (!q.getQuestion().contains("___")) {
 				it.remove();
 				continue;
 			}
@@ -196,6 +194,7 @@ public class QuestionExtractionService {
 			// how many words in the answer? Not more than 2 per question (e.g. "Alan
 			// Turing").
 			if (q.getAnswer().split("\\s").length > 2) {
+				System.out.println(q.toString());
 				it.remove();
 				continue;
 			}
@@ -312,7 +311,7 @@ public class QuestionExtractionService {
 		List<ChatMessage> prompt = new ArrayList<>(instructions);
 		prompt.add(new ChatMessage("user", "Context:\n'''\n" //
 				+ shortText //
-				+ "'''"));
+				+ "\n'''"));
 
 		String json = completionService.complete(prompt).getText();
 		QnAPair[] result = null;
@@ -320,8 +319,6 @@ public class QuestionExtractionService {
 			result = mapper.readValue(json, QnAPair[].class);
 		} catch (JsonProcessingException e) {
 			// TODO do something here?
-			System.err.println(json);
-			e.printStackTrace(System.err);
 		}
 		for (QnAPair r : result) {
 			r.getContext().add(shortText);

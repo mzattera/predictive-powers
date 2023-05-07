@@ -26,7 +26,7 @@ public class QuestionAnsweringService {
 		this(ep, ep.getChatService());
 
 		// TODO test best settings.
-		completionService.getDefaultReq().setTemperature(0.2);
+		completionService.getDefaultReq().setTemperature(0.0);
 	}
 
 	public QuestionAnsweringService(OpenAiEndpoint ep, ChatService completionService) {

@@ -263,4 +263,107 @@ public class Oracle {
  
 ![Example of a conversation with the oracle about the city of Padua](./Oracle.PNG)
  
- 
+### FAQ Creation
+
+The below code downloads a PDF file containing Credit Suisse financial statement for 2022 and creates some FAQ, based on its content.
+
+```java
+import java.util.List;
+
+import io.github.mzattera.predictivepowers.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.services.QnAPair;
+import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
+import io.github.mzattera.util.ExtractionUtil;
+import io.github.mzattera.util.LlmUtil;
+
+public class FAQ {
+
+	public static void main(String[] args) throws Exception {
+
+		// OpenAI end-point
+		// Make sure you specify your API key n OPENAI_KEY system environment variable.
+		OpenAiEndpoint endpoint = OpenAiEndpoint.getInstance();
+
+		// Download Credit Suisse financial statement 2022 PDF and extract its text.
+		// We keep only one piece of 750 tokens, as extracting questions from a long
+		// text might
+		// result in a timeout
+		String statment = LlmUtil.split(ExtractionUtil.fromUrl(
+				"https://www.credit-suisse.com/media/assets/corporate/docs/about-us/investor-relations/financial-disclosures/financial-reports/csg-ar-2022-en.pdf"),
+				750).get(2);
+
+		QuestionExtractionService q = endpoint.getQuestionExtractionService();
+
+		// Get some FAQs and print them
+		List<QnAPair> QnA = q.getQuestions(statment);
+		for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
+			System.out.println(QnA.get(i).toString());
+		}
+		System.out.println();
+
+		// Demo fill-in questions
+		QnA = q.getFillQuestions(statment);
+		for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
+			System.out.println(QnA.get(i).toString());
+		}
+		System.out.println();
+
+		// Demo true/false questions
+		QnA = q.getTFQuestions(statment);
+		for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
+			System.out.println(QnA.get(i).toString());
+		}
+		System.out.println();
+
+		// Demo multiple choice questions
+		QnA = q.getMCQuestions(statment);
+		for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
+			System.out.println(QnA.get(i).toString());
+		}
+		System.out.println();
+	}
+}
+```
+
+This code will produce an output similar to the below:
+
+```console
+Question: What was announced by Credit Suisse in October 2022?
+Answer:   In October 2022, Credit Suisse announced a strategic plan to create a new Credit Suisse, centered on their core strengths and returning to their heritage and cultural values.
+Question: What are the core strengths of Credit Suisse?
+Answer:   The core strengths of Credit Suisse are their leading Wealth Management and Swiss Bank franchises, with strong capabilities in Asset Management and Markets.
+Question: What is the aim of Credit Suisse's strategic, cultural, and operational transformation?
+Answer:   The aim of Credit Suisse's strategic, cultural, and operational transformation is to re-establish Credit Suisse as a solid, reliable, and trusted partner with a strong value proposition for all their stakeholders.
+
+Question: Credit Suisse announced a _______ plan to create a new Credit Suisse.
+Answer:   strategic
+Question: Credit Suisse is centered on its core strengths such as leading Wealth Management and Swiss Bank franchises, with strong capabilities in Asset Management and _______.
+Answer:   Markets
+
+Question: Credit Suisse announced a new strategy in 2022.
+Answer:   true
+Question: The new strategy focuses on creating a more complex bank.
+Answer:   false
+Question: The strategic priorities include the restructuring of the Investment Bank and the accelerated cost transformation.
+Answer:   true
+
+Question: What was announced by Credit Suisse in October 2022?
+ [X] 1. A plan to create a new bank
+ [ ] 2. The resignation of the CEO
+ [ ] 3. A merger with another bank
+ [ ] 4. The acquisition of a new subsidiary
+ [ ] 5. None of the above
+Question: What are Credit Suisse's core strengths according to the message from the Chairman and CEO?
+ [ ] 1. Retail banking and insurance
+ [ ] 2. Investment banking and trading
+ [X] 3. Wealth management and Swiss bank franchises
+ [ ] 4. Real estate and private equity
+ [ ] 5. None of the above
+Question: What is the purpose of Credit Suisse's strategic, cultural, and operational transformation?
+ [ ] 1. To become a more complex and diversified bank
+ [ ] 2. To reduce the number of stakeholders
+ [X] 3. To re-establish Credit Suisse as a solid, reliable, and trusted partner
+ [ ] 4. To merge with another bank
+ [ ] 5. None of the above
+```
+

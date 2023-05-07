@@ -12,6 +12,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -153,6 +154,27 @@ public class KnowledgeBase implements Serializable {
 
 		delete(e); // avoids duplicates
 		domains.get(domain).add(e);
+	}
+
+	/**
+	 * Adds embedded text to the default domain.
+	 * 
+	 * @param e
+	 */
+	public void insert(Collection<EmbeddedText> e) {
+		for (EmbeddedText t : e)
+			insert(DEFAULT_DOMAIN, t);
+	}
+
+	/**
+	 * Adds embedded text to given domain. The domain must exist already.
+	 * 
+	 * @param domain Domain name.
+	 * @param e
+	 */
+	public void insert(String domain, Collection<EmbeddedText> e) {
+		for (EmbeddedText t : e)
+			insert(domain, t);
 	}
 
 	/**

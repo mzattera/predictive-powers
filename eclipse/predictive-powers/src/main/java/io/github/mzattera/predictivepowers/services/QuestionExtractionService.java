@@ -1,12 +1,12 @@
 package io.github.mzattera.predictivepowers.services;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -37,8 +37,8 @@ public class QuestionExtractionService {
 	public QuestionExtractionService(OpenAiEndpoint ep, ChatService completionService) {
 		this.ep = ep;
 		this.completionService = completionService;
-		maxContextTokens = Math.max(ModelUtil.getContextSize(this.completionService.getDefaultReq().getModel()), 2046) * 3
-				/ 4;
+		maxContextTokens = Math.max(ModelUtil.getContextSize(this.completionService.getDefaultReq().getModel()), 2046)
+				* 3 / 4;
 	}
 
 	// Maps from-to POJO <-> JSON
@@ -88,7 +88,7 @@ public class QuestionExtractionService {
 				"Given a context, extract a set of questions and corresponding answers, then format them as a JSON array. Some examples are provided below."));
 		instructions.add(new ChatMessage("user", "Context:\n'''\n" //
 				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China–Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1⁄2 in) was most recently established in 2020 by the Chinese and Nepali authorities.\n" //
-				+ "Mount Everest attracts many climbers, including highly experienced mountaineers. There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the \"standard route\") and the other from the north in Tibet. While not posing substantial technical climbing challenges on the standard route, Everest presents dangers such as altitude sickness, weather, and wind, as well as hazards from avalanches and the Khumbu Icefall. As of 2019, over 300 people have died on Everest, many of whose bodies remain on the mountain.\n" //
+				+ "Mount Everest attracts many climbers, including highly experienced mountaineers. There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the 'standard route') and the other from the north in Tibet. While not posing substantial technical climbing challenges on the standard route, Everest presents dangers such as altitude sickness, weather, and wind, as well as hazards from avalanches and the Khumbu Icefall. As of 2019, over 300 people have died on Everest, many of whose bodies remain on the mountain.\n" //
 				+ "'''"));
 		instructions.add(new ChatMessage("assistant", "[\n" //
 				+ "   {\n" //
@@ -97,7 +97,7 @@ public class QuestionExtractionService {
 				+ "   },\n" //
 				+ "   {\n" //
 				+ "      \"question\":\"What are the two main climbing routes for Mount Everest?\",\n" //
-				+ "      \"answer\":\"There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the \"standard route\") and the other from the north in Tibet.\"\n" //
+				+ "      \"answer\":\"There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the 'standard route') and the other from the north in Tibet.\"\n" //
 				+ "   },\n" //
 				+ "   {\n" //
 				+ "      \"question\":\"How many people have died on Everest as of 2019?\",\n" //
@@ -121,7 +121,7 @@ public class QuestionExtractionService {
 				"Given a context, extract a set of true/false exercise and corresponding answers; make sure some questions require a 'true' answer and  some require a 'false' answer, then format them as a JSON array. Some examples are provided below."));
 		instructions.add(new ChatMessage("user", "Context:\n'''\n" //
 				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China–Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1⁄2 in) was most recently established in 2020 by the Chinese and Nepali authorities.\n" //
-				+ "Mount Everest attracts many climbers, including highly experienced mountaineers. There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the \"standard route\") and the other from the north in Tibet. While not posing substantial technical climbing challenges on the standard route, Everest presents dangers such as altitude sickness, weather, and wind, as well as hazards from avalanches and the Khumbu Icefall. As of 2019, over 300 people have died on Everest, many of whose bodies remain on the mountain.\n" //
+				+ "Mount Everest attracts many climbers, including highly experienced mountaineers. There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the 'standard route') and the other from the north in Tibet. While not posing substantial technical climbing challenges on the standard route, Everest presents dangers such as altitude sickness, weather, and wind, as well as hazards from avalanches and the Khumbu Icefall. As of 2019, over 300 people have died on Everest, many of whose bodies remain on the mountain.\n" //
 				+ "'''"));
 		instructions.add(new ChatMessage("assistant", "[\n" //
 				+ "   {\n" //
@@ -129,7 +129,7 @@ public class QuestionExtractionService {
 				+ "      \"answer\":\"true\"\n" //
 				+ "   },\n" //
 				+ "   {\n" //
-				+ "      \"question\":\"The so-called \"standard route\" is one of the main climbing routes.\",\n" //
+				+ "      \"question\":\"The so-called 'standard route' is one of the main climbing routes.\",\n" //
 				+ "      \"answer\":\"true\"\n" //
 				+ "   },\n" //
 				+ "   {\n" //
@@ -165,7 +165,7 @@ public class QuestionExtractionService {
 				"Given a context, extract a set of 'fill the blank' exercises and corresponding fill-in word, then format them as a JSON array. Some examples are provided below."));
 		instructions.add(new ChatMessage("user", "Context:\n'''\n" //
 				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China–Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1⁄2 in) was most recently established in 2020 by the Chinese and Nepali authorities.\n" //
-				+ "Mount Everest attracts many climbers, including highly experienced mountaineers. There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the \"standard route\") and the other from the north in Tibet. While not posing substantial technical climbing challenges on the standard route, Everest presents dangers such as altitude sickness, weather, and wind, as well as hazards from avalanches and the Khumbu Icefall. As of 2019, over 300 people have died on Everest, many of whose bodies remain on the mountain.\n" //
+				+ "Mount Everest attracts many climbers, including highly experienced mountaineers. There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the 'standard route') and the other from the north in Tibet. While not posing substantial technical climbing challenges on the standard route, Everest presents dangers such as altitude sickness, weather, and wind, as well as hazards from avalanches and the Khumbu Icefall. As of 2019, over 300 people have died on Everest, many of whose bodies remain on the mountain.\n" //
 				+ "'''"));
 		instructions.add(new ChatMessage("assistant", "[\n" //
 				+ "   {\n" //
@@ -217,7 +217,7 @@ public class QuestionExtractionService {
 				"Given a context, extract a set of multiple-choice questions, corresponding answers, and a list of options for each question, then format them as a JSON array. Make sure the options for one question are all different. Some examples are provided below."));
 		instructions.add(new ChatMessage("user", "Context:\n'''\n" //
 				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China–Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1⁄2 in) was most recently established in 2020 by the Chinese and Nepali authorities.\n" //
-				+ "Mount Everest attracts many climbers, including highly experienced mountaineers. There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the \"standard route\") and the other from the north in Tibet. While not posing substantial technical climbing challenges on the standard route, Everest presents dangers such as altitude sickness, weather, and wind, as well as hazards from avalanches and the Khumbu Icefall. As of 2019, over 300 people have died on Everest, many of whose bodies remain on the mountain.\n" //
+				+ "Mount Everest attracts many climbers, including highly experienced mountaineers. There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the 'standard route') and the other from the north in Tibet. While not posing substantial technical climbing challenges on the standard route, Everest presents dangers such as altitude sickness, weather, and wind, as well as hazards from avalanches and the Khumbu Icefall. As of 2019, over 300 people have died on Everest, many of whose bodies remain on the mountain.\n" //
 				+ "'''"));
 		instructions.add(new ChatMessage("assistant", "[\n" //
 				+ "   {\n" //
@@ -315,18 +315,18 @@ public class QuestionExtractionService {
 				+ "'''"));
 
 		String json = completionService.complete(prompt).getText();
-		List<QnAPair> result = null;
+		QnAPair[] result = null;
 		try {
-			result = mapper.readValue(json, new TypeReference<List<QnAPair>>() {
-			});
+			result = mapper.readValue(json, QnAPair[].class);
 		} catch (JsonProcessingException e) {
 			// TODO do something here?
 			System.err.println(json);
+			e.printStackTrace(System.err);
 		}
 		for (QnAPair r : result) {
 			r.getContext().add(shortText);
 		}
 
-		return result;
+		return Arrays.asList(result);
 	}
 }

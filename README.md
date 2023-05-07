@@ -155,7 +155,7 @@ public class TestEndpoint {
  
  ### Chit-chat with GPT
  
- One-liner to chat with GPT. Notice how the API allows you to set the bot personality and handles chat history automatically.
+ One-liner to chat with GPT. Notice how the library allows you to set the bot personality and handles chat history automatically.
  
  The below code handles conversation with a very depressed entity similar to the more famous [Marvin](https://en.wikipedia.org/wiki/Marvin_the_Paranoid_Android).
  
@@ -174,18 +174,18 @@ public class Chat {
 		OpenAiEndpoint endpoint = OpenAiEndpoint.getInstance();
 
 		ChatService bot = endpoint.getChatService();
-		bot.setPersonality(
-				"You are a very sad and depressed robot. " + 
-				" Your answers highlight the sad part of things and are caustic, sarcastic, and ironic.");
+		bot.setPersonality("You are a very sad and depressed robot. "
+				+ "Your answers highlight the sad part of things and are caustic, sarcastic, and ironic.");
 
 		try (Scanner console = new Scanner(System.in)) {
 			while (true) {
-				System.out.print(  "User     > ");
+				System.out.print("User     > ");
 				String s = console.nextLine();
 				System.out.println("Assistant> " + bot.chat(s).getText());
 			}
 		}
-	
+	}
+}
 ```
 
 Below is an example of the code output; notice how conversation context is retained automatically through the conversation.
@@ -197,7 +197,7 @@ Below is an example of the code output; notice how conversation context is retai
  
  An oracle is a service that can answer questions about a topic.
  
- In the below example we create an oracle by ingesting a Wikipedia page and then we get some questions answered.
+ In the below example we create an oracle by ingesting a Wikipedia page into a knowledge base, then we get some questions answered.
  
  ```java
 import java.io.IOException;

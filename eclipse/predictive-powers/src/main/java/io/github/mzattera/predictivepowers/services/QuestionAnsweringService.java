@@ -32,8 +32,8 @@ public class QuestionAnsweringService {
 	public QuestionAnsweringService(OpenAiEndpoint ep, ChatService completionService) {
 		this.ep = ep;
 		this.completionService = completionService;
-		maxContextTokens = Math.max(ModelUtil.getContextSize(this.completionService.getDefaultReq().getModel()), 2046) * 3
-				/ 4;
+		maxContextTokens = Math.max(ModelUtil.getContextSize(this.completionService.getDefaultReq().getModel()), 2046)
+				* 3 / 4;
 	}
 
 	// TODO
@@ -118,13 +118,13 @@ public class QuestionAnsweringService {
 	 * input, starting from beginning of provided List.
 	 */
 	public QnAPair answer(String question, List<String> context) {
-	
+
 		// Guard, should never happen
 		if (context.size() == 0)
 			return QnAPair.builder().question(question).answer("I don't know.").build();
-	
+
 		ChatMessage qMsg = new ChatMessage("user", "Q: " + question);
-	
+
 		// Provides instructions and examples
 		// TODO probably you do not need to write "Context" each time...it saves tokens.
 		List<ChatMessage> instructions = new ArrayList<>();
@@ -135,9 +135,9 @@ public class QuestionAnsweringService {
 		instructions.add(new ChatMessage("user", "Q: What color are biglydoos?"));
 		instructions.add(new ChatMessage("assistant", "A: I do not know."));
 		instructions.add(new ChatMessage("user", "Context: " + context.get(0)));
-	
+
 		int tok = TokenUtil.count(qMsg) + TokenUtil.count(instructions);
-	
+
 		// TODO it adds one too many
 		int i = 1;
 		for (; i < context.size(); ++i) {
@@ -148,13 +148,14 @@ public class QuestionAnsweringService {
 			instructions.add(m);
 		}
 		instructions.add(qMsg);
-	
-		QnAPair result = QnAPair.builder().question(question).answer(completionService.complete(instructions).getText())
-				.build();
+
+		TextResponse answer = completionService.complete(instructions);
+		String txt = answer.getText().startsWith("A: ") ? answer.getText().substring(3) : answer.getText();
+		QnAPair result = QnAPair.builder().question(question).answer(txt).build();
 		for (int j = 0; j < i; ++j) {
 			result.getContext().add(context.get(j));
 		}
-	
+
 		return result;
 	}
 }

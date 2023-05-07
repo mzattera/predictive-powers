@@ -11,7 +11,7 @@ import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
 
 /**
- * Test the OpenAi chat API.
+ * Test the OpenAi chat API & Service
  * 
  * @author Massimiliano "Maxi" Zattera
  *

@@ -2,6 +2,8 @@ package io.github.mzattera.predictivepowers.services;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -16,8 +18,9 @@ import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.Embedding;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
+import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
 import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
-import io.github.mzattera.util.ExtractionUtils;
+import io.github.mzattera.util.ExtractionUtil;
 import io.github.mzattera.util.LlmUtil;
 import lombok.Getter;
 import lombok.NonNull;
@@ -57,13 +60,13 @@ public class EmbeddingService {
 	 * Notice it is limited by the model context size too.
 	 */
 	@Getter
-	private int maxContextTokens = 150;
+	private int maxTextTokens = 150;
 
 	public void setMaxTokens(int maxTokens) {
 		if ((maxTokens <= 0) || (maxTokens > 8192))
 			throw new IllegalArgumentException("maxTokens must be 0 < maxTokens <= 8192: " + maxTokens);
 
-		this.maxContextTokens = maxTokens;
+		this.maxTextTokens = maxTokens;
 	}
 
 	/**
@@ -86,8 +89,8 @@ public class EmbeddingService {
 	 * 
 	 * It uses parameters specified in given {@link EmbeddingsRequest}.
 	 * 
-	 * @param maxContextTokens Maximum length in tokens of each piece of text to be
-	 *                  embedded. Text is split accordingly, if needed.
+	 * @param maxTextTokens Maximum length in tokens of each piece of text to be
+	 *                      embedded. Text is split accordingly, if needed.
 	 */
 	public List<EmbeddedText> embed(String text, EmbeddingsRequest req) {
 		List<String> l = new ArrayList<>();
@@ -115,8 +118,8 @@ public class EmbeddingService {
 	 * 
 	 * It uses parameters specified in given {@link EmbeddingsRequest}.
 	 * 
-	 * @param maxContextTokens Maximum length in tokens of each piece of text to be
-	 *                  embedded. Text is split accordingly, if needed.
+	 * @param maxTextTokens Maximum length in tokens of each piece of text to be
+	 *                      embedded. Text is split accordingly, if needed.
 	 */
 	public List<EmbeddedText> embed(String[] text, EmbeddingsRequest req) {
 		return embed(Arrays.asList(text), req);
@@ -142,17 +145,20 @@ public class EmbeddingService {
 	 * 
 	 * It uses parameters specified in given {@link EmbeddingsRequest}.
 	 * 
-	 * @param maxContextTokens Maximum length in tokens of each piece of text to be
-	 *                  embedded (in tokens). Text is split accordingly, if needed.
+	 * @param maxTextTokens Maximum length in tokens of each piece of text to be
+	 *                      embedded (in tokens). Text is split accordingly, if
+	 *                      needed.
 	 */
 	public List<EmbeddedText> embed(Collection<String> text, EmbeddingsRequest req) {
+
+		int modelSize = Math.min(ModelUtil.getContextSize(req.getModel()), 8192);
 
 		req.getInput().clear();
 
 		// Put all pieces of text to be embedded in a list
 		List<String> l = new ArrayList<>();
 		for (String s : text) {
-			l.addAll(LlmUtil.split(s, maxContextTokens));
+			l.addAll(LlmUtil.split(s, maxTextTokens));
 		}
 
 		// Embed as many pieces you can in a single call
@@ -162,7 +168,7 @@ public class EmbeddingService {
 			String s = l.remove(0);
 			int t = TokenUtil.count(s);
 
-			if ((tok + t) > maxContextTokens) {
+			if ((tok + t) > modelSize) {
 				// too many tokens, embed what you have
 				result.addAll(embed(req));
 				req.getInput().clear();
@@ -219,7 +225,7 @@ public class EmbeddingService {
 	 */
 	public List<EmbeddedText> embedFile(File file, EmbeddingsRequest req)
 			throws IOException, SAXException, TikaException {
-		String content = ExtractionUtils.getText(file);
+		String content = ExtractionUtil.fromFile(file);
 		return embed(content, req);
 	}
 
@@ -262,6 +268,54 @@ public class EmbeddingService {
 		}
 
 		return result;
+	}
+
+	/**
+	 * Embeds text of given web page.
+	 * 
+	 * @throws TikaException
+	 * @throws SAXException
+	 * @throws IOException
+	 * @throws MalformedURLException
+	 */
+	public List<EmbeddedText> embedUrl(String url)
+			throws MalformedURLException, IOException, SAXException, TikaException {
+		return embedUrl(new URL(url), defaultReq);
+	}
+
+	/**
+	 * Embeds text of given web page.
+	 * 
+	 * @throws TikaException
+	 * @throws SAXException
+	 * @throws IOException
+	 * @throws MalformedURLException
+	 */
+	public List<EmbeddedText> embedUrl(String url, EmbeddingsRequest req)
+			throws MalformedURLException, IOException, SAXException, TikaException {
+		return embedUrl(new URL(url), req);
+	}
+
+	/**
+	 * Embeds text of given web page.
+	 * 
+	 * @throws TikaException
+	 * @throws SAXException
+	 * @throws IOException
+	 */
+	public List<EmbeddedText> embedUrl(URL url) throws IOException, SAXException, TikaException {
+		return embedUrl(url, defaultReq);
+	}
+
+	/**
+	 * Embeds text of given web page.
+	 * 
+	 * @throws TikaException
+	 * @throws SAXException
+	 * @throws IOException
+	 */
+	public List<EmbeddedText> embedUrl(URL url, EmbeddingsRequest req) throws IOException, SAXException, TikaException {
+		return embed(ExtractionUtil.fromUrl(url));
 	}
 
 }

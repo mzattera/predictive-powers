@@ -58,6 +58,9 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
  */
 public final class OpenAiClient {
 
+	// TODO Expose features descibed in openai-java
+	// TODO chnge to use inside Azure
+	
 	private final static String API_BASE_URL = "https://api.openai.com/v1/";
 
 	public final static int DEFAULT_READ_TIMEOUT_MIILLIS = 30 * 1000;

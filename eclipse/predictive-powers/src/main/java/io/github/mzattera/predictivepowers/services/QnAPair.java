@@ -6,6 +6,7 @@ package io.github.mzattera.predictivepowers.services;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,6 +23,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Builder
+@AllArgsConstructor
 @NoArgsConstructor
 @RequiredArgsConstructor
 public class QnAPair {
@@ -32,15 +34,26 @@ public class QnAPair {
 	@NonNull
 	private String answer;
 
+	/**
+	 * Explanation for the question, if any, otherwise null. This is typically
+	 * provided if the answer is generated from a context.
+	 */
+	private String explanation;
+
 	/** For 'multiple-choice' questions, this is the list of choices */
 	@NonNull
 	@Builder.Default
 	private List<String> options = new ArrayList<>();
 
-	/** Context from which the pair was created. */
+	/** Context, as simple text, from which the pair was created. */
 	@NonNull
 	@Builder.Default
 	private List<String> context = new ArrayList<>();
+
+	/** Context, as list of embeddings, from which the pair was created. */
+	@NonNull
+	@Builder.Default
+	private List<EmbeddedText> embeddingContext = new ArrayList<>();
 
 	@Override
 	public String toString() {
@@ -51,7 +64,7 @@ public class QnAPair {
 		} else {
 			int a = -1;
 			try {
-				a = Integer.parseInt(answer) -1;
+				a = Integer.parseInt(answer) - 1;
 			} catch (NumberFormatException e) {
 			}
 			for (int i = 0; i < options.size(); ++i) {

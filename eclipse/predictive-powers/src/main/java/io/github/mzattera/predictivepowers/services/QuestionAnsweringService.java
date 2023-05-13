@@ -5,6 +5,12 @@ import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
 import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
@@ -36,17 +42,14 @@ public class QuestionAnsweringService {
 				* 3 / 4;
 	}
 
-	// TODO
-	/*
-	 * Provide a ground truth for the API. If you provide the API with a body of
-	 * text to answer questions about (like a Wikipedia entry) it will be less
-	 * likely to confabulate a response.
-	 * 
-	 * Use a low probability and show the API how to say "I don't know". If the API
-	 * understands that in cases where it's less certain about a response that
-	 * saying "I don't know" or some variation is appropriate, it will be less
-	 * inclined to make up answers.
-	 */
+	// Maps from-to POJO <-> JSON
+	private final static ObjectMapper mapper;
+	static {
+		mapper = new ObjectMapper();
+		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+	}
 
 	@NonNull
 	private final OpenAiEndpoint ep;
@@ -65,7 +68,7 @@ public class QuestionAnsweringService {
 	 * approximated.
 	 */
 	@Getter
-	private int maxContextTokens = 3 * 1024;
+	private int maxContextTokens;
 
 	public void setMaxContextTokens(int n) {
 		if (n < 1)
@@ -85,13 +88,15 @@ public class QuestionAnsweringService {
 	 * Answer a question, using only information from provided context.
 	 * 
 	 * @param context The information to be used to answer the question. Notice this
-	 *                is eventually truncated so at most maxContextTokens are
-	 *                considered.
+	 *                might be shortened if it is too long to fit prompt size.
 	 */
 	public QnAPair answer(String question, String context) {
 
 		List<String> l = new ArrayList<>();
-		l.add(LlmUtil.split(context, maxContextTokens).get(0));
+		l.add(LlmUtil.split(context, maxContextTokens - TokenUtil.count(question) - 400).get(0)); // 400 is to keep
+																									// space for
+																									// instructions and
+																									// examples
 
 		return answer(question, l);
 	}
@@ -108,7 +113,13 @@ public class QuestionAnsweringService {
 		for (Pair<EmbeddedText, Double> p : context)
 			l.add(p.getLeft().getText());
 
-		return answer(question, l);
+		QnAPair result = answer(question, l);
+
+		// Enrich answer with embeddings, as they have in some case useful properties
+		for (int i = 0; i < result.getContext().size(); ++i)
+			result.getEmbeddingContext().add(context.get(i).getLeft());
+
+		return result;
 	}
 
 	/**
@@ -123,25 +134,39 @@ public class QuestionAnsweringService {
 		if (context.size() == 0)
 			return QnAPair.builder().question(question).answer("I don't know.").build();
 
-		ChatMessage qMsg = new ChatMessage("user", "Q: " + question);
+		ChatMessage qMsg = new ChatMessage("user", "Question: " + question);
 
 		// Provides instructions and examples
-		// TODO probably you do not need to write "Context" each time...it saves tokens.
 		List<ChatMessage> instructions = new ArrayList<>();
-		instructions.add(new ChatMessage("system",
-				"You are an assistant and you must respond to questions truthfully considering only the provided context. If the answer cannot be found in the context, reply with \"I do not know.\""));
-		instructions.add(new ChatMessage("user", "Context: Biglydoos are small rodent similar to mice."));
-		instructions.add(new ChatMessage("user", "Context: Biglydoos eat cranberries."));
-		instructions.add(new ChatMessage("user", "Q: What color are biglydoos?"));
-		instructions.add(new ChatMessage("assistant", "A: I do not know."));
-		instructions.add(new ChatMessage("user", "Context: " + context.get(0)));
-
+		if (completionService.getPersonality() == null)
+			instructions.add(new ChatMessage("system", "You are an AI assistant answering questions truthfully."));
+		instructions.add(new ChatMessage("user",
+				"Answer the below questions truthfully, using only the information in the context. " + //
+						"When providing an answer, provide your reasoning as well, step by step. " + //
+						"If the answer cannot be found in the context, reply with \"I do not know.\". " + //
+						"Strictly return the answer and explanation in JSON format, as shown below."));
+		instructions.add(new ChatMessage("user", "Context:"));
+		instructions.add(new ChatMessage("user", "Biglydoos are small rodent similar to mice."));
+		instructions.add(new ChatMessage("user", "Biglydoos eat cranberries."));
+		instructions.add(new ChatMessage("user", "Question: What color are biglydoos?"));
+		instructions.add(new ChatMessage("assistant", //
+				"{\"answer\": \"I do not know.\", \"explanation\": \"1. This information is not provided in the context.\"}"));
+		instructions.add(new ChatMessage("user", "Context:"));
+		instructions.add(new ChatMessage("user", "Biglydoos are small rodent similar to mice."));
+		instructions.add(new ChatMessage("user", "Biglydoos eat cranberries."));
+		instructions.add(new ChatMessage("user", "Question: Do biglydoos eat fruits?"));
+		instructions.add(new ChatMessage("assistant", //
+				"{\"answer\": \"Yes, biglydoos eat fruits.\", " + //
+						"\"explanation\": " + //
+						"\"1. The context states: \"Biglydoos eat cranberries.\"\\n" + //
+						"2. Cranberries are a kind of fruit.\\n" + //
+						"3. Therefore, biglydoos eat fruits.\"}"));
+		instructions.add(new ChatMessage("user", "Context:"));
 		int tok = TokenUtil.count(qMsg) + TokenUtil.count(instructions);
 
-		// TODO it adds one too many
-		int i = 1;
+		int i = 0;
 		for (; i < context.size(); ++i) {
-			ChatMessage m = new ChatMessage("user", "Context: " + context.get(i));
+			ChatMessage m = new ChatMessage("user", context.get(i));
 			tok += TokenUtil.count(m);
 			if (tok > maxContextTokens)
 				break;
@@ -149,9 +174,16 @@ public class QuestionAnsweringService {
 		}
 		instructions.add(qMsg);
 
-		TextResponse answer = completionService.complete(instructions);
-		String txt = answer.getText().startsWith("A: ") ? answer.getText().substring(3) : answer.getText();
-		QnAPair result = QnAPair.builder().question(question).answer(txt).build();
+		TextResponse answerJson = completionService.complete(instructions);
+		QnAPair result = null;
+		try {
+			result = mapper.readValue(answerJson.getText(), QnAPair.class);
+			result.setQuestion(question);
+		} catch (JsonProcessingException e) {
+			// Sometimes API returns only the answer, not as a JSON
+			result = QnAPair.builder().question(question).answer(answerJson.getText()).build();
+		}
+
 		for (int j = 0; j < i; ++j) {
 			result.getContext().add(context.get(j));
 		}

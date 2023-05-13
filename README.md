@@ -1,6 +1,6 @@
 # predictive-powers
 
-`predictive-powers` is library to make generative AI (easily?) accessible to Java developers.
+`predictive-powers` is a library to make generative AI (easily?) accessible to Java developers.
 
 Currently the library:
 
@@ -286,8 +286,7 @@ public class FAQ {
 
 		// Download Credit Suisse financial statement 2022 PDF and extract its text.
 		// We keep only one piece of 750 tokens, as extracting questions from a long
-		// text might
-		// result in a timeout
+		// text might result in a timeout.
 		String statment = LlmUtil.split(ExtractionUtil.fromUrl(
 				"https://www.credit-suisse.com/media/assets/corporate/docs/about-us/investor-relations/financial-disclosures/financial-reports/csg-ar-2022-en.pdf"),
 				750).get(2);

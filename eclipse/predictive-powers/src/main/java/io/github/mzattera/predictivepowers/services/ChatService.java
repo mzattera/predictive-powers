@@ -3,6 +3,9 @@ package io.github.mzattera.predictivepowers.services;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsChoice;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
@@ -255,7 +258,7 @@ public class ChatService {
 				int tok = TokenUtil.count(messages);
 				req.setMaxTokens(ModelUtil.getContextSize(req.getModel()) - tok - 10);
 			}
-
+			
 			// TODO: catch exception if maxToken is too high, parse prompt token length and
 			// resubmit, optionally
 			ChatCompletionsResponse resp = ep.getClient().createChatCompletion(req);

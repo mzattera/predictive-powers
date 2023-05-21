@@ -12,7 +12,7 @@ Currently the library:
   
 ## Installation
 
-This library comes as a [Maven](https://maven.apache.org/) project.
+For the time being, this library comes as a [Maven](https://maven.apache.org/) project inside the `eclipse` folder. Following versions will be better packaged.
 
 It depends, among others, on Jackson [data-binding](https://github.com/FasterXML/jackson-databind) and [annotations](https://github.com/FasterXML/jackson-annotations), 
 and on [Lomboc](https://projectlombok.org/) libraries. These are correctly referenced within the `pom.xml` file for this project. However, to have Lomboc to work, you need to install it in Eclipse or any other IDE you are using, as explained on Lomboc website.
@@ -199,10 +199,10 @@ Below is an example of the code output; notice how conversation context is retai
  
  ### Knowing-all Oracle
  
- An oracle is a service that can answer questions about a topic.
+ An oracle is a service that can answer questions about a domain.
  
- In the below example we create an oracle by ingesting a web page into a knowledge base, then we get some questions answered.
- If you type "explain" it will give an explanation about last provided answer.
+ In the below example, we create an oracle by ingesting a web page into a knowledge base, then we get some questions answered.
+ If you type "explain" the oracle will give an explanation about last provided answer.
  
 ```java
 import java.io.IOException;
@@ -221,12 +221,6 @@ import io.github.mzattera.predictivepowers.services.EmbeddingService;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
 
-/**
- * An Oracle that reads a web page and then answers questions about it.
- * 
- * @author Massimiliano "Maxi" Zattera
- *
- */
 public class Oracle {
 
 	public static void main(String[] args) throws MalformedURLException, IOException, SAXException, TikaException {

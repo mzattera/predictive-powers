@@ -9,8 +9,8 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
 		<!-- Java version -->
-		<maven.compiler.source>17</maven.compiler.source>
-		<maven.compiler.target>17</maven.compiler.target>
+		<maven.compiler.source>11</maven.compiler.source>
+		<maven.compiler.target>11</maven.compiler.target>
 
 		<!-- Library versions -->
 		<lang3.version>3.12.0</lang3.version>
@@ -61,7 +61,7 @@
 			<version>${retrofit.version}</version>
 		</dependency>
 
-		<!-- Tika is a librry to recognize and extract text from a variety of file types -->
+		<!-- Tika is a library to recognize and extract text from a variety of file types -->
 		<dependency>
 			<groupId>org.apache.tika</groupId>
 			<artifactId>tika-core</artifactId>

@@ -130,10 +130,6 @@ public class QuestionAnsweringService {
 	 */
 	public QnAPair answer(String question, List<String> context) {
 
-		// Guard, should never happen
-		if (context.size() == 0)
-			return QnAPair.builder().question(question).answer("I don't know.").build();
-
 		ChatMessage qMsg = new ChatMessage("user", "Question: " + question);
 
 		// Provides instructions and examples
@@ -173,6 +169,11 @@ public class QuestionAnsweringService {
 			instructions.add(m);
 		}
 		instructions.add(qMsg);
+
+		// No context, no answer
+		if (i == 0)
+			return QnAPair.builder().question(question).answer("I do not know.").explanation("No context was provided.")
+					.build();
 
 		TextResponse answerJson = completionService.complete(instructions);
 		QnAPair result = null;

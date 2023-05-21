@@ -97,6 +97,6 @@ public final class ExtractionUtil {
 		BodyContentHandler handler = new BodyContentHandler(-1);
 		Metadata metadata = new Metadata();
 		parser.parse(stream, handler, metadata);
-		return handler.toString();
+		return handler.toString().trim(); // Seems Tika adds a NL at tend of text that is not there 
 	}
 }

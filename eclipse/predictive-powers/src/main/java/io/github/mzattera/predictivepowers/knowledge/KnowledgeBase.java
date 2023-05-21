@@ -19,6 +19,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -48,6 +50,11 @@ public class KnowledgeBase implements Serializable {
 
 	public static final String DEFAULT_DOMAIN = "_default";
 
+	/** Locks used fro therad safety */
+	private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock(true);
+	private final Lock readLock = rwLock.readLock();
+	private final Lock writeLock = rwLock.writeLock();
+
 	private final Map<String, Set<EmbeddedText>> domains = new HashMap<>();
 
 	public KnowledgeBase() {
@@ -73,8 +80,14 @@ public class KnowledgeBase implements Serializable {
 	 * @throws IOException
 	 */
 	public void save(File file) throws FileNotFoundException, IOException {
-		try (FileOutputStream fos = new FileOutputStream(file); ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-			oos.writeObject(this);
+		writeLock.lock();
+		try {
+			try (FileOutputStream fos = new FileOutputStream(file);
+					ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+				oos.writeObject(this);
+			}
+		} finally {
+			writeLock.unlock();
 		}
 	}
 
@@ -111,8 +124,13 @@ public class KnowledgeBase implements Serializable {
 	 * @param domain Name of the domain (case sensitive).
 	 */
 	public void createDomain(String domain) {
-		if (!domains.containsKey(domain))
-			domains.put(domain, new HashSet<>());
+		writeLock.lock();
+		try {
+			if (!domains.containsKey(domain))
+				domains.put(domain, new HashSet<>());
+		} finally {
+			writeLock.unlock();
+		}
 	}
 
 	/**
@@ -122,15 +140,25 @@ public class KnowledgeBase implements Serializable {
 	 * @param domain Name of the domain (case sensitive).
 	 */
 	public void dropDomain(String domain) {
-		domains.remove(domain);
+		writeLock.lock();
+		try {
+			domains.remove(domain);
+		} finally {
+			writeLock.unlock();
+		}
 	}
 
 	/**
 	 * 
 	 * @return The list of domains in this KnowledgeBase.
 	 */
-	public Set<String> listDomains() {
-		return domains.keySet();
+	public List<String> listDomains() {
+		readLock.lock();
+		try {
+			return new ArrayList<String>(domains.keySet());
+		} finally {
+			readLock.unlock();
+		}
 	}
 
 	/**
@@ -149,11 +177,15 @@ public class KnowledgeBase implements Serializable {
 	 * @param e
 	 */
 	public void insert(String domain, EmbeddedText e) {
-		if (!domains.containsKey(domain))
-			throw new IllegalArgumentException("Domain: " + domain + " does not exist.");
-
-		delete(e); // avoids duplicates
-		domains.get(domain).add(e);
+		writeLock.lock();
+		try {
+			Set<EmbeddedText> set = domains.get(domain);
+			if (set == null)
+				throw new IllegalArgumentException("Domain " + domain + " does not exist.");
+			set.add(e);
+		} finally {
+			writeLock.unlock();
+		}
 	}
 
 	/**
@@ -202,8 +234,13 @@ public class KnowledgeBase implements Serializable {
 	 * @param e
 	 */
 	public void delete(EmbeddedText e) {
-		for (Set<EmbeddedText> s : domains.values())
-			delete(s, e);
+		writeLock.lock();
+		try {
+			for (Set<EmbeddedText> s : domains.values())
+				delete(s, e);
+		} finally {
+			writeLock.unlock();
+		}
 	}
 
 	/**
@@ -213,7 +250,12 @@ public class KnowledgeBase implements Serializable {
 	 * @param e
 	 */
 	public void delete(String domain, EmbeddedText e) {
-		delete(domains.get(domain), e);
+		writeLock.lock();
+		try {
+			delete(domains.get(domain), e);
+		} finally {
+			writeLock.unlock();
+		}
 	}
 
 	/**
@@ -223,8 +265,13 @@ public class KnowledgeBase implements Serializable {
 	 *          be removed.
 	 */
 	public void delete(EmbeddedTextMatcher m) {
-		for (Set<EmbeddedText> s : domains.values())
-			delete(s, m);
+		writeLock.lock();
+		try {
+			for (Set<EmbeddedText> s : domains.values())
+				delete(s, m);
+		} finally {
+			writeLock.unlock();
+		}
 	}
 
 	/**
@@ -235,20 +282,29 @@ public class KnowledgeBase implements Serializable {
 	 *               will be removed.
 	 */
 	public void delete(String domain, EmbeddedTextMatcher m) {
-		delete(domains.get(domain), m);
-	}
-
-	private static void delete(Set<EmbeddedText> s, EmbeddedText e) {
-		s.remove(e);
+		writeLock.lock();
+		try {
+			delete(domains.get(domain), m);
+		} finally {
+			writeLock.unlock();
+		}
 	}
 
 	private static void delete(Set<EmbeddedText> s, EmbeddedTextMatcher m) {
+		// We do not synch as this is private so, if you end up here, you should have a
+		// write lock already
 		Iterator<EmbeddedText> it = s.iterator();
 		while (it.hasNext()) {
 			EmbeddedText e = it.next();
 			if (m.match(e))
 				it.remove();
 		}
+	}
+
+	private static void delete(Set<EmbeddedText> s, EmbeddedText e) {
+		// We do not synch as this is private so, if you end up here, you should have a
+		// write lock already
+		s.remove(e);
 	}
 
 	/**
@@ -259,10 +315,15 @@ public class KnowledgeBase implements Serializable {
 	public List<EmbeddedText> query(EmbeddedTextMatcher m) {
 		List<EmbeddedText> result = new ArrayList<>();
 
-		for (Set<EmbeddedText> s : domains.values())
-			result.addAll(query(s, m));
+		readLock.lock();
+		try {
+			for (Set<EmbeddedText> s : domains.values())
+				result.addAll(query(s, m));
 
-		return result;
+			return result;
+		} finally {
+			readLock.unlock();
+		}
 	}
 
 	/**
@@ -272,10 +333,17 @@ public class KnowledgeBase implements Serializable {
 	 * @return All embeddings matching given rule.
 	 */
 	public List<EmbeddedText> query(String domain, EmbeddedTextMatcher m) {
-		return query(domains.get(domain), m);
+		readLock.lock();
+		try {
+			return query(domains.get(domain), m);
+		} finally {
+			readLock.unlock();
+		}
 	}
 
 	private static List<EmbeddedText> query(Set<EmbeddedText> s, EmbeddedTextMatcher m) {
+		// We do not synch as this is private so, if you end up here, you should have a
+		// read lock already
 		List<EmbeddedText> result = new ArrayList<>();
 
 		for (EmbeddedText e : s)
@@ -298,10 +366,15 @@ public class KnowledgeBase implements Serializable {
 	public List<Pair<EmbeddedText, Double>> search(EmbeddedText query, int limit, int offset) {
 		List<Pair<EmbeddedText, Double>> result = new ArrayList<>();
 
-		for (Set<EmbeddedText> s : domains.values())
-			search(s, query, result, limit + offset);
+		readLock.lock();
+		try {
+			for (Set<EmbeddedText> s : domains.values())
+				search(s, query, result, limit + offset);
 
-		return skip(result, offset);
+			return skip(result, offset);
+		} finally {
+			readLock.unlock();
+		}
 	}
 
 	/**
@@ -315,8 +388,14 @@ public class KnowledgeBase implements Serializable {
 	 */
 	public List<Pair<EmbeddedText, Double>> search(String domain, EmbeddedText query, int limit, int offset) {
 		List<Pair<EmbeddedText, Double>> result = new ArrayList<>();
-		search(domains.get(domain), query, result, limit + offset);
-		return skip(result, offset);
+
+		readLock.lock();
+		try {
+			search(domains.get(domain), query, result, limit + offset);
+			return skip(result, offset);
+		} finally {
+			readLock.unlock();
+		}
 	}
 
 	/**
@@ -332,6 +411,8 @@ public class KnowledgeBase implements Serializable {
 	 */
 	private static void search(Set<EmbeddedText> set, EmbeddedText query, List<Pair<EmbeddedText, Double>> result,
 			int limit) {
+		// We do not synch as this is private so, if you end up here, you should have a
+		// read lock already
 
 		// Shortens results, if needed
 		while (result.size() > limit)

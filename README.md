@@ -6,20 +6,23 @@ Currently the library:
 
   1. Provides low-level access to OpeanAi API similar to [OpenAI-Java](https://github.com/TheoKanning/openai-java). It adds access to audio API which, at the time of writing (May 2023), is not supported by OpenAI-Java (and [not really working](https://community.openai.com/t/whisper-api-cannot-read-files-correctly/93420), TBH).
   
-  2. Adds an abstraction layer for GenAI capabilities, which should allow in the future to plug-in different providers (e.g. Hugging Face) seamlessly.
+  2. Adds an abstraction layer for GenAI capabilities, which should allow in the future to plug-in different providers (e.g. Hugging Face) seamlessly (see "Services" below).
   
-  3. Provides an in-memory vector database and methods to easily process and embed files in different formats (MS Office, PDF, HTML, etc.). Again, plans are to make this library database agnostic.
+  3. Provides a serializable in-memory vector database. Again, plans are to allow users to plug in any existing vector database in the future.
+
+  4. Offers methods to easily read textual content from web pages and from files in different formats (MS Office, PDF, HTML, etc.).
   
 ## Installation
 
 For the time being, this library comes as a [Maven](https://maven.apache.org/) project inside the `eclipse` folder. Following versions will be better packaged.
 
-predictive-powers required Java 11 or later.
+predictive-powers requires Java 11 or later.
 
 The code depends, among others, on [Lomboc](https://projectlombok.org/) which is correctly referenced within the `pom.xml` file for this project.
 However, to have Lomboc to work in the Eclipse editor, you need to install it inside Eclipse (or any other IDE you are using), as explained on Lomboc website.
 
-To avoid passing the OpenAi API key explicitly, the library tries to read it from 'OPENAI_API_KEY' system environment variable; setting up this variable depends on the OS you are using.
+To avoid passing the OpenAi API key explicitly, the library 0ries to read it from 'OPENAI_API_KEY' system environment variable by default;
+setting up this variable depends on the OS you are using.
 
 	
 ## Usage
@@ -28,7 +31,7 @@ To avoid passing the OpenAi API key explicitly, the library tries to read it fro
 
 You can access OpeanAi API by instantiating an `OpenAiClient`. Class constructors allow you to pass your OpenAi API key, which will be used in all subsequent calls. If you use the no-arguments constructor, the code will try to read the key from 'OPENAI_API_KEY' system environment variable.
 
-After that, you can call OpenAi API directly; this part of code is not heavily documented but matches 1:1 [OpenAi documentation](https://platform.openai.com/docs/api-reference/introduction).
+After that, you can call OpenAi API directly; this part of code is not heavily documented but matches 1:1 the [OpenAi API definition](https://platform.openai.com/docs/api-reference/introduction).
 
 ```java
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
@@ -50,9 +53,7 @@ public class Test {
 		CompletionsResponse resp = cli.createCompletion(req);
 
 		System.out.println(resp.getChoices().get(0).getText());
-
 	}
-
 }
 ```
 
@@ -66,7 +67,7 @@ will output something like:
 
 ### Endpoint
 
-An endpoint provides GenAI capabilities in form of services; it can be created similarly to an `OpenAiClient`, by passing an API key or reading it from the OS environment.
+An endpoint provides GenAI capabilities in form of services; it can be created similarly to an `OpenAiClient`, by passing an optional API key.
   
 ```java
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
@@ -78,9 +79,9 @@ import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 	OpenAiEndpoint ep = OpenAiEndpoint.getInstance();
 
 	// Pass API key explicitly
-	ep = OpenAiEndpoint.getInstance();
+	ep = OpenAiEndpoint.getInstance("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");
 
-	// Build it from an API client
+	// Build endpoint from an API client
 	OpenAiClient cli = new OpenAiClient();
 	ep = OpenAiEndpoint.getInstance(cli);
 ```
@@ -91,8 +92,8 @@ Once the endpoint is created, it can be used to access "services" which are high
 
   * `CompletionService` text completion (including insertions): basically, it executes given text prompt.
   * `ChatService` handles conversations with an agent, taking care of agent personality and conversation history.
-  * `EmbeddingService` embeds text and calculate semantic similarity; it takes care of automatically splitting text when needed, or if desired.
-  * `QuestionAnsweringService` answers questions, using a user-provided context. The context can be a knowledge base (see below).
+  * `EmbeddingService` embeds text and calculate semantic similarity; it takes care of automatically splitting long texts when needed.
+  * `QuestionAnsweringService` answers questions, using a user-provided context. The context can be a list of embeddings from a knowledge base (see below).
   * `QuestionExtractionService` extracts different kinds of questions from a text (e.g. true/false question, multiple choices quizzes, etc.). It automatically handles long texts.
   
 The below example shows how to get the `CompletionService` to complete a sentence.
@@ -117,13 +118,13 @@ Below we provide some examples of using services; for a detailed description of 
 
 #### Service Configuration
   
-OpenAi provides a rich set of parameters for each of its API calls; in order to access these parameters services exposes a "default request" object.
-This object is used when the service calls OpenAi API. Changing parameters on this object, will affect all further calls to the API.
+OpenAi provides a rich set of parameters for each of its API calls. In order to access these parameters, services expose a "default request" object.
+This object is used when the service calls OpenAi API. Changing parameters on this object will affect all further calls to the API.
 
- For example, let's assume we want to use `courie` model for text completion; we can change the above text as shown here:
+For example, let's assume we want to use `courie` model for text completion:
  
  ```java
- import io.github.mzattera.predictivepowers.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 
 public class TestEndpoint {
@@ -134,7 +135,7 @@ public class TestEndpoint {
 		CompletionService cs = ep.getCompletionService();
 		
 		// Set model parameter in default request, this will affect all further calls		
-		cs.getDefaultReq().setModel(" text-curie-001");
+		cs.getDefaultReq().setModel("text-curie-001");
 
 		// This call now uses text-curie-001 model
 		System.out.println(cs.complete("Alan Turing was").getText());
@@ -144,9 +145,9 @@ public class TestEndpoint {
  
  ### Knowledge Base
  
- A knowledge base is a vector database storing text embedding; a number of arbitrary data (in the form of a map) can be attached to each embedding. 
+ A knowledge base is a vector database storing text embeddings; any number of properties (in the form of a `Map`) can be attached to each embedding. 
  
- The knowledge base provides methods to search text, based on embedding similarity or other filt3ring criteria. Each knowledge base can be partitioned into domains, which can be searched separately, to improve performance.
+ The knowledge base provides methods to search text, based on embedding similarity or other filtering criteria. Each knowledge base can be partitioned into domains, which can be searched separately, to improve performance.
  
  
  ### Thread Safety
@@ -155,6 +156,7 @@ public class TestEndpoint {
  where AI capabilities are provided at endpoints through REST API.
  
  This greatly simplifies server architecture and allows to scale applications automatically and effortlessly when deployed inside a cloud environment.
+ 
  
  ## Examples
  
@@ -175,7 +177,7 @@ public class Chat {
 	public static void main(String[] args) throws Exception {
 
 		// OpenAI end-point
-		// Make sure you specify your API key n OPENAI_KEY system environment variable.
+		// Make sure you specify your API key in OPENAI_KEY system environment variable.
 		OpenAiEndpoint endpoint = OpenAiEndpoint.getInstance();
 
 		ChatService bot = endpoint.getChatService();
@@ -205,6 +207,8 @@ Below is an example of the code output; notice how conversation context is retai
  In the below example, we create an oracle by ingesting a web page into a knowledge base, then we get some questions answered.
  If you type "explain" the oracle will give an explanation about last provided answer.
  
+ Notice the service is automatically storing the explanation and the context used to build the answer.
+ 
 ```java
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -233,12 +237,12 @@ public class Oracle {
 
 		try (Scanner console = new Scanner(System.in)) {
 
-			// Get the web page you are interested in
+			// To build the oracle, get the web page you are interested in
 			System.out.print("Web Page Url: ");
 			String pageUrl = console.nextLine();
 			System.out.println("Reading page " + pageUrl + "...\n");
 
-			// Read the page text, embed it and store it into an in-memory knowledge base
+			// Read the page text, embed it, and store it into an in-memory knowledge base
 			EmbeddingService embeddingService = endpoint.getEmbeddingService();
 			KnowledgeBase knowledgeBase = new KnowledgeBase();
 			knowledgeBase.insert(embeddingService.embedUrl(pageUrl));
@@ -247,11 +251,11 @@ public class Oracle {
 			QnAPair answer = null;
 			while (true) {
 
-				// Get user question
+				// Get user's question
 				System.out.print("Your Question: ");
 				String question = console.nextLine();
 
-				// Does user want an explanation?
+				// Does the user want an explanation?
 				if (question.toLowerCase().equals("explain")) {
 					if (answer == null)
 						continue;
@@ -262,9 +266,11 @@ public class Oracle {
 				}
 
 				// If not, answer the question
-				// Find similar text in the web page, to use as context
-				List<Pair<EmbeddedText, Double>> context = knowledgeBase.search(embeddingService.embed(question).get(0),
-						50, 0);
+				// Find text in the web page which is semantically similar to the question, to use it as context
+				List<Pair<EmbeddedText, Double>> context = knowledgeBase.search(
+						embeddingService.embed(question).get(0),
+						50, 0
+					);
 
 				// Use the context when answering
 				answer = questionAnswer.answerWithEmbeddings(question, context);
@@ -279,6 +285,7 @@ public class Oracle {
  This will produce the below output:
  
 ![Example of a conversation with the oracle about the city of Padua](./Oracle.PNG)
+ 
  
 ### FAQ Creation
 
@@ -298,19 +305,21 @@ public class FAQ {
 	public static void main(String[] args) throws Exception {
 
 		// OpenAI end-point
-		// Make sure you specify your API key n OPENAI_KEY system environment variable.
+		// Make sure you specify your API key in OPENAI_KEY system environment variable.
 		OpenAiEndpoint endpoint = OpenAiEndpoint.getInstance();
 
 		// Download Credit Suisse financial statement 2022 PDF and extract its text.
-		// We keep only one piece of 750 tokens, as extracting questions from a long
-		// text might result in a timeout.
-		String statment = LlmUtil.split(ExtractionUtil.fromUrl(
-				"https://www.credit-suisse.com/media/assets/corporate/docs/about-us/investor-relations/financial-disclosures/financial-reports/csg-ar-2022-en.pdf"),
+		// For this demo, we keep only one initial piece of 750 tokens,
+		// as extracting questions from a long text might sometimes result in a timeout.
+		String statment = LlmUtil.split(
+				ExtractionUtil.fromUrl(
+					"https://www.credit-suisse.com/media/assets/corporate/docs/about-us/investor-relations/financial-disclosures/financial-reports/csg-ar-2022-en.pdf"
+					),
 				750).get(2);
 
 		QuestionExtractionService q = endpoint.getQuestionExtractionService();
 
-		// Get some FAQs and print them
+		// Demo FAQs
 		List<QnAPair> QnA = q.getQuestions(statment);
 		for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
 			System.out.println(QnA.get(i).toString());

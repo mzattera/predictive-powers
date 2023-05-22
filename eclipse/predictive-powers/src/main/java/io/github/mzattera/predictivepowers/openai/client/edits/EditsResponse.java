@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-/**
- * 
- */
 package io.github.mzattera.predictivepowers.openai.client.edits;
 
 import java.util.List;

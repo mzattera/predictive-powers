@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-/**
- * 
- */
 package io.github.mzattera.predictivepowers.applications;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;

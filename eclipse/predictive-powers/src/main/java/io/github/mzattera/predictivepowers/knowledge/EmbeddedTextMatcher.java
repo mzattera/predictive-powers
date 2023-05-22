@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-/**
- * 
- */
 package io.github.mzattera.predictivepowers.knowledge;
 
 import io.github.mzattera.predictivepowers.services.EmbeddedText;

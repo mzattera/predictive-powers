@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-/**
- * 
- */
 package io.github.mzattera.predictivepowers.openai.client;
 
 import io.github.mzattera.predictivepowers.openai.client.audio.AudioResponse;

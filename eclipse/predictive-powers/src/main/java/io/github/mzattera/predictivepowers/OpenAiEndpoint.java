@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-/**
- * 
- */
 package io.github.mzattera.predictivepowers;
 
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;

@@ -12,7 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package io.github.mzattera.predictivepowers.services;
+ */
+package io.github.mzattera.predictivepowers.services;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -158,6 +159,7 @@ public class QuestionExtractionService {
 			QnAPair q = it.next();
 			q.setAnswer(q.getAnswer().trim().toLowerCase());
 			if (!q.getAnswer().equals("true") && !q.getAnswer().equals("false")) // bad result
+				// TODO do something here? Log?
 				it.remove();
 		}
 
@@ -179,19 +181,15 @@ public class QuestionExtractionService {
 		instructions.add(new ChatMessage("user", "Context:\r\n" + "'''\r\n"
 				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China\u2013Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1\u20442 in) was most recently established in 2020 by the Chinese and Nepali authorities.\r\n"
 				+ "'''"));
-		instructions.add(new ChatMessage("assistant", "[\r\n"
-				+ "   {\r\n"
-				+ "      \"question\":\"Which is Earth's highest mountain above sea level?\",\r\n"
-				+ "      \"answer\":\"Mount Everest\"\r\n"
-				+ "   }\r\n"
-				+ "]"));
-		instructions.add(new ChatMessage("user", "This is wrong, this is not a  'fill the blank' exercises. Try again."));
-		instructions.add(new ChatMessage("assistant", "[\r\n"
-				+ "   {\r\n"
-				+ "      \"question\":\"Mount ______ is Earth's highest mountain above sea level.\",\r\n"
-				+ "      \"answer\":\"Everest\"\r\n"
-				+ "   }\r\n"
-				+ "]"));
+		instructions.add(new ChatMessage("assistant",
+				"[\r\n" + "   {\r\n" + "      \"question\":\"Which is Earth's highest mountain above sea level?\",\r\n"
+						+ "      \"answer\":\"Mount Everest\"\r\n" + "   }\r\n" + "]"));
+		instructions
+				.add(new ChatMessage("user", "This is wrong, this is not a  'fill the blank' exercises. Try again."));
+		instructions.add(new ChatMessage("assistant",
+				"[\r\n" + "   {\r\n"
+						+ "      \"question\":\"Mount ______ is Earth's highest mountain above sea level.\",\r\n"
+						+ "      \"answer\":\"Everest\"\r\n" + "   }\r\n" + "]"));
 		instructions.add(new ChatMessage("user", "This is correct."));
 
 		List<QnAPair> result = getQuestions(instructions, text);
@@ -201,6 +199,7 @@ public class QuestionExtractionService {
 			q.setAnswer(q.getAnswer().trim());
 
 			if (!q.getQuestion().contains("___")) {
+				// TODO do something here? Log?
 				it.remove();
 				continue;
 			}
@@ -208,7 +207,7 @@ public class QuestionExtractionService {
 			// how many words in the answer? Not more than 2 per question (e.g. "Alan
 			// Turing").
 			if (q.getAnswer().split("\\s").length > 2) {
-				System.out.println(q.toString());
+				// TODO do something here? Log?
 				it.remove();
 				continue;
 			}
@@ -278,11 +277,13 @@ public class QuestionExtractionService {
 			try {
 				c = Integer.parseInt(q.getAnswer());
 			} catch (Exception e) {
+				// TODO do something here? Log?
 				it.remove();
 				continue;
 			}
 
 			if ((c <= 0) || (c > q.getOptions().size())) {
+				// TODO do something here? Log?
 				it.remove();
 				continue;
 			}
@@ -332,7 +333,7 @@ public class QuestionExtractionService {
 		try {
 			result = mapper.readValue(json, QnAPair[].class);
 		} catch (JsonProcessingException e) {
-			// TODO do something here?
+			// TODO do something here? Log?
 		}
 		for (QnAPair r : result) {
 			r.getContext().add(shortText);

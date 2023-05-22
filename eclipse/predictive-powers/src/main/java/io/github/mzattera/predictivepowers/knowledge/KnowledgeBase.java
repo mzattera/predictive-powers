@@ -62,7 +62,7 @@ public class KnowledgeBase implements Serializable {
 
 	public static final String DEFAULT_DOMAIN = "_default";
 
-	/** Locks used fro therad safety */
+	/** Locks used for thread safety */
 	private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock(true);
 	private final Lock readLock = rwLock.readLock();
 	private final Lock writeLock = rwLock.writeLock();

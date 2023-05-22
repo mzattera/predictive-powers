@@ -157,6 +157,8 @@ public class TestEndpoint {
  
  This greatly simplifies server architecture and allows to scale applications automatically and effortlessly when deployed inside a cloud environment.
  
+ Some examples about how to use a knowledge base can be found [below](#oracle).
+ 
  
  ## Examples
  
@@ -200,7 +202,7 @@ Below is an example of the code output; notice how conversation context is retai
 ![Example of a conversation with GPT-3](./Chat.PNG)
  
  
- ### Knowing-all Oracle
+ ### <a name="oracle"></a>All-knowing Oracle
  
  An oracle is a service that can answer questions about a domain.
  

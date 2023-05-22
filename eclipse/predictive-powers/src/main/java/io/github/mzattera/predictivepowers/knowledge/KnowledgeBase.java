@@ -39,6 +39,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
+import lombok.NonNull;
 
 /**
  * A knowledge base contains information in form of embedded text that can be
@@ -56,8 +57,6 @@ import io.github.mzattera.predictivepowers.services.EmbeddedText;
  *
  */
 public class KnowledgeBase implements Serializable {
-
-	// TODO make it thread safe
 
 	private static final long serialVersionUID = 1L;
 
@@ -192,10 +191,7 @@ public class KnowledgeBase implements Serializable {
 	public void insert(String domain, EmbeddedText e) {
 		writeLock.lock();
 		try {
-			Set<EmbeddedText> set = domains.get(domain);
-			if (set == null)
-				throw new IllegalArgumentException("Domain " + domain + " does not exist.");
-			set.add(e);
+			insert(domains.get(domain), e);
 		} finally {
 			writeLock.unlock();
 		}
@@ -207,8 +203,7 @@ public class KnowledgeBase implements Serializable {
 	 * @param e
 	 */
 	public void insert(Collection<EmbeddedText> e) {
-		for (EmbeddedText t : e)
-			insert(DEFAULT_DOMAIN, t);
+		insert (DEFAULT_DOMAIN, e);
 	}
 
 	/**
@@ -218,10 +213,22 @@ public class KnowledgeBase implements Serializable {
 	 * @param e
 	 */
 	public void insert(String domain, Collection<EmbeddedText> e) {
-		for (EmbeddedText t : e)
-			insert(domain, t);
+		writeLock.lock();
+		try {
+			Set<EmbeddedText> set = domains.get(domain);
+			for (EmbeddedText t : e)
+				insert(set, t);
+		} finally {
+			writeLock.unlock();
+		}
 	}
-
+	
+	private static void insert(@NonNull Set<EmbeddedText> set, @NonNull EmbeddedText e) {
+		// We do not synch as this is private so, if you end up here, you should have a
+		// write lock already
+		set.add(e);
+	}
+	
 	/**
 	 * Removes given text from all domains.
 	 * 
@@ -303,7 +310,13 @@ public class KnowledgeBase implements Serializable {
 		}
 	}
 
-	private static void delete(Set<EmbeddedText> s, EmbeddedTextMatcher m) {
+	private static void delete(@NonNull Set<EmbeddedText> s, @NonNull EmbeddedText e) {
+		// We do not synch as this is private so, if you end up here, you should have a
+		// write lock already
+		s.remove(e);
+	}
+
+	private static void delete(@NonNull Set<EmbeddedText> s, @NonNull EmbeddedTextMatcher m) {
 		// We do not synch as this is private so, if you end up here, you should have a
 		// write lock already
 		Iterator<EmbeddedText> it = s.iterator();
@@ -312,12 +325,6 @@ public class KnowledgeBase implements Serializable {
 			if (m.match(e))
 				it.remove();
 		}
-	}
-
-	private static void delete(Set<EmbeddedText> s, EmbeddedText e) {
-		// We do not synch as this is private so, if you end up here, you should have a
-		// write lock already
-		s.remove(e);
 	}
 
 	/**
@@ -422,7 +429,7 @@ public class KnowledgeBase implements Serializable {
 	 *               already already in the list.
 	 * @param limit  Maximum number of results to return.
 	 */
-	private static void search(Set<EmbeddedText> set, EmbeddedText query, List<Pair<EmbeddedText, Double>> result,
+	private static void search(@NonNull Set<EmbeddedText> set, @NonNull EmbeddedText query, List<Pair<EmbeddedText, Double>> result,
 			int limit) {
 		// We do not synch as this is private so, if you end up here, you should have a
 		// read lock already

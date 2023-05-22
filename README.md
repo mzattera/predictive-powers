@@ -8,17 +8,18 @@ Currently the library:
   
   2. Adds an abstraction layer for GenAI capabilities, which should allow in the future to plug-in different providers (e.g. Hugging Face) seamlessly.
   
-  3. Provides an in-memory vector database and methods to easily process and embed files in different formats (MS Office, PDF, HTML, etc., courtesy of [Apache Tika](https://tika.apache.org/)). Again, plans are to make this DB agnostic and add support for the most commmon vector databases.
+  3. Provides an in-memory vector database and methods to easily process and embed files in different formats (MS Office, PDF, HTML, etc.). Again, plans are to make this library database agnostic.
   
 ## Installation
 
 For the time being, this library comes as a [Maven](https://maven.apache.org/) project inside the `eclipse` folder. Following versions will be better packaged.
 
-It depends, among others, on Jackson [data-binding](https://github.com/FasterXML/jackson-databind) and [annotations](https://github.com/FasterXML/jackson-annotations), 
-and on [Lomboc](https://projectlombok.org/) libraries. These are correctly referenced within the `pom.xml` file for this project. However, to have Lomboc to work, you need to install it in Eclipse or any other IDE you are using, as explained on Lomboc website.
+predictive-powers required Java 11 or later.
 
-To avoid passing the OpenAi API key explicitly, the library tries to read it from 'OPENAI_API_KEY' system environment variable. See your 
+The code depends, among others, on [Lomboc](https://projectlombok.org/) which is correctly referenced within the `pom.xml` file for this project.
+However, to have Lomboc to work in the Eclipse editor, you need to install it inside Eclipse (or any other IDE you are using), as explained on Lomboc website.
 
+To avoid passing the OpenAi API key explicitly, the library tries to read it from 'OPENAI_API_KEY' system environment variable; setting up this variable depends on the OS you are using.
 
 	
 ## Usage

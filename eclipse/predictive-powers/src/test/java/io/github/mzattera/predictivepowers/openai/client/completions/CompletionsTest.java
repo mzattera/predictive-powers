@@ -32,12 +32,12 @@ class CompletionsTest {
 	void test01() {
 		OpenAiEndpoint oai = OpenAiEndpoint.getInstance();
 		String model = "text-davinci-003";
-		String prompt = "How high is Mt. Everest?";
+		String prompt = "How high is Mt. Everest (in meters)?";
 		CompletionsRequest cr = new CompletionsRequest();
 
 		cr.setModel(model);
 		cr.setPrompt(prompt);
-		cr.setMaxTokens(ModelUtil.getContextSize(model) - 7);
+		cr.setMaxTokens(ModelUtil.getContextSize(model) - 10);
 		cr.setStop(new ArrayList<>());
 		cr.getStop().add("feet");
 
@@ -51,12 +51,12 @@ class CompletionsTest {
 	void test02() {
 		OpenAiEndpoint oai = OpenAiEndpoint.getInstance();
 		String model = "text-davinci-003";
-		String prompt = "How high is Mt. Everest?";
+		String prompt = "How high is Mt. Everest (in meters)?";
 		CompletionsRequest cr = new CompletionsRequest();
 
 		cr.setModel(model);
 		cr.setPrompt(prompt);
-		cr.setMaxTokens(ModelUtil.getContextSize(model) - 7);
+		cr.setMaxTokens(ModelUtil.getContextSize(model) - 10);
 		cr.setN(3);
 
 		CompletionsResponse resp = oai.getClient().createCompletion(cr);
@@ -73,12 +73,12 @@ class CompletionsTest {
 	void test03() {
 		OpenAiEndpoint oai = OpenAiEndpoint.getInstance();
 		String model = "text-davinci-003";
-		String prompt = "How high is Mt. Everest?";
+		String prompt = "How high is Mt. Everest (in meters)?";
 		CompletionsRequest cr = new CompletionsRequest();
 
 		cr.setModel(model);
 		cr.setPrompt(prompt);
-		cr.setMaxTokens(ModelUtil.getContextSize(model) - 7);
+		cr.setMaxTokens(ModelUtil.getContextSize(model) - 10);
 		cr.setLogprobs(2);
 
 		CompletionsResponse resp = oai.getClient().createCompletion(cr);

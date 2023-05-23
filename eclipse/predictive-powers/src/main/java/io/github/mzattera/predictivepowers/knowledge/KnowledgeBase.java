@@ -58,7 +58,7 @@ import lombok.NonNull;
  */
 public class KnowledgeBase implements Serializable {
 
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 42424242L;
 
 	public static final String DEFAULT_DOMAIN = "_default";
 
@@ -203,7 +203,7 @@ public class KnowledgeBase implements Serializable {
 	 * @param e
 	 */
 	public void insert(Collection<EmbeddedText> e) {
-		insert (DEFAULT_DOMAIN, e);
+		insert(DEFAULT_DOMAIN, e);
 	}
 
 	/**
@@ -222,13 +222,13 @@ public class KnowledgeBase implements Serializable {
 			writeLock.unlock();
 		}
 	}
-	
+
 	private static void insert(@NonNull Set<EmbeddedText> set, @NonNull EmbeddedText e) {
 		// We do not synch as this is private so, if you end up here, you should have a
 		// write lock already
 		set.add(e);
 	}
-	
+
 	/**
 	 * Removes given text from all domains.
 	 * 
@@ -429,8 +429,8 @@ public class KnowledgeBase implements Serializable {
 	 *               already already in the list.
 	 * @param limit  Maximum number of results to return.
 	 */
-	private static void search(@NonNull Set<EmbeddedText> set, @NonNull EmbeddedText query, List<Pair<EmbeddedText, Double>> result,
-			int limit) {
+	private static void search(@NonNull Set<EmbeddedText> set, @NonNull EmbeddedText query,
+			List<Pair<EmbeddedText, Double>> result, int limit) {
 		// We do not synch as this is private so, if you end up here, you should have a
 		// read lock already
 

@@ -16,10 +16,12 @@
 
 package io.github.mzattera.predictivepowers.applications;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -49,10 +51,90 @@ public class OracleTest {
 		QuestionAnsweringService qas = ep.getQuestionAnsweringService();
 		KnowledgeBase kb = KnowledgeBase.load(ResourceUtil.getResourceFile("kb_banana.object"));
 
-		String question = "What is that you like?";
+		String question = "What does Olaf like?";
 		List<Pair<EmbeddedText, Double>> context = kb.search(es.embed(question).get(0), 50, 0);
 		QnAPair answer = qas.answerWithEmbeddings(question, context);
 
 		assertTrue(answer.getAnswer().toLowerCase().contains("banana"));
+		assertEquals(context.size(), answer.getEmbeddingContext().size());
+		for (int i = 0; i < context.size(); ++i)
+			assertEquals(context.get(i).getLeft().getText(), answer.getEmbeddingContext().get(i).getText());
+	}
+
+	/**
+	 * Simple completion.
+	 */
+	@Test
+	public void test02() {
+		OpenAiEndpoint ep = OpenAiEndpoint.getInstance();
+		QuestionAnsweringService qas = ep.getQuestionAnsweringService();
+
+		qas.setMaxContextTokens(1);
+
+		String question = "How high is Mt. Everest (in meters)?";
+		QnAPair answer = qas.answer(question);
+
+		assertTrue(answer.getAnswer().contains("848"));
+	}
+
+	/**
+	 * Test empty context.
+	 * @throws IOException 
+	 * @throws ClassNotFoundException 
+	 */
+	@Test
+	public void test03() throws ClassNotFoundException, IOException {
+		OpenAiEndpoint ep = OpenAiEndpoint.getInstance();
+		EmbeddingService es = ep.getEmbeddingService();
+		QuestionAnsweringService qas = ep.getQuestionAnsweringService();
+		KnowledgeBase kb = KnowledgeBase.load(ResourceUtil.getResourceFile("kb_banana.object"));
+
+		qas.setMaxContextTokens(1);
+
+		String question = "What does Olaf like?";
+		List<Pair<EmbeddedText, Double>> context = kb.search(es.embed(question).get(0), 50, 0);
+		QnAPair answer = qas.answerWithEmbeddings(question, context);
+
+		assertEquals("I do not know.", answer.getAnswer());
+		assertEquals("No context was provided.", answer.getExplanation());
+	}
+
+	/**
+	 * String as context.
+	 */
+	@Test
+	public void test0() {
+		OpenAiEndpoint ep = OpenAiEndpoint.getInstance();
+		QuestionAnsweringService qas = ep.getQuestionAnsweringService();
+
+		String question = "What does Olaf like?";
+		QnAPair answer = qas.answer(question, "Olaf likes pears.");
+
+		assertEquals("Olaf likes pears.", answer.getAnswer());
+		assertEquals(1, answer.getContext().size());
+		assertEquals("Olaf likes pears.", answer.getContext().get(0));
+	}
+
+	/**
+	 * This can be used to build a KnowledgeBase that can later be used in testing.
+	 * 
+	 * @throws IOException
+	 * @throws FileNotFoundException
+	 */
+	public static void main(String args[]) throws FileNotFoundException, IOException {
+
+		OpenAiEndpoint ep = OpenAiEndpoint.getInstance();
+		EmbeddingService es = ep.getEmbeddingService();
+		KnowledgeBase kb = new KnowledgeBase();
+
+		List<String> test = new ArrayList<>();
+		test.add("Olaf likes bananas");
+		test.add("the sum of parts is more than the parts of the sum");
+		test.add("a tiger is runnin in the forest");
+		test.add("there is no prime number smaller than 1");
+		test.add("Jupiter is a planet");
+		kb.insert(es.embed(test));
+
+		kb.save("D:\\kb_banana.object");
 	}
 }

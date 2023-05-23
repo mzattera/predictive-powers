@@ -12,7 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package io.github.mzattera.predictivepowers.services;
+ */
+package io.github.mzattera.predictivepowers.services;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -144,7 +145,7 @@ public class QuestionAnsweringService {
 	 */
 	public QnAPair answer(String question, List<String> context) {
 
-		ChatMessage qMsg = new ChatMessage("user", "Question: " + question);
+		String qMsg = "\nQuestion: " + question;
 
 		// Provides instructions and examples
 		List<ChatMessage> instructions = new ArrayList<>();
@@ -155,34 +156,34 @@ public class QuestionAnsweringService {
 						"When providing an answer, provide your reasoning as well, step by step. " + //
 						"If the answer cannot be found in the context, reply with \"I do not know.\". " + //
 						"Strictly return the answer and explanation in JSON format, as shown below."));
-		instructions.add(new ChatMessage("user", "Context:"));
-		instructions.add(new ChatMessage("user", "Biglydoos are small rodent similar to mice."));
-		instructions.add(new ChatMessage("user", "Biglydoos eat cranberries."));
-		instructions.add(new ChatMessage("user", "Question: What color are biglydoos?"));
+		instructions.add(new ChatMessage("user", "Context:\n" + //
+				"Biglydoos are small rodent similar to mice.\n" + //
+				"Biglydoos eat cranberries.\n" + //
+				"Question: What color are biglydoos?"));
 		instructions.add(new ChatMessage("assistant", //
 				"{\"answer\": \"I do not know.\", \"explanation\": \"1. This information is not provided in the context.\"}"));
-		instructions.add(new ChatMessage("user", "Context:"));
-		instructions.add(new ChatMessage("user", "Biglydoos are small rodent similar to mice."));
-		instructions.add(new ChatMessage("user", "Biglydoos eat cranberries."));
-		instructions.add(new ChatMessage("user", "Question: Do biglydoos eat fruits?"));
+		instructions.add(new ChatMessage("user", "Context:\n" + //
+				"Biglydoos are small rodent similar to mice.\n" + //
+				"Biglydoos eat cranberries.\n" + //
+				"Question: Do biglydoos eat fruits?"));
 		instructions.add(new ChatMessage("assistant", //
 				"{\"answer\": \"Yes, biglydoos eat fruits.\", " + //
 						"\"explanation\": " + //
 						"\"1. The context states: \"Biglydoos eat cranberries.\"\\n" + //
 						"2. Cranberries are a kind of fruit.\\n" + //
 						"3. Therefore, biglydoos eat fruits.\"}"));
-		instructions.add(new ChatMessage("user", "Context:"));
-		int tok = TokenUtil.count(qMsg) + TokenUtil.count(instructions);
+		int instTok = TokenUtil.count(new ChatMessage("user", qMsg)) + TokenUtil.count(instructions);
 
+		StringBuffer ctx = new StringBuffer("Context:\n");
 		int i = 0;
 		for (; i < context.size(); ++i) {
-			ChatMessage m = new ChatMessage("user", context.get(i));
-			tok += TokenUtil.count(m);
-			if (tok > maxContextTokens)
+			ChatMessage m = new ChatMessage("user", ctx.toString() + "\n" + context.get(i));
+			if ((instTok + TokenUtil.count(m)) > maxContextTokens)
 				break;
-			instructions.add(m);
+			ctx.append('\n').append(context.get(i));
 		}
-		instructions.add(qMsg);
+		ctx.append(qMsg);
+		instructions.add(new ChatMessage("user", ctx.toString()));
 
 		// No context, no answer
 		if (i == 0)

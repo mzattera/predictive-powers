@@ -6,11 +6,11 @@ Currently the library:
 
   1. Provides low-level access to OpeanAi API similar to [OpenAI-Java](https://github.com/TheoKanning/openai-java). It adds access to audio API which, at the time of writing (May 2023), is not supported by OpenAI-Java (and [not really working](https://community.openai.com/t/whisper-api-cannot-read-files-correctly/93420), TBH).
   
-  2. Adds an abstraction layer for GenAI capabilities, which should allow in the future to plug-in different providers (e.g. Hugging Face) seamlessly (see "Services" below).
+  2. Adds an abstraction layer for GenAI capabilities, which should allow in the future to plug-in different providers (e.g. Hugging Face) seamlessly (see "[Services](#services)" below).
   
   3. Provides a serializable in-memory vector database. Again, plans are to allow users to plug in any existing vector database in the future.
 
-  4. Offers methods to easily read textual content from web pages and from files in different formats (MS Office, PDF, HTML, etc.).
+  4. Offers methods to easily read textual content from web pages and files in different formats (MS Office, PDF, HTML, etc.).
   
 ## Installation
 
@@ -86,7 +86,7 @@ import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 	ep = OpenAiEndpoint.getInstance(cli);
 ```
 
-### Services
+### <a name="services"></a>Services
 
 Once the endpoint is created, it can be used to access "services" which are high-level GenAI capabilities. Currently following services are provided:
 
@@ -149,16 +149,16 @@ public class TestEndpoint {
  
  The knowledge base provides methods to search text, based on embedding similarity or other filtering criteria. Each knowledge base can be partitioned into domains, which can be searched separately, to improve performance.
  
- 
+ Some examples about how to use a knowledge base can be found [below](#oracle).
+  
+  
  ### Thread Safety
  
  With the notable exception of the knowledge base, classes in this library are NOT thread safe; this is because the library is, at present, supporting a micro-service stateless architecture,
  where AI capabilities are provided at endpoints through REST API.
  
  This greatly simplifies server architecture and allows to scale applications automatically and effortlessly when deployed inside a cloud environment.
- 
- Some examples about how to use a knowledge base can be found [below](#oracle).
- 
+  
  
  ## Examples
  
@@ -268,7 +268,8 @@ public class Oracle {
 				}
 
 				// If not, answer the question
-				// Find text in the web page which is semantically similar to the question, to use it as context
+				// Find text in the web page which is semantically similar to the question,
+				// to use it as context
 				List<Pair<EmbeddedText, Double>> context = knowledgeBase.search(
 						embeddingService.embed(question).get(0),
 						50, 0

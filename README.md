@@ -199,7 +199,7 @@ public class Chat {
 
 Below is an example of the code output; notice how conversation context is retained automatically through the conversation.
  
-![Example of a conversation with GPT-3](./Chat.PNG)
+![Example of a conversation with GPT-3](./img/Chat.PNG)
  
  
  ### <a name="oracle"></a>All-knowing Oracle
@@ -287,7 +287,7 @@ public class Oracle {
  
  This will produce the below output:
  
-![Example of a conversation with the oracle about the city of Padua](./Oracle.PNG)
+![Example of a conversation with the oracle about the city of Padua](./img/Oracle.PNG)
  
  
 ### FAQ Creation

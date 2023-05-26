@@ -15,6 +15,7 @@
  */
 package io.github.mzattera.predictivepowers.openai.client.models;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashSet;
@@ -88,6 +89,16 @@ class ModelsTest {
 
 				assertTrue(contextSize > 0);
 			}
+		} // Close endpoint
+	}
+
+	@Test
+	void test02() {
+		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+			String id = "gpt-3.5-turbo";
+			Model model = oai.getClient().retrieveModel(id);
+			assertEquals(id, model.getId());
+			assertEquals("model", model.getObject());
 		} // Close endpoint
 	}
 }

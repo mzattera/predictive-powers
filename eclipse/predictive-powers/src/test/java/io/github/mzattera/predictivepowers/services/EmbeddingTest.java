@@ -21,8 +21,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import org.apache.tika.exception.TikaException;
@@ -119,7 +121,44 @@ public class EmbeddingTest {
 
 			assertEquals(base.get(0).getEmbedding().size(), test.get(0).getEmbedding().size());
 			for (int i = 0; i < base.get(0).getEmbedding().size(); ++i)
+				
+				// TODO THIS FAILS, I DO NOT KNOW WHY, above I check that content from file matches "banana"
 				assertEquals(base.get(0).getEmbedding().get(i), test.get(0).getEmbedding().get(i));
+		} // Close endpoint
+	}
+
+	/**
+	 * Tests embedding folders recursively.
+	 * 
+	 * @throws TikaException
+	 * @throws SAXException
+	 * @throws IOException
+	 */
+	@Test
+	public void test04() throws IOException, SAXException, TikaException {
+
+		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+			EmbeddingService es = ep.getEmbeddingService();
+
+			Map<File, List<EmbeddedText>> base = es.embedFolder(ResourceUtil.getResourceFile("recursion"));
+			assertEquals(3, base.size());
+		} // Close endpoint
+	}
+
+	/**
+	 * Tests embedding URL.
+	 * @throws MalformedURLException 
+	 * 
+	 * @throws TikaException
+	 * @throws SAXException
+	 * @throws IOException
+	 */
+	@Test
+	public void test05() throws MalformedURLException, IOException, SAXException, TikaException  {
+
+		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+			EmbeddingService es = ep.getEmbeddingService();
+			es.embedURL("https://en.wikipedia.org/wiki/Alan_Turing");
 		} // Close endpoint
 	}
 }

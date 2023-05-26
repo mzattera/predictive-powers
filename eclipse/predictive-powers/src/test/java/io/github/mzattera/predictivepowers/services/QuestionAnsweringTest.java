@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.applications;
+package io.github.mzattera.predictivepowers.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -29,13 +29,9 @@ import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
-import io.github.mzattera.predictivepowers.services.EmbeddedText;
-import io.github.mzattera.predictivepowers.services.EmbeddingService;
-import io.github.mzattera.predictivepowers.services.QnAPair;
-import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
 import io.github.mzattera.util.ResourceUtil;
 
-public class OracleTest {
+public class QuestionAnsweringTest {
 
 	/**
 	 * Makes some tests by reading a knowledge base and asking a relevant question

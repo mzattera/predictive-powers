@@ -18,6 +18,7 @@ package io.github.mzattera.predictivepowers.openai.util;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Scanner;
 import java.util.Set;
 
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
@@ -27,7 +28,7 @@ import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTune;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 
 /**
- * Deletes all files and all model fine-tumes.
+ * Deletes all files and all model fine-tunes.
  * 
  * !!! USE WITH CARE !!!
  * 
@@ -37,6 +38,17 @@ import io.github.mzattera.predictivepowers.openai.client.models.Model;
 public class CleanupUtil {
 
 	public static void main(String[] args) {
+
+		try (Scanner console = new Scanner(System.in)) {
+
+			System.out.print("*** You are going to delete all uploaded files, completed fine tunes and tuned models from your account !!! ***\n");
+			System.out.print("Type \"yes\" to continue: ");
+			if (!console.nextLine().equals("yes")) {
+				System.out.print("Aborted.");
+				System.exit(-1);
+			}
+		}
+
 		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
 			OpenAiClient cli = ep.getClient();
 
@@ -47,6 +59,8 @@ public class CleanupUtil {
 				if (status.equals("pending") || status.equals("running")) {
 					status = cli.cancelFineTune(t.getId()).getStatus();
 					System.out.println("Deleting task: " + t.getId() + " => " + status);
+				} else {
+					System.out.println("\tTask (not deleted): " + t.getId() + " => " + status);					
 				}
 			}
 
@@ -56,24 +70,21 @@ public class CleanupUtil {
 				System.out.println("Deleting file: " + f.getId() + " => " + cli.deleteFile(f.getId()).isDeleted());
 			}
 
-			// TODO Delete fine tunes models still there...
+			// Delete fine tunes models still there...
 			Set<String> models = new HashSet<>();
 			for (Model m : cli.listModels()) {
 				models.add(m.getId());
 			}
 			List<FineTune> tunes = cli.listFineTunes();
 			for (FineTune t : tunes) {
-				if (t.getFineTunedModel() == null)
+				if (t.getFineTunedModel() == null) // Fine tune did not create a model
 					continue;
 
-				if (models.contains(t.getFineTunedModel())) {
+				if (models.contains(t.getFineTunedModel())) { // Is the tuned model still there?
 					System.out.println("Deleting tuned model: " + t.getFineTunedModel() + " => "
 							+ cli.deleteFineTuneModel(t.getFineTunedModel()).isDeleted());
-				} else {
-					System.out.println("		Tuned model: " + t.getFineTunedModel() + " deleteed already.");
 				}
 			}
-
 		} catch (Exception e) {
 			e.printStackTrace(System.err);
 		}

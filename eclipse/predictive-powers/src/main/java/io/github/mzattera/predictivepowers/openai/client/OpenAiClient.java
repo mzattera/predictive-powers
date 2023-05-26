@@ -286,19 +286,14 @@ public final class OpenAiClient implements Closeable {
 		return callApi(api.files()).getData();
 	}
 
+	public File uploadFile(@NonNull String fileName, @NonNull String purpose) throws IOException {
+		return uploadFile(new java.io.File(fileName), purpose);
+	}
+
 	public File uploadFile(@NonNull java.io.File jsonl, @NonNull String purpose) throws IOException {
 		try (InputStream is = new FileInputStream(jsonl)) {
 			return uploadFile(is, jsonl.getName(), purpose);
 		}
-	}
-
-	public File uploadFile(@NonNull String fileName, @NonNull String purpose) {
-
-		MultipartBody.Builder builder = new MultipartBody.Builder().setType(MediaType.get("multipart/form-data"))
-				.addFormDataPart("file", fileName, RequestBody.create(MediaType.parse("text/jsonl"), fileName))
-				.addFormDataPart("purpose", purpose);
-
-		return callApi(api.files(builder.build()));
 	}
 
 	public File uploadFile(@NonNull InputStream jsonl, @NonNull String fileName, @NonNull String purpose)

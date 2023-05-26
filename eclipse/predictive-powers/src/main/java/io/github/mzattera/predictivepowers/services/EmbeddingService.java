@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -78,6 +77,8 @@ public class EmbeddingService {
 
 	public void setMaxTokens(int maxTokens) {
 		if ((maxTokens <= 0) || (maxTokens > 8192))
+			// TODO is this a limitation of the model? 
+			// I think the API description mention this, but it might be assuming user is using text-embedding-ada-002
 			throw new IllegalArgumentException("maxTokens must be 0 < maxTokens <= 8192: " + maxTokens);
 
 		this.maxTextTokens = maxTokens;
@@ -110,33 +111,6 @@ public class EmbeddingService {
 		List<String> l = new ArrayList<>();
 		l.add(text);
 		return embed(l, req);
-	}
-
-	/**
-	 * Create embeddings for given text.
-	 * 
-	 * As there is a default maximum length for text, each element might be split
-	 * into several parts before embeddings are returned.
-	 * 
-	 * It uses parameters specified in {@link #getDefaultReq()}.
-	 */
-	public List<EmbeddedText> embed(String[] text) {
-		return embed(Arrays.asList(text), defaultReq);
-	}
-
-	/**
-	 * Create embeddings for given text.
-	 * 
-	 * As there is a default maximum length for text, each element might be split
-	 * into several parts before embeddings are returned.
-	 * 
-	 * It uses parameters specified in given {@link EmbeddingsRequest}.
-	 * 
-	 * @param maxTextTokens Maximum length in tokens of each piece of text to be
-	 *                      embedded. Text is split accordingly, if needed.
-	 */
-	public List<EmbeddedText> embed(String[] text, EmbeddingsRequest req) {
-		return embed(Arrays.asList(text), req);
 	}
 
 	/**
@@ -292,9 +266,9 @@ public class EmbeddingService {
 	 * @throws IOException
 	 * @throws MalformedURLException
 	 */
-	public List<EmbeddedText> embedUrl(String url)
+	public List<EmbeddedText> embedURL(String url)
 			throws MalformedURLException, IOException, SAXException, TikaException {
-		return embedUrl(new URL(url), defaultReq);
+		return embedURL(new URL(url), defaultReq);
 	}
 
 	/**
@@ -305,9 +279,9 @@ public class EmbeddingService {
 	 * @throws IOException
 	 * @throws MalformedURLException
 	 */
-	public List<EmbeddedText> embedUrl(String url, EmbeddingsRequest req)
+	public List<EmbeddedText> embedURL(String url, EmbeddingsRequest req)
 			throws MalformedURLException, IOException, SAXException, TikaException {
-		return embedUrl(new URL(url), req);
+		return embedURL(new URL(url), req);
 	}
 
 	/**
@@ -317,8 +291,8 @@ public class EmbeddingService {
 	 * @throws SAXException
 	 * @throws IOException
 	 */
-	public List<EmbeddedText> embedUrl(URL url) throws IOException, SAXException, TikaException {
-		return embedUrl(url, defaultReq);
+	public List<EmbeddedText> embedURL(URL url) throws IOException, SAXException, TikaException {
+		return embedURL(url, defaultReq);
 	}
 
 	/**
@@ -328,7 +302,7 @@ public class EmbeddingService {
 	 * @throws SAXException
 	 * @throws IOException
 	 */
-	public List<EmbeddedText> embedUrl(URL url, EmbeddingsRequest req) throws IOException, SAXException, TikaException {
+	public List<EmbeddedText> embedURL(URL url, EmbeddingsRequest req) throws IOException, SAXException, TikaException {
 		return embed(ExtractionUtil.fromUrl(url));
 	}
 

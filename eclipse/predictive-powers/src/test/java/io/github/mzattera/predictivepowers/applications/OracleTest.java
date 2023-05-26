@@ -46,19 +46,20 @@ public class OracleTest {
 	 */
 	@Test
 	public void test01() throws ClassNotFoundException, IOException {
-		OpenAiEndpoint ep = OpenAiEndpoint.getInstance();
-		EmbeddingService es = ep.getEmbeddingService();
-		QuestionAnsweringService qas = ep.getQuestionAnsweringService();
-		KnowledgeBase kb = KnowledgeBase.load(ResourceUtil.getResourceFile("kb_banana.object"));
+		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+			EmbeddingService es = ep.getEmbeddingService();
+			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
+			KnowledgeBase kb = KnowledgeBase.load(ResourceUtil.getResourceFile("kb_banana.object"));
 
-		String question = "What does Olaf like?";
-		List<Pair<EmbeddedText, Double>> context = kb.search(es.embed(question).get(0), 50, 0);
-		QnAPair answer = qas.answerWithEmbeddings(question, context);
+			String question = "What does Olaf like?";
+			List<Pair<EmbeddedText, Double>> context = kb.search(es.embed(question).get(0), 50, 0);
+			QnAPair answer = qas.answerWithEmbeddings(question, context);
 
-		assertTrue(answer.getAnswer().toLowerCase().contains("banana"));
-		assertEquals(context.size(), answer.getEmbeddingContext().size());
-		for (int i = 0; i < context.size(); ++i)
-			assertEquals(context.get(i).getLeft().getText(), answer.getEmbeddingContext().get(i).getText());
+			assertTrue(answer.getAnswer().toLowerCase().contains("banana"));
+			assertEquals(context.size(), answer.getEmbeddingContext().size());
+			for (int i = 0; i < context.size(); ++i)
+				assertEquals(context.get(i).getLeft().getText(), answer.getEmbeddingContext().get(i).getText());
+		} // Close endpoint
 	}
 
 	/**
@@ -66,37 +67,40 @@ public class OracleTest {
 	 */
 	@Test
 	public void test02() {
-		OpenAiEndpoint ep = OpenAiEndpoint.getInstance();
-		QuestionAnsweringService qas = ep.getQuestionAnsweringService();
+		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
 
-		qas.setMaxContextTokens(1);
+			qas.setMaxContextTokens(1);
 
-		String question = "How high is Mt. Everest (in meters)?";
-		QnAPair answer = qas.answer(question);
+			String question = "How high is Mt. Everest (in meters)?";
+			QnAPair answer = qas.answer(question);
 
-		assertTrue(answer.getAnswer().contains("848"));
+			assertTrue(answer.getAnswer().contains("848"));
+		} // Close endpoint
 	}
 
 	/**
 	 * Test empty context.
-	 * @throws IOException 
-	 * @throws ClassNotFoundException 
+	 * 
+	 * @throws IOException
+	 * @throws ClassNotFoundException
 	 */
 	@Test
 	public void test03() throws ClassNotFoundException, IOException {
-		OpenAiEndpoint ep = OpenAiEndpoint.getInstance();
-		EmbeddingService es = ep.getEmbeddingService();
-		QuestionAnsweringService qas = ep.getQuestionAnsweringService();
-		KnowledgeBase kb = KnowledgeBase.load(ResourceUtil.getResourceFile("kb_banana.object"));
+		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+			EmbeddingService es = ep.getEmbeddingService();
+			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
+			KnowledgeBase kb = KnowledgeBase.load(ResourceUtil.getResourceFile("kb_banana.object"));
 
-		qas.setMaxContextTokens(1);
+			qas.setMaxContextTokens(1);
 
-		String question = "What does Olaf like?";
-		List<Pair<EmbeddedText, Double>> context = kb.search(es.embed(question).get(0), 50, 0);
-		QnAPair answer = qas.answerWithEmbeddings(question, context);
+			String question = "What does Olaf like?";
+			List<Pair<EmbeddedText, Double>> context = kb.search(es.embed(question).get(0), 50, 0);
+			QnAPair answer = qas.answerWithEmbeddings(question, context);
 
-		assertEquals("I do not know.", answer.getAnswer());
-		assertEquals("No context was provided.", answer.getExplanation());
+			assertEquals("I do not know.", answer.getAnswer());
+			assertEquals("No context was provided.", answer.getExplanation());
+		} // Close endpoint
 	}
 
 	/**
@@ -104,15 +108,16 @@ public class OracleTest {
 	 */
 	@Test
 	public void test0() {
-		OpenAiEndpoint ep = OpenAiEndpoint.getInstance();
-		QuestionAnsweringService qas = ep.getQuestionAnsweringService();
+		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
 
-		String question = "What does Olaf like?";
-		QnAPair answer = qas.answer(question, "Olaf likes pears.");
+			String question = "What does Olaf like?";
+			QnAPair answer = qas.answer(question, "Olaf likes pears.");
 
-		assertEquals("Olaf likes pears.", answer.getAnswer());
-		assertEquals(1, answer.getContext().size());
-		assertEquals("Olaf likes pears.", answer.getContext().get(0));
+			assertEquals("Olaf likes pears.", answer.getAnswer());
+			assertEquals(1, answer.getContext().size());
+			assertEquals("Olaf likes pears.", answer.getContext().get(0));
+		} // Close endpoint
 	}
 
 	/**
@@ -123,18 +128,19 @@ public class OracleTest {
 	 */
 	public static void main(String args[]) throws FileNotFoundException, IOException {
 
-		OpenAiEndpoint ep = OpenAiEndpoint.getInstance();
-		EmbeddingService es = ep.getEmbeddingService();
-		KnowledgeBase kb = new KnowledgeBase();
+		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+			EmbeddingService es = ep.getEmbeddingService();
+			KnowledgeBase kb = new KnowledgeBase();
 
-		List<String> test = new ArrayList<>();
-		test.add("Olaf likes bananas");
-		test.add("the sum of parts is more than the parts of the sum");
-		test.add("a tiger is runnin in the forest");
-		test.add("there is no prime number smaller than 1");
-		test.add("Jupiter is a planet");
-		kb.insert(es.embed(test));
+			List<String> test = new ArrayList<>();
+			test.add("Olaf likes bananas");
+			test.add("the sum of parts is more than the parts of the sum");
+			test.add("a tiger is runnin in the forest");
+			test.add("there is no prime number smaller than 1");
+			test.add("Jupiter is a planet");
+			kb.insert(es.embed(test));
 
-		kb.save("D:\\kb_banana.object");
+			kb.save("D:\\kb_banana.object");
+		} // Close endpoint
 	}
 }

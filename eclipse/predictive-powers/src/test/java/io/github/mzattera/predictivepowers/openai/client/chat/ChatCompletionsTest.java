@@ -12,7 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package io.github.mzattera.predictivepowers.openai.client.chat;
+ */
+package io.github.mzattera.predictivepowers.openai.client.chat;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -29,23 +30,24 @@ class ChatCompletionsTest {
 
 	@Test
 	void test01() {
-		OpenAiEndpoint oai = OpenAiEndpoint.getInstance();
-		String model = "gpt-3.5-turbo";
-		String prompt = "How high is Mt. Everest?";
-		ChatCompletionsRequest cr = new ChatCompletionsRequest();
+		try (OpenAiEndpoint endpoint = OpenAiEndpoint.getInstance()) {
+			String model = "gpt-3.5-turbo";
+			String prompt = "How high is Mt. Everest?";
+			ChatCompletionsRequest cr = new ChatCompletionsRequest();
 
-		cr.setModel(model);
-		cr.getMessages().add(ChatMessage.builder().role("user").content(prompt).build());
-		cr.setMaxTokens(ModelUtil.getContextSize(model) - 15);
-		cr.setStop(new ArrayList<>());
-		cr.getStop().add("feet");
+			cr.setModel(model);
+			cr.getMessages().add(ChatMessage.builder().role("user").content(prompt).build());
+			cr.setMaxTokens(ModelUtil.getContextSize(model) - 15);
+			cr.setStop(new ArrayList<>());
+			cr.getStop().add("feet");
 
-		ChatCompletionsResponse resp = oai.getClient().createChatCompletion(cr);
+			ChatCompletionsResponse resp = endpoint.getClient().createChatCompletion(cr);
 
-		assertEquals(resp.getChoices().size(), 1);
-		assertEquals(resp.getChoices().get(0).getFinishReason(), "stop");
-		assertTrue(resp.getChoices().get(0).getMessage().getContent().contains("848")
-				|| resp.getChoices().get(0).getMessage().getContent().contains("029 "));
-		assertTrue(resp.getChoices().get(0).getMessage().getContent().endsWith("029 "));
+			assertEquals(resp.getChoices().size(), 1);
+			assertEquals(resp.getChoices().get(0).getFinishReason(), "stop");
+			assertTrue(resp.getChoices().get(0).getMessage().getContent().contains("848")
+					|| resp.getChoices().get(0).getMessage().getContent().contains("029 "));
+			assertTrue(resp.getChoices().get(0).getMessage().getContent().endsWith("029 "));
+		} // Close endpoint
 	}
 }

@@ -37,9 +37,7 @@ import io.github.mzattera.predictivepowers.openai.client.models.Model;
 public class CleanupUtil {
 
 	public static void main(String[] args) {
-		try {
-
-			OpenAiEndpoint ep = OpenAiEndpoint.getInstance();
+		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
 			OpenAiClient cli = ep.getClient();
 
 			// Cancel tuning tasks

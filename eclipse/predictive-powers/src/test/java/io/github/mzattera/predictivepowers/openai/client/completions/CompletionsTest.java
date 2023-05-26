@@ -12,7 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package io.github.mzattera.predictivepowers.openai.client.completions;
+ */
+package io.github.mzattera.predictivepowers.openai.client.completions;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,87 +31,92 @@ class CompletionsTest {
 
 	@Test
 	void test01() {
-		OpenAiEndpoint oai = OpenAiEndpoint.getInstance();
-		String model = "text-davinci-003";
-		String prompt = "How high is Mt. Everest (in meters)?";
-		CompletionsRequest cr = new CompletionsRequest();
+		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+			String model = "text-davinci-003";
+			String prompt = "How high is Mt. Everest (in meters)?";
+			CompletionsRequest cr = new CompletionsRequest();
 
-		cr.setModel(model);
-		cr.setPrompt(prompt);
-		cr.setMaxTokens(ModelUtil.getContextSize(model) - 10);
-		cr.setStop(new ArrayList<>());
-		cr.getStop().add("feet");
+			cr.setModel(model);
+			cr.setPrompt(prompt);
+			cr.setMaxTokens(ModelUtil.getContextSize(model) - 10);
+			cr.setStop(new ArrayList<>());
+			cr.getStop().add("feet");
 
-		CompletionsResponse resp = oai.getClient().createCompletion(cr);
+			CompletionsResponse resp = oai.getClient().createCompletion(cr);
 
-		assertEquals(resp.getChoices().size(), 1);
-		assertEquals(resp.getChoices().get(0).getFinishReason(), "stop");
+			assertEquals(resp.getChoices().size(), 1);
+			assertEquals(resp.getChoices().get(0).getFinishReason(), "stop");
+		} // Close endpoint
 	}
 
 	@Test
 	void test02() {
-		OpenAiEndpoint oai = OpenAiEndpoint.getInstance();
-		String model = "text-davinci-003";
-		String prompt = "How high is Mt. Everest (in meters)?";
-		CompletionsRequest cr = new CompletionsRequest();
+		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+			String model = "text-davinci-003";
+			String prompt = "How high is Mt. Everest (in meters)?";
+			CompletionsRequest cr = new CompletionsRequest();
 
-		cr.setModel(model);
-		cr.setPrompt(prompt);
-		cr.setMaxTokens(ModelUtil.getContextSize(model) - 10);
-		cr.setN(3);
+			cr.setModel(model);
+			cr.setPrompt(prompt);
+			cr.setMaxTokens(ModelUtil.getContextSize(model) - 10);
+			cr.setN(3);
 
-		CompletionsResponse resp = oai.getClient().createCompletion(cr);
+			CompletionsResponse resp = oai.getClient().createCompletion(cr);
 
-		assertEquals(resp.getChoices().size(), 3);
-		assertEquals(resp.getChoices().get(0).getFinishReason(), "stop");
+			assertEquals(resp.getChoices().size(), 3);
+			assertEquals(resp.getChoices().get(0).getFinishReason(), "stop");
 
-		for (CompletionsChoice c : resp.getChoices()) {
-			assertTrue(c.getText().contains("848"));
-		}
+			for (CompletionsChoice c : resp.getChoices()) {
+				assertTrue(c.getText().contains("848"));
+			}
+		} // Close endpoint
 	}
 
 	@Test
 	void test03() {
-		OpenAiEndpoint oai = OpenAiEndpoint.getInstance();
-		String model = "text-davinci-003";
-		String prompt = "How high is Mt. Everest (in meters)?";
-		CompletionsRequest cr = new CompletionsRequest();
+		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+			String model = "text-davinci-003";
+			String prompt = "How high is Mt. Everest (in meters)?";
+			CompletionsRequest cr = new CompletionsRequest();
 
-		cr.setModel(model);
-		cr.setPrompt(prompt);
-		cr.setMaxTokens(ModelUtil.getContextSize(model) - 10);
-		cr.setLogprobs(2);
+			cr.setModel(model);
+			cr.setPrompt(prompt);
+			cr.setMaxTokens(ModelUtil.getContextSize(model) - 10);
+			cr.setLogprobs(2);
 
-		CompletionsResponse resp = oai.getClient().createCompletion(cr);
+			CompletionsResponse resp = oai.getClient().createCompletion(cr);
 
-		assertEquals(resp.getChoices().size(), 1);
-		assertEquals(resp.getChoices().get(0).getFinishReason(), "stop");
+			assertEquals(resp.getChoices().size(), 1);
+			assertEquals(resp.getChoices().get(0).getFinishReason(), "stop");
+		} // Close endpoint
 	}
 
 	@Test
 	void test04() {
-		OpenAiEndpoint oai = OpenAiEndpoint.getInstance();
-		CompletionService cs = oai.getCompletionService();
+		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+			CompletionService cs = oai.getCompletionService();
 
-		cs.getDefaultReq().setEcho(true);
-		cs.getDefaultReq().setTemperature(0.0);
-		String prompt = "Mt. Everest is";
-		TextResponse resp = cs.complete(prompt);
-		
-		assertTrue(resp.getText().startsWith(prompt));
+			cs.getDefaultReq().setEcho(true);
+			cs.getDefaultReq().setTemperature(0.0);
+			String prompt = "Mt. Everest is";
+			TextResponse resp = cs.complete(prompt);
+
+			assertTrue(resp.getText().startsWith(prompt));
+		} // Close endpoint
 	}
 
 	@Test
 	void test05() {
-		OpenAiEndpoint oai = OpenAiEndpoint.getInstance();
-		CompletionService cs = oai.getCompletionService();
+		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+			CompletionService cs = oai.getCompletionService();
 
-		cs.getDefaultReq().setEcho(false);
-		cs.getDefaultReq().setTemperature(0.0);
-		String prompt = "Mt. Everest is";
-		String suffix = "meters high.";	
-		TextResponse resp = cs.insert(prompt, suffix);
-		
-		assertTrue(resp.getText().contains("8,848"));
+			cs.getDefaultReq().setEcho(false);
+			cs.getDefaultReq().setTemperature(0.0);
+			String prompt = "Mt. Everest is";
+			String suffix = "meters high.";
+			TextResponse resp = cs.insert(prompt, suffix);
+
+			assertTrue(resp.getText().contains("8,848"));
+		} // Close endpoint
 	}
 }

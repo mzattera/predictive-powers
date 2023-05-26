@@ -12,9 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package io.github.mzattera.predictivepowers.services;
-
-import java.sql.Timestamp;
+ */
+package io.github.mzattera.predictivepowers.services;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -42,11 +41,11 @@ public class ChatMessage {
 
 	@NonNull
 	String role;
-	
+
 	@NonNull
 	String content;
 
 	// TODO add a timestamp?
-	
+
 	String name;
 }

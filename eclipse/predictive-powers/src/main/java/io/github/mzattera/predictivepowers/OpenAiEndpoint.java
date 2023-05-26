@@ -16,6 +16,8 @@
 
 package io.github.mzattera.predictivepowers;
 
+import java.io.Closeable;
+
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
@@ -34,7 +36,7 @@ import lombok.NonNull;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-public class OpenAiEndpoint {
+public class OpenAiEndpoint implements Closeable {
 
 	// TODO add endpoint for Azure OpenAi Services
 
@@ -129,5 +131,14 @@ public class OpenAiEndpoint {
 
 	public QuestionAnsweringService getQuestionAnsweringService(@NonNull ChatService cs) {
 		return new QuestionAnsweringService(this, cs);
+	}
+
+	@Override
+	public void close() {
+		try {
+			client.close();
+		} catch (Exception e) {
+			// TODO log
+		}
 	}
 }

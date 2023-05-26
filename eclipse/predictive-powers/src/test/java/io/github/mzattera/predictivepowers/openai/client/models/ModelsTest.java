@@ -12,7 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package io.github.mzattera.predictivepowers.openai.client.models;
+ */
+package io.github.mzattera.predictivepowers.openai.client.models;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -68,24 +69,25 @@ class ModelsTest {
 
 	@Test
 	void test01() {
-		OpenAiEndpoint oai = OpenAiEndpoint.getInstance();
-		List<Model> models = oai.getClient().listModels();
-		assertTrue(models.size() > 0);
+		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+			List<Model> models = oai.getClient().listModels();
+			assertTrue(models.size() > 0);
 
-		for (Model m : models) {
+			for (Model m : models) {
 
-			if (m.getId().contains("-edit"))
-				continue; // Edits model do not need size
-			if (m.getId().contains("ft-personal"))
-				continue; // fine-tunes can be ignored
-			if (oldModels.contains(m.getId()))
-				continue; // Skip old models
+				if (m.getId().contains("-edit"))
+					continue; // Edits model do not need size
+				if (m.getId().contains("ft-personal"))
+					continue; // fine-tunes can be ignored
+				if (oldModels.contains(m.getId()))
+					continue; // Skip old models
 
-			int contextSize = ModelUtil.getContextSize(m.getId());
-			if (contextSize < 0)
-				System.out.println("No context size defined for model: " + m.getId());
+				int contextSize = ModelUtil.getContextSize(m.getId());
+				if (contextSize < 0)
+					System.out.println("No context size defined for model: " + m.getId());
 
-			assertTrue(contextSize > 0);
-		}
+				assertTrue(contextSize > 0);
+			}
+		} // Close endpoint
 	}
 }

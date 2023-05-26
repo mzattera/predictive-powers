@@ -17,6 +17,7 @@
 package io.github.mzattera.predictivepowers.openai.client;
 
 import java.awt.image.BufferedImage;
+import java.io.Closeable;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -69,17 +70,19 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public final class OpenAiClient {
+public final class OpenAiClient implements Closeable {
 
 	// TODO Expose features descibed in openai-java
 	// TODO chnge to use inside Azure
-	
+
 	private final static String API_BASE_URL = "https://api.openai.com/v1/";
 
 	public final static int DEFAULT_READ_TIMEOUT_MIILLIS = 30 * 1000;
 
 	// OpenAI API defined with Retrofit
 	private final OpenAiApi api;
+
+	private final OkHttpClient client;
 
 	// Maps from-to POJO <-> JSON
 	private final static ObjectMapper mapper;
@@ -101,8 +104,7 @@ public final class OpenAiClient {
 	// TODO expose other parameters
 	public OpenAiClient(@NonNull String apiKey, int timeoutMillis) {
 
-		OkHttpClient client = new OkHttpClient.Builder()
-				.connectionPool(new ConnectionPool(5, timeoutMillis, TimeUnit.MILLISECONDS))
+		client = new OkHttpClient.Builder().connectionPool(new ConnectionPool(5, timeoutMillis, TimeUnit.MILLISECONDS))
 				.readTimeout(timeoutMillis, TimeUnit.MILLISECONDS).addInterceptor(new Interceptor() {
 					@Override
 					public Response intercept(Chain chain) throws IOException {
@@ -399,6 +401,17 @@ public final class OpenAiClient {
 				throw e;
 			}
 			throw oaie;
+		}
+	}
+
+	@Override
+	public void close() {
+		try {
+			client.dispatcher().executorService().shutdown();
+			client.connectionPool().evictAll();
+			client.cache().close();
+		} catch (Exception e) {
+			// TODO log here
 		}
 	}
 }

@@ -27,7 +27,7 @@ setting up this variable depends on the OS you are using.
 	
 ## Usage
 
-### Direct OpenAi API calls
+### OpenAiClient (Direct OpenAi API Calls)
 
 You can access OpeanAi API by instantiating an `OpenAiClient`. Class constructors allow you to pass your OpenAi API key, which will be used in all subsequent calls. If you use the no-arguments constructor, the code will try to read the key from 'OPENAI_API_KEY' system environment variable.
 
@@ -65,9 +65,9 @@ will output something like:
  of theoretical computer science and artificial intelligence.
 ```
 
-### Endpoint
+### Endpoints
 
-An endpoint provides GenAI capabilities in form of services; it can be created similarly to an `OpenAiClient`, by passing an optional API key.
+An endpoint provides GenAI capabilities in form of services; it can be created by passing an optional API key or an existing client.
   
 ```java
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
@@ -79,7 +79,7 @@ import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 	OpenAiEndpoint ep = OpenAiEndpoint.getInstance();
 
 	// Pass API key explicitly
-	ep = OpenAiEndpoint.getInstance("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");
+	ep = OpenAiEndpoint.getInstance("sk-H0a...Yo1");
 
 	// Build endpoint from an API client
 	OpenAiClient cli = new OpenAiClient();

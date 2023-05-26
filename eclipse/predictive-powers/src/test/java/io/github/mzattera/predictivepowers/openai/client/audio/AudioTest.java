@@ -12,7 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package io.github.mzattera.predictivepowers.openai.client.audio;
+ */
+package io.github.mzattera.predictivepowers.openai.client.audio;
 
 import java.io.IOException;
 
@@ -26,31 +27,33 @@ class AudioTest {
 
 	@Test
 	void test01() throws IOException {
-		OpenAiEndpoint oai = OpenAiEndpoint.getInstance();
-		String model = "whisper-1";
-		AudioRequest req = new AudioRequest();
+		try (OpenAiEndpoint endpoint = OpenAiEndpoint.getInstance()) {
+			String model = "whisper-1";
+			AudioRequest req = new AudioRequest();
 
-		req.setModel(model);
-		req.setResponseFormat(ResponseFormat.TEXT);
-		req.setLanguage("en");
+			req.setModel(model);
+			req.setResponseFormat(ResponseFormat.TEXT);
+			req.setLanguage("en");
 
-		String resp = oai.getClient().createTranscription(ResourceUtil.getResourceStream("Welcome.wav"), req);
+			String resp = endpoint.getClient().createTranscription(ResourceUtil.getResourceStream("Welcome.wav"), req);
 
-		System.out.println(resp.toString());
+			System.out.println(resp.toString());
+		} // Close endpoint
 	}
 
 	@Test
 	void test02() throws IOException {
-		OpenAiEndpoint oai = OpenAiEndpoint.getInstance();
-		String model = "whisper-1";
-		AudioRequest req = new AudioRequest();
+		try (OpenAiEndpoint endpoint = OpenAiEndpoint.getInstance()) {
+			String model = "whisper-1";
+			AudioRequest req = new AudioRequest();
 
-		req.setModel(model);
-		req.setResponseFormat(ResponseFormat.TEXT);
-		req.setLanguage("en");
+			req.setModel(model);
+			req.setResponseFormat(ResponseFormat.TEXT);
+			req.setLanguage("en");
 
-		String resp = oai.getClient().createTranscription(ResourceUtil.getResourceStream("Welcome.wav"), req);
+			String resp = endpoint.getClient().createTranscription(ResourceUtil.getResourceStream("Welcome.wav"), req);
 
-		System.out.println(resp.toString());
+			System.out.println(resp.toString());
+		} // Close endpoint
 	}
 }

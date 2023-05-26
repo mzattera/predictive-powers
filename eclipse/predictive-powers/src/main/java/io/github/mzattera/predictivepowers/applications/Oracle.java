@@ -52,11 +52,9 @@ public class Oracle {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		try {
-
-			// OpenAI end-point
-			// Make sure you specify your API key n OPENAI_KEY system environment variable.
-			OpenAiEndpoint ep = OpenAiEndpoint.getInstance();
+		// OpenAI end-point
+		// Make sure you specify your API key n OPENAI_KEY system environment variable.
+		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
 			EmbeddingService es = ep.getEmbeddingService();
 			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
 
@@ -68,7 +66,7 @@ public class Oracle {
 				kb = KnowledgeBase.load(SAVED_KB_FILE);
 			} else {
 				System.out.println("Knowledge Base Folder: " + KB_FOLDER.getCanonicalPath());
-				
+
 				// Creates a KB out of the folder
 				for (Entry<File, List<EmbeddedText>> fileEmbeddings : es.embedFolder(KB_FOLDER).entrySet()) {
 					for (EmbeddedText embedding : fileEmbeddings.getValue()) {
@@ -76,7 +74,7 @@ public class Oracle {
 						kb.insert(embedding);
 					}
 				}
-				
+
 				// Save it
 				kb.save(SAVED_KB_FILE);
 			}
@@ -107,5 +105,4 @@ public class Oracle {
 			e.printStackTrace(System.err);
 		}
 	}
-
 }

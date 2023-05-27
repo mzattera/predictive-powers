@@ -45,7 +45,7 @@ public class ChatMessage {
 	@NonNull
 	String content;
 
-	// TODO add a timestamp?
+	// TODO add a time stamp?
 
 	String name;
 }

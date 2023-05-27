@@ -104,8 +104,7 @@ public class CompletionService {
 				req.setMaxTokens(ModelUtil.getContextSize(req.getModel()) - tok -10);
 			}
 
-			// TODO: catch exception if maxToken is too high, parse prompt token length and
-			// resubmit, optionally
+			// TODO: catch exception if maxToken is too high, parse prompt token length and resubmit
 			CompletionsResponse resp = ep.getClient().createCompletion(req);
 			CompletionsChoice choice = resp.getChoices().get(0);
 			return TextResponse.fromGptApi(choice.getText(), choice.getFinishReason());

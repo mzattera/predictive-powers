@@ -27,7 +27,7 @@ class AudioTest {
 
 	@Test
 	void test01() throws IOException {
-		try (OpenAiEndpoint endpoint = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 			String model = "whisper-1";
 			AudioRequest req = new AudioRequest();
 
@@ -43,7 +43,7 @@ class AudioTest {
 
 	@Test
 	void test02() throws IOException {
-		try (OpenAiEndpoint endpoint = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 			String model = "whisper-1";
 			AudioRequest req = new AudioRequest();
 

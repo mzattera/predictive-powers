@@ -31,11 +31,11 @@ import io.github.mzattera.util.ResourceUtil;
 
 class ImagesTest {
 
-	// TODO add test for image edits
+	// TODO add test for createImageEdit()
 
 	@Test
 	void test01() throws IOException {
-		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			String prompt = "A portrait of a blonde lady, with green eyes, holding a green apple. On the background a red wall with a window opened on a country landscape with a lake. In the sky an eagle flies. Neoromantic oil portrait style";
 			ImagesRequest req = new ImagesRequest();
 
@@ -53,7 +53,7 @@ class ImagesTest {
 
 	@Test
 	void test02() throws IOException {
-		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			ImagesRequest req = new ImagesRequest();
 
 			req.setSize(ImageSize._256x256);

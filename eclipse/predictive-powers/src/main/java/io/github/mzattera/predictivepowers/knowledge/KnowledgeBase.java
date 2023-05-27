@@ -373,7 +373,7 @@ public class KnowledgeBase implements Serializable {
 		return result;
 	}
 
-	// TODO: add a search filtered by a matcher
+	// TODO: add a search filtered by a matcher -> Check if Milvus supports it
 
 	/**
 	 * Searches in the knowledge base, returning the list of embeddings most similar

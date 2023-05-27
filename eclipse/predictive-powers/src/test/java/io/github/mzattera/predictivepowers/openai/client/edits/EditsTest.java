@@ -25,7 +25,7 @@ class EditsTest {
 
 	@Test
 	void test01() {
-		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			String model = "text-davinci-edit-001";
 			String prompt = "Put all text in uppercase.";
 			String input = "How high is Mt. Everest?";

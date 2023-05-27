@@ -27,7 +27,7 @@ class ModerationsTest {
 
 	@Test
 	void test01() {
-		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			OpenAiClient cli = oai.getClient();
 
 			ModerationsRequest req = new ModerationsRequest();

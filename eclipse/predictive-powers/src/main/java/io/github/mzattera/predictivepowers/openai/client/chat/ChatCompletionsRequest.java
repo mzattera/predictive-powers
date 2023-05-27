@@ -54,7 +54,7 @@ public class ChatCompletionsRequest implements Cloneable {
 	Double topP;
 	Integer n;
 
-	// TODO: Add support
+	// TODO: Add support for streaming input at least in direct API calls, if so make sure services do not stream
 	final boolean stream = false;
 
 	List<String> stop;

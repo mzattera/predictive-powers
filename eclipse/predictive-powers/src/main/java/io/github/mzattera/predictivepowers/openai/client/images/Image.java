@@ -16,6 +16,8 @@
 
 package io.github.mzattera.predictivepowers.openai.client.images;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -32,5 +34,7 @@ import lombok.ToString;
 public class Image {
 
 	String url;
+	
+	@JsonProperty("b64_json") // must do for single lower case initial
 	String b64Json;
 }

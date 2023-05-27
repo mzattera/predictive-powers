@@ -42,7 +42,7 @@ public class QuestionAnsweringTest {
 	 */
 	@Test
 	public void test01() throws ClassNotFoundException, IOException {
-		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			EmbeddingService es = ep.getEmbeddingService();
 			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
 			KnowledgeBase kb = KnowledgeBase.load(ResourceUtil.getResourceFile("kb_banana.object"));
@@ -63,7 +63,7 @@ public class QuestionAnsweringTest {
 	 */
 	@Test
 	public void test02() {
-		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
 
 			qas.setMaxContextTokens(1);
@@ -83,7 +83,7 @@ public class QuestionAnsweringTest {
 	 */
 	@Test
 	public void test03() throws ClassNotFoundException, IOException {
-		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			EmbeddingService es = ep.getEmbeddingService();
 			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
 			KnowledgeBase kb = KnowledgeBase.load(ResourceUtil.getResourceFile("kb_banana.object"));
@@ -104,7 +104,7 @@ public class QuestionAnsweringTest {
 	 */
 	@Test
 	public void test0() {
-		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
 
 			String question = "What does Olaf like?";
@@ -124,7 +124,7 @@ public class QuestionAnsweringTest {
 	 */
 	public static void main(String args[]) throws FileNotFoundException, IOException {
 
-		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			EmbeddingService es = ep.getEmbeddingService();
 			KnowledgeBase kb = new KnowledgeBase();
 

@@ -36,7 +36,7 @@ public class ChatTest {
 	 */
 	@Test
 	public void test01() {
-		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			ChatService cs = ep.getChatService();
 
 			// Personality
@@ -67,10 +67,9 @@ public class ChatTest {
 	/**
 	 * Check chat and history management.
 	 */
-	// TODO potentially split in many tasks
 	@Test
 	public void test02() {
-		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			ChatService cs = ep.getChatService();
 
 			// Personality, history length and conversation steps limits ////////////
@@ -197,10 +196,9 @@ public class ChatTest {
 	/**
 	 * Check chat and history management with exception.
 	 */
-	// TODO potentially split in many tasks
 	@Test
 	public void test03() {
-		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			ChatService cs = ep.getChatService();
 
 			// Personality, history length and conversation steps limits ////////////

@@ -40,8 +40,7 @@ import lombok.Setter;
  */
 public class ChatService {
 
-	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
-	// values from a Map
+	// TODO add "slot filling" capabilities: fill a slot in the prompt based on values from a Map
 
 	public ChatService(OpenAiEndpoint ep) {
 		this(ep, new ChatCompletionsRequest());
@@ -271,8 +270,7 @@ public class ChatService {
 				req.setMaxTokens(ModelUtil.getContextSize(req.getModel()) - tok - 10);
 			}
 
-			// TODO: catch exception if maxToken is too high, parse prompt token length and
-			// resubmit, optionally
+			// TODO: catch exception if maxToken is too high, parse prompt token length and resubmit
 			ChatCompletionsResponse resp = ep.getClient().createChatCompletion(req);
 			return resp.getChoices().get(0);
 

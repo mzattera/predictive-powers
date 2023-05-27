@@ -34,11 +34,9 @@ import io.github.mzattera.util.ResourceUtil;
 
 class FineTunesTest {
 
-	// TODO add checks about events
-
 	@Test
 	void test01() throws IOException {
-		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			OpenAiClient c = oai.getClient();
 
 			// Upload file for training
@@ -69,12 +67,12 @@ class FineTunesTest {
 	 * Tests uploading and retrieving a file.
 	 * 
 	 * @throws IOException
-	 * @throws TikaException 
-	 * @throws SAXException 
+	 * @throws TikaException
+	 * @throws SAXException
 	 */
 	@Test
 	void test02() throws IOException, SAXException, TikaException {
-		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			OpenAiClient c = oai.getClient();
 
 			// Upload file for training
@@ -93,24 +91,50 @@ class FineTunesTest {
 	 * Tests listing events
 	 * 
 	 * @throws IOException
-	 * @throws TikaException 
-	 * @throws SAXException 
+	 * @throws TikaException
+	 * @throws SAXException
 	 */
 	@Test
-	void test03()  {
-		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+	void test03() {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			OpenAiClient c = oai.getClient();
-			
+
 			List<FineTune> fineTunes = c.listFineTunes();
-			assertTrue(fineTunes.size()>0);
-			
+			assertTrue(fineTunes.size() > 0);
+
 			List<FineTuneEvent> events = c.listFineTuneEvents(fineTunes.get(0).getId());
-			assertTrue(events.size()>0);
+			assertTrue(events.size() > 0);
 			assertEquals("fine-tune-event", events.get(0).getObject());
-			
+
 			for (FineTuneEvent e : events) {
 				System.out.println(e.toString());
 			}
 		} // Close endpoint
 	}
+
+	/**
+	 * Test for cancelFineTunes() ...seems difficult as it need a model in training
+	 * 
+	 * @throws IOException
+	 */
+	@Test
+	void test04() throws IOException {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
+			OpenAiClient c = oai.getClient();
+
+			// Upload file for training
+			File training = c.uploadFile(ResourceUtil.getResourceFile("sentiment_training_dataset.jsonl"), "fine-tune");
+
+			// Start tuning the model
+			FineTunesRequest req = FineTunesRequest.builder().trainingFile(training.getId()).model("ada").nEpochs(10)
+					.build();
+			FineTune tuned = c.createFineTune(req);
+//			while (!tuned.getStatus().equals("running")) { // Wait for tuning to start -> seems it is not needed
+//			}
+
+			// Cancel
+			c.cancelFineTune(tuned.getId());
+		} // Close endpoint
+	}
+
 }

@@ -49,7 +49,7 @@ public class CleanupUtil {
 			}
 		}
 
-		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			OpenAiClient cli = ep.getClient();
 
 			// Cancel tuning tasks

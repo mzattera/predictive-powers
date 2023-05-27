@@ -65,6 +65,9 @@ will output something like:
  of theoretical computer science and artificial intelligence.
 ```
 
+**** TODO Document customisation & mention different constructors for customisation
+**** TODO esempio usando proxy
+
 ### Endpoints
 
 An endpoint provides GenAI capabilities in form of services; it can be created by passing an optional API key or an existing client.
@@ -85,6 +88,9 @@ import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 	OpenAiClient cli = new OpenAiClient();
 	ep = OpenAiEndpoint.getInstance(cli);
 ```
+
+**** TODO Document creation using custom client
+
 
 ### <a name="services"></a>Services
 

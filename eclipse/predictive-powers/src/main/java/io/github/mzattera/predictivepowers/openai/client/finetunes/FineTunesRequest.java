@@ -18,6 +18,8 @@ package io.github.mzattera.predictivepowers.openai.client.finetunes;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -44,10 +46,13 @@ public class FineTunesRequest {
 
 	@NonNull
 	String trainingFile;
-	
+
 	String validationFile;
 	String model;
+
+	@JsonProperty("n_epochs") // must do for single lower case initial
 	Integer nEpochs;
+	
 	Integer batchSize;
 	Double learningRateMultiplier;
 	Double promptLossWeight;

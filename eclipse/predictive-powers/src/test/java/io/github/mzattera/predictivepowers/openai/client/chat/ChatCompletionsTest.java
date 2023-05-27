@@ -30,7 +30,7 @@ class ChatCompletionsTest {
 
 	@Test
 	void test01() {
-		try (OpenAiEndpoint endpoint = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 			String model = "gpt-3.5-turbo";
 			String prompt = "How high is Mt. Everest?";
 			ChatCompletionsRequest cr = new ChatCompletionsRequest();
@@ -48,6 +48,27 @@ class ChatCompletionsTest {
 			assertTrue(resp.getChoices().get(0).getMessage().getContent().contains("848")
 					|| resp.getChoices().get(0).getMessage().getContent().contains("029 "));
 			assertTrue(resp.getChoices().get(0).getMessage().getContent().endsWith("029 "));
+		} // Close endpoint
+	}
+
+	@Test
+	void test02() {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+			String model = "gpt-3.5-turbo";
+			String prompt = "How high is Mt. Everest?";
+			ChatCompletionsRequest cr = new ChatCompletionsRequest();
+
+			cr.setModel(model);
+			cr.getMessages().add(ChatMessage.builder().role("user").content(prompt).build());
+			cr.setMaxTokens(ModelUtil.getContextSize(model) - 15);
+			cr.setTopP(0.8);
+			
+			ChatCompletionsResponse resp = endpoint.getClient().createChatCompletion(cr);
+
+			assertEquals(resp.getChoices().size(), 1);
+			assertEquals(resp.getChoices().get(0).getFinishReason(), "stop");
+			assertTrue(resp.getChoices().get(0).getMessage().getContent().contains("848")
+					|| resp.getChoices().get(0).getMessage().getContent().contains("029 "));
 		} // Close endpoint
 	}
 }

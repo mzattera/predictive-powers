@@ -72,12 +72,16 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
  */
 public final class OpenAiClient implements Closeable {
 
-	// TODO Expose features descibed in openai-java
-	// TODO chnge to use inside Azure
+	// TODO Expose features described in openai-java (e.g. Proxy)
+	// TODO add client/endpoint for Azure OpenAi Services
 
 	private final static String API_BASE_URL = "https://api.openai.com/v1/";
 
-	public final static int DEFAULT_READ_TIMEOUT_MIILLIS = 30 * 1000;
+	public final static int DEFAULT_TIMEOUT_MILLIS = 60 * 1000;
+
+	public final static int DEFAULT_KEEP_ALIVE_MILLIS = 5 * 60 * 1000;
+
+	public final static int DEFAULT_MAX_IDLE_CONNECTIONS = 5;
 
 	// OpenAI API defined with Retrofit
 	private final OpenAiApi api;
@@ -85,39 +89,122 @@ public final class OpenAiClient implements Closeable {
 	private final OkHttpClient client;
 
 	// Maps from-to POJO <-> JSON
-	private final static ObjectMapper mapper;
+	private final static ObjectMapper JSON_MAPPER;
 	static {
-		mapper = new ObjectMapper();
-		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-		mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+		JSON_MAPPER = new ObjectMapper();
+		JSON_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		JSON_MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		JSON_MAPPER.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 	}
 
+	/**
+	 * Constructor, using default parameters for OkHttpClient. OpenAiApi key is read
+	 * from OPENAI_API_KEY system environment variable.
+	 */
 	public OpenAiClient() {
-		this(System.getenv("OPENAI_API_KEY"), DEFAULT_READ_TIMEOUT_MIILLIS);
+		this(OpenAiClient.getDefaultHttpClient(null, -1, -1, -1));
 	}
 
-	public OpenAiClient(@NonNull String apiKey) {
-		this(apiKey, DEFAULT_READ_TIMEOUT_MIILLIS);
+	/**
+	 * Constructor, using default parameters for OkHttpClient.
+	 * 
+	 * @param apiKey OpenAiApi key. If this is null, it will try to read it from
+	 *               OPENAI_API_KEY system environment variable.
+	 */
+	public OpenAiClient(String apiKey) {
+		this(OpenAiClient.getDefaultHttpClient(apiKey, -1, -1, -1));
 	}
 
-	// TODO expose other parameters
-	public OpenAiClient(@NonNull String apiKey, int timeoutMillis) {
+	/**
+	 * Constructor. This client uses an underlying OkHttpClient for API calls, which
+	 * parameters can be specified.
+	 * 
+	 * @param apiKey             OpenAiApi key. If this is null, it will try to read
+	 *                           it from OPENAI_API_KEY system environment variable.
+	 * @param readTimeout        Read timeout for connections. 0 means no timeout,
+	 *                           if a value < 0 is provided, then
+	 *                           {@link DEFAULT_TIMEOUT_MILLIS} is used.
+	 * @param keepAliveDuration  Timeout for connections in client pool
+	 *                           (milliseconds). If this is < 0,
+	 *                           {@link #DEFAULT_KEEP_ALIVE_MILLIS} is used instead.
+	 * @param maxIdleConnections Maximum number of idle connections to keep in the
+	 *                           pool. If this is < 0,
+	 *                           {@link #DEFAULT_MAX_IDLE_CONNECTIONS} is used
+	 *                           instead.
+	 */
+	public OpenAiClient(String apiKey, int readTimeout, int keepAliveDuration, int maxIdleConnections) {
+		this(OpenAiClient.getDefaultHttpClient(apiKey, readTimeout, keepAliveDuration, maxIdleConnections));
+	}
 
-		client = new OkHttpClient.Builder().connectionPool(new ConnectionPool(5, timeoutMillis, TimeUnit.MILLISECONDS))
-				.readTimeout(timeoutMillis, TimeUnit.MILLISECONDS).addInterceptor(new Interceptor() {
-					@Override
-					public Response intercept(Chain chain) throws IOException {
-						return chain.proceed(
-								chain.request().newBuilder().header("Authorization", "Bearer " + apiKey).build());
-					}
-				}).build();
+	/**
+	 * Constructor. This client uses provided OkHttpClient for API calls, to allow
+	 * full customization {@link #getDefaultHttpClient(String, int, int, int)}
+	 */
+	public OpenAiClient(OkHttpClient http) {
+
+		client = http;
 
 		Retrofit retrofit = new Retrofit.Builder().baseUrl(API_BASE_URL).client(client)
-				.addConverterFactory(JacksonConverterFactory.create(mapper))
+				.addConverterFactory(JacksonConverterFactory.create(JSON_MAPPER))
 				.addCallAdapterFactory(RxJava2CallAdapterFactory.create()).build();
 
 		api = retrofit.create(OpenAiApi.class);
+	}
+
+	/**
+	 * Returns an OkHttpClient to use for API calls, using default parameters. This
+	 * can be further customized and then used in constructor to build an
+	 * OpenAiClient.
+	 * 
+	 * @param apiKey OpenAiApi key. If this is null, it will try to read it from
+	 *               OPENAI_API_KEY system environment variable.
+	 */
+	public static OkHttpClient getDefaultHttpClient(String apiKey) {
+		return getDefaultHttpClient(apiKey, -1, -1, -1);
+	}
+
+	/**
+	 * Returns an OkHttpClient to use for API calls. This can be further customized
+	 * and then used in constructor to build an OpenAiClient.
+	 * 
+	 * @param apiKey             OpenAiApi key. If this is null, it will try to read
+	 *                           it from OPENAI_API_KEY system environment variable.
+	 * @param readTimeout        Read timeout for connections. 0 means no timeout,
+	 *                           if a value < 0 is provided, then
+	 *                           {@link DEFAULT_TIMEOUT_MILLIS} is used.
+	 * @param keepAliveDuration  Timeout for connections in client pool
+	 *                           (milliseconds). If this is < 0,
+	 *                           {@link #DEFAULT_KEEP_ALIVE_MILLIS} is used instead.
+	 * @param maxIdleConnections Maximum number of idle connections to keep in the
+	 *                           pool. If this is < 0,
+	 *                           {@link #DEFAULT_MAX_IDLE_CONNECTIONS} is used
+	 *                           instead.
+	 */
+	public static OkHttpClient getDefaultHttpClient(String apiKey, int readTimeout, int keepAliveDuration,
+			int maxIdleConnections) {
+
+		if (apiKey == null)
+			apiKey = System.getenv("OPENAI_API_KEY");
+		if (apiKey == null)
+			throw new IllegalArgumentException(
+					"OpenAi API key is not provided and it cannot be found in OPENAI_API_KEY system environment variable");
+		final String bearer = "Bearer " + apiKey;
+
+		if (readTimeout < 0)
+			readTimeout = DEFAULT_TIMEOUT_MILLIS;
+		if (keepAliveDuration < 0)
+			keepAliveDuration = DEFAULT_KEEP_ALIVE_MILLIS;
+		if (maxIdleConnections < 0)
+			maxIdleConnections = DEFAULT_MAX_IDLE_CONNECTIONS;
+
+		return new OkHttpClient.Builder()
+				.connectionPool(new ConnectionPool(maxIdleConnections, keepAliveDuration, TimeUnit.MILLISECONDS))
+				.readTimeout(readTimeout, TimeUnit.MILLISECONDS).addInterceptor(new Interceptor() {
+					@Override
+					public Response intercept(Chain chain) throws IOException {
+						return chain.proceed(chain.request().newBuilder().header("Authorization", bearer).build());
+					}
+				}).build();
 	}
 
 	//////// API METHODS MAPPED INTO JAVA CALLS ////////////////////////////////////
@@ -391,7 +478,8 @@ public final class OpenAiClient implements Closeable {
 		} catch (HttpException e) {
 			OpenAiException oaie;
 			try {
-				oaie = new OpenAiException(mapper.readValue(e.response().errorBody().string(), OpenAiError.class), e);
+				oaie = new OpenAiException(JSON_MAPPER.readValue(e.response().errorBody().string(), OpenAiError.class),
+						e);
 			} catch (Exception ex) {
 				throw e;
 			}

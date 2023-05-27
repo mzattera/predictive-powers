@@ -1,5 +1,5 @@
 /*
-0 * Copyright 2023 Massimiliano "Maxi" Zattera
+ * Copyright 2023 Massimiliano "Maxi" Zattera
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ public class KnowledgeBaseTest {
 	 */
 	@Test
 	public void test01() {
-		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			EmbeddingService es = ep.getEmbeddingService();
 			KnowledgeBase kb = new KnowledgeBase();
 
@@ -162,7 +162,7 @@ public class KnowledgeBaseTest {
 	 */
 	@Test
 	public void test03() {
-		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			EmbeddingService es = ep.getEmbeddingService();
 			KnowledgeBase kb = new KnowledgeBase();
 			kb.createDomain("test");
@@ -215,7 +215,7 @@ public class KnowledgeBaseTest {
 	 */
 	@Test
 	public void test04() {
-		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			EmbeddingService es = ep.getEmbeddingService();
 			KnowledgeBase kb = new KnowledgeBase();
 
@@ -255,7 +255,7 @@ public class KnowledgeBaseTest {
 	 * @throws FileNotFoundException
 	 */
 	public static void main(String args[]) throws FileNotFoundException, IOException {
-		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			EmbeddingService es = ep.getEmbeddingService();
 			KnowledgeBase kb = new KnowledgeBase();
 			kb.createDomain("test");

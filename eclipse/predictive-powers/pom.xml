@@ -1,4 +1,6 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.github.mzattera</groupId>
 	<artifactId>predictive-powers</artifactId>
@@ -18,14 +20,15 @@
 		<lombok.version>1.18.26</lombok.version>
 		<retrofit.version>2.9.0</retrofit.version>
 		<tika.version>2.7.0</tika.version>
+		<mockserver.version>5.15.0</mockserver.version>
 	</properties>
 	<dependencies>
 
 		<!-- Apache utilities 
 		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
-			<version>${lang3.version}</version>
+		<groupId>org.apache.commons</groupId>
+		<artifactId>commons-lang3</artifactId>
+		<version>${lang3.version}</version>
 		</dependency>
 		-->
 
@@ -61,7 +64,8 @@
 			<version>${retrofit.version}</version>
 		</dependency>
 
-		<!-- Tika is a library to recognize and extract text from a variety of file types -->
+		<!-- Tika is a library to recognize and extract text from a variety of
+		file types -->
 		<dependency>
 			<groupId>org.apache.tika</groupId>
 			<artifactId>tika-core</artifactId>
@@ -87,19 +91,21 @@
 		<!--
 		  <dependency>
 		    <groupId>org.apache.tika</groupId>
-		    <artifactId>tika-parser-sqlite3-package</artifactId>
-		    <version>2.7.0</version>
+		<artifactId>tika-parser-sqlite3-package</artifactId>
+		<version>2.7.0</version>
 		  </dependency>
 		  <dependency>
-		    <groupId>org.apache.tika</groupId>
-		    <artifactId>tika-parser-scientific-package</artifactId>
-		    <version>2.7.0</version>
+		<groupId>org.apache.tika</groupId>
+		<artifactId>tika-parser-scientific-package</artifactId>
+		<version>2.7.0</version>
 		  </dependency>	
   		-->
 
 		<!--
-		Below dependencies are needed to disable annoying SLF4J log messages FFS!
-		Notice also a logback.xml file must be in the project resources to disable all logging.
+		Below dependencies are needed to disable annoying SLF4J log
+		messages FFS!
+		Notice also a logback.xml file must be in the project
+		resources to disable all logging.
 		-->
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -116,5 +122,44 @@
 			<artifactId>log4j-core</artifactId>
 			<version>2.20.0</version>
 		</dependency>
+
+		<!-- MockServer is an amazing proxy fro API testing -->
+		<dependency>
+			<groupId>org.mock-server</groupId>
+			<artifactId>mockserver-client-java-no-dependencies</artifactId>
+			<version>${mockserver.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mock-server</groupId>
+			<artifactId>mockserver-netty-no-dependencies</artifactId>
+			<version>${mockserver.version}</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
+
+	<build>		
+		<plugins>
+			<!-- This Mave plugin creates a single JAR with all dependencies, when "package" runs -->
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>3.6.0</version>
+				<configuration>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+				</configuration>
+				<executions>
+					<execution>
+						<id>make-assembly</id> <!-- this is used for inheritance
+						merges -->
+						<phase>package</phase> <!-- bind to the packaging phase -->
+						<goals>
+							<goal>single</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 </project>

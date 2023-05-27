@@ -28,7 +28,7 @@ public class QuestionExtractionTest {
 
 		// OpenAI end-point
 		// Make sure you specify your API key n OPENAI_KEY system environment variable.
-		try (OpenAiEndpoint endpoint = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
 			// Download Credit Suisse financial statement 2022 PDF and extract its text.
 			// We keep only one piece of 750 tokens, as extracting questions from a long
@@ -37,8 +37,6 @@ public class QuestionExtractionTest {
 
 			QuestionExtractionService q = endpoint.getQuestionExtractionService();
 			q.getCompletionService().getDefaultReq().setTemperature(0.0);
-
-			// TODO There's no really way to test accuracy, as questions can vary....
 
 			// Get some FAQs and print them
 			List<QnAPair> QnA = q.getQuestions(context);

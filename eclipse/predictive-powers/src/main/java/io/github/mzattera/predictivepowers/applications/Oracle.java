@@ -54,7 +54,7 @@ public class Oracle {
 	public static void main(String[] args) {
 		// OpenAI end-point
 		// Make sure you specify your API key n OPENAI_KEY system environment variable.
-		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			EmbeddingService es = ep.getEmbeddingService();
 			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
 

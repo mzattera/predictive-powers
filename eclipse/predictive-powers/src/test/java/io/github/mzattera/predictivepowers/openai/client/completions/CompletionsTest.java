@@ -31,7 +31,7 @@ class CompletionsTest {
 
 	@Test
 	void test01() {
-		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			String model = "text-davinci-003";
 			String prompt = "How high is Mt. Everest (in meters)?";
 			CompletionsRequest cr = new CompletionsRequest();
@@ -51,7 +51,7 @@ class CompletionsTest {
 
 	@Test
 	void test02() {
-		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			String model = "text-davinci-003";
 			String prompt = "How high is Mt. Everest (in meters)?";
 			CompletionsRequest cr = new CompletionsRequest();
@@ -74,7 +74,7 @@ class CompletionsTest {
 
 	@Test
 	void test03() {
-		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			String model = "text-davinci-003";
 			String prompt = "How high is Mt. Everest (in meters)?";
 			CompletionsRequest cr = new CompletionsRequest();
@@ -93,7 +93,7 @@ class CompletionsTest {
 
 	@Test
 	void test04() {
-		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			CompletionService cs = oai.getCompletionService();
 
 			cs.getDefaultReq().setEcho(true);
@@ -107,7 +107,7 @@ class CompletionsTest {
 
 	@Test
 	void test05() {
-		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			CompletionService cs = oai.getCompletionService();
 
 			cs.getDefaultReq().setEcho(false);
@@ -119,4 +119,23 @@ class CompletionsTest {
 			assertTrue(resp.getText().contains("8,848"));
 		} // Close endpoint
 	}
+	
+
+	@Test
+	void test06() {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
+			String model = "text-davinci-003";
+			String prompt = "How high is Mt. Everest (in meters)?";
+			CompletionsRequest cr = new CompletionsRequest();
+
+			cr.setModel(model);
+			cr.setPrompt(prompt);
+			cr.setMaxTokens(ModelUtil.getContextSize(model) - 10);
+			cr.setTopP(0.8);
+			CompletionsResponse resp = oai.getClient().createCompletion(cr);
+
+			assertEquals(resp.getChoices().size(), 1);
+			assertEquals(resp.getChoices().get(0).getFinishReason(), "stop");
+		} // Close endpoint
+	}	
 }

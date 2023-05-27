@@ -16,6 +16,8 @@
 
 package io.github.mzattera.predictivepowers.openai.client.models;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -30,8 +32,17 @@ import lombok.ToString;
 @Setter
 @ToString
 public final class Model {
+	
 	String id;
 	String object;
 	String ownedBy;
-	// TODO add permissions
+	
+	/**
+	 * As they are undocumented, permissions are returned as a (JSON) string and a JsonNode.
+	 */
+	String permission;
+	
+	public void setPermission(JsonNode node) {
+	    permission = node.toString();
+	}
 }

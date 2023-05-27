@@ -64,7 +64,7 @@ public class CompletionsRequest implements Cloneable {
 	Double topP;
 	Integer n;
 
-	// TODO: add support for this
+	// TODO: Add support for streaming input at least in direct API calls, if so make sure services do not stream
 	final boolean stream = false;
 
 	Integer logprobs;

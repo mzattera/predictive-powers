@@ -70,12 +70,11 @@ class ModelsTest {
 
 	@Test
 	void test01() {
-		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			List<Model> models = oai.getClient().listModels();
 			assertTrue(models.size() > 0);
 
 			for (Model m : models) {
-
 				if (m.getId().contains("-edit"))
 					continue; // Edits model do not need size
 				if (m.getId().contains("ft-personal"))
@@ -94,7 +93,7 @@ class ModelsTest {
 
 	@Test
 	void test02() {
-		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			String id = "gpt-3.5-turbo";
 			Model model = oai.getClient().retrieveModel(id);
 			assertEquals(id, model.getId());

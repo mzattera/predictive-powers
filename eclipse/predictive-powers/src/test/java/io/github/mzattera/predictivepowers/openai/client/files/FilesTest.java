@@ -35,7 +35,7 @@ class FilesTest {
 
 	@Test
 	void test01() throws IOException {
-		try (OpenAiEndpoint oai = OpenAiEndpoint.getInstance()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			OpenAiClient cli = oai.getClient();
 
 			// See how many files we have

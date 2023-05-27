@@ -38,48 +38,27 @@ import lombok.NonNull;
  */
 public class OpenAiEndpoint implements Closeable {
 
-	// TODO add endpoint for Azure OpenAi Services
+	// TODO add client/endpoint for Azure OpenAi Services
 
 	@Getter
 	private final OpenAiClient client;
 
-	private OpenAiEndpoint(@NonNull String apiKey) {
-		this(new OpenAiClient(apiKey));
+	/**
+	 * Constructor. OpenAiApi key is read from OPENAI_API_KEY system environment
+	 * variable.
+	 */
+	public OpenAiEndpoint() {
+		this(new OpenAiClient(null, -1, -1, -1));
 	}
 
-	private OpenAiEndpoint(@NonNull OpenAiClient client) {
+	public OpenAiEndpoint(String apiKey) {
+		this(new OpenAiClient(apiKey, -1, -1, -1));
+	}
+
+	public OpenAiEndpoint(@NonNull OpenAiClient client) {
 		this.client = client;
 	}
 
-	// TODO add configuration of API client (e.g. timeout)
-
-	/**
-	 * Create a new end point.
-	 * 
-	 * @return An end point instance, reading API key from "OPENAI_API_KEY"
-	 *         environment parameter.
-	 */
-	public static OpenAiEndpoint getInstance() {
-		return new OpenAiEndpoint(System.getenv("OPENAI_API_KEY"));
-	}
-
-	/**
-	 * Create a new end point.
-	 * 
-	 * @return An end point instance that uses given API key.
-	 */
-	public static OpenAiEndpoint getInstance(@NonNull String apiKey) {
-		return new OpenAiEndpoint(apiKey);
-	}
-
-	/**
-	 * Create a new end point.
-	 * 
-	 * @return An end point instance that uses given API client.
-	 */
-	public static OpenAiEndpoint getInstance(@NonNull OpenAiClient client) {
-		return new OpenAiEndpoint(client);
-	}
 
 	public CompletionService getCompletionService() {
 		return new CompletionService(this);

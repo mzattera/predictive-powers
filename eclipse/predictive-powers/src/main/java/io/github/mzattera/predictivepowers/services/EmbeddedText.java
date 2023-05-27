@@ -12,9 +12,11 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package io.github.mzattera.predictivepowers.services;
+ */
+package io.github.mzattera.predictivepowers.services;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +28,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
-import lombok.ToString;
 
 /**
  * A text that has been embedded.
@@ -35,7 +36,7 @@ import lombok.ToString;
  * properties can be attached to the embedded text.
  * 
  * Notice that two instances with same text are equal, regardless of their
- * properties or embeddings.
+ * properties, embeddings, or the model used to embed the text.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -45,7 +46,6 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString
 public class EmbeddedText implements Serializable {
 
 	private static final long serialVersionUID = -12432423425341702L;
@@ -146,5 +146,19 @@ public class EmbeddedText implements Serializable {
 	@Override
 	public int hashCode() {
 		return text.hashCode();
+	}
+
+	// Avoid writing a long list of embeddings.
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("EmbeddedText [text=");
+		builder.append(text);
+		builder.append(", model=");
+		builder.append(model);
+		builder.append(", properties=");
+		builder.append(properties);
+		builder.append("]");
+		return builder.toString();
 	}
 }

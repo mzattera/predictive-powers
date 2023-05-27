@@ -18,10 +18,12 @@ package io.github.mzattera.predictivepowers.knowledge;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -42,74 +44,71 @@ public class KnowledgeBaseTest {
 
 	/**
 	 * Insert some strings in the KB and checks search finds them.
-	 * 
-	 * @throws IOException
-	 * @throws ClassNotFoundException
 	 */
 	@Test
 	public void test01() {
 		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
-		EmbeddingService es = ep.getEmbeddingService();
-		KnowledgeBase kb = new KnowledgeBase();
+			EmbeddingService es = ep.getEmbeddingService();
+			KnowledgeBase kb = new KnowledgeBase();
 
-		// Do not use saved version here, ass we still want to test embedding size.
-		List<String> test = new ArrayList<>();
-		test.add("La somma delle parti e' maggiore del tutto");
-		test.add("Una tigre corre nella foresta.");
-		test.add("Non esistono numeri primi minori di 1");
-		test.add("Giove e' il quinto pianeta del sistema solare");
+			// Do not use saved version here, ass we still want to test embedding size.
+			List<String> test = new ArrayList<>();
+			test.add("La somma delle parti e' maggiore del tutto");
+			test.add("Una tigre corre nella foresta.");
+			test.add("Non esistono numeri primi minori di 1");
+			test.add("Giove e' il quinto pianeta del sistema solare");
 
-		for (String s : test) {
-			List<EmbeddedText> resp = es.embed(s);
-			assertEquals(1, resp.size());
-			kb.insert(resp);
-		}
+			for (String s : test) {
+				List<EmbeddedText> resp = es.embed(s);
+				assertEquals(1, resp.size());
+				kb.insert(resp);
+			}
 
-		// Used default domain
-		for (int i = 0; i < 10; i++)
-			kb.insert(es.embed("Frase numero " + i));
+			// Used default domain
+			for (int i = 0; i < 10; i++)
+				kb.insert(es.embed("Frase numero " + i));
 
-		for (int i = 0; i < test.size(); ++i) {
-			String target = test.get(i);
-			List<Pair<EmbeddedText, Double>> result = kb.search(es.embed(target).get(0), 1, 0);
-			assertEquals(target, result.get(0).getLeft().getText());
-		}
+			for (int i = 0; i < test.size(); ++i) {
+				String target = test.get(i);
+				List<Pair<EmbeddedText, Double>> result = kb.search(es.embed(target).get(0), 1, 0);
+				assertEquals(target, result.get(0).getLeft().getText());
+			}
 
-		// delete all the strings and make sure we do not find any
-		for (String s : test) {
-			List<EmbeddedText> resp = es.embed(s);
-			kb.delete(resp.get(0));
-		}
-		for (int i = 0; i < test.size(); ++i) {
-			String target = test.get(i);
-			List<Pair<EmbeddedText, Double>> result = kb.search(es.embed(target).get(0), 1, 0);
-			assertFalse(target.equals(result.get(0).getLeft().getText()));
-		}
+			// delete all the strings and make sure we do not find any
+			for (String s : test) {
+				List<EmbeddedText> resp = es.embed(s);
+				kb.delete(resp.get(0));
+			}
+			for (int i = 0; i < test.size(); ++i) {
+				String target = test.get(i);
+				List<Pair<EmbeddedText, Double>> result = kb.search(es.embed(target).get(0), 1, 0);
+				assertFalse(target.equals(result.get(0).getLeft().getText()));
+			}
 
-		// Do the same for a new domain
-		kb.createDomain("other");
-		kb.createDomain("domain");
-		for (String s : test) {
-			List<EmbeddedText> resp = es.embed(s);
-			kb.insert("domain", resp);
-		}
+			// Do the same for a new domain
+			kb.createDomain("other");
+			kb.createDomain("domain");
+			for (String s : test) {
+				List<EmbeddedText> resp = es.embed(s);
+				kb.insert("domain", resp);
+			}
 
-		for (int i = 0; i < test.size(); ++i) {
-			String target = test.get(i);
-			List<Pair<EmbeddedText, Double>> result = kb.search("domain", es.embed(target).get(0), 1, 0);
-			assertEquals(target, result.get(0).getLeft().getText());
-			result = kb.search(es.embed(target).get(0), 1, 0);
-			assertEquals(target, result.get(0).getLeft().getText());
-			result = kb.search("other", es.embed(target).get(0), 50, 0);
-			assertEquals(0, result.size());
-		}
+			for (int i = 0; i < test.size(); ++i) {
+				String target = test.get(i);
+				List<Pair<EmbeddedText, Double>> result = kb.search("domain", es.embed(target).get(0), 1, 0);
+				assertEquals(target, result.get(0).getLeft().getText());
+				result = kb.search(es.embed(target).get(0), 1, 0);
+				assertEquals(target, result.get(0).getLeft().getText());
+				result = kb.search("other", es.embed(target).get(0), 50, 0);
+				assertEquals(0, result.size());
+			}
 
-		// Delete domains and make sure they are
-		kb.dropDomain("domain");
-		kb.dropDomain("other");
-		List<String> domains = kb.listDomains();
-		assertEquals(1, domains.size());
-		assertEquals(KnowledgeBase.DEFAULT_DOMAIN, domains.get(0));
+			// Delete domains and make sure they are
+			kb.dropDomain("domain");
+			kb.dropDomain("other");
+			List<String> domains = kb.listDomains();
+			assertEquals(1, domains.size());
+			assertEquals(KnowledgeBase.DEFAULT_DOMAIN, domains.get(0));
 		} // Close endpoint
 	}
 
@@ -158,6 +157,88 @@ public class KnowledgeBaseTest {
 		}
 	}
 
+	/**
+	 * Test using text instead of embeddings.
+	 */
+	@Test
+	public void test03() {
+		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+			EmbeddingService es = ep.getEmbeddingService();
+			KnowledgeBase kb = new KnowledgeBase();
+			kb.createDomain("test");
+			kb.createDomain("other");
+
+			// Insert using embeddings
+			for (int i = 0; i < savedText.size(); ++i) {
+				List<EmbeddedText> resp = es.embed(savedText.get(i));
+				assertEquals(1, resp.size());
+				resp.get(0).set("index", i);
+				kb.insert("test", resp.get(0));
+			}
+
+			// Delete using text
+			EmbeddedTextMatcher m = new IndexMatcher(0);
+			assertEquals(1, kb.query(m).size());
+			kb.delete(savedText.get(0));
+			assertEquals(0, kb.query(m).size());
+
+			// Delete from specific group using text
+			m = new IndexMatcher(1);
+			assertEquals(1, kb.query(m).size());
+			kb.delete(KnowledgeBase.DEFAULT_DOMAIN, savedText.get(1));
+			assertEquals(1, kb.query(m).size());
+
+			// Delete from specific group using text
+			kb.delete("test", savedText.get(1));
+			assertEquals(0, kb.query(m).size());
+
+			// Delete using matcher
+			m = new IndexMatcher(2);
+			assertEquals(1, kb.query(m).size());
+			kb.delete(m);
+			assertEquals(0, kb.query(m).size());
+
+			// Delete from specific group using text
+			m = new IndexMatcher(3);
+			assertEquals(1, kb.query(m).size());
+			kb.delete(KnowledgeBase.DEFAULT_DOMAIN, m);
+			assertEquals(1, kb.query(m).size());
+
+			// Delete from specific group using text
+			kb.delete("test", m);
+			assertEquals(0, kb.query(m).size());
+		}
+	}
+
+	/**
+	 * Test null parameters.
+	 */
+	@Test
+	public void test04() {
+		try (OpenAiEndpoint ep = OpenAiEndpoint.getInstance()) {
+			EmbeddingService es = ep.getEmbeddingService();
+			KnowledgeBase kb = new KnowledgeBase();
+
+			List<EmbeddedText> resp = es.embed(savedText.get(0));
+
+			assertThrows(java.lang.NullPointerException.class, () -> kb.createDomain((String) null));
+
+			assertThrows(java.lang.NullPointerException.class, () -> kb.insert((EmbeddedText) null));
+			assertThrows(java.lang.NullPointerException.class, () -> kb.insert(null, resp.get(0)));
+			assertThrows(java.lang.NullPointerException.class, () -> kb.insert((Collection<EmbeddedText>) null));
+			assertThrows(java.lang.NullPointerException.class, () -> kb.insert(null, resp));
+			assertThrows(java.lang.NullPointerException.class, () -> kb.insert(null, (EmbeddedText) null));
+			assertThrows(java.lang.NullPointerException.class, () -> kb.insert(null, (Collection<EmbeddedText>) null));
+
+			assertThrows(java.lang.NullPointerException.class, () -> kb.delete((EmbeddedText) null));
+			assertThrows(java.lang.NullPointerException.class, () -> kb.delete(null, resp.get(0)));
+			assertThrows(java.lang.NullPointerException.class, () -> kb.delete(null, (EmbeddedText) null));
+
+			kb.createDomain("test");
+			kb.createDomain("test");
+		}
+	}
+
 	private final static List<String> savedText = new ArrayList<>();
 	static {
 		savedText.add("La somma delle parti e' maggiore del tutto");
@@ -178,12 +259,12 @@ public class KnowledgeBaseTest {
 			EmbeddingService es = ep.getEmbeddingService();
 			KnowledgeBase kb = new KnowledgeBase();
 			kb.createDomain("test");
-			
+
 			for (int i = 0; i < savedText.size(); ++i) {
 				List<EmbeddedText> resp = es.embed(savedText.get(i));
 				assertEquals(1, resp.size());
 				resp.get(0).set("index", i);
-				kb.insert("test", resp);
+				kb.insert("test", resp.get(0));
 			}
 
 			kb.save("D:\\kb.object");

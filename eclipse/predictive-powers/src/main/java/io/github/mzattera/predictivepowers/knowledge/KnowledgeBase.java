@@ -135,7 +135,7 @@ public class KnowledgeBase implements Serializable {
 	 * 
 	 * @param domain Name of the domain (case sensitive).
 	 */
-	public void createDomain(String domain) {
+	public void createDomain(@NonNull String domain) {
 		writeLock.lock();
 		try {
 			if (!domains.containsKey(domain))
@@ -151,7 +151,7 @@ public class KnowledgeBase implements Serializable {
 	 * 
 	 * @param domain Name of the domain (case sensitive).
 	 */
-	public void dropDomain(String domain) {
+	public void dropDomain(@NonNull String domain) {
 		writeLock.lock();
 		try {
 			domains.remove(domain);
@@ -235,7 +235,7 @@ public class KnowledgeBase implements Serializable {
 	 * @param e
 	 */
 	public void delete(String txt) {
-		delete(EmbeddedText.builder().text(txt).build());
+		delete(EmbeddedText.builder().text(txt).model("").embedding(new ArrayList<>()).build());
 	}
 
 	/**
@@ -245,7 +245,7 @@ public class KnowledgeBase implements Serializable {
 	 * @param e
 	 */
 	public void delete(String domain, String txt) {
-		delete(domain, EmbeddedText.builder().text(txt).build());
+		delete(domain, EmbeddedText.builder().text(txt).model("").embedding(new ArrayList<>()).build());
 	}
 
 	/**

@@ -15,7 +15,7 @@ Currently the library:
 ## Installation
 
 For the time being, this library comes as a `.jar` file containing all the required dependencies.
-The source, is a [Maven](https://maven.apache.org/) project inside the `eclipse` folder..
+The source is a [Maven](https://maven.apache.org/) project inside the `eclipse` folder.
 
 `predictive-powers` requires Java 11 or later.
 
@@ -30,7 +30,8 @@ The exact process for setting up this variable depends on the OS you are using.
 
 ### OpenAiClient (Direct OpenAi API Calls)
 
-You can access OpeanAi API by instantiating an `OpenAiClient`. Class constructors allow you to pass your OpenAi API key, which will be used in all subsequent calls.
+Similarly to [OpenAI-Java](https://github.com/TheoKanning/openai-java), you can access OpeanAi API by instantiating an `OpenAiClient`.
+Class constructors allow you to pass your OpenAi API key, which will be used in all subsequent calls.
 If the API key is `null`, the code will try to read the key from `OPENAI_API_KEY` system environment variable.
 
 After that, you can call OpenAi API directly; this part of code is not heavily documented but matches 1:1 the [OpenAi API definition](https://platform.openai.com/docs/api-reference/introduction).
@@ -228,7 +229,8 @@ public class ChatExample {
 			// Get chat service
 			ChatService bot = endpoint.getChatService();
 			bot.setPersonality("You are a very sad and depressed robot. "
-					+ "Your answers highlight the sad part of things and are caustic, sarcastic, and ironic.");
+					+ "Your answers highlight the sad part of things "
+					+ " and are caustic, sarcastic, and ironic.");
 
 			// Conversation loop
 			try (Scanner console = new Scanner(System.in)) {
@@ -259,6 +261,13 @@ Below is an example of the code output; notice how conversation context is retai
  Notice the service is automatically storing the explanation and the context used to build the answer.
  
 ```java
+package io.github.mzattera.predictivepowers.examples;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.List;
+import java.util.Scanner;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tika.exception.TikaException;
 import org.xml.sax.SAXException;
@@ -272,7 +281,9 @@ import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
 
 public class OracleExample {
 
-	public static void main(String[] args) throws MalformedURLException, IOException, SAXException, TikaException {
+	public static void main(String[] args) 
+			throws MalformedURLException, IOException, SAXException, TikaException 
+	{
 
 		// OpenAI end-point
 		// Make sure you specify your API key in OPENAI_KEY system environment variable.

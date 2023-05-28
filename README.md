@@ -29,7 +29,8 @@ setting up this variable depends on the OS you are using.
 
 ### OpenAiClient (Direct OpenAi API Calls)
 
-You can access OpeanAi API by instantiating an `OpenAiClient`. Class constructors allow you to pass your OpenAi API key, which will be used in all subsequent calls. If you use the no-arguments constructor, the code will try to read the key from 'OPENAI_API_KEY' system environment variable.
+You can access OpeanAi API by instantiating an `OpenAiClient`. Class constructors allow you to pass your OpenAi API key, which will be used in all subsequent calls.
+If the API key is `null`, the code will try to read the key from `OPENAI_API_KEY` system environment variable.
 
 After that, you can call OpenAi API directly; this part of code is not heavily documented but matches 1:1 the [OpenAi API definition](https://platform.openai.com/docs/api-reference/introduction).
 
@@ -38,21 +39,26 @@ import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
 
-public class Test {
+public class OpenAiClientExample {
 
 	public static void main(String[] args) {
 
 		// Get API key from OS environment
-		OpenAiClient cli = new OpenAiClient();
+		try (OpenAiClient client = new OpenAiClient()) {
 
-		// Complete a sentence.
-		CompletionsRequest req = CompletionsRequest.builder()
-			.model("text-davinci-003")
-			.maxTokens(50)
-			.prompt("Alan Turing was").build();
-		CompletionsResponse resp = cli.createCompletion(req);
+			// Complete a sentence
+			// see https://platform.openai.com/docs/api-reference/completions
+			CompletionsRequest req = CompletionsRequest.builder()
+					.model("text-davinci-003")
+					.maxTokens(50)
+					.prompt("Alan Turing was")
+					.build();
+			CompletionsResponse resp = client.createCompletion(req);
 
-		System.out.println(resp.getChoices().get(0).getText());
+			// Prints result
+			System.out.println(resp.getChoices().get(0).getText());
+			
+		} // closes client
 	}
 }
 ```
@@ -65,12 +71,34 @@ will output something like:
  of theoretical computer science and artificial intelligence.
 ```
 
-**** TODO Document customisation & mention different constructors for customisation
-**** TODO esempio usando proxy
+#### Customization
+
+`OpenAiClient` relies on an underlying `OkHttpClient` for API calls, providing features like connection pools, etc.
+You can customize the `OkHttpClient` client by creating a pre-configured version of it with `OpenAiClient.getDefaultHttpClient()`
+and passing it in `OpenAiClient` constructor, after you have set it up as desired.
+
+The below example shows how to configure `OpenAiClient` to use a proxy.
+
+```java
+		String host = "<Your proxy goes here>";
+		int port = 80; // your proxy port goes here
+
+		Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(host, port));
+		OkHttpClient http = OpenAiClient.getDefaultHttpClient(null) // get API key from system environment
+				.newBuilder()
+				.proxy(proxy)
+				.build();
+		OpenAiClient cli = new OpenAiClient(http);
+		
+		//... use client here ...
+```
 
 ### Endpoints
 
-An endpoint provides GenAI capabilities in form of services; it can be created by passing an optional API key or an existing client.
+An endpoint provides GenAI capabilities in form of services; it can be created by passing an optional API key or an existing `OpenAiClient`.
+
+Notice it is good practice to close an endpoint when it is no longer needed; this will close the underlying `OpenAiClient`
+terminating idle connections and freeing up resources.
   
 ```java
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
@@ -78,19 +106,16 @@ import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 
 [...]
 
-	// Get API key from OS environment
-	OpenAiEndpoint ep = OpenAiEndpoint.getInstance();
+		// Get API key from OS environment
+		endpoint = new OpenAiEndpoint();
 
-	// Pass API key explicitly
-	ep = OpenAiEndpoint.getInstance("sk-H0a...Yo1");
+		// Pass API key explicitly
+		endpoint = new OpenAiEndpoint("sk-H0a...Yo1");
 
-	// Build endpoint from an API client
-	OpenAiClient cli = new OpenAiClient();
-	ep = OpenAiEndpoint.getInstance(cli);
+		// Build endpoint from an existing API client
+		OpenAiClient cli = new OpenAiClient();
+		endpoint = new OpenAiEndpoint(cli);
 ```
-
-**** TODO Document creation using custom client
-** TODO document closing (or is it enough to show in examples?)
 
 
 ### <a name="services"></a>Services
@@ -109,24 +134,27 @@ The below example shows how to get the `CompletionService` to complete a sentenc
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 
-public class TestEndpoint {
+public class CompletionExample {
 
 	public static void main(String[] args) {
 
-		OpenAiEndpoint ep = OpenAiEndpoint.getInstance();
-		CompletionService cs = ep.getCompletionService();
-
-		System.out.println(cs.complete("Alan Turing was").getText());
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+			
+			CompletionService cs = endpoint.getCompletionService();
+			System.out.println(cs.complete("Alan Turing was").getText());
+			
+		} // closes endpoint
 	}
 }
 ```
 
-Below we provide some examples of using services; for a detailed description of the functionalities provided, please refer to the library JavaDoc.
+Below we provide some [examples](#examples) about using services; for a detailed description of the functionalities provided, please refer to the library JavaDoc.
+
 
 #### Service Configuration
   
-OpenAi provides a rich set of parameters for each of its API calls. In order to access these parameters, services expose a "default request" object.
-This object is used when the service calls OpenAi API. Changing parameters on this object will affect all further calls to the API.
+OpenAi provides a rich set of parameters for each of its API calls. In order to access these parameters, services typically expose a "default request" object.
+This object is used when the service calls the OpenAi API. Changing parameters on this object will affect all further calls to the API.
 
 For example, let's assume we want to use `courie` model for text completion:
  
@@ -134,27 +162,31 @@ For example, let's assume we want to use `courie` model for text completion:
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 
-public class TestEndpoint {
+public class DefaultConfigurationExample {
 
 	public static void main(String[] args) {
 
-		OpenAiEndpoint ep = OpenAiEndpoint.getInstance();
-		CompletionService cs = ep.getCompletionService();
-		
-		// Set model parameter in default request, this will affect all further calls		
-		cs.getDefaultReq().setModel("text-curie-001");
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
-		// This call now uses text-curie-001 model
-		System.out.println(cs.complete("Alan Turing was").getText());
+			CompletionService cs = endpoint.getCompletionService();
+
+			// Set "model" parameter in default request, this will affect all further calls
+			cs.getDefaultReq().setModel("text-curie-001");
+
+			// this call now uses text-curie-001 model
+			System.out.println(cs.complete("Alan Turing was").getText());
+			
+		} // closes endpoint
 	}
 }
- ```
+```
  
  ### Knowledge Base
  
  A knowledge base is a vector database storing text embeddings; any number of properties (in the form of a `Map`) can be attached to each embedding. 
  
- The knowledge base provides methods to search text, based on embedding similarity or other filtering criteria. Each knowledge base can be partitioned into domains, which can be searched separately, to improve performance.
+ The knowledge base provides methods to search text based on embedding similarity or other filtering criteria.
+ Each knowledge base can be partitioned into domains, which can be searched separately, to improve performance.
  
  Some examples about how to use a knowledge base can be found [below](#oracle).
   
@@ -164,20 +196,19 @@ public class TestEndpoint {
  With the notable exception of the knowledge base, classes in this library are NOT thread safe; this is because the library is, at present, supporting a micro-service stateless architecture,
  where AI capabilities are provided at endpoints through REST API.
  
- This greatly simplifies server architecture and allows to scale applications automatically and effortlessly when deployed inside a cloud environment.
+ This greatly simplifies backend architecture and allows to scale applications automatically and effortlessly when deployed inside a cloud environment.
   
  
- ## Examples
+## <a name="examples"></a>Examples
  
- ** Update example code 
+Below some code examples. These examples, and more, can be found in the [example package](eclipse/predictive-powers/src/main/java/io/github/mzattera/predictivepowers/examples).
  
- Below some code examples. These examples, and more, can be found in the example package.
  
- ### Chit-chat with GPT
+### Chit-chat with GPT
  
- One-liner to chat with GPT. Notice how the library allows you to set the bot personality and handles chat history automatically.
+One-liner to chat with GPT. Notice how the library allows you to set the bot personality and handles chat history automatically.
  
- The below code handles conversation with a very depressed entity similar to the more famous [Marvin](https://en.wikipedia.org/wiki/Marvin_the_Paranoid_Android).
+The below code handles conversation with a very depressed entity similar to the more famous [Marvin](https://en.wikipedia.org/wiki/Marvin_the_Paranoid_Android).
  
  ```java
 import java.util.Scanner;
@@ -185,25 +216,29 @@ import java.util.Scanner;
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.ChatService;
 
-public class Chat {
+public class ChatExample {
 
 	public static void main(String[] args) throws Exception {
 
 		// OpenAI end-point
-		// Make sure you specify your API key in OPENAI_KEY system environment variable.
-		OpenAiEndpoint endpoint = OpenAiEndpoint.getInstance();
+		// Make sure you specify your API key n OPENAI_KEY system environment variable.
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
-		ChatService bot = endpoint.getChatService();
-		bot.setPersonality("You are a very sad and depressed robot. "
-				+ "Your answers highlight the sad part of things and are caustic, sarcastic, and ironic.");
+			// Get chat service
+			ChatService bot = endpoint.getChatService();
+			bot.setPersonality("You are a very sad and depressed robot. "
+					+ "Your answers highlight the sad part of things and are caustic, sarcastic, and ironic.");
 
-		try (Scanner console = new Scanner(System.in)) {
-			while (true) {
-				System.out.print("User     > ");
-				String s = console.nextLine();
-				System.out.println("Assistant> " + bot.chat(s).getText());
+			// Conversation loop
+			try (Scanner console = new Scanner(System.in)) {
+				while (true) {
+					System.out.print("User     > ");
+					String s = console.nextLine();
+					System.out.println("Assistant> " + bot.chat(s).getText());
+				}
 			}
-		}
+			
+		} // closes endpoint
 	}
 }
 ```
@@ -223,11 +258,6 @@ Below is an example of the code output; notice how conversation context is retai
  Notice the service is automatically storing the explanation and the context used to build the answer.
  
 ```java
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.util.List;
-import java.util.Scanner;
-
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tika.exception.TikaException;
 import org.xml.sax.SAXException;
@@ -239,62 +269,60 @@ import io.github.mzattera.predictivepowers.services.EmbeddingService;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
 
-public class Oracle {
+public class OracleExample {
 
 	public static void main(String[] args) throws MalformedURLException, IOException, SAXException, TikaException {
 
 		// OpenAI end-point
 		// Make sure you specify your API key in OPENAI_KEY system environment variable.
-		OpenAiEndpoint endpoint = OpenAiEndpoint.getInstance();
-		QuestionAnsweringService questionAnswer = endpoint.getQuestionAnsweringService();
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+			QuestionAnsweringService questionAnswer = endpoint.getQuestionAnsweringService();
 
-		try (Scanner console = new Scanner(System.in)) {
+			try (Scanner console = new Scanner(System.in)) {
 
-			// To build the oracle, get the web page you are interested in
-			System.out.print("Web Page Url: ");
-			String pageUrl = console.nextLine();
-			System.out.println("Reading page " + pageUrl + "...\n");
+				// Get the web page you are interested in
+				System.out.print("Web Page Url: ");
+				String pageUrl = console.nextLine();
+				System.out.println("Reading page " + pageUrl + "...\n");
 
-			// Read the page text, embed it, and store it into an in-memory knowledge base
-			EmbeddingService embeddingService = endpoint.getEmbeddingService();
-			KnowledgeBase knowledgeBase = new KnowledgeBase();
-			knowledgeBase.insert(embeddingService.embedUrl(pageUrl));
+				// Read the page text, embed it and store it into an in-memory knowledge base
+				EmbeddingService embeddingService = endpoint.getEmbeddingService();
+				KnowledgeBase knowledgeBase = new KnowledgeBase();
+				knowledgeBase.insert(embeddingService.embedURL(pageUrl));
 
-			// Reads questions from user and answers them
-			QnAPair answer = null;
-			while (true) {
+				// Loop to reads questions from user and answer them
+				QnAPair answer = null;
+				while (true) {
 
-				// Get user's question
-				System.out.print("Your Question: ");
-				String question = console.nextLine();
+					// Get user question
+					System.out.print("Your Question: ");
+					String question = console.nextLine();
 
-				// Does the user want an explanation?
-				if (question.toLowerCase().equals("explain")) {
-					if (answer == null)
+					// Does user want an explanation?
+					if (question.toLowerCase().equals("explain")) {
+						if (answer == null)
+							continue;
+						System.out.println();
+						System.out.println(answer.getExplanation());
+						System.out.println();
 						continue;
-					System.out.println();
-					System.out.println(answer.getExplanation());
-					System.out.println();
-					continue;
+					}
+
+					// If not, answer the question
+					// Create context by finding similar text in the web page
+					List<Pair<EmbeddedText, Double>> context = knowledgeBase
+							.search(embeddingService.embed(question).get(0), 50, 0);
+
+					// Use the context when answering
+					answer = questionAnswer.answerWithEmbeddings(question, context);
+
+					System.out.println("My Answer: " + answer.getAnswer() + "\n");
 				}
-
-				// If not, answer the question
-				// Find text in the web page which is semantically similar to the question,
-				// to use it as context
-				List<Pair<EmbeddedText, Double>> context = knowledgeBase.search(
-						embeddingService.embed(question).get(0),
-						50, 0
-					);
-
-				// Use the context when answering
-				answer = questionAnswer.answerWithEmbeddings(question, context);
-
-				System.out.println("My Answer: " + answer.getAnswer() + "\n");
 			}
 		}
-	}
+	} // closes endpoint
 }
- ```
+```
  
  This will produce the below output:
  
@@ -314,53 +342,53 @@ import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 import io.github.mzattera.util.ExtractionUtil;
 import io.github.mzattera.util.LlmUtil;
 
-public class FAQ {
+public class FaqExample {
 
 	public static void main(String[] args) throws Exception {
 
 		// OpenAI end-point
-		// Make sure you specify your API key in OPENAI_KEY system environment variable.
-		OpenAiEndpoint endpoint = OpenAiEndpoint.getInstance();
+		// Make sure you specify your API key n OPENAI_KEY system environment variable.
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
-		// Download Credit Suisse financial statement 2022 PDF and extract its text.
-		// For this demo, we keep only one initial piece of 750 tokens,
-		// as extracting questions from a long text might sometimes result in a timeout.
-		String statment = LlmUtil.split(
-				ExtractionUtil.fromUrl(
-					"https://www.credit-suisse.com/media/assets/corporate/docs/about-us/investor-relations/financial-disclosures/financial-reports/csg-ar-2022-en.pdf"
-					),
-				750).get(2);
+			// Download Credit Suisse financial statement 2022 PDF and extract its text
+			// We keep only one piece of 750 tokens
+			String statment = LlmUtil.split(
+					ExtractionUtil.fromUrl("https://www.credit-suisse.com/media/assets/corporate/docs/about-us/investor-relations/financial-disclosures/financial-reports/csg-ar-2022-en.pdf"),
+					750)
+					.get(2);
 
-		QuestionExtractionService q = endpoint.getQuestionExtractionService();
+			// Our query generation service
+			QuestionExtractionService q = endpoint.getQuestionExtractionService();
 
-		// Demo FAQs
-		List<QnAPair> QnA = q.getQuestions(statment);
-		for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
-			System.out.println(QnA.get(i).toString());
+			// Get some FAQs and print them
+			List<QnAPair> QnA = q.getQuestions(statment);
+			for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
+				System.out.println(QnA.get(i).toString());
+			}
+			System.out.println();
+
+			// fill-the-gap questions
+			QnA = q.getFillQuestions(statment);
+			for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
+				System.out.println(QnA.get(i).toString());
+			}
+			System.out.println();
+
+			// true/false questions
+			QnA = q.getTFQuestions(statment);
+			for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
+				System.out.println(QnA.get(i).toString());
+			}
+			System.out.println();
+
+			// multiple choice questions
+			QnA = q.getMCQuestions(statment);
+			for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
+				System.out.println(QnA.get(i).toString());
+			}
+			System.out.println();
 		}
-		System.out.println();
-
-		// Demo fill-in questions
-		QnA = q.getFillQuestions(statment);
-		for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
-			System.out.println(QnA.get(i).toString());
-		}
-		System.out.println();
-
-		// Demo true/false questions
-		QnA = q.getTFQuestions(statment);
-		for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
-			System.out.println(QnA.get(i).toString());
-		}
-		System.out.println();
-
-		// Demo multiple choice questions
-		QnA = q.getMCQuestions(statment);
-		for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
-			System.out.println(QnA.get(i).toString());
-		}
-		System.out.println();
-	}
+	} // closes endpoint
 }
 ```
 
@@ -368,41 +396,37 @@ This code will produce an output similar to the below:
 
 ```console
 Question: What was announced by Credit Suisse in October 2022?
-Answer:   In October 2022, Credit Suisse announced a strategic plan to create a new Credit Suisse, centered on their core strengths and returning to their heritage and cultural values.
-Question: What are the core strengths of Credit Suisse?
-Answer:   The core strengths of Credit Suisse are their leading Wealth Management and Swiss Bank franchises, with strong capabilities in Asset Management and Markets.
-Question: What is the aim of Credit Suisse's strategic, cultural, and operational transformation?
-Answer:   The aim of Credit Suisse's strategic, cultural, and operational transformation is to re-establish Credit Suisse as a solid, reliable, and trusted partner with a strong value proposition for all their stakeholders.
+Answer:   In October 2022, Credit Suisse announced a strategic plan to create a new Credit Suisse, centered on their core strengths – their leading Wealth Management and Swiss Bank franchises, with strong capabilities in Asset Management and Markets – and returning to their heritage and cultural values.
+Question: What are the strategic priorities of Credit Suisse?
+Answer:   The strategic priorities of Credit Suisse focus on the restructuring of their Investment Bank, the strengthening and reallocation of their capital, and the accelerated cost transformation.
+Question: What is the goal of Credit Suisse's transformation?
+Answer:   The goal of Credit Suisse's transformation is to re-establish Credit Suisse as a solid, reliable, and trusted partner with a strong value proposition for all their stakeholders.
 
-Question: Credit Suisse announced a _______ plan to create a new Credit Suisse.
-Answer:   strategic
-Question: Credit Suisse is centered on its core strengths such as leading Wealth Management and Swiss Bank franchises, with strong capabilities in Asset Management and _______.
-Answer:   Markets
 
-Question: Credit Suisse announced a new strategy in 2022.
+Question: The year 2022 was a turning point for Credit Suisse.
 Answer:   true
-Question: The new strategy focuses on creating a more complex bank.
+Question: Credit Suisse's strategy focuses on strengthening and reallocating its capital.
+Answer:   true
+Question: Credit Suisse is primarily a retail bank.
 Answer:   false
-Question: The strategic priorities include the restructuring of the Investment Bank and the accelerated cost transformation.
-Answer:   true
 
 Question: What was announced by Credit Suisse in October 2022?
- [X] 1. A plan to create a new bank
- [ ] 2. The resignation of the CEO
- [ ] 3. A merger with another bank
- [ ] 4. The acquisition of a new subsidiary
- [ ] 5. None of the above
-Question: What are Credit Suisse's core strengths according to the message from the Chairman and CEO?
- [ ] 1. Retail banking and insurance
- [ ] 2. Investment banking and trading
- [X] 3. Wealth management and Swiss bank franchises
- [ ] 4. Real estate and private equity
- [ ] 5. None of the above
-Question: What is the purpose of Credit Suisse's strategic, cultural, and operational transformation?
- [ ] 1. To become a more complex and diversified bank
- [ ] 2. To reduce the number of stakeholders
- [X] 3. To re-establish Credit Suisse as a solid, reliable, and trusted partner
- [ ] 4. To merge with another bank
- [ ] 5. None of the above
+ [X] 1. A clear strategy for the future
+ [ ] 2. A merger with another bank
+ [ ] 3. The resignation of the CEO
+ [ ] 4. A decline in profits
+ [ ] 5. The closure of all branches
+Question: What are the core strengths of Credit Suisse according to the message?
+ [X] 1. Leading Wealth Management and Swiss Bank franchises, with strong capabilities in Asset Management and Markets
+ [ ] 2. Investment Bank and Corporate Banking
+ [ ] 3. Retail Banking and Insurance
+ [ ] 4. Real Estate and Construction
+ [ ] 5. Energy and Resources
+Question: What is Credit Suisse's aim through its strategic, cultural and operational transformation?
+ [ ] 1. To become the biggest bank in the world
+ [X] 2. To re-establish itself as a solid, reliable and trusted partner with a strong value proposition for all its stakeholders
+ [ ] 3. To focus on short-term profits
+ [ ] 4. To reduce its workforce
+ [ ] 5. To increase its involvement in risky investments
 ```
 

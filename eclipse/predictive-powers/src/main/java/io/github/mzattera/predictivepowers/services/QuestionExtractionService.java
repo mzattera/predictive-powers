@@ -157,6 +157,12 @@ public class QuestionExtractionService {
 		Iterator<QnAPair> it = result.iterator();
 		while (it.hasNext()) {
 			QnAPair q = it.next();
+			if (q.getAnswer() == null) {// bad result
+				// TODO do something here? Log?
+				it.remove();
+				continue;
+			}
+
 			q.setAnswer(q.getAnswer().trim().toLowerCase());
 			if (!q.getAnswer().equals("true") && !q.getAnswer().equals("false")) // bad result
 				// TODO do something here? Log?
@@ -196,6 +202,12 @@ public class QuestionExtractionService {
 		Iterator<QnAPair> it = result.iterator();
 		while (it.hasNext()) {
 			QnAPair q = it.next();
+			if (q.getAnswer() == null) {// bad result
+				// TODO do something here? Log?
+				it.remove();
+				continue;
+			}
+
 			q.setAnswer(q.getAnswer().trim());
 
 			if (!q.getQuestion().contains("___")) {
@@ -271,6 +283,12 @@ public class QuestionExtractionService {
 		Iterator<QnAPair> it = result.iterator();
 		while (it.hasNext()) {
 			QnAPair q = it.next();
+			if (q.getAnswer() == null) {// bad result
+				// TODO do something here? Log?
+				it.remove();
+				continue;
+			}
+
 			q.setAnswer(q.getAnswer().trim());
 
 			int c = -1;

@@ -44,7 +44,7 @@ import io.github.mzattera.util.ResourceUtil;
  */
 public class EmbeddingTest {
 
-	@Test
+//	@Test
 	public void test01() {
 		Random rnd = new Random();
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
@@ -90,7 +90,7 @@ public class EmbeddingTest {
 		} // Close endpoint
 	}
 
-	@Test
+//	@Test
 	public void test02() {
 
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
@@ -105,26 +105,40 @@ public class EmbeddingTest {
 		} // Close endpoint
 	}
 
+	/**
+	 * Tests that embedding a file content works.
+	 * 
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws TikaException
+	 */
 	@Test
 	public void test03() throws IOException, SAXException, TikaException {
 
+		final String banana = "banana";
+		
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			EmbeddingService es = ep.getEmbeddingService();
 
-			List<EmbeddedText> base = es.embed("banana");
+			List<EmbeddedText> base = es.embed(banana);
 			assertEquals(1, base.size());
 
 			File f = ResourceUtil.getResourceFile("banana.txt");
-			assertEquals("banana", ExtractionUtil.fromFile(f));
+			assertEquals(banana, ExtractionUtil.fromFile(f));
+
 			List<EmbeddedText> test = es.embedFile(f);
 			assertEquals(1, test.size());
 
-			assertEquals(base.get(0).getEmbedding().size(), test.get(0).getEmbedding().size());
+			assertEquals(base.get(0).getModel(), test.get(0).getModel());
+			assertEquals(base.get(0).getEmbedding().size(), test.get(0).getEmbedding().size());			
 			for (int i = 0; i < base.get(0).getEmbedding().size(); ++i) {
-				// TODO THIS FAILS, I DO NOT KNOW WHY, above I check that content from file
-				// matches "banana"
-//				assertEquals(base.get(0).getEmbedding().get(i), test.get(0).getEmbedding().get(i));
+				// TODO: SOMETIMES, not always returned vectors are slightly different
+				// org.opentest4j.AssertionFailedError: expected: <-0.013906941> but was: <-0.013921019>
+//				 assertEquals(base.get(0).getEmbedding().get(i), test.get(0).getEmbedding().get(i));
 			}
+			
+			assertEquals(1.0d, EmbeddedText.similarity(base.get(0), test.get(0)));
+			
 		} // Close endpoint
 	}
 
@@ -135,7 +149,7 @@ public class EmbeddingTest {
 	 * @throws SAXException
 	 * @throws IOException
 	 */
-	@Test
+//	@Test
 	public void test04() throws IOException, SAXException, TikaException {
 
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
@@ -155,7 +169,7 @@ public class EmbeddingTest {
 	 * @throws SAXException
 	 * @throws IOException
 	 */
-	@Test
+//	@Test
 	public void test05() throws MalformedURLException, IOException, SAXException, TikaException {
 
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {

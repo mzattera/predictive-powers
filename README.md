@@ -84,7 +84,7 @@ The below example shows how to configure `OpenAiClient` to use a proxy.
 		int port = 80; // your proxy port goes here
 
 		Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(host, port));
-		OkHttpClient http = OpenAiClient.getDefaultHttpClient(null) // get API key from system environment
+		OkHttpClient http = OpenAiClient.getDefaultHttpClient(null)
 				.newBuilder()
 				.proxy(proxy)
 				.build();
@@ -156,7 +156,7 @@ Below we provide some [examples](#examples) about using services; for a detailed
 OpenAi provides a rich set of parameters for each of its API calls. In order to access these parameters, services typically expose a "default request" object.
 This object is used when the service calls the OpenAi API. Changing parameters on this object will affect all further calls to the API.
 
-For example, let's assume we want to use `courie` model for text completion:
+For example, let's assume we want to use `curiekl` model for text completion:
  
  ```java
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;

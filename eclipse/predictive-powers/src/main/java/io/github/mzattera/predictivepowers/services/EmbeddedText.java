@@ -98,39 +98,44 @@ public class EmbeddedText implements Serializable {
 	}
 
 	/**
-	 * 
-	 * @param other
 	 * @throws IllegalArgumentException if the two embeddings were not created by
-	 *                                  using same model.
-	 * @return cosine similarity between two embeddings.
+	 *                                  using same model or have different embedding
+	 *                                  length.
+	 * @return cosine similarity in range [-1, 1] between this embedding and other.
 	 */
-	public static double similarity(@NonNull EmbeddedText one, @NonNull EmbeddedText other) {
-		return one.similarity(other);
+	public double similarity(EmbeddedText other) {
+		return similarity (this, other);
 	}
 
 	/**
-	 * 
-	 * @param other
 	 * @throws IllegalArgumentException if the two embeddings were not created by
-	 *                                  using same model.
-	 * @return cosine similarity between this embedding and other.
+	 *                                  using same model or have different embedding
+	 *                                  length.
+	 * 
+	 * @return cosine similarity in range [-1, 1] between two embeddings.
 	 */
-	public double similarity(@NonNull EmbeddedText other) {
-		if (!model.equals(other.model))
-			throw new IllegalArgumentException("Embedding from twoi different models");
+	public static double similarity(@NonNull EmbeddedText a, @NonNull EmbeddedText b) {
+		
+		if (!a.model.equals(b.model))
+			throw new IllegalArgumentException(
+					"Embedding from two different models [" + a.model + ", " + b.model + "]");
+		if (a.embedding.size() != b.embedding.size())
+			throw new IllegalArgumentException(
+					"Embedding with different size [" + a.embedding.size() + ", " + b.embedding.size() + "]");
 
 		double a2 = 0.0, b2 = 0.0, ab = 0.0;
-		for (int i = 0; i < embedding.size(); ++i) {
-			a2 += embedding.get(i) * embedding.get(i);
-			b2 += other.embedding.get(i) * other.embedding.get(i);
-			ab += embedding.get(i) * other.embedding.get(i);
+		for (int i = 0; i < a.embedding.size(); ++i) {
+			a2 += a.embedding.get(i) * a.embedding.get(i);
+			b2 += b.embedding.get(i) * b.embedding.get(i);
+			ab += a.embedding.get(i) * b.embedding.get(i);
 		}
 
 		double similarity = ab / Math.sqrt(a2 * b2);
-		if (Double.isNaN(similarity))
-			return 0.0;
-
-		return similarity;
+		if (!Double.isFinite(similarity))
+			return -1.0d; // Sometimes vectors are too small
+		
+		// Fix rounding errors, eventually
+		return Math.max(Math.min(similarity, 1.0d), -1.0d);
 	}
 
 	@Override

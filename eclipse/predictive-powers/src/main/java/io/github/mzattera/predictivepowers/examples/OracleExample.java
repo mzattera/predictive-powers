@@ -38,7 +38,9 @@ public class OracleExample {
 			throws MalformedURLException, IOException, SAXException, TikaException 
 	{
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
-			QuestionAnsweringService questionAnswer = endpoint.getQuestionAnsweringService();
+			
+			// Question answering service
+			QuestionAnsweringService answerSvc = endpoint.getQuestionAnsweringService();
 
 			try (Scanner console = new Scanner(System.in)) {
 
@@ -47,7 +49,7 @@ public class OracleExample {
 				String pageUrl = console.nextLine();
 				System.out.println("Reading page " + pageUrl + "...\n");
 
-				// Read the page text, embed it and store it into an in-memory knowledge base
+				// Read the page text, embed it, and store it into a knowledge base
 				EmbeddingService embeddingService = endpoint.getEmbeddingService();
 				KnowledgeBase knowledgeBase = new KnowledgeBase();
 				knowledgeBase.insert(embeddingService.embedURL(pageUrl));
@@ -72,11 +74,14 @@ public class OracleExample {
 
 					// If not, answer the question
 					// Create context by finding similar text in the web page
-					List<Pair<EmbeddedText, Double>> context = knowledgeBase
-							.search(embeddingService.embed(question).get(0), 50, 0);
+					List<Pair<EmbeddedText, Double>> context = 
+							knowledgeBase.search(
+								embeddingService.embed(question).get(0),
+								50, 0
+							);
 
 					// Use the context when answering
-					answer = questionAnswer.answerWithEmbeddings(question, context);
+					answer = answerSvc.answerWithEmbeddings(question, context);
 
 					System.out.println("My Answer: " + answer.getAnswer() + "\n");
 				}

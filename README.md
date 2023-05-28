@@ -90,6 +90,7 @@ import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 ```
 
 **** TODO Document creation using custom client
+** TODO document closing (or is it enough to show in examples?)
 
 
 ### <a name="services"></a>Services
@@ -167,6 +168,10 @@ public class TestEndpoint {
   
  
  ## Examples
+ 
+ ** Update example code 
+ 
+ Below some code examples. These examples, and more, can be found in the example package.
  
  ### Chit-chat with GPT
  

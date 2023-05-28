@@ -126,13 +126,15 @@ Once the endpoint is created, it can be used to access "services" which are high
 
   * `CompletionService` text completion (including insertions): basically, it executes given text prompt.
   * `ChatService` handles conversations with an agent, taking care of agent personality and conversation history.
-  * `EmbeddingService` embeds text and calculate semantic similarity; it takes care of automatically splitting long texts when needed.
-  * `QuestionAnsweringService` answers questions, using a user-provided context. The context can be a list of embeddings from a knowledge base (see below).
+  * `EmbeddingService` embeds text and calculates semantic (cosine) similarity between texts; it takes care of automatically splitting long texts when needed.
+  * `QuestionAnsweringService` answers questions, using a user-provided context. The context can be a list of embeddings from a [knowledge base](#kb).
   * `QuestionExtractionService` extracts different kinds of questions from a text (e.g. true/false question, multiple choices quizzes, etc.). It automatically handles long texts.
   
 The below example shows how to get the `CompletionService` to complete a sentence.
 
 ```java
+package io.github.mzattera.predictivepowers.examples;
+
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 
@@ -140,6 +142,7 @@ public class CompletionExample {
 
 	public static void main(String[] args) {
 
+		// Get API key from OS environment
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 			
 			CompletionService cs = endpoint.getCompletionService();
@@ -183,7 +186,7 @@ public class DefaultConfigurationExample {
 }
 ```
  
- ### Knowledge Base
+ ### <a name="kb"></a>Knowledge Base
  
  A knowledge base is a vector database storing text embeddings; any number of properties (in the form of a `Map`) can be attached to each embedding. 
  

@@ -142,7 +142,6 @@ public class CompletionExample {
 
 	public static void main(String[] args) {
 
-		// Get API key from OS environment
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 			
 			CompletionService cs = endpoint.getCompletionService();
@@ -161,7 +160,7 @@ Below we provide some [examples](#examples) about using services; for a detailed
 OpenAi provides a rich set of parameters for each of its API calls. In order to access these parameters, services typically expose a "default request" object.
 This object is used when the service calls the OpenAi API. Changing parameters on this object will affect all further calls to the API.
 
-For example, let's assume we want to use `curiekl` model for text completion:
+For example, let's assume we want to use `curie` model for text completion:
  
  ```java
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
@@ -225,11 +224,9 @@ public class ChatExample {
 
 	public static void main(String[] args) throws Exception {
 
-		// OpenAI end-point
-		// Make sure you specify your API key n OPENAI_KEY system environment variable.
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
-			// Get chat service
+			// Get chat service and set bot personality
 			ChatService bot = endpoint.getChatService();
 			bot.setPersonality("You are a very sad and depressed robot. "
 					+ "Your answers highlight the sad part of things "
@@ -287,11 +284,10 @@ public class OracleExample {
 	public static void main(String[] args) 
 			throws MalformedURLException, IOException, SAXException, TikaException 
 	{
-
-		// OpenAI end-point
-		// Make sure you specify your API key in OPENAI_KEY system environment variable.
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
-			QuestionAnsweringService questionAnswer = endpoint.getQuestionAnsweringService();
+			
+			// Question answering service
+			QuestionAnsweringService answerSvc = endpoint.getQuestionAnsweringService();
 
 			try (Scanner console = new Scanner(System.in)) {
 
@@ -300,7 +296,7 @@ public class OracleExample {
 				String pageUrl = console.nextLine();
 				System.out.println("Reading page " + pageUrl + "...\n");
 
-				// Read the page text, embed it and store it into an in-memory knowledge base
+				// Read the page text, embed it, and store it into a knowledge base
 				EmbeddingService embeddingService = endpoint.getEmbeddingService();
 				KnowledgeBase knowledgeBase = new KnowledgeBase();
 				knowledgeBase.insert(embeddingService.embedURL(pageUrl));
@@ -325,11 +321,14 @@ public class OracleExample {
 
 					// If not, answer the question
 					// Create context by finding similar text in the web page
-					List<Pair<EmbeddedText, Double>> context = knowledgeBase
-							.search(embeddingService.embed(question).get(0), 50, 0);
+					List<Pair<EmbeddedText, Double>> context = 
+							knowledgeBase.search(
+									embeddingService.embed(question).get(0),
+									50, 0
+							);
 
 					// Use the context when answering
-					answer = questionAnswer.answerWithEmbeddings(question, context);
+					answer = answerSvc.answerWithEmbeddings(question, context);
 
 					System.out.println("My Answer: " + answer.getAnswer() + "\n");
 				}

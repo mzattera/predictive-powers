@@ -34,10 +34,9 @@ import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
 
 public class OracleExample {
 
-	public static void main(String[] args) throws MalformedURLException, IOException, SAXException, TikaException {
-
-		// OpenAI end-point
-		// Make sure you specify your API key in OPENAI_KEY system environment variable.
+	public static void main(String[] args) 
+			throws MalformedURLException, IOException, SAXException, TikaException 
+	{
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 			QuestionAnsweringService questionAnswer = endpoint.getQuestionAnsweringService();
 

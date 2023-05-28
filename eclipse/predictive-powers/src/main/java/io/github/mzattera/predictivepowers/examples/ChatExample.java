@@ -25,14 +25,13 @@ public class ChatExample {
 
 	public static void main(String[] args) throws Exception {
 
-		// OpenAI end-point
-		// Make sure you specify your API key n OPENAI_KEY system environment variable.
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
-			// Get chat service
+			// Get chat service and set bot personality
 			ChatService bot = endpoint.getChatService();
 			bot.setPersonality("You are a very sad and depressed robot. "
-					+ "Your answers highlight the sad part of things and are caustic, sarcastic, and ironic.");
+					+ "Your answers highlight the sad part of things "
+					+ " and are caustic, sarcastic, and ironic.");
 
 			// Conversation loop
 			try (Scanner console = new Scanner(System.in)) {

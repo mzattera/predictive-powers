@@ -41,7 +41,8 @@ public class CleanupUtil {
 
 		try (Scanner console = new Scanner(System.in)) {
 
-			System.out.print("*** You are going to delete all uploaded files, completed fine tunes and tuned models from your account !!! ***\n");
+			System.out.print(
+					"*** You are going to delete all uploaded files, completed fine tunes and tuned models from your account !!! ***\n");
 			System.out.print("Type \"yes\" to continue: ");
 			if (!console.nextLine().equals("yes")) {
 				System.out.print("Aborted.");
@@ -53,24 +54,27 @@ public class CleanupUtil {
 			OpenAiClient cli = ep.getClient();
 
 			// Cancel tuning tasks
+			System.out.println("Cancelling FineTunes...");
 			List<FineTune> tasks = cli.listFineTunes();
 			for (FineTune t : tasks) {
 				String status = t.getStatus();
 				if (status.equals("pending") || status.equals("running")) {
 					status = cli.cancelFineTune(t.getId()).getStatus();
-					System.out.println("Deleting task: " + t.getId() + " => " + status);
+					System.out.println("Cancelling task: " + t.getId() + " => " + status);
 				} else {
-					System.out.println("\tTask (not deleted): " + t.getId() + " => " + status);					
+					System.out.println("\tTask cannot be cancelled: " + t.getId() + " => " + status);
 				}
 			}
 
 			// Delete uploaded files
+			System.out.println("Deleting Files...");
 			List<File> files = cli.listFiles();
 			for (File f : files) {
 				System.out.println("Deleting file: " + f.getId() + " => " + cli.deleteFile(f.getId()).isDeleted());
 			}
 
 			// Delete fine tunes models still there...
+			System.out.println("Deleting Models...");
 			Set<String> models = new HashSet<>();
 			for (Model m : cli.listModels()) {
 				models.add(m.getId());
@@ -89,5 +93,4 @@ public class CleanupUtil {
 			e.printStackTrace(System.err);
 		}
 	}
-
 }

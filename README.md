@@ -14,15 +14,16 @@ Currently the library:
   
 ## Installation
 
-For the time being, this library comes as a [Maven](https://maven.apache.org/) project inside the `eclipse` folder. Following versions will be better packaged.
+For the time being, this library comes as a `.jar` file containing all the required dependencies.
+The source, is a [Maven](https://maven.apache.org/) project inside the `eclipse` folder..
 
-predictive-powers requires Java 11 or later.
+`predictive-powers` requires Java 11 or later.
 
 The code depends, among others, on [Lomboc](https://projectlombok.org/) which is correctly referenced within the `pom.xml` file for this project.
 However, to have Lomboc to work in the Eclipse editor, you need to install it inside Eclipse (or any other IDE you are using), as explained on Lomboc website.
 
-To avoid passing the OpenAi API key explicitly, the library 0ries to read it from 'OPENAI_API_KEY' system environment variable by default;
-setting up this variable depends on the OS you are using.
+To avoid passing the OpenAi API key explicitly, by default the library tries to read it from `OPENAI_API_KEY` system environment variable.
+The exact process for setting up this variable depends on the OS you are using.
 
 	
 ## Usage

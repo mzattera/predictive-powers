@@ -44,7 +44,7 @@ import retrofit2.http.POST;
 import retrofit2.http.Path;
 
 /**
- * Retrofit definition for OpenAI /models API.
+ * Retrofit definition for OpenAI API.
  * 
  * @author Massimiliano "Maxi" Zattera
  *

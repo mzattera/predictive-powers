@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
+import io.github.mzattera.predictivepowers.ApiClient;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
 import okhttp3.Interceptor;
@@ -45,7 +46,7 @@ public class OpenAiClientTest {
 	@Test
 	public void test02() {
 
-		OkHttpClient http = OpenAiClient.getDefaultHttpClient(null).newBuilder().addInterceptor(new Interceptor() {
+		OkHttpClient http = ApiClient.getDefaultHttpClient(null).newBuilder().addInterceptor(new Interceptor() {
 
 			@Override
 			public Response intercept(Chain chain) throws IOException {

@@ -25,12 +25,12 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tika.exception.TikaException;
 import org.xml.sax.SAXException;
 
-import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
-import io.github.mzattera.predictivepowers.services.EmbeddingService;
 import io.github.mzattera.predictivepowers.services.QnAPair;
-import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
 
 public class OracleExample {
 
@@ -40,7 +40,7 @@ public class OracleExample {
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 			
 			// Question answering service
-			QuestionAnsweringService answerSvc = endpoint.getQuestionAnsweringService();
+			OpenAiQuestionAnsweringService answerSvc = endpoint.getQuestionAnsweringService();
 
 			try (Scanner console = new Scanner(System.in)) {
 
@@ -50,7 +50,7 @@ public class OracleExample {
 				System.out.println("Reading page " + pageUrl + "...\n");
 
 				// Read the page text, embed it, and store it into a knowledge base
-				EmbeddingService embeddingService = endpoint.getEmbeddingService();
+				OpenAiEmbeddingService embeddingService = endpoint.getEmbeddingService();
 				KnowledgeBase knowledgeBase = new KnowledgeBase();
 				knowledgeBase.insert(embeddingService.embedURL(pageUrl));
 

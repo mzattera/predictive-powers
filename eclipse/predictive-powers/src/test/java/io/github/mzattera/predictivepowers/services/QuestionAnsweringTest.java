@@ -27,11 +27,17 @@ import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 
-import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionAnsweringService;
 import io.github.mzattera.util.ResourceUtil;
 
 public class QuestionAnsweringTest {
+	
+	@Test
+	public void test00() {
+	}
 
 	/**
 	 * Makes some tests by reading a knowledge base and asking a relevant question
@@ -43,8 +49,8 @@ public class QuestionAnsweringTest {
 	@Test
 	public void test01() throws ClassNotFoundException, IOException {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			EmbeddingService es = ep.getEmbeddingService();
-			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
+			OpenAiEmbeddingService es = ep.getEmbeddingService();
+			OpenAiQuestionAnsweringService qas = ep.getQuestionAnsweringService();
 			KnowledgeBase kb = KnowledgeBase.load(ResourceUtil.getResourceFile("kb_banana.object"));
 
 			String question = "What does Olaf like?";
@@ -64,7 +70,7 @@ public class QuestionAnsweringTest {
 	@Test
 	public void test02() {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
+			OpenAiQuestionAnsweringService qas = ep.getQuestionAnsweringService();
 
 			qas.setMaxContextTokens(1);
 
@@ -84,8 +90,8 @@ public class QuestionAnsweringTest {
 	@Test
 	public void test03() throws ClassNotFoundException, IOException {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			EmbeddingService es = ep.getEmbeddingService();
-			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
+			OpenAiEmbeddingService es = ep.getEmbeddingService();
+			OpenAiQuestionAnsweringService qas = ep.getQuestionAnsweringService();
 			KnowledgeBase kb = KnowledgeBase.load(ResourceUtil.getResourceFile("kb_banana.object"));
 
 			qas.setMaxContextTokens(1);
@@ -105,7 +111,7 @@ public class QuestionAnsweringTest {
 	@Test
 	public void test0() {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
+			OpenAiQuestionAnsweringService qas = ep.getQuestionAnsweringService();
 
 			String question = "What does Olaf like?";
 			QnAPair answer = qas.answer(question, "Olaf likes pears.");
@@ -125,7 +131,7 @@ public class QuestionAnsweringTest {
 	public static void main(String args[]) throws FileNotFoundException, IOException {
 
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			EmbeddingService es = ep.getEmbeddingService();
+			OpenAiEmbeddingService es = ep.getEmbeddingService();
 			KnowledgeBase kb = new KnowledgeBase();
 
 			List<String> test = new ArrayList<>();

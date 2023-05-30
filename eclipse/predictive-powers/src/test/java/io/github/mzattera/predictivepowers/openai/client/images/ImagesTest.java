@@ -23,9 +23,9 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest.ImageSize;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest.ResponseFormat;
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.util.ImageUtil;
 import io.github.mzattera.util.ResourceUtil;
 

@@ -31,7 +31,7 @@ import org.xml.sax.SAXException;
 /**
  * Utility methods to extract content from files.
  * 
- * @author Massimiliano "maxi" Zattera
+ * @author Massimiliano "Maxi" Zattera
  *
  */
 public final class ExtractionUtil {

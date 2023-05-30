@@ -21,11 +21,11 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
-import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
 import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTune;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 
 /**
  * Deletes all files and all model fine-tunes.

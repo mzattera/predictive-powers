@@ -19,7 +19,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Represents the error body when an OpenAI request fails
+ * Represents the error body when an OpenAi request fails
  * 
  * @author Massimiliano "Maxi" Zattera
  *

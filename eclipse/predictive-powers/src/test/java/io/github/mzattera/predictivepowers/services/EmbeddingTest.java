@@ -31,7 +31,8 @@ import org.apache.tika.exception.TikaException;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
-import io.github.mzattera.predictivepowers.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
 import io.github.mzattera.util.ExtractionUtil;
 import io.github.mzattera.util.ResourceUtil;
@@ -43,66 +44,81 @@ import io.github.mzattera.util.ResourceUtil;
  *
  */
 public class EmbeddingTest {
-
-//	@Test
-	public void test01() {
-		Random rnd = new Random();
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			EmbeddingService es = ep.getEmbeddingService();
-
-			List<String> test = new ArrayList<>();
-			test.add("La somma delle parti e' maggiore del tutto");
-			test.add("Una tigre corre nella foresta.");
-			test.add("Non esistono numeri primi minori di 1");
-			test.add("Giove e' il quinto pianeta del sistema solare");
-
-			List<EmbeddedText> testEmb = new ArrayList<>();
-			for (String s : test) {
-				List<EmbeddedText> resp = es.embed(s);
-				assertEquals(1, resp.size());
-				testEmb.add(resp.get(0));
-			}
-
-			List<String> txt = new ArrayList<>(test);
-			for (int i = 0; i < 1024 * 8 * 2 / 5; i++)
-				txt.add("Frase numero " + i);
-			for (int i = 0; i < txt.size(); ++i) {
-				txt.add(txt.remove(rnd.nextInt(txt.size())));
-			}
-
-			List<EmbeddedText> resp = es.embed(txt);
-			assertEquals(txt.size(), resp.size());
-
-			for (int i = 0; i < testEmb.size(); ++i) {
-
-				int bestFit = -1;
-				double mostSim = -1.0;
-				for (int j = 0; j < txt.size(); ++j) {
-					double sim = resp.get(j).similarity(testEmb.get(i));
-					if (sim > mostSim) {
-						mostSim = sim;
-						bestFit = j;
-					}
-				}
-
-				assertEquals(testEmb.get(i).getText(), resp.get(bestFit).getText());
-			}
-		} // Close endpoint
+	@Test
+	public void test00() throws IOException, SAXException, TikaException {
+//		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
+//			test(ep.getEmbeddingService());
+//		}
+		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
+			test(ep.getEmbeddingService());
+		}
 	}
 
-//	@Test
-	public void test02() {
+	private void test(EmbeddingService e) throws IOException, SAXException, TikaException {
+		test01(e);
+		test02(e);
+		test03(e);
+		test04(e);
+		test05(e);
+	}
 
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			EmbeddingService es = ep.getEmbeddingService();
+	public void test01(EmbeddingService es) {
+		Random rnd = new Random();
 
-			StringBuilder txt = new StringBuilder();
-			while (TokenUtil.count(txt.toString()) < 10_000)
-				txt.append("Banana! ");
+		List<String> test = new ArrayList<>();
+		test.add("La somma delle parti e' maggiore del tutto");
+		test.add("Una tigre corre nella foresta.");
+		test.add("Non esistono numeri primi minori di 1");
+		test.add("Giove e' il quinto pianeta del sistema solare");
 
-			List<EmbeddedText> resp = es.embed(txt.toString());
-			assertTrue(resp.size() > 1);
-		} // Close endpoint
+		List<EmbeddedText> testEmb = new ArrayList<>();
+		for (String s : test) {
+			List<EmbeddedText> resp = es.embed(s);
+			assertEquals(1, resp.size());
+			testEmb.add(resp.get(0));
+		}
+
+		List<String> txt = new ArrayList<>(test);
+		for (int i = 0; i < 10; i++)
+			txt.add("Frase numero " + i);
+		for (int i = 0; i < txt.size(); ++i) {
+			txt.add(txt.remove(rnd.nextInt(txt.size())));
+		}
+
+		List<EmbeddedText> resp = es.embed(txt);
+		assertEquals(txt.size(), resp.size());
+
+		for (int i = 0; i < testEmb.size(); ++i) {
+
+			int bestFit = -1;
+			double mostSim = -1.0;
+			for (int j = 0; j < txt.size(); ++j) {
+				double sim = resp.get(j).similarity(testEmb.get(i));
+				if (sim > mostSim) {
+					mostSim = sim;
+					bestFit = j;
+				}
+			}
+
+			assertEquals(testEmb.get(i).getText(), resp.get(bestFit).getText());
+		}
+	}
+
+	public static void main(String args[]) {
+		EmbeddingTest i = new EmbeddingTest(); 
+		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
+			i.test02(ep.getEmbeddingService());
+		}
+	}
+	
+	public void test02(EmbeddingService es) {
+
+		StringBuilder txt = new StringBuilder();
+		while (TokenUtil.count(txt.toString()) <= es.getMaxTextTokens())
+			txt.append("Banana! ");
+
+		List<EmbeddedText> resp = es.embed(txt.toString());
+		assertTrue(resp.size() > 1);
 	}
 
 	/**
@@ -112,34 +128,31 @@ public class EmbeddingTest {
 	 * @throws SAXException
 	 * @throws TikaException
 	 */
-	@Test
-	public void test03() throws IOException, SAXException, TikaException {
+	public void test03(EmbeddingService es) throws IOException, SAXException, TikaException {
 
 		final String banana = "banana";
-		
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			EmbeddingService es = ep.getEmbeddingService();
 
-			List<EmbeddedText> base = es.embed(banana);
-			assertEquals(1, base.size());
+		List<EmbeddedText> base = es.embed(banana);
+		assertEquals(1, base.size());
 
-			File f = ResourceUtil.getResourceFile("banana.txt");
-			assertEquals(banana, ExtractionUtil.fromFile(f));
+		File f = ResourceUtil.getResourceFile("banana.txt");
+		assertEquals(banana, ExtractionUtil.fromFile(f));
 
-			List<EmbeddedText> test = es.embedFile(f);
-			assertEquals(1, test.size());
+		List<EmbeddedText> test = es.embedFile(f);
+		assertEquals(1, test.size());
 
-			assertEquals(base.get(0).getModel(), test.get(0).getModel());
-			assertEquals(base.get(0).getEmbedding().size(), test.get(0).getEmbedding().size());			
-			for (int i = 0; i < base.get(0).getEmbedding().size(); ++i) {
-				// TODO: SOMETIMES, not always returned vectors are slightly different
-				// org.opentest4j.AssertionFailedError: expected: <-0.013906941> but was: <-0.013921019>
+		assertEquals(base.get(0).getModel(), test.get(0).getModel());
+		assertEquals(base.get(0).getEmbedding().size(), test.get(0).getEmbedding().size());
+		for (int i = 0; i < base.get(0).getEmbedding().size(); ++i) {
+			// TODO: SOMETIMES, not always returned vectors are slightly different
+			// org.opentest4j.AssertionFailedError: expected: <-0.013906941> but was:
+			// <-0.013921019>
 //				 assertEquals(base.get(0).getEmbedding().get(i), test.get(0).getEmbedding().get(i));
-			}
-			
-			assertEquals(1.0d, EmbeddedText.similarity(base.get(0), test.get(0)));
-			
-		} // Close endpoint
+		}
+
+		// Checks similarity considering rounding
+		double similarity = EmbeddedText.similarity(base.get(0), test.get(0));
+		assertTrue(Math.abs(1.0d - similarity) < 10e-5);
 	}
 
 	/**
@@ -149,15 +162,9 @@ public class EmbeddingTest {
 	 * @throws SAXException
 	 * @throws IOException
 	 */
-//	@Test
-	public void test04() throws IOException, SAXException, TikaException {
-
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			EmbeddingService es = ep.getEmbeddingService();
-
-			Map<File, List<EmbeddedText>> base = es.embedFolder(ResourceUtil.getResourceFile("recursion"));
-			assertEquals(3, base.size());
-		} // Close endpoint
+	public void test04(EmbeddingService es) throws IOException, SAXException, TikaException {
+		Map<File, List<EmbeddedText>> base = es.embedFolder(ResourceUtil.getResourceFile("recursion"));
+		assertEquals(3, base.size());
 	}
 
 	/**
@@ -169,12 +176,7 @@ public class EmbeddingTest {
 	 * @throws SAXException
 	 * @throws IOException
 	 */
-//	@Test
-	public void test05() throws MalformedURLException, IOException, SAXException, TikaException {
-
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			EmbeddingService es = ep.getEmbeddingService();
-			es.embedURL("https://en.wikipedia.org/wiki/Alan_Turing");
-		} // Close endpoint
+	public void test05(EmbeddingService es) throws MalformedURLException, IOException, SAXException, TikaException {
+		es.embedURL("https://en.wikipedia.org/wiki/Alan_Turing");
 	}
 }

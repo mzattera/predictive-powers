@@ -23,17 +23,20 @@ package io.github.mzattera.predictivepowers.examples;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 
+import io.github.mzattera.predictivepowers.ApiClient;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import okhttp3.OkHttpClient;
 
 public class ProxyExample {
 
 	public static void main(String[] args) {
+		String yourApiKey = "<Your API key goes here>";
+		
 		String host = "<Your proxy goes here>";
 		int port = 80; // your proxy port goes here
 
 		Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(host, port));
-		OkHttpClient http = OpenAiClient.getDefaultHttpClient(null) // get API key from system environment
+		OkHttpClient http = ApiClient.getDefaultHttpClient(yourApiKey)
 				.newBuilder()
 				.proxy(proxy)
 				.build();

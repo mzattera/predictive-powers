@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-import io.github.mzattera.predictivepowers.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 
 class EditsTest {
 

@@ -29,9 +29,9 @@ import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 
-import io.github.mzattera.predictivepowers.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
-import io.github.mzattera.predictivepowers.services.EmbeddingService;
 import io.github.mzattera.util.ResourceUtil;
 
 /**
@@ -48,7 +48,7 @@ public class KnowledgeBaseTest {
 	@Test
 	public void test01() {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			EmbeddingService es = ep.getEmbeddingService();
+			OpenAiEmbeddingService es = ep.getEmbeddingService();
 			KnowledgeBase kb = new KnowledgeBase();
 
 			// Do not use saved version here, ass we still want to test embedding size.
@@ -163,7 +163,7 @@ public class KnowledgeBaseTest {
 	@Test
 	public void test03() {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			EmbeddingService es = ep.getEmbeddingService();
+			OpenAiEmbeddingService es = ep.getEmbeddingService();
 			KnowledgeBase kb = new KnowledgeBase();
 			kb.createDomain("test");
 			kb.createDomain("other");
@@ -216,7 +216,7 @@ public class KnowledgeBaseTest {
 	@Test
 	public void test04() {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			EmbeddingService es = ep.getEmbeddingService();
+			OpenAiEmbeddingService es = ep.getEmbeddingService();
 			KnowledgeBase kb = new KnowledgeBase();
 
 			List<EmbeddedText> resp = es.embed(savedText.get(0));
@@ -256,7 +256,7 @@ public class KnowledgeBaseTest {
 	 */
 	public static void main(String args[]) throws FileNotFoundException, IOException {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			EmbeddingService es = ep.getEmbeddingService();
+			OpenAiEmbeddingService es = ep.getEmbeddingService();
 			KnowledgeBase kb = new KnowledgeBase();
 			kb.createDomain("test");
 

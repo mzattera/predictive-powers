@@ -22,9 +22,9 @@ import java.util.ArrayList;
 
 import org.junit.jupiter.api.Test;
 
-import io.github.mzattera.predictivepowers.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
 import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
-import io.github.mzattera.predictivepowers.services.CompletionService;
 import io.github.mzattera.predictivepowers.services.TextResponse;
 
 class CompletionsTest {
@@ -94,7 +94,7 @@ class CompletionsTest {
 	@Test
 	void test04() {
 		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
-			CompletionService cs = oai.getCompletionService();
+			OpenAiCompletionService cs = oai.getCompletionService();
 
 			cs.getDefaultReq().setEcho(true);
 			cs.getDefaultReq().setTemperature(0.0);
@@ -108,7 +108,7 @@ class CompletionsTest {
 	@Test
 	void test05() {
 		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
-			CompletionService cs = oai.getCompletionService();
+			OpenAiCompletionService cs = oai.getCompletionService();
 
 			cs.getDefaultReq().setEcho(false);
 			cs.getDefaultReq().setTemperature(0.0);

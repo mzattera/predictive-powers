@@ -12,108 +12,101 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package io.github.mzattera.predictivepowers.services;
+ */
 
-import io.github.mzattera.predictivepowers.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsChoice;
-import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
-import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
-import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
-import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+package io.github.mzattera.predictivepowers.services;
 
 /**
- * This class does completions (prompt execution).
+ * A completion service provides methods to complete/generate text (prompt
+ * execution).
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@RequiredArgsConstructor
-public class CompletionService {
+public interface CompletionService extends Service {
+
+	/**
+	 * Number of top tokens considered within the sample operation to create new
+	 * text.
+	 */
+	Integer getTopK();
+
+	/**
+	 * Number of top tokens considered within the sample operation to create new
+	 * text.
+	 */
+	void setTopK(Integer topK);
+
+	/**
+	 * Add tokens in the sample for more probable to least probable until the sum of
+	 * the probabilities is greater than this.
+	 */
+	Double getTopP();
+
+	/**
+	 * Add tokens in the sample for more probable to least probable until the sum of
+	 * the probabilities is greater than this.
+	 */
+	void setTopP(Double topP);
+
+	/**
+	 * The temperature (0-100) of the sampling operation. 1 means regular sampling,
+	 * 0 means always take the highest score, 100.0 is getting closer to uniform
+	 * probability.
+	 */
+	Double getTemperature();
+
+	/**
+	 * The temperature (0-100) of the sampling operation. 1 means regular sampling,
+	 * 0 means always take the highest score, 100.0 is getting closer to uniform
+	 * probability.
+	 */
+	void setTemperature(Double temperature);
+
+	/**
+	 * Maximum amount of tokens to produce (not including the prompt).
+	 */
+	Integer getMaxNewTokens();
+
+	/**
+	 * Maximum amount of tokens to produce (not including the prompt).
+	 */
+	void setMaxNewTokens(Integer maxNewTokens);
+
+	/**
+	 * If true, returns the prompt in addition to the generated text.
+	 * Implementations should ensure this defaults to false.
+	 */
+	boolean getEcho();
+
+	/**
+	 * If true, returns the prompt in addition to the generated text.
+	 * Implementations should ensure this defaults to false.
+	 */
+	void setEcho(boolean echo);
+
+	/**
+	 * Number of completions to return for each prompt. Implementations should
+	 * ensure this defaults to 1.
+	 */
+	int getN();
+
+	/**
+	 * Number of completions to return for each prompt. Implementations should
+	 * ensure this defaults to 1.
+	 */
+	void setN(int n);
 
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
 	// values from a Map
 
-	public CompletionService(OpenAiEndpoint ep) {
-		this(ep, new CompletionsRequest());
-		defaultReq.setModel("text-davinci-003");
-	}
-
-	@NonNull
-	protected final OpenAiEndpoint ep;
-
-	/**
-	 * This request, with its parameters, is used as default setting for each call.
-	 * 
-	 * You can change any parameter to change these defaults (e.g. the model used)
-	 * and the change will apply to all subsequent calls.
-	 */
-	@Getter
-	@NonNull
-	protected final CompletionsRequest defaultReq;
-
 	/**
 	 * Completes text (executes given prompt).
-	 * 
-	 * It uses parameters specified in {@link #getDefaultReq()}.
 	 */
-	public TextResponse complete(String prompt) {
-		return insert(prompt, null, defaultReq);
-	}
+	TextResponse complete(String prompt);
 
 	/**
-	 * Completes text (executes given prompt); uses provided
-	 * {@link CompletionsRequest} to get parameters for the call.
-	 * 
-	 * Notice that if maxToxens is null, this method will try to set it
-	 * automatically, based on prompt length.
+	 * Inserts text between given prompt and the suffix.
 	 */
-	public TextResponse complete(String prompt, CompletionsRequest req) {
-		return insert(prompt, null, req);
-	}
-
-	/**
-	 * Inserts text between given prompt and the suffix (executes given prompt).
-	 * 
-	 * It uses {@link #getDefaultReq()} parameters.
-	 */
-	public TextResponse insert(String prompt, String suffix) {
-		return insert(prompt, suffix, defaultReq);
-	}
-
-	/**
-	 * Inserts text between given prompt and the suffix (executes given prompt).
-	 * uses provided {@link CompletionsRequest} to get parameters for the call.
-	 * 
-	 * Notice that if maxToxens is null, this method will try to set it
-	 * automatically, based on prompt length.
-	 */
-	public TextResponse insert(String prompt, String suffix, CompletionsRequest req) {
-		req.setPrompt(prompt);
-		req.setSuffix(suffix);
-
-		// Adjust token limit if needed
-		boolean autofit = (req.getMaxTokens() == null) && (ModelUtil.getContextSize(req.getModel()) != -1);
-		try {
-			if (autofit) {
-				int tok = TokenUtil.count(prompt);
-				if (suffix != null)
-					tok += TokenUtil.count(suffix);
-				req.setMaxTokens(ModelUtil.getContextSize(req.getModel()) - tok -10);
-			}
-
-			// TODO: catch exception if maxToken is too high, parse prompt token length and resubmit
-			CompletionsResponse resp = ep.getClient().createCompletion(req);
-			CompletionsChoice choice = resp.getChoices().get(0);
-			return TextResponse.fromGptApi(choice.getText(), choice.getFinishReason());
-
-		} finally {
-
-			// for next call, or maxTokens will remain fixed
-			if (autofit)
-				req.setMaxTokens(null);
-		}
-	}
+	TextResponse insert(String prompt, String suffix);
 }

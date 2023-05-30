@@ -18,7 +18,7 @@ package io.github.mzattera.predictivepowers.examples;
 
 import java.util.List;
 
-import io.github.mzattera.predictivepowers.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 import io.github.mzattera.util.ExtractionUtil;

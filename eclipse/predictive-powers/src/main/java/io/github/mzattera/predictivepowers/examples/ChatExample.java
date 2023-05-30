@@ -18,7 +18,7 @@ package io.github.mzattera.predictivepowers.examples;
 
 import java.util.Scanner;
 
-import io.github.mzattera.predictivepowers.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.ChatService;
 
 public class ChatExample {

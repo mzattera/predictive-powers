@@ -14,39 +14,34 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers;
+package io.github.mzattera.predictivepowers.openai.endpoint;
 
-import java.io.Closeable;
-
+import io.github.mzattera.predictivepowers.Endpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.ChatService;
-import io.github.mzattera.predictivepowers.services.CompletionService;
-import io.github.mzattera.predictivepowers.services.EmbeddingService;
-import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 import lombok.Getter;
 import lombok.NonNull;
 
 /**
- * This represents an OpenAI end point, from which APIs can be created.
+ * This represents an OpenAI end point, from which APIs can be accessed.
  * 
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-public class OpenAiEndpoint implements Closeable {
+public class OpenAiEndpoint implements Endpoint {
 
 	// TODO add client/endpoint for Azure OpenAi Services
 
 	@Getter
 	private final OpenAiClient client;
 
-	/**
-	 * Constructor. OpenAiApi key is read from OPENAI_API_KEY system environment
-	 * variable.
-	 */
 	public OpenAiEndpoint() {
 		this(new OpenAiClient(null, -1, -1, -1));
 	}
@@ -59,27 +54,32 @@ public class OpenAiEndpoint implements Closeable {
 		this.client = client;
 	}
 
+	// TODO return each of these as an OpenAi service
 
-	public CompletionService getCompletionService() {
-		return new CompletionService(this);
+	@Override
+	public OpenAiCompletionService getCompletionService() {
+		return new OpenAiCompletionService(this);
 	}
 
-	public CompletionService getCompletionService(CompletionsRequest defaultReq) {
-		return new CompletionService(this, defaultReq);
+	public OpenAiCompletionService getCompletionService(CompletionsRequest defaultReq) {
+		return new OpenAiCompletionService(this, defaultReq);
 	}
 
-	public EmbeddingService getEmbeddingService() {
-		return new EmbeddingService(this);
+	@Override
+	public OpenAiEmbeddingService getEmbeddingService() {
+		return new OpenAiEmbeddingService(this);
 	}
 
-	public EmbeddingService getEmbeddingService(@NonNull EmbeddingsRequest defaultReq) {
-		return new EmbeddingService(this, defaultReq);
+	public OpenAiEmbeddingService getEmbeddingService(@NonNull EmbeddingsRequest defaultReq) {
+		return new OpenAiEmbeddingService(this, defaultReq);
 	}
 
+	@Override
 	public ChatService getChatService() {
 		return new ChatService(this);
 	}
 
+	@Override
 	public ChatService getChatService(String personality) {
 		ChatService s = getChatService();
 		s.setPersonality(personality);
@@ -96,6 +96,7 @@ public class OpenAiEndpoint implements Closeable {
 		return s;
 	}
 
+	@Override
 	public QuestionExtractionService getQuestionExtractionService() {
 		return new QuestionExtractionService(this);
 	}
@@ -104,16 +105,17 @@ public class OpenAiEndpoint implements Closeable {
 		return new QuestionExtractionService(this, cs);
 	}
 
-	public QuestionAnsweringService getQuestionAnsweringService() {
-		return new QuestionAnsweringService(this);
+	@Override
+	public OpenAiQuestionAnsweringService getQuestionAnsweringService() {
+		return new OpenAiQuestionAnsweringService(this);
 	}
 
-	public QuestionAnsweringService getQuestionAnsweringService(@NonNull ChatService cs) {
-		return new QuestionAnsweringService(this, cs);
+	public OpenAiQuestionAnsweringService getQuestionAnsweringService(@NonNull ChatService cs) {
+		return new OpenAiQuestionAnsweringService(this, cs);
 	}
 
 	@Override
-	public void close() {
+	public synchronized void close() {
 		try {
 			client.close();
 		} catch (Exception e) {

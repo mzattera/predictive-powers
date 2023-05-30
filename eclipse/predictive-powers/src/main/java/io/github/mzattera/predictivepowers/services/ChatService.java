@@ -18,10 +18,10 @@ package io.github.mzattera.predictivepowers.services;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsChoice;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
 import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
 import lombok.Getter;
@@ -38,24 +38,38 @@ import lombok.Setter;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public class ChatService {
+public class ChatService implements Service {
 
-	// TODO add "slot filling" capabilities: fill a slot in the prompt based on values from a Map
+	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
+	// values from a Map
+
+	public static final String DEFAULT_MODEL = "gpt-3.5-turbo";
 
 	public ChatService(OpenAiEndpoint ep) {
 		this(ep, new ChatCompletionsRequest());
-		defaultReq.setModel("gpt-3.5-turbo");
+		defaultReq.setModel(DEFAULT_MODEL);
 		maxConversationTokens = Math.max(ModelUtil.getContextSize(defaultReq.getModel()), 2046) * 3 / 4;
 	}
 
 	public ChatService(OpenAiEndpoint ep, ChatCompletionsRequest defaultReq) {
-		this.ep = ep;
+		this.endpoint = ep;
 		this.defaultReq = defaultReq;
 		maxConversationTokens = Math.max(ModelUtil.getContextSize(defaultReq.getModel()), 2046) * 3 / 4;
 	}
 
 	@NonNull
-	protected final OpenAiEndpoint ep;
+	@Getter
+	protected final OpenAiEndpoint endpoint;
+
+	@Override
+	public String getModel() {
+		return defaultReq.getModel();
+	}
+
+	@Override
+	public void setModel(@NonNull String model) {
+		defaultReq.setModel(model);
+	}
 
 	/**
 	 * This request, with its parameters, is used as default setting for each call.
@@ -207,8 +221,10 @@ public class ChatService {
 	}
 
 	/**
-	 * Completes text (executes given prompt). The agent personality is considered,
-	 * if provided.
+	 * Completes text (executes given prompt).
+	 * 
+	 * Notice this does not consider or affects chat history but agent personality
+	 * is used, if provided.
 	 */
 	public TextResponse complete(String prompt) {
 		return complete(prompt, defaultReq);
@@ -230,10 +246,11 @@ public class ChatService {
 	}
 
 	/**
-	 * Completes given conversation.
+	 * Completes given conversation, using this service as a completion service.
 	 * 
-	 * Notice this does not consider or affects chat history but agent personality
-	 * is used, if provided.
+	 * Notice this does not consider or affects chat history. In addition, agent
+	 * personality is NOT considered, but can be injected as first message in the
+	 * list, for service that support this.
 	 */
 	public TextResponse complete(List<ChatMessage> messages) {
 		return complete(messages, defaultReq);
@@ -270,8 +287,9 @@ public class ChatService {
 				req.setMaxTokens(ModelUtil.getContextSize(req.getModel()) - tok - 10);
 			}
 
-			// TODO: catch exception if maxToken is too high, parse prompt token length and resubmit
-			ChatCompletionsResponse resp = ep.getClient().createChatCompletion(req);
+			// TODO: catch exception if maxToken is too high, parse prompt token length and
+			// resubmit
+			ChatCompletionsResponse resp = endpoint.getClient().createChatCompletion(req);
 			return resp.getChoices().get(0);
 
 		} finally {

@@ -16,8 +16,8 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
-import io.github.mzattera.predictivepowers.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 
 public class OpenAiEndpointExample {
 

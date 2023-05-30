@@ -16,8 +16,8 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
-import io.github.mzattera.predictivepowers.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.services.CompletionService;
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
 
 public class DefaultConfigurationExample {
 
@@ -25,7 +25,7 @@ public class DefaultConfigurationExample {
 
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
-			CompletionService cs = endpoint.getCompletionService();
+			OpenAiCompletionService cs = endpoint.getCompletionService();
 
 			// Set "model" parameter in default request, this will affect all further calls
 			cs.getDefaultReq().setModel("text-curie-001");

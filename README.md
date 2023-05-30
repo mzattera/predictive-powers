@@ -28,9 +28,14 @@ The exact process for setting up this variable depends on the OS you are using.
 	
 ## Usage
 
-### OpenAiClient (Direct OpenAi API Calls)
+### API Clients
 
-Similarly to [OpenAI-Java](https://github.com/TheoKanning/openai-java), you can access OpeanAi API by instantiating an `OpenAiClient`.
+API clients are the lowest-level components of this library; they allow you to perform direct API calls to service providers. 
+For example, you can access OpeanAi API directly by instantiating an `OpenAiClient` and calling its methods
+(similarly to what [OpenAI-Java](https://github.com/TheoKanning/openai-java) does).
+
+*** Update and make more generic, adjust code
+
 Class constructors allow you to pass your OpenAi API key, which will be used in all subsequent calls.
 If the API key is `null`, the code will try to read the key from `OPENAI_API_KEY` system environment variable.
 
@@ -75,18 +80,25 @@ will output something like:
 
 #### Customization
 
-`OpenAiClient` relies on an underlying `OkHttpClient` for API calls, providing features like connection pools, etc.
-You can customize the `OkHttpClient` client by creating a pre-configured version of it with `OpenAiClient.getDefaultHttpClient()`
-and passing it in `OpenAiClient` constructor, after you have set it up as desired.
+API clients rely on an underlying `OkHttpClient` which provides features like connection pools, etc.
+You can use a customized `OkHttpClient` (e.g. to provide logging) to use in your API client following the belwo steps:
 
-The below example shows how to configure `OpenAiClient` to use a proxy.
+  1. Create a pre-configured version of `OkHttpClient` with `Client.getDefaultHttpClient()`.
+     Notice that at this step you will have to provide an API key.
+  2. Configure the `OkHttpClient` as desired.
+  3. Pass it to your API client constructor.
+
+The below example shows how to configure an `OpenAiClient` to use a proxy.
+
+**** VERIFY CODE
 
 ```java
+		
 		String host = "<Your proxy goes here>";
 		int port = 80; // your proxy port goes here
 
 		Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(host, port));
-		OkHttpClient http = OpenAiClient.getDefaultHttpClient(null)
+		OkHttpClient http = ApiClient.getDefaultHttpClient()
 				.newBuilder()
 				.proxy(proxy)
 				.build();
@@ -97,10 +109,16 @@ The below example shows how to configure `OpenAiClient` to use a proxy.
 
 ### Endpoints
 
-An endpoint provides GenAI capabilities in form of services; it can be created by passing an optional API key or an existing `OpenAiClient`.
+An endpoint uses a client to provide GenAI capabilities in form of services.
+
+*** ADAPT
+
+; it can be created by passing an optional API key or an existing `OpenAiClient`.
 
 Notice it is good practice to close an endpoint when it is no longer needed; this will close the underlying `OpenAiClient`
 terminating idle connections and freeing up resources.
+
+*** Update
   
 ```java
 import io.github.mzattera.predictivepowers.OpenAiEndpoint;
@@ -197,10 +215,11 @@ public class DefaultConfigurationExample {
   
  ### Thread Safety
  
- With the notable exception of the knowledge base, classes in this library are NOT thread safe; this is because the library is, at present, supporting a micro-service stateless architecture,
+ With the notable exception of the knowledge base and the endpoint, classes in this library are NOT thread safe;
+ this is because the library is, at present, supporting a micro-service stateless architecture,
  where AI capabilities are provided at endpoints through REST API.
  
- This greatly simplifies backend architecture and allows to scale applications automatically and effortlessly when deployed inside a cloud environment.
+ This greatly simplifies back-end architecture and allows to scale applications automatically and effortlessly when deployed inside a cloud environment.
   
  
 ## <a name="examples"></a>Examples

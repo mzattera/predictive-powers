@@ -16,9 +16,12 @@
 
 package io.github.mzattera.predictivepowers.services;
 
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 /**
@@ -31,19 +34,36 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
 @RequiredArgsConstructor
+//@AllArgsConstructor
 @ToString
 public final class TextResponse {
 
 	/** Reason why the language model finished responding. */
 	public enum FinishReason {
-		/** API returned complete model output */
+		/**
+		 * API returned complete model output (decided to properly stop before max
+		 * length was reached)
+		 */
 		COMPLETED,
 
-		/** Incomplete model output due to max_tokens parameter or token limit */
+		/** Incomplete model output due to token length limit */
 		LENGTH_LIMIT_REACHED,
 
-		/** API response still in progress or incomplete */
+		/**
+		 * API returned without errors, but cannot distinguish between COMPLETED and
+		 * LENGTH_LIMIT_REACHED
+		 */
+		OK,
+
+		/**
+		 * API response still in progress or incomplete (for asynchronous calls, not
+		 * supported at the moment)
+		 */
 		INCOMPLETE,
 
 		/** Omitted content due to content filters */

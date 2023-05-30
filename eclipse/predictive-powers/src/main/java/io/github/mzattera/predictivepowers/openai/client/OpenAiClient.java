@@ -17,20 +17,19 @@
 package io.github.mzattera.predictivepowers.openai.client;
 
 import java.awt.image.BufferedImage;
-import java.io.Closeable;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
+import io.github.mzattera.predictivepowers.ApiClient;
 import io.github.mzattera.predictivepowers.openai.client.audio.AudioRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
@@ -52,13 +51,10 @@ import io.github.mzattera.predictivepowers.openai.client.moderations.Moderations
 import io.github.mzattera.util.ImageUtil;
 import io.reactivex.Single;
 import lombok.NonNull;
-import okhttp3.ConnectionPool;
-import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
-import okhttp3.Response;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
@@ -70,18 +66,17 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public final class OpenAiClient implements Closeable {
+public final class OpenAiClient implements ApiClient {
 
-	// TODO Expose features described in openai-java (e.g. Proxy)
 	// TODO add client/endpoint for Azure OpenAi Services
-
-	private final static String API_BASE_URL = "https://api.openai.com/v1/";
 
 	public final static int DEFAULT_TIMEOUT_MILLIS = 60 * 1000;
 
 	public final static int DEFAULT_KEEP_ALIVE_MILLIS = 5 * 60 * 1000;
 
 	public final static int DEFAULT_MAX_IDLE_CONNECTIONS = 5;
+
+	private final static String API_BASE_URL = "https://api.openai.com/v1/";
 
 	// OpenAI API defined with Retrofit
 	private final OpenAiApi api;
@@ -102,7 +97,7 @@ public final class OpenAiClient implements Closeable {
 	 * from OPENAI_API_KEY system environment variable.
 	 */
 	public OpenAiClient() {
-		this(OpenAiClient.getDefaultHttpClient(null, -1, -1, -1));
+		this(null, DEFAULT_TIMEOUT_MILLIS, DEFAULT_KEEP_ALIVE_MILLIS, DEFAULT_MAX_IDLE_CONNECTIONS);
 	}
 
 	/**
@@ -112,7 +107,7 @@ public final class OpenAiClient implements Closeable {
 	 *               OPENAI_API_KEY system environment variable.
 	 */
 	public OpenAiClient(String apiKey) {
-		this(OpenAiClient.getDefaultHttpClient(apiKey, -1, -1, -1));
+		this(apiKey, DEFAULT_TIMEOUT_MILLIS, DEFAULT_KEEP_ALIVE_MILLIS, DEFAULT_MAX_IDLE_CONNECTIONS);
 	}
 
 	/**
@@ -121,19 +116,15 @@ public final class OpenAiClient implements Closeable {
 	 * 
 	 * @param apiKey             OpenAiApi key. If this is null, it will try to read
 	 *                           it from OPENAI_API_KEY system environment variable.
-	 * @param readTimeout        Read timeout for connections. 0 means no timeout,
-	 *                           if a value < 0 is provided, then
-	 *                           {@link DEFAULT_TIMEOUT_MILLIS} is used.
+	 * @param readTimeout        Read timeout for connections. 0 means no timeout.
 	 * @param keepAliveDuration  Timeout for connections in client pool
-	 *                           (milliseconds). If this is < 0,
-	 *                           {@link #DEFAULT_KEEP_ALIVE_MILLIS} is used instead.
+	 *                           (milliseconds).
 	 * @param maxIdleConnections Maximum number of idle connections to keep in the
-	 *                           pool. If this is < 0,
-	 *                           {@link #DEFAULT_MAX_IDLE_CONNECTIONS} is used
-	 *                           instead.
+	 *                           pool.
 	 */
 	public OpenAiClient(String apiKey, int readTimeout, int keepAliveDuration, int maxIdleConnections) {
-		this(OpenAiClient.getDefaultHttpClient(apiKey, readTimeout, keepAliveDuration, maxIdleConnections));
+		this(ApiClient.getDefaultHttpClient((apiKey == null) ? getApiKey() : apiKey, readTimeout, keepAliveDuration,
+				maxIdleConnections));
 	}
 
 	/**
@@ -152,59 +143,14 @@ public final class OpenAiClient implements Closeable {
 	}
 
 	/**
-	 * Returns an OkHttpClient to use for API calls, using default parameters. This
-	 * can be further customized and then used in constructor to build an
-	 * OpenAiClient.
-	 * 
-	 * @param apiKey OpenAiApi key. If this is null, it will try to read it from
-	 *               OPENAI_API_KEY system environment variable.
+	 * @return The API key from OS environment.
 	 */
-	public static OkHttpClient getDefaultHttpClient(String apiKey) {
-		return getDefaultHttpClient(apiKey, -1, -1, -1);
-	}
-
-	/**
-	 * Returns an OkHttpClient to use for API calls. This can be further customized
-	 * and then used in constructor to build an OpenAiClient.
-	 * 
-	 * @param apiKey             OpenAiApi key. If this is null, it will try to read
-	 *                           it from OPENAI_API_KEY system environment variable.
-	 * @param readTimeout        Read timeout for connections. 0 means no timeout,
-	 *                           if a value < 0 is provided, then
-	 *                           {@link DEFAULT_TIMEOUT_MILLIS} is used.
-	 * @param keepAliveDuration  Timeout for connections in client pool
-	 *                           (milliseconds). If this is < 0,
-	 *                           {@link #DEFAULT_KEEP_ALIVE_MILLIS} is used instead.
-	 * @param maxIdleConnections Maximum number of idle connections to keep in the
-	 *                           pool. If this is < 0,
-	 *                           {@link #DEFAULT_MAX_IDLE_CONNECTIONS} is used
-	 *                           instead.
-	 */
-	public static OkHttpClient getDefaultHttpClient(String apiKey, int readTimeout, int keepAliveDuration,
-			int maxIdleConnections) {
-
-		if (apiKey == null)
-			apiKey = System.getenv("OPENAI_API_KEY");
+	private static String getApiKey() {
+		String apiKey = System.getenv("OPENAI_API_KEY");
 		if (apiKey == null)
 			throw new IllegalArgumentException(
 					"OpenAi API key is not provided and it cannot be found in OPENAI_API_KEY system environment variable");
-		final String bearer = "Bearer " + apiKey;
-
-		if (readTimeout < 0)
-			readTimeout = DEFAULT_TIMEOUT_MILLIS;
-		if (keepAliveDuration < 0)
-			keepAliveDuration = DEFAULT_KEEP_ALIVE_MILLIS;
-		if (maxIdleConnections < 0)
-			maxIdleConnections = DEFAULT_MAX_IDLE_CONNECTIONS;
-
-		return new OkHttpClient.Builder()
-				.connectionPool(new ConnectionPool(maxIdleConnections, keepAliveDuration, TimeUnit.MILLISECONDS))
-				.readTimeout(readTimeout, TimeUnit.MILLISECONDS).addInterceptor(new Interceptor() {
-					@Override
-					public Response intercept(Chain chain) throws IOException {
-						return chain.proceed(chain.request().newBuilder().header("Authorization", bearer).build());
-					}
-				}).build();
+		return apiKey;
 	}
 
 	//////// API METHODS MAPPED INTO JAVA CALLS ////////////////////////////////////
@@ -476,6 +422,9 @@ public final class OpenAiClient implements Closeable {
 		try {
 			return apiCall.blockingGet();
 		} catch (HttpException e) {
+			// TODO: Socket Timeout passthrought?
+			// TODO: In case error is for token length, have a special exception that allows
+			// counting tokens?
 			OpenAiException oaie;
 			try {
 				oaie = new OpenAiException(JSON_MAPPER.readValue(e.response().errorBody().string(), OpenAiError.class),

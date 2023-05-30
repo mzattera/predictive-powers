@@ -43,12 +43,15 @@ import io.github.mzattera.util.ResourceUtil;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public class EmbeddingTest {
+public class EmbeddingServiceTest {
+	
+	// TODO break it in smaller tests...
+	
 	@Test
 	public void test00() throws IOException, SAXException, TikaException {
-//		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-//			test(ep.getEmbeddingService());
-//		}
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
+			test(ep.getEmbeddingService());
+		}
 		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
 			test(ep.getEmbeddingService());
 		}
@@ -105,12 +108,12 @@ public class EmbeddingTest {
 	}
 
 	public static void main(String args[]) {
-		EmbeddingTest i = new EmbeddingTest(); 
+		EmbeddingServiceTest i = new EmbeddingServiceTest();
 		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
 			i.test02(ep.getEmbeddingService());
 		}
 	}
-	
+
 	public void test02(EmbeddingService es) {
 
 		StringBuilder txt = new StringBuilder();

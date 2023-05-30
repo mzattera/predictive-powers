@@ -140,6 +140,9 @@ import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 
 ### <a name="services"></a>Services
 
+*** Indica quali sono su OAI e quali su HF
+*** Esempio 
+
 Once the endpoint is created, it can be used to access "services" which are high-level GenAI capabilities. Currently following services are provided:
 
   * `CompletionService` text completion (including insertions): basically, it executes given text prompt.
@@ -147,6 +150,7 @@ Once the endpoint is created, it can be used to access "services" which are high
   * `EmbeddingService` embeds text and calculates semantic (cosine) similarity between texts; it takes care of automatically splitting long texts when needed.
   * `QuestionAnsweringService` answers questions, using a user-provided context. The context can be a list of embeddings from a [knowledge base](#kb).
   * `QuestionExtractionService` extracts different kinds of questions from a text (e.g. true/false question, multiple choices quizzes, etc.). It automatically handles long texts.
+  * `ImageGenerationService` to create images.
   
 The below example shows how to get the `CompletionService` to complete a sentence.
 

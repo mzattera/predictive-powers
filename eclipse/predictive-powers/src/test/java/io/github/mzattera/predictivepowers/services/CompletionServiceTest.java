@@ -34,6 +34,10 @@ import io.github.mzattera.predictivepowers.services.TextResponse.FinishReason;
  */
 public class CompletionServiceTest {
 
+	
+	// TODO break it in smaller tests...
+	
+
 	@Test
 	public void test01() {
 

@@ -49,7 +49,7 @@ class FineTunesTest {
 			System.out.println("Status=" + status);
 
 			// Wait it is ready
-			while (!status.equals("succeeded")) {
+			while (!status.equals("succeeded") && !status.equals("failed")) {
 
 				try {
 					TimeUnit.SECONDS.sleep(10);

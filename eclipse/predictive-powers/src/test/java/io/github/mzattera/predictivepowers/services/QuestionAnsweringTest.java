@@ -34,10 +34,6 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionAnsweri
 import io.github.mzattera.util.ResourceUtil;
 
 public class QuestionAnsweringTest {
-	
-	@Test
-	public void test00() {
-	}
 
 	/**
 	 * Makes some tests by reading a knowledge base and asking a relevant question

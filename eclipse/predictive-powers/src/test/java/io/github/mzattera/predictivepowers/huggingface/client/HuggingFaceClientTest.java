@@ -58,24 +58,13 @@ public class HuggingFaceClientTest {
 		try (HuggingFaceClient cli = new HuggingFaceClient()) {
 
 			TextGenerationRequest req = new TextGenerationRequest();
-			req.getInputs().add("How high is Mt. Everest?");			
+			req.getInputs().add("How high is Mt. Everest?");
 //			req.getInputs().add("I like my new kangaroo.");
 			req.getParameters().setMaxNewTokens(15);
 			req.getParameters().setReturnFullText(false);
 
 			// Prompt completion
 			List<List<TextGenerationResponse>> resp = cli.textGeneration("gpt2", req);
-			for (List<TextGenerationResponse> lsa : resp) {
-				System.out.println("---");
-				for (TextGenerationResponse ls : lsa) {
-					System.out.println("\t" + ls.toString());
-				}
-			}
-
-			// Prompt completion
-//			SingleHuggingFaceRequest req2 = new SingleHuggingFaceRequest();
-//			req2.setInputs("How high is Mt. Everest?");
-			resp = cli.textGeneration("bigscience/bloom", req);
 			for (List<TextGenerationResponse> lsa : resp) {
 				System.out.println("---");
 				for (TextGenerationResponse ls : lsa) {

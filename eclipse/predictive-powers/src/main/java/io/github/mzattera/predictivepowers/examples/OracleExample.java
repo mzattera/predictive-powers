@@ -25,22 +25,31 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tika.exception.TikaException;
 import org.xml.sax.SAXException;
 
+import io.github.mzattera.predictivepowers.Endpoint;
+import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
+import io.github.mzattera.predictivepowers.services.EmbeddingService;
 import io.github.mzattera.predictivepowers.services.QnAPair;
+import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
 
 public class OracleExample {
 
 	public static void main(String[] args) 
 			throws MalformedURLException, IOException, SAXException, TikaException 
 	{
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+		
+		// Un-comment the below to use OpenAi services for the oracle
+		Endpoint endpoint = new OpenAiEndpoint();
+		
+		// Un-comment the below to use Hugging Face services for the oracle
+		// Endpoint endpoint = new HuggingFaceEndpoint();
+		
+		try (endpoint) {
 			
 			// Question answering service
-			OpenAiQuestionAnsweringService answerSvc = endpoint.getQuestionAnsweringService();
+			QuestionAnsweringService answerSvc = endpoint.getQuestionAnsweringService();
 
 			try (Scanner console = new Scanner(System.in)) {
 
@@ -50,7 +59,7 @@ public class OracleExample {
 				System.out.println("Reading page " + pageUrl + "...\n");
 
 				// Read the page text, embed it, and store it into a knowledge base
-				OpenAiEmbeddingService embeddingService = endpoint.getEmbeddingService();
+				EmbeddingService embeddingService = endpoint.getEmbeddingService();
 				KnowledgeBase knowledgeBase = new KnowledgeBase();
 				knowledgeBase.insert(embeddingService.embedURL(pageUrl));
 
@@ -77,7 +86,7 @@ public class OracleExample {
 					List<Pair<EmbeddedText, Double>> context = 
 							knowledgeBase.search(
 								embeddingService.embed(question).get(0),
-								50, 0
+								15, 0
 							);
 
 					// Use the context when answering

@@ -23,6 +23,7 @@ import io.github.mzattera.predictivepowers.openai.client.completions.Completions
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiImageGenerationService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.ChatService;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
@@ -43,11 +44,11 @@ public class OpenAiEndpoint implements Endpoint {
 	private final OpenAiClient client;
 
 	public OpenAiEndpoint() {
-		this(new OpenAiClient(null, -1, -1, -1));
+		this(new OpenAiClient());
 	}
 
 	public OpenAiEndpoint(String apiKey) {
-		this(new OpenAiClient(apiKey, -1, -1, -1));
+		this(new OpenAiClient(apiKey));
 	}
 
 	public OpenAiEndpoint(@NonNull OpenAiClient client) {
@@ -112,6 +113,11 @@ public class OpenAiEndpoint implements Endpoint {
 
 	public OpenAiQuestionAnsweringService getQuestionAnsweringService(@NonNull ChatService cs) {
 		return new OpenAiQuestionAnsweringService(this, cs);
+	}
+
+	@Override
+	public OpenAiImageGenerationService getImageGenerationService() {
+		return new OpenAiImageGenerationService(this);
 	}
 
 	@Override

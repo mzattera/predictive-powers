@@ -21,6 +21,7 @@ import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceClient;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationRequest;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceCompletionService;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceEmbeddingService;
+import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceImageGenerationService;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.ChatService;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
@@ -86,6 +87,11 @@ public class HuggingFaceEndpoint implements Endpoint {
 	@Override
 	public HuggingFaceQuestionAnsweringService getQuestionAnsweringService() {
 		return new HuggingFaceQuestionAnsweringService(this);
+	}
+
+	@Override
+	public HuggingFaceImageGenerationService getImageGenerationService() {
+		return new HuggingFaceImageGenerationService(this);
 	}
 
 	@Override

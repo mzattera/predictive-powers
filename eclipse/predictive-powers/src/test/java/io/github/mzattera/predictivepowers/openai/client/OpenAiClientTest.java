@@ -46,7 +46,7 @@ public class OpenAiClientTest {
 	@Test
 	public void test02() {
 
-		OkHttpClient http = ApiClient.getDefaultHttpClient(null).newBuilder().addInterceptor(new Interceptor() {
+		OkHttpClient http = ApiClient.getDefaultHttpClient(System.getenv("OPENAI_API_KEY")).newBuilder().addInterceptor(new Interceptor() {
 
 			@Override
 			public Response intercept(Chain chain) throws IOException {

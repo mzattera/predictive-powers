@@ -16,25 +16,23 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
-import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionAnsweringService;
 
-public class OpenAiEndpointExample {
+public class SubclassExample {
 
-	@SuppressWarnings({ "resource", "unused" })
 	public static void main(String[] args) {
 
-		OpenAiEndpoint endpoint;
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
-		// Get API key from OS environment variable OpenAiClient.OS_ENV_VAR_NAME
-		endpoint = new OpenAiEndpoint();
+			// Explicitly instantiates a subclass of QuestionAnsweringService
+			OpenAiQuestionAnsweringService svc = endpoint.getQuestionAnsweringService();
 
-		// Pass API key explicitly
-		endpoint = new OpenAiEndpoint("sk-H0a...Yo1");
+			// This files is provided only in OpenAI service, to allow extra configurability
+			svc.getCompletionService().setPersonality("You are an helpful question ansering assistant");
 
-		// Build endpoint from an existing API client
-		OpenAiClient cli = new OpenAiClient();
-		endpoint = new OpenAiEndpoint(cli);
-		
+			// ... use the service here
+
+		} // close endpoint
 	}
 }

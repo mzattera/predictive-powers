@@ -80,7 +80,7 @@ class FineTunesTest {
 			File training = c.uploadFile(resource.getCanonicalPath(), "fine-tune");
 
 			// Retrieve its content
-			java.io.File dnLoad = java.io.File.createTempFile("OpenAi", ".jsonl");
+			java.io.File dnLoad = java.io.File.createTempFile("OpenAI", ".jsonl");
 			c.retrieveFileContent(training.getId(), dnLoad);
 
 			assertEquals(ExtractionUtil.fromFile(resource), ExtractionUtil.fromFile(dnLoad));

@@ -30,7 +30,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Request for fine-tunes OpenAi API.
+ * Request for fine-tunes OpenAI API.
  * 
  * @author Massimiliano "Maxi" Zattera
  *

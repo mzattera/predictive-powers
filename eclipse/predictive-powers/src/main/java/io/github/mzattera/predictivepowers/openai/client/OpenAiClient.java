@@ -61,14 +61,21 @@ import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
 /**
- * Clients that calls OpenAI API and return results.
+ * API Client to access OpenAI API.
+ * 
+ * See {@link https://platform.openai.com/docs/api-reference} for details.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
 public final class OpenAiClient implements ApiClient {
 
-	// TODO add client/endpoint for Azure OpenAi Services
+	// TODO add client/endpoint for Azure OpenAI Services
+
+	/**
+	 * Name of the OS environment variable containing the API key.
+	 */
+	public static final String OS_ENV_VAR_NAME = "OPENAI_API_KEY";
 
 	public final static int DEFAULT_TIMEOUT_MILLIS = 60 * 1000;
 
@@ -93,8 +100,8 @@ public final class OpenAiClient implements ApiClient {
 	}
 
 	/**
-	 * Constructor, using default parameters for OkHttpClient. OpenAiApi key is read
-	 * from OPENAI_API_KEY system environment variable.
+	 * Constructor, using default parameters for OkHttpClient. OpenAI API key is
+	 * read from {@link #OS_ENV_VAR_NAME} system environment variable.
 	 */
 	public OpenAiClient() {
 		this(null, DEFAULT_TIMEOUT_MILLIS, DEFAULT_KEEP_ALIVE_MILLIS, DEFAULT_MAX_IDLE_CONNECTIONS);
@@ -104,7 +111,7 @@ public final class OpenAiClient implements ApiClient {
 	 * Constructor, using default parameters for OkHttpClient.
 	 * 
 	 * @param apiKey OpenAiApi key. If this is null, it will try to read it from
-	 *               OPENAI_API_KEY system environment variable.
+	 *               {@link #OS_ENV_VAR_NAME} system environment variable.
 	 */
 	public OpenAiClient(String apiKey) {
 		this(apiKey, DEFAULT_TIMEOUT_MILLIS, DEFAULT_KEEP_ALIVE_MILLIS, DEFAULT_MAX_IDLE_CONNECTIONS);
@@ -115,7 +122,8 @@ public final class OpenAiClient implements ApiClient {
 	 * parameters can be specified.
 	 * 
 	 * @param apiKey             OpenAiApi key. If this is null, it will try to read
-	 *                           it from OPENAI_API_KEY system environment variable.
+	 *                           it from {@link #OS_ENV_VAR_NAME} system environment
+	 *                           variable.
 	 * @param readTimeout        Read timeout for connections. 0 means no timeout.
 	 * @param keepAliveDuration  Timeout for connections in client pool
 	 *                           (milliseconds).
@@ -146,10 +154,10 @@ public final class OpenAiClient implements ApiClient {
 	 * @return The API key from OS environment.
 	 */
 	private static String getApiKey() {
-		String apiKey = System.getenv("OPENAI_API_KEY");
+		String apiKey = System.getenv(OS_ENV_VAR_NAME);
 		if (apiKey == null)
-			throw new IllegalArgumentException(
-					"OpenAi API key is not provided and it cannot be found in OPENAI_API_KEY system environment variable");
+			throw new IllegalArgumentException("OpenAI API key is not provided and it cannot be found in "
+					+ OS_ENV_VAR_NAME + " system environment variable");
 		return apiKey;
 	}
 

@@ -26,7 +26,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
-import io.github.mzattera.predictivepowers.Endpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
 import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
@@ -72,7 +71,7 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 		mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 		mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 	}
-	
+
 	@NonNull
 	@Getter
 	private final OpenAiEndpoint endpoint;

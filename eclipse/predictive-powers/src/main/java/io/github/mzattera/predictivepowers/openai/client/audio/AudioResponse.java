@@ -21,7 +21,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Response from OpenAi /audio API.
+ * Response from OpenAI /audio API.
  * 
  * @author Massimiliano "Maxi" Zattera
  *

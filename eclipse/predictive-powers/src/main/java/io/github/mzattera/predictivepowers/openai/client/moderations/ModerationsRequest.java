@@ -29,7 +29,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Request for OpenAi /moderations API.
+ * Request for OpenAI /moderations API.
  * 
  * @author Massimiliano "Maxi" Zattera.
  *

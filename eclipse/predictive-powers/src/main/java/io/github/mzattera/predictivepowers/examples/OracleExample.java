@@ -34,13 +34,13 @@ import io.github.mzattera.predictivepowers.services.EmbeddingService;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
 
+@SuppressWarnings("unused")
 public class OracleExample {
 
-	public static void main(String[] args) 
-			throws MalformedURLException, IOException, SAXException, TikaException 
+	public static void main(String[] args) throws Exception 
 	{
 		
-		// Un-comment the below to use OpenAi services for the oracle
+		// Un-comment the below to use OpenAI services for the oracle
 		Endpoint endpoint = new OpenAiEndpoint();
 		
 		// Un-comment the below to use Hugging Face services for the oracle

@@ -23,7 +23,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * An image as returned by OpenAi /images API.
+ * An image as returned by OpenAI /images API.
  * 
  * @author Massimiliano "Maxi" Zattera
  *

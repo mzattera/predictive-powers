@@ -30,29 +30,12 @@ import okhttp3.OkHttpClient;
 import okhttp3.Response;
 
 /**
- * This represent a client to access an existing HTTP API.
+ * Interface for all clients accessing an existing HTTP API.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
 public interface ApiClient extends Closeable {
-
-	public final static int DEFAULT_TIMEOUT_MILLIS = 60 * 1000;
-
-	public final static int DEFAULT_KEEP_ALIVE_MILLIS = 5 * 60 * 1000;
-
-	public final static int DEFAULT_MAX_IDLE_CONNECTIONS = 5;
-
-	/**
-	 * Returns an OkHttpClient to use for API calls, using default parameters. This
-	 * can be further customized and then used in constructor to build an client
-	 * which, in turn, can be used to build an Endpoint.
-	 * 
-	 * @param apiKey API key for underlying API calls.
-	 */
-	public static OkHttpClient getDefaultHttpClient(@NonNull final String apiKey) {
-		return getDefaultHttpClient(apiKey, DEFAULT_TIMEOUT_MILLIS, DEFAULT_KEEP_ALIVE_MILLIS, DEFAULT_MAX_IDLE_CONNECTIONS);
-	}
 
 	/**
 	 * Returns an OkHttpClient to use for API calls, using default parameters. This

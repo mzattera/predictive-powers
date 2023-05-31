@@ -29,7 +29,9 @@ import lombok.Getter;
 import lombok.NonNull;
 
 /**
- * This represents a Hugging Face end point, from which APIs can be accessed.
+ * This represents a Hugging Face endpoint, from which services can be created.
+ * 
+ * This class is thread-safe.
  * 
  * @author Massimiliano "Maxi" Zattera.
  *
@@ -51,7 +53,7 @@ public class HuggingFaceEndpoint implements Endpoint {
 		this.client = client;
 	}
 
-	// TODO return each of these as an OpenAi service
+	// TODO return each of these as an OpenAI service
 
 	@Override
 	public HuggingFaceCompletionService getCompletionService() {

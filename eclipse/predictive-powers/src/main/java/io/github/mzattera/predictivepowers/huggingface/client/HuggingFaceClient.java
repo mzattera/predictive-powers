@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -37,25 +36,31 @@ import io.github.mzattera.predictivepowers.huggingface.nlp.QuestionAnsweringResp
 import io.github.mzattera.util.ImageUtil;
 import io.reactivex.Single;
 import lombok.NonNull;
-import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
-import okhttp3.Response;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
 /**
- * Clients that calls Hugging Face Inference API and return results.
+ * API Client to access Hugging Face Hosted Inference API.
+ * 
+ * See {@link https://huggingface.co/docs/api-inference/index} for details.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
 public final class HuggingFaceClient implements ApiClient {
 
+	/**
+	 * Name of the OS environment variable containing the API key.
+	 */
+	public static final String OS_ENV_VAR_NAME = "HUGGING_FACE_API_KEY";
+
 	private final static String API_BASE_URL = "https://api-inference.huggingface.co/models/";
 
-	public final static int DEFAULT_TIMEOUT_MILLIS = 6 * 60 * 1000; // Sometimes we must wait for the models to load, which takes time
+	public final static int DEFAULT_TIMEOUT_MILLIS = 6 * 60 * 1000; // Sometimes we must wait for the models to load,
+																	// which takes time
 
 	public final static int DEFAULT_KEEP_ALIVE_MILLIS = 5 * 60 * 1000;
 
@@ -76,8 +81,8 @@ public final class HuggingFaceClient implements ApiClient {
 	}
 
 	/**
-	 * Constructor, using default parameters for OkHttpClient. HuggingFaceApi key is
-	 * read from HUGGING_FACE_API_KEY system environment variable.
+	 * Constructor, using default parameters for OkHttpClient. Hugging Face API key
+	 * is read from {@link #OS_ENV_VAR_NAME} system environment variable.
 	 */
 	public HuggingFaceClient() {
 		this(null, DEFAULT_TIMEOUT_MILLIS, DEFAULT_KEEP_ALIVE_MILLIS, DEFAULT_MAX_IDLE_CONNECTIONS);
@@ -86,8 +91,8 @@ public final class HuggingFaceClient implements ApiClient {
 	/**
 	 * Constructor, using default parameters for OkHttpClient.
 	 * 
-	 * @param apiKey HuggingFaceApi key. If this is null, it will try to read it
-	 *               from HUGGING_FACE_API_KEY system environment variable.
+	 * @param apiKey Hugging Face API key. If this is null, it will try to read it
+	 *               from {@link #OS_ENV_VAR_NAME} system environment variable.
 	 */
 	public HuggingFaceClient(String apiKey) {
 		this(apiKey, DEFAULT_TIMEOUT_MILLIS, DEFAULT_KEEP_ALIVE_MILLIS, DEFAULT_MAX_IDLE_CONNECTIONS);
@@ -97,8 +102,8 @@ public final class HuggingFaceClient implements ApiClient {
 	 * Constructor. This client uses an underlying OkHttpClient for API calls, which
 	 * parameters can be specified.
 	 * 
-	 * @param apiKey             HuggingFaceApi key. If this is null, it will try to
-	 *                           read it from HUGGING_FACE_API_KEY system
+	 * @param apiKey             Hugging Face API key. If this is null, it will try
+	 *                           to read it from {@link #OS_ENV_VAR_NAME} system
 	 *                           environment variable.
 	 * @param readTimeout        Read timeout for connections. 0 means no timeout.
 	 * @param keepAliveDuration  Timeout for connections in client pool
@@ -158,10 +163,10 @@ public final class HuggingFaceClient implements ApiClient {
 	 * @return The API key from OS environment.
 	 */
 	private static String getApiKey() {
-		String apiKey = System.getenv("HUGGING_FACE_API_KEY");
+		String apiKey = System.getenv(OS_ENV_VAR_NAME);
 		if (apiKey == null)
-			throw new IllegalArgumentException(
-					"OpenAi API key is not provided and it cannot be found in HUGGING_FACE_API_KEY system environment variable");
+			throw new IllegalArgumentException("OpenAI API key is not provided and it cannot be found in "
+					+ OS_ENV_VAR_NAME + " system environment variable");
 		return apiKey;
 	}
 

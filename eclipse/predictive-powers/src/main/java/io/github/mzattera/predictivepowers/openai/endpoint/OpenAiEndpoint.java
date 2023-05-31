@@ -30,15 +30,18 @@ import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 import lombok.Getter;
 import lombok.NonNull;
 
+
 /**
- * This represents an OpenAI end point, from which APIs can be accessed.
+ * This represents an OpenAI endpoint, from which services can be created.
+ * 
+ * This class is thread-safe.
  * 
  * @author Massimiliano "Maxi" Zattera.
  *
  */
 public class OpenAiEndpoint implements Endpoint {
 
-	// TODO add client/endpoint for Azure OpenAi Services
+	// TODO add client/endpoint for Azure OpenAI Services
 
 	@Getter
 	private final OpenAiClient client;
@@ -55,7 +58,7 @@ public class OpenAiEndpoint implements Endpoint {
 		this.client = client;
 	}
 
-	// TODO return each of these as an OpenAi service
+	// TODO return each of these as an OpenAI service
 
 	@Override
 	public OpenAiCompletionService getCompletionService() {

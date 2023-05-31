@@ -35,7 +35,7 @@ import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.util.ResourceUtil;
 
 /**
- * Test the OpenAi embedding service.
+ * Test the OpenAI embedding service.
  * 
  * @author Massimiliano "Maxi" Zattera
  *

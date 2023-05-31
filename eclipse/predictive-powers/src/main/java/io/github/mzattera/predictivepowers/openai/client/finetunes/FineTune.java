@@ -24,7 +24,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * A fine-tunes, as represented by OpenAi API.
+ * A fine-tunes, as represented by OpenAI API.
  * 
  * @author Massimiliano "Maxi" Zattera
  *

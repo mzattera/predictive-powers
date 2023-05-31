@@ -53,6 +53,8 @@ import lombok.NonNull;
  * That is same piece of embedded text (even if with different properties) can
  * exist only once in the knowledge base.
  * 
+ * This class is thread safe.
+ * 
  * @author Massimiliano "Maxi" Zattera.
  *
  */

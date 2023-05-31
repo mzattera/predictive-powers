@@ -46,14 +46,17 @@ public class OpenAiClientTest {
 	@Test
 	public void test02() {
 
-		OkHttpClient http = ApiClient.getDefaultHttpClient(System.getenv("OPENAI_API_KEY")).newBuilder().addInterceptor(new Interceptor() {
+		OkHttpClient http = ApiClient
+				.getDefaultHttpClient(System.getenv(OpenAiClient.OS_ENV_VAR_NAME), OpenAiClient.DEFAULT_TIMEOUT_MILLIS,
+						OpenAiClient.DEFAULT_KEEP_ALIVE_MILLIS, OpenAiClient.DEFAULT_MAX_IDLE_CONNECTIONS)
+				.newBuilder().addInterceptor(new Interceptor() {
 
-			@Override
-			public Response intercept(Chain chain) throws IOException {
+					@Override
+					public Response intercept(Chain chain) throws IOException {
 //				System.out.println(chain.request().toString());
-				return chain.proceed(chain.request());
-			}
-		}).build();
+						return chain.proceed(chain.request());
+					}
+				}).build();
 
 		try (OpenAiClient cli = new OpenAiClient(http)) {
 

@@ -21,7 +21,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Single choice returned by OpenAi /edits API.
+ * Single choice returned by OpenAI /edits API.
  * 
  * @author Massimiliano "Maxi" Zattera
  *

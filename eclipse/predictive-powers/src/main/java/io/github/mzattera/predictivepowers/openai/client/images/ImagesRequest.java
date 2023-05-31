@@ -26,7 +26,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Request for OpenAi /images/generations API.
+ * Request for OpenAI /images/generations API.
  * 
  * @author Massimiliano "Maxi" Zattera
  *

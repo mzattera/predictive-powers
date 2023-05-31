@@ -42,7 +42,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 /**
- * This class creates embeddings using OpenAi.
+ * This class creates embeddings using OpenAI.
  * 
  * @author Massimiliano "Maxi" Zattera
  *

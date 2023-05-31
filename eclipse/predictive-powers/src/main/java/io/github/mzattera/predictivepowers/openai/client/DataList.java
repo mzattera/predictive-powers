@@ -23,7 +23,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Sometimes OpenAi API returns list of data i this format.
+ * Sometimes OpenAI API returns list of data i this format.
  * 
  * @author Massimiliano "Maxi" Zattera
  *

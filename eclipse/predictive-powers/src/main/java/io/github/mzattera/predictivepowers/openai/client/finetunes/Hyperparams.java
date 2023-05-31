@@ -23,7 +23,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Fine-tunes hyper parameters, as defined by OpenAi API.
+ * Fine-tunes hyper parameters, as defined by OpenAI API.
  * 
  * @author Massimiliano "Maxi" Zattera
  *

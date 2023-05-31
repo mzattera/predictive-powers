@@ -21,7 +21,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Moderation, as defined in the OpenAi API.
+ * Moderation, as defined in the OpenAI API.
  * 
  * @author Massimiliano "Maxi" Zattera.
  *

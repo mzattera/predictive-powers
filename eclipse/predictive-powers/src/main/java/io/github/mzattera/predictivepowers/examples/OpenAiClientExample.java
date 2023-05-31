@@ -24,9 +24,9 @@ public class OpenAiClientExample {
 
 	public static void main(String[] args) {
 
-		// Get API key from OS environment
+		// Get API key from OS environment variable OpenAiClient.OS_ENV_VAR_NAME
 		try (OpenAiClient client = new OpenAiClient()) {
-
+			
 			// Complete a sentence
 			// see https://platform.openai.com/docs/api-reference/completions
 			CompletionsRequest req = CompletionsRequest.builder()

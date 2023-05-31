@@ -30,13 +30,17 @@ import okhttp3.OkHttpClient;
 public class ProxyExample {
 
 	public static void main(String[] args) {
-		String yourApiKey = "<Your API key goes here>";
-		
-		String host = "<Your proxy goes here>";
+		String key = "<Your API key goes here>";
+		String host = "<Your proxy host name goes here>";
 		int port = 80; // your proxy port goes here
 
 		Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(host, port));
-		OkHttpClient http = ApiClient.getDefaultHttpClient(yourApiKey)
+		OkHttpClient http = ApiClient.getDefaultHttpClient(
+					key, 
+					OpenAiClient.DEFAULT_TIMEOUT_MILLIS,
+					OpenAiClient.DEFAULT_KEEP_ALIVE_MILLIS,
+					OpenAiClient.DEFAULT_MAX_IDLE_CONNECTIONS
+				)
 				.newBuilder()
 				.proxy(proxy)
 				.build();

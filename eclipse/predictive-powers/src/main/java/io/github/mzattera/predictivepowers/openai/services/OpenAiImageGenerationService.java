@@ -33,7 +33,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 /**
- * OpenAi implementation of image generation service.
+ * OpenAI implementation of image generation service.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -49,7 +49,7 @@ public class OpenAiImageGenerationService implements ImageGenerationService {
 
 	@Override
 	public String getModel() {
-		return "DALLE-2";
+		return "DALL-E 2";
 	}
 
 	@Override

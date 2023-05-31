@@ -26,9 +26,11 @@ import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 
 /**
- * This is an endpoint providing capabilities. At the moment it has methods to
- * provide all available services, in the future this interface might be broken
- * down into smaller pieces.
+ * This interface represents an endpoint providing GenAI capabilities in form of
+ * services.
+ * 
+ * At the moment it has methods to provide all available services, in the future
+ * this interface might be broken down into smaller pieces.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -48,6 +50,6 @@ public interface Endpoint extends Closeable {
 	QuestionExtractionService getQuestionExtractionService();
 
 	QuestionAnsweringService getQuestionAnsweringService();
-	
-	ImageGenerationService getImageGenerationService(); 
+
+	ImageGenerationService getImageGenerationService();
 }

@@ -21,7 +21,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * A fine-tuines event, as defined in the OpenAi API.
+ * A fine-tuines event, as defined in the OpenAI API.
  * 
  * @author Massimiliano "Maxi" Zattera
  */

@@ -7,13 +7,14 @@ Currently the library:
   1. Provides low-level access to OpeanAi API similar to [OpenAI-Java](https://github.com/TheoKanning/openai-java).
     It adds access to audio API which, at the time of writing (May 2023),
 	is not supported by OpenAI-Java (and [not really working](https://community.openai.com/t/whisper-api-cannot-read-files-correctly/93420), TBH).
-  
-  2. Adds an abstraction layer for GenAI capabilities, this allows to plug-in different providers seamlessly (see "[Services](#services)" below).
-     This versions provide some capabilities (e.g. image and text generation) over both OpenAI (GPT & DALL-E 2) and Hugging Face (GPT-2 & OpenJourney).
-  
-  3. Provides a serializable in-memory vector database. Again, plans are to allow users to plug in any existing vector database in the future.
 
-  4. Offers methods to easily read textual content from web pages and files in different formats (MS Office, PDF, HTML, etc.).
+  2. Provides (limited) low-level access to Hugging Face Hosted Inference API.
+	  
+  3. Adds an abstraction layer for GenAI capabilities, this allows to plug-in different providers seamlessly (see "[Services](#services)" below).
+  
+  4. Provides a serializable in-memory vector database. Again, plans are to allow users to plug in any existing vector database in the future.
+
+  5. Offers methods to easily read textual content from web pages and files in different formats (MS Office, PDF, HTML, etc.).
   
 ## Installation
 
@@ -510,7 +511,8 @@ Question: What is Credit Suisse's aim through its strategic, cultural and operat
 
 The below code generates two images using an `ImageGenerationService`.
 
-```javaimport java.awt.image.BufferedImage;
+```java
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 

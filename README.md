@@ -18,10 +18,10 @@ Currently the library:
   
 ## Installation
 
+`predictive-powers` requires Java 11 or higher.
+
 For the time being, this library comes as a `.jar` file containing all the required dependencies.
 The source is a [Maven](https://maven.apache.org/) project inside the `eclipse` folder.
-
-`predictive-powers` requires Java 11 or higher.
 
 The code depends, among others, on [Lomboc](https://projectlombok.org/) which is correctly referenced within the `pom.xml` file for this project.
 However, to have Lomboc to work in the Eclipse editor, you need to install it inside Eclipse (or any other IDE you are using), as explained on Lomboc website.
@@ -44,7 +44,6 @@ Alternatively, the code will try to read the key from your system environment; p
 After that, you can call the provider API directly; 
 this part of code is not heavily documented but it is meant to match exactly API definitions from service providers.
 
-*** Update and make more generic, adjust code
 
 ```java
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
@@ -86,7 +85,7 @@ will output something like:
 #### Customization
 
 API clients rely on an underlying `OkHttpClient` which provides features like connection pools, etc.
-You can use a customized `OkHttpClient` (e.g. to provide logging) to use in your API client, by following the below steps:
+You can create a customized `OkHttpClient` (e.g. to provide logging) to be used in your API client, by following the below steps:
 
   1. Create a pre-configured version of `OkHttpClient` with `ApiClient.getDefaultHttpClient()`.
      Notice that at this step you will have to provide an API key.
@@ -127,7 +126,7 @@ You can instantiate endpoints directly, or by providing an API client that will 
 When an endpoint is no longer needed, it should be closed to free-up underlying resources
 (typically, HTTP connections in the underlying API client).
 
-The example below shows how to create an `OpenAiEndpoit`.
+The example below shows how to create an `OpenAiEndpoint`.
 
 ```java
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
@@ -153,16 +152,27 @@ import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 Once the endpoint is created, it can be used to access "services" which are high-level GenAI capabilities. Currently following services are provided:
 
   * `CompletionService` text completion (including insertions): basically, it executes given text prompt.
-     Provided both over OpenAI (GPT) and Hugging Face (GPT-2 by default) endpoints.
+     
+	 Provided both over OpenAI (GPT) and Hugging Face (GPT-2 by default) endpoints.
+	 
   * `ChatService` handles conversations with an agent, taking care of agent personality and conversation history.
-     Provided only over OpenAI (ChatGPT) endpoint for now.
+     
+	 Provided only over OpenAI (ChatGPT) endpoint for now.
+	 
   * `EmbeddingService` embeds text and calculates semantic (cosine) similarity between texts; it takes care of automatically splitting long texts when needed.
-     Provided both over OpenAI and Hugging Face endpoints.
+     
+	 Provided both over OpenAI and Hugging Face endpoints.
+	 
   * `QuestionAnsweringService` answers questions, using a user-provided context. The context can be a list of embeddings from a [knowledge base](#kb).
-     Provided both over OpenAI and Hugging Face endpoints.
+     
+	 Provided both over OpenAI and Hugging Face endpoints.
+	 
   * `QuestionExtractionService` extracts different kinds of questions from a text (e.g. true/false question, multiple choices quizzes, etc.). It automatically handles long texts.
+  
      Provided only over OpenAI endpoint for now.
+	 
   * `ImageGenerationService` to create images.
+  
      Provided both over OpenAI (DALL-E 2) and Hugging Face (OpenJourney) endpoints.
   
 The below example shows how to get the `CompletionService` to complete a sentence.

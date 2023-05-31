@@ -43,7 +43,7 @@ public class ImageGenerationExample {
 			save(img);
 		}
 
-		// OpenJourney
+		// OpenJourney (notice is same code as above)
 		try (Endpoint endpoint = new HuggingFaceEndpoint()) {
 			ImageGenerationService svc = endpoint.getImageGenerationService();
 			BufferedImage img = svc.createImage(PROMPT, 1, 512, 512).get(0);

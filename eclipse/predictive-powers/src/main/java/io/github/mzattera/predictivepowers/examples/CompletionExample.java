@@ -33,10 +33,8 @@ public class CompletionExample {
 		// Endpoint endpoint = new HuggingFaceEndpoint();
 
 		try (endpoint) {
-
 			CompletionService cs = endpoint.getCompletionService();
 			System.out.println(cs.complete("Alan Turing was").getText());
-
 		}
 	}
 }

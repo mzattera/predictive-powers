@@ -153,7 +153,7 @@ Once the endpoint is created, it can be used to access "services" which are high
 
   * `CompletionService` text completion (including insertions): basically, it executes given text prompt.
      
-	 Provided both over OpenAI (GPT) and Hugging Face (GPT-2 by default) endpoints.
+	 Provided over both OpenAI (GPT) and Hugging Face (GPT-2 by default) endpoints.
 	 
   * `ChatService` handles conversations with an agent, taking care of agent personality and conversation history.
      
@@ -161,11 +161,11 @@ Once the endpoint is created, it can be used to access "services" which are high
 	 
   * `EmbeddingService` embeds text and calculates semantic (cosine) similarity between texts; it takes care of automatically splitting long texts when needed.
      
-	 Provided both over OpenAI and Hugging Face endpoints.
+	 Provided over both OpenAI and Hugging Face endpoints.
 	 
   * `QuestionAnsweringService` answers questions, using a user-provided context. The context can be a list of embeddings from a [knowledge base](#kb).
      
-	 Provided both over OpenAI and Hugging Face endpoints.
+	 Provided over both OpenAI and Hugging Face endpoints.
 	 
   * `QuestionExtractionService` extracts different kinds of questions from a text (e.g. true/false question, multiple choices quizzes, etc.). It automatically handles long texts.
   
@@ -173,7 +173,7 @@ Once the endpoint is created, it can be used to access "services" which are high
 	 
   * `ImageGenerationService` to create images.
   
-     Provided both over OpenAI (DALL-E 2) and Hugging Face (OpenJourney) endpoints.
+     Provided over both OpenAI (DALL-E 2) and Hugging Face (OpenJourney) endpoints.
   
 The below example shows how to get the `CompletionService` to complete a sentence.
 Notice how the service abstraction allows you to use two different service providers, only by changing a single line of code.
@@ -195,10 +195,8 @@ public class CompletionExample {
 		// Endpoint endpoint = new HuggingFaceEndpoint();
 
 		try (endpoint) {
-
 			CompletionService cs = endpoint.getCompletionService();
 			System.out.println(cs.complete("Alan Turing was").getText());
-
 		}
 	}
 }
@@ -222,8 +220,10 @@ public class SubclassExample {
 			// Explicitly instantiates a subclass of QuestionAnsweringService
 			OpenAiQuestionAnsweringService svc = endpoint.getQuestionAnsweringService();
 
-			// This files is provided only in OpenAI service, to allow extra configurability
-			svc.getCompletionService().setPersonality("You are an helpful question ansering assistant");
+			// This field is provided only in OpenAI service,
+			// to allow for additional configurability
+			svc.getCompletionService()
+				.setPersonality("You are an helpful question answering assistant");
 
 			// ... use the service here
 
@@ -350,10 +350,10 @@ public class OracleExample {
 	public static void main(String[] args) throws Exception 
 	{
 		
-		// Un-comment the below to use OpenAI services for the oracle
+		// Uncomment the below to use OpenAI services for the oracle
 		Endpoint endpoint = new OpenAiEndpoint();
 		
-		// Un-comment the below to use Hugging Face services for the oracle
+		// Uncomment the below to use Hugging Face services for the oracle
 		// Endpoint endpoint = new HuggingFaceEndpoint();
 		
 		try (endpoint) {

@@ -28,8 +28,10 @@ public class SubclassExample {
 			// Explicitly instantiates a subclass of QuestionAnsweringService
 			OpenAiQuestionAnsweringService svc = endpoint.getQuestionAnsweringService();
 
-			// This files is provided only in OpenAI service, to allow extra configurability
-			svc.getCompletionService().setPersonality("You are an helpful question ansering assistant");
+			// This field is provided only in OpenAI service,
+			// to allow for additional configurability
+			svc.getCompletionService()
+				.setPersonality("You are an helpful question ansering assistant");
 
 			// ... use the service here
 

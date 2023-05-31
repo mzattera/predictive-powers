@@ -40,10 +40,10 @@ public class OracleExample {
 	public static void main(String[] args) throws Exception 
 	{
 		
-		// Un-comment the below to use OpenAI services for the oracle
+		// Uncomment the below to use OpenAI services for the oracle
 		Endpoint endpoint = new OpenAiEndpoint();
 		
-		// Un-comment the below to use Hugging Face services for the oracle
+		// Uncomment the below to use Hugging Face services for the oracle
 		// Endpoint endpoint = new HuggingFaceEndpoint();
 		
 		try (endpoint) {

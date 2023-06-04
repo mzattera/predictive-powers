@@ -37,7 +37,7 @@ public class HuggingFaceCompletionService implements CompletionService {
 
 	public HuggingFaceCompletionService(HuggingFaceEndpoint ep) {
 		this(ep, new TextGenerationRequest());
-		setModel("gpt2");
+		setModel("gpt2-large");
 		setEcho(false);
 		setN(1);
 	}

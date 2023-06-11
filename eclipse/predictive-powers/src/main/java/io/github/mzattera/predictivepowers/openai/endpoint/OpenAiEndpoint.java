@@ -16,6 +16,9 @@
 
 package io.github.mzattera.predictivepowers.openai.endpoint;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.github.mzattera.predictivepowers.Endpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
@@ -42,6 +45,8 @@ import lombok.NonNull;
 public class OpenAiEndpoint implements Endpoint {
 
 	// TODO add client/endpoint for Azure OpenAI Services
+
+	private final static Logger LOG =LoggerFactory.getLogger(OpenAiEndpoint.class);
 
 	@Getter
 	private final OpenAiClient client;
@@ -128,7 +133,7 @@ public class OpenAiEndpoint implements Endpoint {
 		try {
 			client.close();
 		} catch (Exception e) {
-			// TODO log
+			LOG.warn("Error while closing endpoint", e);
 		}
 	}
 }

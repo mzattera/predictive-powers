@@ -30,7 +30,7 @@ import lombok.NonNull;
 import okhttp3.ResponseBody;
 import retrofit2.http.Body;
 import retrofit2.http.POST;
-import retrofit2.http.Path;
+import retrofit2.http.Url;
 
 /**
  * Retrofit definition for Hugging Face Inference API.
@@ -42,22 +42,22 @@ public interface HuggingFaceApi {
 
 	/// NLP //////////////////////////////////////////////////
 
-	@POST("{model}")
-	Single<List<List<TextClassificationResponse>>> textClassification(@Path("model") @NonNull String model,
+	@POST
+	Single<List<List<TextClassificationResponse>>> textClassification(@Url @NonNull String model,
 			@Body TextClassificationRequest req);
 
-	@POST("{model}")
-	Single<List<List<TextGenerationResponse>>> textGeneration(@Path("model") @NonNull String model,
+	@POST
+	Single<List<List<TextGenerationResponse>>> textGeneration(@Url @NonNull String model,
 			@Body TextGenerationRequest req);
-	
-	@POST("{model}")
-	Single<List<List<Double>>> featureExtraction(@Path("model") @NonNull String model, @Body HuggingFaceRequest req);
-	
-	@POST("{model}")
-	Single<QuestionAnsweringResponse> questionAnswering(@Path("model") @NonNull String model, @Body QuestionAnsweringRequest req);
+
+	@POST
+	Single<List<List<Double>>> featureExtraction(@Url @NonNull String model, @Body HuggingFaceRequest req);
+
+	@POST
+	Single<QuestionAnsweringResponse> questionAnswering(@Url @NonNull String model, @Body QuestionAnsweringRequest req);
 
 	/// MULTIMODAL //////////////////////////////////////////
 
-	@POST("{model}")
-	Single<ResponseBody> textToImage(@Path("model") @NonNull String model, @Body TextToImageRequest req);
+	@POST
+	Single<ResponseBody> textToImage(@Url @NonNull String model, @Body TextToImageRequest req);
 }

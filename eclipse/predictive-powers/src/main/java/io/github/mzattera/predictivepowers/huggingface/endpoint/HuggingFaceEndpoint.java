@@ -16,6 +16,9 @@
 
 package io.github.mzattera.predictivepowers.huggingface.endpoint;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.github.mzattera.predictivepowers.Endpoint;
 import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceClient;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationRequest;
@@ -37,6 +40,8 @@ import lombok.NonNull;
  *
  */
 public class HuggingFaceEndpoint implements Endpoint {
+
+	private final static Logger LOG =LoggerFactory.getLogger(HuggingFaceEndpoint.class);
 
 	@Getter
 	private final HuggingFaceClient client;
@@ -101,7 +106,7 @@ public class HuggingFaceEndpoint implements Endpoint {
 		try {
 			client.close();
 		} catch (Exception e) {
-			// TODO log
+			LOG.warn("Error while closing endpoint", e);
 		}
 	}
 }

@@ -29,6 +29,12 @@ However, to have Lomboc to work in the Eclipse editor, you need to install it in
 To avoid passing API keys explicitly in code, the library tries to read it from the operating system environment.
 The exact process for setting up the environment depends on the OS you are using.
 
+### Logging
+
+`predictive-powers` uses [logback](https://logback.qos.ch/index.html) for logging. 
+
+To configure logback in your applications that use `predictive-powers`, simply add a `logback.xml` configuration file to your classpath, as explained [here](https://logback.qos.ch/manual/configuration.html).
+
 	
 ## Usage
 

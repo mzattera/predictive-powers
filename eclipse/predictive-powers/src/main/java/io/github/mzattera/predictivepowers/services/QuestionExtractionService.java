@@ -20,6 +20,9 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -41,6 +44,8 @@ import lombok.NonNull;
  *
  */
 public class QuestionExtractionService {
+
+	private final static Logger LOG = LoggerFactory.getLogger(QuestionExtractionService.class);
 
 	public QuestionExtractionService(OpenAiEndpoint ep) {
 		this(ep, ep.getChatService());
@@ -158,15 +163,15 @@ public class QuestionExtractionService {
 		while (it.hasNext()) {
 			QnAPair q = it.next();
 			if (q.getAnswer() == null) {// bad result
-				// TODO do something here? Log?
+				LOG.info("QnA pair removed: {}", q);
 				it.remove();
 				continue;
 			}
 
 			q.setAnswer(q.getAnswer().trim().toLowerCase());
 			if (!q.getAnswer().equals("true") && !q.getAnswer().equals("false")) // bad result
-				// TODO do something here? Log?
-				it.remove();
+				LOG.info("QnA pair removed: {}", q);
+			it.remove();
 		}
 
 		return result;
@@ -203,7 +208,7 @@ public class QuestionExtractionService {
 		while (it.hasNext()) {
 			QnAPair q = it.next();
 			if (q.getAnswer() == null) {// bad result
-				// TODO do something here? Log?
+				LOG.info("QnA pair removed: {}", q);
 				it.remove();
 				continue;
 			}
@@ -211,7 +216,7 @@ public class QuestionExtractionService {
 			q.setAnswer(q.getAnswer().trim());
 
 			if (!q.getQuestion().contains("___")) {
-				// TODO do something here? Log?
+				LOG.info("QnA pair removed: {}", q);
 				it.remove();
 				continue;
 			}
@@ -219,7 +224,7 @@ public class QuestionExtractionService {
 			// how many words in the answer? Not more than 2 per question (e.g. "Alan
 			// Turing").
 			if (q.getAnswer().split("\\s").length > 2) {
-				// TODO do something here? Log?
+				LOG.info("QnA pair removed: {}", q);
 				it.remove();
 				continue;
 			}
@@ -284,7 +289,7 @@ public class QuestionExtractionService {
 		while (it.hasNext()) {
 			QnAPair q = it.next();
 			if (q.getAnswer() == null) {// bad result
-				// TODO do something here? Log?
+				LOG.info("QnA pair removed: {}", q);
 				it.remove();
 				continue;
 			}
@@ -295,13 +300,13 @@ public class QuestionExtractionService {
 			try {
 				c = Integer.parseInt(q.getAnswer());
 			} catch (Exception e) {
-				// TODO do something here? Log?
+				LOG.info("QnA pair removed: {}", q);
 				it.remove();
 				continue;
 			}
 
 			if ((c <= 0) || (c > q.getOptions().size())) {
-				// TODO do something here? Log?
+				LOG.info("QnA pair removed: {}", q);
 				it.remove();
 				continue;
 			}
@@ -351,7 +356,7 @@ public class QuestionExtractionService {
 		try {
 			result = mapper.readValue(json, QnAPair[].class);
 		} catch (JsonProcessingException e) {
-			// TODO do something here? Log?
+			LOG.warn("Malformed JSON when parsing QnAPair[]", e);
 		}
 		for (QnAPair r : result) {
 			r.getContext().add(shortText);

@@ -20,6 +20,9 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -51,6 +54,8 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
  *
  */
 public final class HuggingFaceClient implements ApiClient {
+
+	private final static Logger LOG = LoggerFactory.getLogger(HuggingFaceClient.class);
 
 	/**
 	 * Name of the OS environment variable containing the API key.
@@ -209,6 +214,7 @@ public final class HuggingFaceClient implements ApiClient {
 				System.err.println("HTTP Error Code: " + e.code());
 				System.err.println(e.response().toString());
 
+				// TODO remove loop
 //				if (e.code() == 503) { // Loops in case model is loading
 //					try {
 //						System.out.println("\t- wait");
@@ -230,7 +236,7 @@ public final class HuggingFaceClient implements ApiClient {
 			client.connectionPool().evictAll();
 			client.cache().close();
 		} catch (Exception e) {
-			// TODO log here
+			LOG.warn("Error while closing client", e);
 		}
 	}
 }

@@ -15,12 +15,12 @@
  */
 package io.github.mzattera.predictivepowers.openai.services;
 
+import io.github.mzattera.predictivepowers.TokenCounter;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsChoice;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
-import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 import io.github.mzattera.predictivepowers.services.TextResponse;
 import lombok.Getter;
@@ -194,17 +194,17 @@ public class OpenAiCompletionService implements CompletionService {
 		req.setSuffix(suffix);
 
 		// Adjust token limit if needed
-		boolean autofit = (req.getMaxTokens() == null) && (ModelUtil.getContextSize(req.getModel()) != -1);
+		String model = req.getModel();
+		boolean autofit = (req.getMaxTokens() == null) && (ModelUtil.getContextSize(model) != -1);
 		try {
 			if (autofit) {
-				int tok = TokenUtil.count(prompt);
+				TokenCounter counter = ModelUtil.getTokenCounter(model);
+				int tok = counter.count(prompt);
 				if (suffix != null)
-					tok += TokenUtil.count(suffix);
-				req.setMaxTokens(ModelUtil.getContextSize(req.getModel()) - tok - 10);
+					tok += counter.count(suffix);
+				req.setMaxTokens(ModelUtil.getContextSize(model) - tok);
 			}
 
-			// TODO: catch exception if maxToken is too high, parse prompt token length and
-			// resubmit
 			CompletionsResponse resp = endpoint.getClient().createCompletion(req);
 			CompletionsChoice choice = resp.getChoices().get(0);
 			return TextResponse.fromGptApi(choice.getText(), choice.getFinishReason());

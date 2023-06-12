@@ -59,7 +59,7 @@ public class HuggingFaceEmbeddingService extends AbstractEmbeddingService {
 		// Put all pieces of text to be embedded in a list
 		List<String> l = new ArrayList<>();
 		for (String s : text) {
-			l.addAll(LlmUtil.split(s, getMaxTextTokens()));
+			l.addAll(LlmUtil.splitByChars(s, getMaxTextTokens()));
 		}
 
 		HuggingFaceRequest req = new HuggingFaceRequest();

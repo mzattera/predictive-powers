@@ -31,23 +31,23 @@ public interface QuestionAnsweringService extends Service {
 	 * Answer a question, using only information from provided context.
 	 * 
 	 * @param context The information to be used to answer the question. Notice this
-	 *                might be shortened if it is too long to fit prompt size.
+	 *                might be shortened if it is too big for the model being used.
 	 */
 	QnAPair answer(String question, String context);
 
 	/**
 	 * Answer a question, using only information from provided context.
 	 * 
-	 * Notice that context is shortened taking at most maxContextTokens as input,
-	 * starting from beginning of provided List.
+	 * @param context The information to be used to answer the question. Notice this
+	 *                might be shortened if it is too big for the model being used.
 	 */
 	QnAPair answerWithEmbeddings(String question, List<Pair<EmbeddedText, Double>> context);
 
 	/**
 	 * Answer a question, using only information from provided context.
 	 * 
-	 * Notice that context is shortened taking at most {@link #maxContextTokens} as
-	 * input, starting from beginning of provided List.
+	 * @param context The information to be used to answer the question. Notice this
+	 *                might be shortened if it is too big for the model being used.
 	 */
 	QnAPair answer(String question, List<String> context);
 }

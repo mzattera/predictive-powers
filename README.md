@@ -5,8 +5,11 @@
 Currently the library:
 
   1. Provides low-level access to OpeanAi API similar to [OpenAI-Java](https://github.com/TheoKanning/openai-java).
+  
     It adds access to audio API which, at the time of writing (May 2023),
 	is not supported by OpenAI-Java (and [not really working](https://community.openai.com/t/whisper-api-cannot-read-files-correctly/93420), TBH).
+	
+	In addition, it provides proper OpenAi tokenizers form [gpt3-tokenizer-java](https://github.com/didalgolab/gpt3-tokenizer-java).
 
   2. Provides (limited) low-level access to Hugging Face Hosted Inference API.
 	  
@@ -272,7 +275,7 @@ public class DefaultConfigurationExample {
 }
 ```
  
- ### <a name="kb"></a>Knowledge Base
+### <a name="kb"></a>Knowledge Base
  
  A knowledge base is a vector database storing text embeddings; any number of properties (in the form of a `Map`) can be attached to each embedding. 
  
@@ -281,7 +284,20 @@ public class DefaultConfigurationExample {
  
  Some examples about how to use a knowledge base can be found [below](#oracle).
   
- 
+
+### Tokens
+
+Some services, namely those using GPT models, have limits on number of tokens in input and output.
+
+An interface `TokenCounter` is provided, to count number of tokens in text. As tokenization depends on the target model being used, you need to pay attention to provide right `TokenCounter` instance;
+however, this should be hanled transparently by services.
+
+For OpenAI models, `ModelUtil.getTokenCounter()`can be used to return the tokenizer for a model. In addition, in package `io.github.mzattera.predictivepowers.openai.util.tokeniser`
+you can find classes ported from [gpt3-tokenizer-java](https://github.com/didalgolab/gpt3-tokenizer-java) that provide methods to tokenize strings for GPT models.
+
+Class `CharCounter` is a `TokenCounter` that simply counts number of characters in a text.
+
+
 ## <a name="examples"></a>Examples
  
 Below some code examples. These examples, and more, can be found in the [example package](eclipse/predictive-powers/src/main/java/io/github/mzattera/predictivepowers/examples).
@@ -428,7 +444,7 @@ The below code downloads a PDF file containing Credit Suisse financial statement
 ```java
 import java.util.List;
 
-import io.github.mzattera.predictivepowers.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 import io.github.mzattera.util.ExtractionUtil;
@@ -443,8 +459,8 @@ public class FaqExample {
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
 			// Download Credit Suisse financial statement 2022 PDF and extract its text
-			// We keep only one piece of 750 tokens
-			String statment = LlmUtil.split(
+			// We keep only one piece of 750 characters.
+			String statment = LlmUtil.splitByChars(
 					ExtractionUtil.fromUrl("https://www.credit-suisse.com/media/assets/corporate/docs/about-us/investor-relations/financial-disclosures/financial-reports/csg-ar-2022-en.pdf"),
 					750)
 					.get(2);

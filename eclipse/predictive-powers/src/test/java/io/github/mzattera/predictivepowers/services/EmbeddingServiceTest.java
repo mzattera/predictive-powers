@@ -31,9 +31,11 @@ import org.apache.tika.exception.TikaException;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
+import io.github.mzattera.predictivepowers.CharCounter;
+import io.github.mzattera.predictivepowers.TokenCounter;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
+import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
 import io.github.mzattera.util.ExtractionUtil;
 import io.github.mzattera.util.ResourceUtil;
 
@@ -44,9 +46,9 @@ import io.github.mzattera.util.ResourceUtil;
  *
  */
 public class EmbeddingServiceTest {
-	
+
 	// TODO break it in smaller tests...
-	
+
 	@Test
 	public void test00() throws IOException, SAXException, TikaException {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
@@ -116,8 +118,16 @@ public class EmbeddingServiceTest {
 
 	public void test02(EmbeddingService es) {
 
+		TokenCounter counter;
+		try {
+			counter = ModelUtil.getTokenCounter(es.getModel());
+		} catch (IllegalArgumentException e) {
+			// No counter for this model, it is probably Hugging Face one
+			counter = CharCounter.getInstance();
+		}
+
 		StringBuilder txt = new StringBuilder();
-		while (TokenUtil.count(txt.toString()) <= es.getMaxTextTokens())
+		while (counter.count(txt.toString()) <= es.getMaxTextTokens())
 			txt.append("Banana! ");
 
 		List<EmbeddedText> resp = es.embed(txt.toString());

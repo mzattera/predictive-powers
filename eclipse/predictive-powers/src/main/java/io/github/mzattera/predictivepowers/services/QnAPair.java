@@ -28,7 +28,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 /**
- * This describes a question/answer pair, ass extracted by a question service.
+ * This describes a question/answer pair, as extracted by a question service.
  * 
  * @author Massimliano "Maxi" Zattera.
  *

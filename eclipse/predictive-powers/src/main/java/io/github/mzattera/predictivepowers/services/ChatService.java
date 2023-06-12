@@ -18,12 +18,12 @@ package io.github.mzattera.predictivepowers.services;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.github.mzattera.predictivepowers.TokenCounter;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsChoice;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
-import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -46,9 +46,7 @@ public class ChatService implements Service {
 	public static final String DEFAULT_MODEL = "gpt-3.5-turbo";
 
 	public ChatService(OpenAiEndpoint ep) {
-		this(ep, new ChatCompletionsRequest());
-		defaultReq.setModel(DEFAULT_MODEL);
-		maxConversationTokens = Math.max(ModelUtil.getContextSize(defaultReq.getModel()), 2046) * 3 / 4;
+		this(ep, ChatCompletionsRequest.builder().model(DEFAULT_MODEL).build());
 	}
 
 	public ChatService(OpenAiEndpoint ep, ChatCompletionsRequest defaultReq) {
@@ -59,7 +57,7 @@ public class ChatService implements Service {
 
 	@NonNull
 	@Getter
-	protected final OpenAiEndpoint endpoint;
+	private final OpenAiEndpoint endpoint;
 
 	@Override
 	public String getModel() {
@@ -164,7 +162,8 @@ public class ChatService implements Service {
 
 		try {
 
-			ChatCompletionsChoice choice = chatCompletion(trimChat(history), req);
+			ChatCompletionsChoice choice = chatCompletion(trimChat(history, ModelUtil.getTokenCounter(req.getModel())),
+					req);
 			TextResponse result = TextResponse.fromGptApi(choice.getMessage().getContent(), choice.getFinishReason());
 			history.add(choice.getMessage());
 			return result;
@@ -187,14 +186,14 @@ public class ChatService implements Service {
 	 * @return A new conversation, including agent personality and as many messages
 	 *         as can fit, given current settings.
 	 */
-	private List<ChatMessage> trimChat(List<ChatMessage> messages) {
+	private List<ChatMessage> trimChat(List<ChatMessage> messages, TokenCounter counter) {
 		List<ChatMessage> result = new ArrayList<>(messages.size());
 
 		int numTokens = 3; // these are in the chat response, always
 		if (getPersonality() != null) {
 			ChatMessage m = new ChatMessage("system", getPersonality());
 			result.add(m);
-			numTokens = TokenUtil.count(m);
+			numTokens = counter.count(m);
 		}
 
 		int numMsg = 0;
@@ -203,7 +202,7 @@ public class ChatService implements Service {
 				break;
 
 			ChatMessage msg = messages.get(i);
-			int t = TokenUtil.count(msg);
+			int t = counter.count(msg);
 			if ((numMsg > 0) && ((numTokens + t) > maxConversationTokens))
 				break;
 
@@ -277,14 +276,17 @@ public class ChatService implements Service {
 	 */
 	private ChatCompletionsChoice chatCompletion(List<ChatMessage> messages, ChatCompletionsRequest req) {
 
+		String model = req.getModel();
+		TokenCounter counter = ModelUtil.getTokenCounter(model);
+
 		req.setMessages(messages);
 
 		// Adjust token limit if needed
-		boolean autofit = (req.getMaxTokens() == null) && (ModelUtil.getContextSize(req.getModel()) != -1);
+		boolean autofit = (req.getMaxTokens() == null) && (ModelUtil.getContextSize(model) != -1);
 		try {
 			if (autofit) {
-				int tok = TokenUtil.count(messages);
-				req.setMaxTokens(ModelUtil.getContextSize(req.getModel()) - tok - 10);
+				int tok = counter.count(messages);
+				req.setMaxTokens(ModelUtil.getContextSize(model) - tok - 10);
 			}
 
 			// TODO: catch exception if maxToken is too high, parse prompt token length and

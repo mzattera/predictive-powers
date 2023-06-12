@@ -29,37 +29,24 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
+import io.github.mzattera.predictivepowers.Endpoint;
+import io.github.mzattera.predictivepowers.TokenCounter;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
-import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
 import io.github.mzattera.util.LlmUtil;
 import lombok.Getter;
 import lombok.NonNull;
 
 /**
- * This class provides method to extract questions from a text, in different
- * formats.
+ * This class provides method to extract different types of questions from a
+ * text.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public class QuestionExtractionService {
+public class QuestionExtractionService implements Service {
 
 	private final static Logger LOG = LoggerFactory.getLogger(QuestionExtractionService.class);
-
-	public QuestionExtractionService(OpenAiEndpoint ep) {
-		this(ep, ep.getChatService());
-
-		// TODO test best settings.
-		completionService.getDefaultReq().setTemperature(0.2);
-	}
-
-	public QuestionExtractionService(OpenAiEndpoint ep, ChatService completionService) {
-		this.ep = ep;
-		this.completionService = completionService;
-		maxContextTokens = Math.max(ModelUtil.getContextSize(this.completionService.getDefaultReq().getModel()), 2046)
-				* 3 / 4;
-	}
 
 	// Maps from-to POJO <-> JSON
 	private final static ObjectMapper mapper;
@@ -69,9 +56,6 @@ public class QuestionExtractionService {
 		mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 		mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 	}
-
-	@NonNull
-	private final OpenAiEndpoint ep;
 
 	/**
 	 * This underlying service is used for executing required prompts.
@@ -93,6 +77,34 @@ public class QuestionExtractionService {
 		if (n < 1)
 			throw new IllegalArgumentException("Must keep at least 1 token.");
 		maxContextTokens = n;
+	}
+
+	@Override
+	public Endpoint getEndpoint() {
+		return completionService.getEndpoint();
+	}
+
+	@Override
+	public String getModel() {
+		return completionService.getModel();
+	}
+
+	@Override
+	public void setModel(@NonNull String model) {
+		completionService.setModel(model);
+	}
+
+	public QuestionExtractionService(OpenAiEndpoint ep) {
+		this(ep.getChatService());
+
+		// TODO test best settings.
+		completionService.getDefaultReq().setTemperature(0.2);
+	}
+
+	public QuestionExtractionService(ChatService completionService) {
+		this.completionService = completionService;
+		maxContextTokens = Math.max(ModelUtil.getContextSize(this.completionService.getDefaultReq().getModel()), 2046)
+				* 3 / 4;
 	}
 
 	/**
@@ -181,8 +193,6 @@ public class QuestionExtractionService {
 	 * Extracts "fill the blank" type of questions from given text.
 	 */
 	public List<QnAPair> getFillQuestions(String text) {
-		completionService.getDefaultReq().setTemperature(0.7);
-
 		// Provides instructions and examples
 		List<ChatMessage> instructions = new ArrayList<>();
 		instructions.add(new ChatMessage("system",
@@ -327,10 +337,14 @@ public class QuestionExtractionService {
 	private List<QnAPair> getQuestions(List<ChatMessage> instructions, String text) {
 
 		// Split text, based on prompt size
-		int tok = TokenUtil.count(instructions);
+		TokenCounter counter = ModelUtil.getTokenCounter(getModel());
+		int tok = counter.count(instructions);
 
 		List<QnAPair> result = new ArrayList<>();
-		for (String t : LlmUtil.split(text, maxContextTokens - tok - 10)) { // adding a message is additional tokens
+
+		// TODO better token calculation maybe
+		// adding a message is additional tokens
+		for (String t : LlmUtil.splitByTokens(text, maxContextTokens - tok - 10, counter)) {
 			result.addAll(getQuestionsShort(instructions, t));
 		}
 

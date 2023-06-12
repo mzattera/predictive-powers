@@ -26,9 +26,10 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
+import io.github.mzattera.predictivepowers.Endpoint;
+import io.github.mzattera.predictivepowers.TokenCounter;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
-import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ChatService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
@@ -49,20 +50,6 @@ import lombok.NonNull;
  */
 public class OpenAiQuestionAnsweringService implements QuestionAnsweringService {
 
-	public OpenAiQuestionAnsweringService(OpenAiEndpoint ep) {
-		this(ep, ep.getChatService());
-
-		// TODO test best settings.
-		completionService.getDefaultReq().setTemperature(0.0);
-	}
-
-	public OpenAiQuestionAnsweringService(OpenAiEndpoint ep, ChatService completionService) {
-		this.endpoint = ep;
-		this.completionService = completionService;
-		maxContextTokens = Math.max(ModelUtil.getContextSize(this.completionService.getDefaultReq().getModel()), 2046)
-				* 3 / 4;
-	}
-
 	// Maps from-to POJO <-> JSON
 	private final static ObjectMapper mapper;
 	static {
@@ -72,9 +59,10 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 		mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 	}
 
-	@NonNull
-	@Getter
-	private final OpenAiEndpoint endpoint;
+	@Override
+	public Endpoint getEndpoint() {
+		return completionService.getEndpoint();
+	}
 
 	@Override
 	public String getModel() {
@@ -95,9 +83,6 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 
 	/**
 	 * Maximum number of tokens to keep in the question context when answering.
-	 * 
-	 * As there is no Java code available for an exact calculation, this is
-	 * approximated.
 	 */
 	@Getter
 	private int maxContextTokens;
@@ -106,6 +91,19 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 		if (n < 1)
 			throw new IllegalArgumentException("Must keep at least 1 token.");
 		maxContextTokens = n;
+	}
+
+	public OpenAiQuestionAnsweringService(OpenAiEndpoint ep) {
+		this(ep.getChatService());
+
+		// TODO test best settings.
+		completionService.getDefaultReq().setTemperature(0.0);
+	}
+
+	public OpenAiQuestionAnsweringService(ChatService completionService) {
+		this.completionService = completionService;
+		maxContextTokens = Math.max(ModelUtil.getContextSize(this.completionService.getDefaultReq().getModel()), 2046)
+				* 3 / 4;
 	}
 
 	@Override
@@ -118,10 +116,12 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 	public QnAPair answer(String question, String context) {
 
 		List<String> l = new ArrayList<>();
-		l.add(LlmUtil.split(context, maxContextTokens - TokenUtil.count(question) - 400).get(0)); // 400 is to keep
-																									// space for
-																									// instructions and
-																									// examples
+		// TODO better calculation of sizes
+		// 400 is to keep space for instructions and examples
+		l.add(LlmUtil
+				.splitByTokens(context, maxContextTokens - ModelUtil.getTokenCounter(getModel()).count(question) - 400,
+						ModelUtil.getTokenCounter(getModel()))
+				.get(0));
 
 		return answer(question, l);
 	}
@@ -146,13 +146,14 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 	public QnAPair answer(String question, List<String> context) {
 
 		String qMsg = "\nQuestion: " + question;
+		TokenCounter counter = ModelUtil.getTokenCounter(getModel());
 
 		// Provides instructions and examples
 		List<ChatMessage> instructions = new ArrayList<>();
 		if (completionService.getPersonality() == null)
 			instructions.add(new ChatMessage("system", "You are an AI assistant answering questions truthfully."));
 		instructions.add(new ChatMessage("user",
-				"Answer the below questions truthfully, using only the information in the context. " + //
+				"Answer the below questions truthfully, strictly using only the information in the context. " + //
 						"When providing an answer, provide your reasoning as well, step by step. " + //
 						"If the answer cannot be found in the context, reply with \"I do not know.\". " + //
 						"Strictly return the answer and explanation in JSON format, as shown below."));
@@ -172,13 +173,13 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 						"\"1. The context states: \"Biglydoos eat cranberries.\"\\n" + //
 						"2. Cranberries are a kind of fruit.\\n" + //
 						"3. Therefore, biglydoos eat fruits.\"}"));
-		int instTok = TokenUtil.count(new ChatMessage("user", qMsg)) + TokenUtil.count(instructions);
+		int instTok = counter.count(new ChatMessage("user", qMsg)) + counter.count(instructions);
 
 		StringBuffer ctx = new StringBuffer("Context:\n");
 		int i = 0;
 		for (; i < context.size(); ++i) {
 			ChatMessage m = new ChatMessage("user", ctx.toString() + "\n" + context.get(i));
-			if ((instTok + TokenUtil.count(m)) > maxContextTokens)
+			if ((instTok + counter.count(m)) > maxContextTokens)
 				break;
 			ctx.append('\n').append(context.get(i));
 		}

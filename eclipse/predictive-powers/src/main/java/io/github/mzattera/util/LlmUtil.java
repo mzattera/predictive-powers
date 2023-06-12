@@ -21,7 +21,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
+import io.github.mzattera.predictivepowers.CharCounter;
+import io.github.mzattera.predictivepowers.TokenCounter;
 
 /**
  * Some utility methods to deal with Large Language Models.
@@ -34,28 +35,41 @@ public final class LlmUtil {
 	/**
 	 * 
 	 * @param text      A text to be split.
-	 * @param maxTokens Maximum number of tokens in each piece of the split text.
-	 * @return Input text, split in parts smaller than given number of tokens. As we
-	 *         do not have an exact way of calculating tokens, this is approximated.
+	 * @param maxChars Maximum number of characters in each piece of the split
+	 *                  text.
+	 * 
+	 * @return Input text, split in parts smaller than given number of characters.
 	 */
-	public static List<String> split(String text, int maxTokens) {
+	public static List<String> splitByChars(String text, int maxChars) {
+		return splitByTokens(text, maxChars, CharCounter.getInstance());
+	}
+
+	/**
+	 * 
+	 * @param text      A text to be split.
+	 * @param maxTokens Maximum number of tokens in each piece of the split text.
+	 * @param counter   {@link TokenCounter} used to calculate tokens.
+	 * 
+	 * @return Input text, split in parts smaller than given number of tokens.
+	 */
+	public static List<String> splitByTokens(String text, int maxTokens, TokenCounter counter) {
 
 		List<String> result = new ArrayList<>();
 		result.add(text);
-		if (TokenUtil.count(text) <= maxTokens) { // s short enough it can be ignored
+		if (counter.count(text) <= maxTokens) { // s short enough it can be ignored
 			return result;
 		}
 
 		// Now split using decreasingly strong separators
-		result = split(result, maxTokens, "[\\n]{2,}"); // empty lines
-		result = split(result, maxTokens, "\\.[\\s]+"); // full stop (not in number)
-		result = split(result, maxTokens, "\\,[\\s]+"); // other common separators
-		result = split(result, maxTokens, ";[\\s]+");
-		result = split(result, maxTokens, ":[\\s]+");
-		result = split(result, maxTokens, "[\\s]+"); // spaces (including newlines)
+		result = split(result, maxTokens, "[\\n]{2,}", counter); // empty lines
+		result = split(result, maxTokens, "\\.[\\s]+", counter); // full stop (not in number)
+		result = split(result, maxTokens, "\\,[\\s]+", counter); // other common separators
+		result = split(result, maxTokens, ";[\\s]+", counter);
+		result = split(result, maxTokens, ":[\\s]+", counter);
+		result = split(result, maxTokens, "[\\s]+", counter); // spaces (including newlines)
 
 		// We might have broken up too much, re-join tiny pieces
-		result = merge(result, maxTokens);
+		result = merge(result, maxTokens, counter);
 
 		// trim
 		List<String> l = new ArrayList<>(result.size());
@@ -65,19 +79,15 @@ public final class LlmUtil {
 	}
 
 	/**
-	 * Splits pieces bigger than max length into smaller pieces, using given regex as
-	 * separator. Notice pieces already small enough are not touched.
-	 * 
-	 * @param text
-	 * @param maxTokens
-	 * @return
+	 * Splits pieces bigger than max length into smaller pieces, using given regex
+	 * as separator. Notice pieces already small enough are not touched.
 	 */
-	private static List<String> split(List<String> text, int maxTokens, String regex) {
+	private static List<String> split(List<String> text, int maxTokens, String regex, TokenCounter counter) {
 		List<String> result = new ArrayList<>();
 		Pattern p = Pattern.compile(regex);
 
 		for (String s : text) {
-			if (TokenUtil.count(s) <= maxTokens) { // s short enough it can be ignored
+			if (counter.count(s) <= maxTokens) { // s short enough it can be ignored
 				result.add(s);
 				continue;
 			}
@@ -98,13 +108,16 @@ public final class LlmUtil {
 		return result;
 	}
 
-	private static List<String> merge(List<String> text, int maxTokens) {
+	/**
+	 * Merge text back, when possible.
+	 */
+	private static List<String> merge(List<String> text, int maxTokens, TokenCounter counter) {
 		List<String> result = new ArrayList<>();
 
 		StringBuffer tmp = new StringBuffer();
 		int tok = 0;
 		for (String s : text) {
-			int t = TokenUtil.count(s);
+			int t = counter.count(s);
 			if ((t + tok) > maxTokens) { // we are exceeding max length, output what we have so far
 				if (tmp.length() > 0) { // output any merged text
 					result.add(tmp.toString());
@@ -132,14 +145,12 @@ public final class LlmUtil {
 	}
 
 	public static void main(String[] args) {
-//		String t = "nel mezzo del cammin di notstra vita, mi ritrovai in una selva\n oscura,, che la diritta viea era perduta. o qual cosa dura...";
 		String t = "nel mezzo del cammin di notstra vita, mi ritrovai in una selva\n oscura,, che la diritta viea era perduta. o qual cosa dura...";
-		t = t+"\n\n"+t+"\n\n"+t;
-		//		String t = TestKB.TEXT01;
+		t = t + "\n\n" + t + "\n\n" + t;
 
 		System.out.println(t);
 		System.out.println("---------------------");
-		for (String s : split(t, 20)) {
+		for (String s : splitByChars(t, 20)) {
 			System.out.println(">" + s + "<");
 			System.out.println("---------------------");
 		}

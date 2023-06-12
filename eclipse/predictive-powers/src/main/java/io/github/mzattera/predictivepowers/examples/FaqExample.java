@@ -33,11 +33,11 @@ public class FaqExample {
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
 			// Download Credit Suisse financial statement 2022 PDF and extract its text
-			// We keep only one piece of 750 tokens
-			String statment = LlmUtil.split(
+			// We keep only one piece of 750 characters.
+			String statment = LlmUtil.splitByChars(
 					ExtractionUtil.fromUrl("https://www.credit-suisse.com/media/assets/corporate/docs/about-us/investor-relations/financial-disclosures/financial-reports/csg-ar-2022-en.pdf"),
-					750)
-					.get(2);
+					1000)
+					.get(3);
 
 			// Our query generation service
 			QuestionExtractionService q = endpoint.getQuestionExtractionService();

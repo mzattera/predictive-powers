@@ -12,7 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package io.github.mzattera.predictivepowers.openai.services;
+ */
+package io.github.mzattera.predictivepowers.openai.services;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,12 +28,12 @@ import java.util.Map;
 import org.apache.tika.exception.TikaException;
 import org.xml.sax.SAXException;
 
+import io.github.mzattera.predictivepowers.TokenCounter;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.Embedding;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
-import io.github.mzattera.predictivepowers.openai.util.TokenUtil;
 import io.github.mzattera.predictivepowers.services.AbstractEmbeddingService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.util.ExtractionUtil;
@@ -78,14 +79,15 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 
 	@Override
 	public void setModel(@NonNull String model) {
-		defaultReq.setModel(model);		
+		defaultReq.setModel(model);
 	}
 
 	@Override
 	public void setMaxTokens(int maxTokens) {
 		if ((maxTokens <= 0) || (maxTokens > 8192))
-			// TODO is this a limitation of the model? 
-			// I think the API description mention this, but it might be assuming user is using text-embedding-ada-002
+			// TODO is this a limitation of the model?
+			// I think the API description mention this, but it might be assuming user is
+			// using text-embedding-ada-002
 			throw new IllegalArgumentException("maxTokens must be 0 < maxTokens <= 8192: " + maxTokens);
 
 		super.setMaxTokens(maxTokens);
@@ -148,14 +150,15 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 	 */
 	public List<EmbeddedText> embed(Collection<String> text, EmbeddingsRequest req) {
 
-		int modelSize = Math.min(ModelUtil.getContextSize(req.getModel()), 8192);
-
+		String model = req.getModel();
+		int modelSize = Math.min(ModelUtil.getContextSize(model), 8192);
+		TokenCounter counter = ModelUtil.getTokenCounter(model);
 		req.getInput().clear();
 
 		// Put all pieces of text to be embedded in a list
 		List<String> l = new ArrayList<>();
 		for (String s : text) {
-			l.addAll(LlmUtil.split(s, getMaxTextTokens()));
+			l.addAll(LlmUtil.splitByTokens(s, getMaxTextTokens(), counter));
 		}
 
 		// Embed as many pieces you can in a single call
@@ -163,7 +166,7 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 		int tok = 0;
 		while (l.size() > 0) {
 			String s = l.remove(0);
-			int t = TokenUtil.count(s);
+			int t = counter.count(s);
 
 			if ((tok + t) > modelSize) {
 				// too many tokens, embed what you have

@@ -33,7 +33,6 @@ import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 import lombok.Getter;
 import lombok.NonNull;
 
-
 /**
  * This represents an OpenAI endpoint, from which services can be created.
  * 
@@ -46,7 +45,7 @@ public class OpenAiEndpoint implements Endpoint {
 
 	// TODO add client/endpoint for Azure OpenAI Services
 
-	private final static Logger LOG =LoggerFactory.getLogger(OpenAiEndpoint.class);
+	private final static Logger LOG = LoggerFactory.getLogger(OpenAiEndpoint.class);
 
 	@Getter
 	private final OpenAiClient client;
@@ -111,7 +110,7 @@ public class OpenAiEndpoint implements Endpoint {
 	}
 
 	public QuestionExtractionService getQuestionExtractionService(@NonNull ChatService cs) {
-		return new QuestionExtractionService(this, cs);
+		return new QuestionExtractionService(cs);
 	}
 
 	@Override
@@ -120,7 +119,7 @@ public class OpenAiEndpoint implements Endpoint {
 	}
 
 	public OpenAiQuestionAnsweringService getQuestionAnsweringService(@NonNull ChatService cs) {
-		return new OpenAiQuestionAnsweringService(this, cs);
+		return new OpenAiQuestionAnsweringService(cs);
 	}
 
 	@Override

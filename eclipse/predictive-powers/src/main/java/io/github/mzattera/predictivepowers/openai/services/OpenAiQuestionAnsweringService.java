@@ -50,6 +50,18 @@ import lombok.NonNull;
  */
 public class OpenAiQuestionAnsweringService implements QuestionAnsweringService {
 
+	public OpenAiQuestionAnsweringService(OpenAiEndpoint ep) {
+		this(ep.getChatService());
+
+		// TODO test best settings.
+		completionService.getDefaultReq().setTemperature(0.0);
+	}
+
+	public OpenAiQuestionAnsweringService(ChatService completionService) {
+		this.completionService = completionService;
+		maxContextTokens = ModelUtil.getContextSize(completionService.getModel()) * 3 / 4;
+	}
+
 	// Maps from-to POJO <-> JSON
 	private final static ObjectMapper mapper;
 	static {
@@ -76,6 +88,8 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 
 	/**
 	 * This underlying service is used for executing required prompts.
+	 * 
+	 * You can configure this underlying service to fine tune behavior of this instance.
 	 */
 	@NonNull
 	@Getter
@@ -91,19 +105,6 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 		if (n < 1)
 			throw new IllegalArgumentException("Must keep at least 1 token.");
 		maxContextTokens = n;
-	}
-
-	public OpenAiQuestionAnsweringService(OpenAiEndpoint ep) {
-		this(ep.getChatService());
-
-		// TODO test best settings.
-		completionService.getDefaultReq().setTemperature(0.0);
-	}
-
-	public OpenAiQuestionAnsweringService(ChatService completionService) {
-		this.completionService = completionService;
-		maxContextTokens = Math.max(ModelUtil.getContextSize(this.completionService.getDefaultReq().getModel()), 2046)
-				* 3 / 4;
 	}
 
 	@Override

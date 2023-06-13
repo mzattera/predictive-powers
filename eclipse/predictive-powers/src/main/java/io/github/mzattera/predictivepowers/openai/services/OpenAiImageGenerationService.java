@@ -41,7 +41,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class OpenAiImageGenerationService implements ImageGenerationService {
 
-	public static final String DEFAULT_MODEL = "text-embedding-ada-002";
+	public static final String DEFAULT_MODEL = "DALL-E 2";
 
 	@NonNull
 	@Getter
@@ -49,12 +49,13 @@ public class OpenAiImageGenerationService implements ImageGenerationService {
 
 	@Override
 	public String getModel() {
-		return "DALL-E 2";
+		return DEFAULT_MODEL;
 	}
 
 	@Override
 	public void setModel(@NonNull String model) {
-		throw new UnsupportedOperationException("At this time only DALL-E model is available");
+		if (!model.equals(DEFAULT_MODEL))
+			throw new UnsupportedOperationException("At this time only " + DEFAULT_MODEL + " model is available");
 	}
 
 	@Override

@@ -40,7 +40,6 @@ import io.github.mzattera.util.ImageUtil;
 import io.reactivex.Single;
 import lombok.NonNull;
 import okhttp3.OkHttpClient;
-import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -139,7 +138,6 @@ public final class HuggingFaceClient implements ApiClient {
 //							.writeValueAsString(chain.request().toString()));
 //					System.out.println("--------------------------------");
 //				} catch (JsonProcessingException e) {
-//					// TODO Auto-generated catch block
 //					e.printStackTrace();
 //				}
 //
@@ -149,7 +147,6 @@ public final class HuggingFaceClient implements ApiClient {
 //							JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(resp.body().string()));
 //					System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
 //				} catch (JsonProcessingException e) {
-//					// TODO Auto-generated catch block
 //					e.printStackTrace();
 //				}
 //
@@ -205,28 +202,7 @@ public final class HuggingFaceClient implements ApiClient {
 	/////////////////////////////////////////////////////////////////////////////////
 
 	private <T> T callApi(Single<T> apiCall) {
-		while (true) {
-			try {
-				return apiCall.blockingGet();
-			} catch (HttpException e) {
-
-				// TODO Wrap it into an HuggingFace exception?
-				System.err.println("HTTP Error Code: " + e.code());
-				System.err.println(e.response().toString());
-
-				// TODO remove loop
-//				if (e.code() == 503) { // Loops in case model is loading
-//					try {
-//						System.out.println("\t- wait");
-//						Thread.sleep(10 * 1000);
-//					} catch (InterruptedException e1) {
-//					}
-//					continue;
-//				}
-
-				throw e;
-			}
-		}
+		return apiCall.blockingGet();
 	}
 
 	@Override

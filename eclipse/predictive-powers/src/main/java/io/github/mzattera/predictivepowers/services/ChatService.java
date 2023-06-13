@@ -289,8 +289,6 @@ public class ChatService implements Service {
 				req.setMaxTokens(ModelUtil.getContextSize(model) - tok - 10);
 			}
 
-			// TODO: catch exception if maxToken is too high, parse prompt token length and
-			// resubmit
 			ChatCompletionsResponse resp = endpoint.getClient().createChatCompletion(req);
 			return resp.getChoices().get(0);
 

@@ -35,9 +35,11 @@ import lombok.Setter;
 @RequiredArgsConstructor
 public class HuggingFaceCompletionService implements CompletionService {
 
+	public static final String DEFAULT_MODEL = "gpt2-large";
+
 	public HuggingFaceCompletionService(HuggingFaceEndpoint ep) {
 		this(ep, new TextGenerationRequest());
-		setModel("gpt2-large");
+		setModel(DEFAULT_MODEL);
 		setEcho(false);
 		setN(1);
 	}
@@ -57,11 +59,11 @@ public class HuggingFaceCompletionService implements CompletionService {
 	 */
 	@Getter
 	@NonNull
-	protected final TextGenerationRequest defaultReq;
+	private final TextGenerationRequest defaultReq;
 
 	@Getter
 	@Setter
-	protected String model;
+	private String model;
 
 	@Override
 	public Integer getTopK() {
@@ -153,11 +155,17 @@ public class HuggingFaceCompletionService implements CompletionService {
 		return TextResponse.builder().text(resp.getGeneratedText()).finishReason(FinishReason.OK).build();
 	}
 
-	/**
-	 * Inserts text between given prompt and the suffix (executes given prompt).
-	 */
 	@Override
 	public TextResponse insert(String prompt, String suffix) {
+		// TODO maybe find a workaround with completion?
+		return insert(prompt, suffix, defaultReq);
+	}
+
+	/**
+	 * Inserts text between given prompt and the suffix (executes given prompt);
+	 * uses provided {@link TextGenerationRequest} to get parameters for the call.
+	 */
+	public TextResponse insert(String prompt, String suffix, TextGenerationRequest req) {
 		// TODO maybe find a workaround with completion?
 		throw new UnsupportedOperationException();
 	}

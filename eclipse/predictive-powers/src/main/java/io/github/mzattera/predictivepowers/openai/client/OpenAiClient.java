@@ -435,9 +435,8 @@ public final class OpenAiClient implements ApiClient {
 		try {
 			return apiCall.blockingGet();
 		} catch (HttpException e) {
-			// TODO: Socket Timeout passthrought?
-			// TODO: In case error is for token length, have a special exception that allows
-			// counting tokens?
+			// TODO: In case error is for token length, have a special exception/parsing
+			// that allows counting tokens?
 			OpenAiException oaie;
 			try {
 				oaie = new OpenAiException(JSON_MAPPER.readValue(e.response().errorBody().string(), OpenAiError.class),

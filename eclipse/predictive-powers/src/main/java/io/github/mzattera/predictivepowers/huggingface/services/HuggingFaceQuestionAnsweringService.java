@@ -33,7 +33,6 @@ import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -43,7 +42,6 @@ import lombok.Setter;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@RequiredArgsConstructor
 public class HuggingFaceQuestionAnsweringService implements QuestionAnsweringService {
 
 	public final static String DEFAULT_MODEL = "allenai/longformer-large-4096-finetuned-triviaqa";
@@ -60,9 +58,25 @@ public class HuggingFaceQuestionAnsweringService implements QuestionAnsweringSer
 		mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 	}
 
+	public HuggingFaceQuestionAnsweringService(HuggingFaceEndpoint ep) {
+		this.endpoint = ep;
+		defaultReq = new QuestionAnsweringRequest();
+		defaultReq.getOptions().setWaitForModel(true); // TODO remove? Improve?
+	}
+
 	@NonNull
 	@Getter
 	private final HuggingFaceEndpoint endpoint;
+
+	/**
+	 * This request, with its parameters, is used as default setting for each call.
+	 * 
+	 * You can change any parameter to change these defaults (e.g. the model used)
+	 * and the change will apply to all subsequent calls.
+	 */
+	@Getter
+	@NonNull
+	private final QuestionAnsweringRequest defaultReq;
 
 	@NonNull
 	@Getter
@@ -77,10 +91,13 @@ public class HuggingFaceQuestionAnsweringService implements QuestionAnsweringSer
 	@Override
 	public QnAPair answer(String question, String context) {
 
-		QuestionAnsweringRequest req = new QuestionAnsweringRequest();
+		return answer(question, context, defaultReq);
+	}
+
+	public QnAPair answer(String question, String context, QuestionAnsweringRequest req) {
+
 		req.getInputs().setQuestion(question);
 		req.getInputs().setContext(context);
-		req.getOptions().setWaitForModel(true); // TODO remove? Improve?
 
 		QuestionAnsweringResponse resp = endpoint.getClient().questionAnswering(model, req);
 
@@ -92,12 +109,17 @@ public class HuggingFaceQuestionAnsweringService implements QuestionAnsweringSer
 
 	@Override
 	public QnAPair answerWithEmbeddings(String question, List<Pair<EmbeddedText, Double>> context) {
+		return answerWithEmbeddings(question, context, defaultReq);
+	}
+
+	public QnAPair answerWithEmbeddings(String question, List<Pair<EmbeddedText, Double>> context,
+			QuestionAnsweringRequest req) {
 
 		List<String> l = new ArrayList<>(context.size());
 		for (Pair<EmbeddedText, Double> p : context)
 			l.add(p.getLeft().getText());
 
-		QnAPair result = answer(question, l);
+		QnAPair result = answer(question, l, req);
 
 		// Enrich answer with embeddings, as they have in some case useful properties
 		for (int i = 0; i < result.getContext().size(); ++i)
@@ -108,19 +130,15 @@ public class HuggingFaceQuestionAnsweringService implements QuestionAnsweringSer
 
 	@Override
 	public QnAPair answer(String question, List<String> context) {
+		return answer(question, context, defaultReq);
+	}
+
+	public QnAPair answer(String question, List<String> context, QuestionAnsweringRequest req) {
 		StringBuffer ctx = new StringBuffer();
 		for (String c : context) {
 			ctx.append(c.trim()).append('\n');
 		}
 
-		return answer(question, ctx.toString().trim());
-	}
-
-	public static void main(String args[]) {
-
-		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
-			HuggingFaceQuestionAnsweringService s = ep.getQuestionAnsweringService();
-			System.out.println(s.answer("What is my name?", "I am Maxi and I live in Italy.").toString());
-		}
+		return answer(question, ctx.toString().trim(), req);
 	}
 }

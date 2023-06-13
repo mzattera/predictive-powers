@@ -58,8 +58,6 @@ public class HuggingFaceEndpoint implements Endpoint {
 		this.client = client;
 	}
 
-	// TODO return each of these as an OpenAI service
-
 	@Override
 	public HuggingFaceCompletionService getCompletionService() {
 		return new HuggingFaceCompletionService(this);

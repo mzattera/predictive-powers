@@ -60,7 +60,7 @@ public class OpenAiCompletionService implements CompletionService {
 	 */
 	@Getter
 	@NonNull
-	protected final CompletionsRequest defaultReq;
+	private final CompletionsRequest defaultReq;
 
 	@Override
 	public String getModel() {

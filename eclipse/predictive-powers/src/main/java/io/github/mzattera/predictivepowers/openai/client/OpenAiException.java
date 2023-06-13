@@ -16,15 +16,16 @@
 
 import io.github.mzattera.predictivepowers.openai.client.OpenAiError.ErrorDetails;
 import lombok.NonNull;
+import retrofit2.HttpException;
 
 /**
- * Thjis exception is thrown when an error is returned by the OpenAI API in form
+ * This exception is thrown when an error is returned by the OpenAI API in form
  * of an {@link OpenAiError}
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public class OpenAiException extends RuntimeException {
+public class OpenAiException extends HttpException {
 
 	private static final long serialVersionUID = 2872745638990379630L;
 
@@ -38,22 +39,10 @@ public class OpenAiException extends RuntimeException {
 	public ErrorDetails getErrorDetails() {
 		return error.getError();
 	}
-	
-	/**
-	 * 
-	 * @return HTTP status code for the error, if this was caused by an HTTP error,
-	 *         or -1.
-	 */
-	public int getHttpStatusCode() {
-		try {
-			return Integer.parseInt(error.getError().getCode());
-		} catch (NumberFormatException e) {
-			return -1;
-		}
-	}
 
-	public OpenAiException(@NonNull OpenAiError error, Throwable rootCause) {
-		super(error.getError().message, rootCause);
+	public OpenAiException(@NonNull OpenAiError error, HttpException rootCause) {
+		super(rootCause.response());
 		this.error = error;
+		initCause(rootCause);
 	}
 }

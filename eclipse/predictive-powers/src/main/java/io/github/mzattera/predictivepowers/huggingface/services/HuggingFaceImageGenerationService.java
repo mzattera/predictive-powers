@@ -40,6 +40,7 @@ public class HuggingFaceImageGenerationService implements ImageGenerationService
 
 	public HuggingFaceImageGenerationService(HuggingFaceEndpoint ep) {
 		this.endpoint = ep;
+		defaultReq = new TextToImageRequest();
 		defaultReq.getOptions().setWaitForModel(true); // TODO remove? Improve?
 		defaultReq.getOptions().setUseCache(false);
 	}
@@ -53,12 +54,25 @@ public class HuggingFaceImageGenerationService implements ImageGenerationService
 	@Setter
 	private String model = DEFAULT_MODEL;
 
-	protected final TextToImageRequest defaultReq = new TextToImageRequest();
+	/**
+	 * This request, with its parameters, is used as default setting for each call.
+	 * 
+	 * You can change any parameter to change these defaults (e.g. the model used)
+	 * and the change will apply to all subsequent calls.
+	 */
+	@Getter
+	@NonNull
+	private final TextToImageRequest defaultReq;
 
 	@Override
 	public List<BufferedImage> createImage(String prompt, int n, int width, int height) throws IOException {
+		return createImage(prompt, n, width, height, defaultReq);
+	}
 
-		defaultReq.setInputs(prompt);
+	public List<BufferedImage> createImage(String prompt, int n, int width, int height, TextToImageRequest req)
+			throws IOException {
+
+		req.setInputs(prompt);
 		List<BufferedImage> result = new ArrayList<>(n);
 		for (int i = 0; i < n; ++i) {
 			result.add(endpoint.getClient().textToImage(model, defaultReq));
@@ -70,6 +84,11 @@ public class HuggingFaceImageGenerationService implements ImageGenerationService
 	@Override
 	public List<BufferedImage> createImageVariation(BufferedImage prompt, int n, int width, int height)
 			throws IOException {
+		return createImageVariation(prompt, n, width, height, defaultReq);
+	}
+
+	public List<BufferedImage> createImageVariation(BufferedImage prompt, int n, int width, int height,
+			TextToImageRequest req) throws IOException {
 		throw new UnsupportedOperationException();
 	}
 

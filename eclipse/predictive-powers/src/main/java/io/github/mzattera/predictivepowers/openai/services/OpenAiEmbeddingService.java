@@ -54,8 +54,7 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 	public static final String DEFAULT_MODEL = "text-embedding-ada-002";
 
 	public OpenAiEmbeddingService(OpenAiEndpoint ep) {
-		this(ep, new EmbeddingsRequest());
-		defaultReq.setModel(DEFAULT_MODEL);
+		this(ep, EmbeddingsRequest.builder().model(DEFAULT_MODEL).build());
 	}
 
 	@NonNull
@@ -70,7 +69,7 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 	 */
 	@Getter
 	@NonNull
-	protected final EmbeddingsRequest defaultReq;
+	private final EmbeddingsRequest defaultReq;
 
 	@Override
 	public String getModel() {

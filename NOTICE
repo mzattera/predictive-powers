@@ -12,5 +12,7 @@ which is partially a  transpiled version of the code from https://github.com/ope
 
 These files were distributed under MIT license and retain their respective copyrights.
 
-The code in the package has been modified to work with Java 11
+However, code in the package has been modified to work with Java 11
 (as the original version requires Java 14 or above).
+
+=============

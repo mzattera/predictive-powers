@@ -64,9 +64,9 @@ public class TokenizerTest {
 	@Test
 	void test03() {
 		List<ChatMessage> l = new ArrayList<>();
-		l.add(new ChatMessage("system", "You are a usefl assistant"));
-		l.add(new ChatMessage("user", "Hello"));
-		l.add(new ChatMessage("assistant", "Hi, how cna I help?"));
+		l.add(new ChatMessage(ChatMessage.Role.SYSTEM, "You are a usefl assistant"));
+		l.add(new ChatMessage(ChatMessage.Role.USER, "Hello"));
+		l.add(new ChatMessage(ChatMessage.Role.BOT, "Hi, how cna I help?"));
 
 		GPT3Tokenizer tokenizer = new GPT3Tokenizer(Encoding.forModel("gpt-3.5-turbo"));
 		assertEquals(33, TokenCount.fromMessages(l, tokenizer, ChatFormatDescriptor.forModel("gpt-3.5-turbo")));

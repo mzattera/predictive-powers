@@ -37,6 +37,8 @@ import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
  */
 public interface Endpoint extends Closeable {
 
+	// TODO always ensure it return service interfaces
+
 	ApiClient getClient();
 
 	CompletionService getCompletionService();

@@ -59,7 +59,7 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 
 	@NonNull
 	@Getter
-	private final OpenAiEndpoint endpoint;
+	protected final OpenAiEndpoint endpoint;
 
 	/**
 	 * This request, with its parameters, is used as default setting for each call.

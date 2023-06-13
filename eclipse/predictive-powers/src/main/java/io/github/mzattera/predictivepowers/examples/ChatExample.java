@@ -19,7 +19,7 @@ package io.github.mzattera.predictivepowers.examples;
 import java.util.Scanner;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.services.ChatService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 
 public class ChatExample {
 
@@ -28,7 +28,7 @@ public class ChatExample {
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
 			// Get chat service and set bot personality
-			ChatService bot = endpoint.getChatService();
+			OpenAiChatService bot = endpoint.getChatService();
 			bot.setPersonality("You are a very sad and depressed robot. "
 					+ "Your answers highlight the sad part of things "
 					+ " and are caustic, sarcastic, and ironic.");

@@ -36,7 +36,7 @@ class ChatCompletionsTest {
 			ChatCompletionsRequest cr = new ChatCompletionsRequest();
 
 			cr.setModel(model);
-			cr.getMessages().add(ChatMessage.builder().role("user").content(prompt).build());
+			cr.getMessages().add(ChatMessage.builder().role(ChatMessage.Role.USER).content(prompt).build());
 			cr.setMaxTokens(ModelUtil.getContextSize(model) - 15);
 			cr.setStop(new ArrayList<>());
 			cr.getStop().add("feet");
@@ -59,7 +59,7 @@ class ChatCompletionsTest {
 			ChatCompletionsRequest cr = new ChatCompletionsRequest();
 
 			cr.setModel(model);
-			cr.getMessages().add(ChatMessage.builder().role("user").content(prompt).build());
+			cr.getMessages().add(ChatMessage.builder().role(ChatMessage.Role.USER).content(prompt).build());
 			cr.setMaxTokens(ModelUtil.getContextSize(model) - 15);
 			cr.setTopP(0.8);
 			

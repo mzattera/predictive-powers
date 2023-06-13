@@ -52,7 +52,7 @@ public final class CharCounter implements TokenCounter {
 
 	@Override
 	public int count(@NonNull ChatMessage msg) {
-		return count(msg.getRole()) + count(msg.getContent()) + 1;
+		return count(msg.getRole().toString()) + count(msg.getContent()) + 1;
 	}
 
 	@Override

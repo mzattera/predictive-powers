@@ -45,7 +45,7 @@ public class OpenAiImageGenerationService implements ImageGenerationService {
 
 	@NonNull
 	@Getter
-	private final OpenAiEndpoint endpoint;
+	protected final OpenAiEndpoint endpoint;
 
 	@Override
 	public String getModel() {

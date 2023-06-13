@@ -50,7 +50,7 @@ public class HuggingFaceEmbeddingService extends AbstractEmbeddingService {
 
 	@NonNull
 	@Getter
-	private final HuggingFaceEndpoint endpoint;
+	protected final HuggingFaceEndpoint endpoint;
 
 	@Override
 	public List<EmbeddedText> embed(Collection<String> text) {

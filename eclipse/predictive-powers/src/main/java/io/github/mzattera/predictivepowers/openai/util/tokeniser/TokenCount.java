@@ -87,7 +87,7 @@ public class TokenCount {
 		for (ChatMessage message : messages) {
 			tokenCount += chatFormat.getExtraTokenCountPerMessage();
 			if (message.getRole() != null)
-				tokenCount += tokenizer.encode(message.getRole()).size();
+				tokenCount += tokenizer.encode(message.getRole().toString()).size();
 			if (message.getContent() != null)
 				tokenCount += tokenizer.encode(message.getContent()).size();
 		}

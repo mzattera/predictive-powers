@@ -47,7 +47,7 @@ public class HuggingFaceImageGenerationService implements ImageGenerationService
 
 	@NonNull
 	@Getter
-	private final HuggingFaceEndpoint endpoint;
+	protected final HuggingFaceEndpoint endpoint;
 
 	@NonNull
 	@Getter

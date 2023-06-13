@@ -24,11 +24,11 @@ import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiImageGenerationService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionAnsweringService;
-import io.github.mzattera.predictivepowers.services.ChatService;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 import lombok.Getter;
 import lombok.NonNull;
@@ -44,6 +44,7 @@ import lombok.NonNull;
 public class OpenAiEndpoint implements Endpoint {
 
 	// TODO add client/endpoint for Azure OpenAI Services
+	// TODO always ensure it returns OpenAI specific services
 
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiEndpoint.class);
 
@@ -83,23 +84,23 @@ public class OpenAiEndpoint implements Endpoint {
 	}
 
 	@Override
-	public ChatService getChatService() {
-		return new ChatService(this);
+	public OpenAiChatService getChatService() {
+		return new OpenAiChatService(this);
 	}
 
 	@Override
-	public ChatService getChatService(String personality) {
-		ChatService s = getChatService();
+	public OpenAiChatService getChatService(String personality) {
+		OpenAiChatService s = getChatService();
 		s.setPersonality(personality);
 		return s;
 	}
 
-	public ChatService getChatService(ChatCompletionsRequest defaultReq) {
-		return new ChatService(this, defaultReq);
+	public OpenAiChatService getChatService(ChatCompletionsRequest defaultReq) {
+		return new OpenAiChatService(this, defaultReq);
 	}
 
-	public ChatService getChatService(ChatCompletionsRequest defaultReq, String personality) {
-		ChatService s = getChatService(defaultReq);
+	public OpenAiChatService getChatService(ChatCompletionsRequest defaultReq, String personality) {
+		OpenAiChatService s = getChatService(defaultReq);
 		s.setPersonality(personality);
 		return s;
 	}
@@ -109,7 +110,7 @@ public class OpenAiEndpoint implements Endpoint {
 		return new QuestionExtractionService(this);
 	}
 
-	public QuestionExtractionService getQuestionExtractionService(@NonNull ChatService cs) {
+	public QuestionExtractionService getQuestionExtractionService(@NonNull OpenAiChatService cs) {
 		return new QuestionExtractionService(cs);
 	}
 
@@ -118,7 +119,7 @@ public class OpenAiEndpoint implements Endpoint {
 		return new OpenAiQuestionAnsweringService(this);
 	}
 
-	public OpenAiQuestionAnsweringService getQuestionAnsweringService(@NonNull ChatService cs) {
+	public OpenAiQuestionAnsweringService getQuestionAnsweringService(@NonNull OpenAiChatService cs) {
 		return new OpenAiQuestionAnsweringService(cs);
 	}
 

@@ -41,7 +41,9 @@ import lombok.NonNull;
  */
 public class HuggingFaceEndpoint implements Endpoint {
 
-	private final static Logger LOG =LoggerFactory.getLogger(HuggingFaceEndpoint.class);
+	// TODO always ensure it returns Hugging Face specific services
+
+	private final static Logger LOG = LoggerFactory.getLogger(HuggingFaceEndpoint.class);
 
 	@Getter
 	private final HuggingFaceClient client;

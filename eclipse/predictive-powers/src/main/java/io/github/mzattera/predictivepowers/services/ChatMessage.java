@@ -15,6 +15,8 @@
  */
 package io.github.mzattera.predictivepowers.services;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -39,8 +41,37 @@ import lombok.ToString;
 @ToString
 public class ChatMessage {
 
+	/**
+	 * Set of fixed roles for chats, to allow easier interoperability (hopefully).
+	 */
+	public enum Role {
+		/** Marks messages coming from the user */
+		USER("user"),
+
+		/** Marks messages coming from the bot (assistant) */
+		BOT("assistant"),
+
+		/**
+		 * Marks text used for bot configuration (e.g. in OpenAI ChatGPT). It might not
+		 * be supported by all services.
+		 */
+		SYSTEM("system");
+
+		private final String label;
+
+		private Role(String label) {
+			this.label = label;
+		}
+
+		@Override
+		@JsonValue
+		public String toString() { // Notice we rely on labels not to change
+			return label;
+		}
+	}
+
 	@NonNull
-	String role;
+	Role role;
 
 	@NonNull
 	String content;

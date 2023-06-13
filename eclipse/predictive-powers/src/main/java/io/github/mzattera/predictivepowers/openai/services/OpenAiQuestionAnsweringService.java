@@ -31,7 +31,6 @@ import io.github.mzattera.predictivepowers.TokenCounter;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.services.ChatService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
@@ -57,7 +56,7 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 		completionService.getDefaultReq().setTemperature(0.0);
 	}
 
-	public OpenAiQuestionAnsweringService(ChatService completionService) {
+	public OpenAiQuestionAnsweringService(OpenAiChatService completionService) {
 		this.completionService = completionService;
 		maxContextTokens = ModelUtil.getContextSize(completionService.getModel()) * 3 / 4;
 	}
@@ -93,7 +92,7 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 	 */
 	@NonNull
 	@Getter
-	private final ChatService completionService;
+	private final OpenAiChatService completionService;
 
 	/**
 	 * Maximum number of tokens to keep in the question context when answering.
@@ -152,40 +151,40 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 		// Provides instructions and examples
 		List<ChatMessage> instructions = new ArrayList<>();
 		if (completionService.getPersonality() == null)
-			instructions.add(new ChatMessage("system", "You are an AI assistant answering questions truthfully."));
-		instructions.add(new ChatMessage("user",
+			instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM, "You are an AI assistant answering questions truthfully."));
+		instructions.add(new ChatMessage(ChatMessage.Role.USER,
 				"Answer the below questions truthfully, strictly using only the information in the context. " + //
 						"When providing an answer, provide your reasoning as well, step by step. " + //
 						"If the answer cannot be found in the context, reply with \"I do not know.\". " + //
 						"Strictly return the answer and explanation in JSON format, as shown below."));
-		instructions.add(new ChatMessage("user", "Context:\n" + //
+		instructions.add(new ChatMessage(ChatMessage.Role.USER, "Context:\n" + //
 				"Biglydoos are small rodent similar to mice.\n" + //
 				"Biglydoos eat cranberries.\n" + //
 				"Question: What color are biglydoos?"));
-		instructions.add(new ChatMessage("assistant", //
+		instructions.add(new ChatMessage(ChatMessage.Role.BOT, //
 				"{\"answer\": \"I do not know.\", \"explanation\": \"1. This information is not provided in the context.\"}"));
-		instructions.add(new ChatMessage("user", "Context:\n" + //
+		instructions.add(new ChatMessage(ChatMessage.Role.USER, "Context:\n" + //
 				"Biglydoos are small rodent similar to mice.\n" + //
 				"Biglydoos eat cranberries.\n" + //
 				"Question: Do biglydoos eat fruits?"));
-		instructions.add(new ChatMessage("assistant", //
+		instructions.add(new ChatMessage(ChatMessage.Role.BOT, //
 				"{\"answer\": \"Yes, biglydoos eat fruits.\", " + //
 						"\"explanation\": " + //
 						"\"1. The context states: \"Biglydoos eat cranberries.\"\\n" + //
 						"2. Cranberries are a kind of fruit.\\n" + //
 						"3. Therefore, biglydoos eat fruits.\"}"));
-		int instTok = counter.count(new ChatMessage("user", qMsg)) + counter.count(instructions);
+		int instTok = counter.count(new ChatMessage(ChatMessage.Role.USER, qMsg)) + counter.count(instructions);
 
 		StringBuffer ctx = new StringBuffer("Context:\n");
 		int i = 0;
 		for (; i < context.size(); ++i) {
-			ChatMessage m = new ChatMessage("user", ctx.toString() + "\n" + context.get(i));
+			ChatMessage m = new ChatMessage(ChatMessage.Role.USER, ctx.toString() + "\n" + context.get(i));
 			if ((instTok + counter.count(m)) > maxContextTokens)
 				break;
 			ctx.append('\n').append(context.get(i));
 		}
 		ctx.append(qMsg);
-		instructions.add(new ChatMessage("user", ctx.toString()));
+		instructions.add(new ChatMessage(ChatMessage.Role.USER, ctx.toString()));
 
 		// No context, no answer
 		if (i == 0)

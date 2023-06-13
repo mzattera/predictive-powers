@@ -66,7 +66,7 @@ public class HuggingFaceQuestionAnsweringService implements QuestionAnsweringSer
 
 	@NonNull
 	@Getter
-	private final HuggingFaceEndpoint endpoint;
+	protected final HuggingFaceEndpoint endpoint;
 
 	/**
 	 * This request, with its parameters, is used as default setting for each call.

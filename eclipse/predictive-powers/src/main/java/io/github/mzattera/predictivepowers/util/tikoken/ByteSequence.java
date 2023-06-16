@@ -27,7 +27,7 @@
  * SOFTWARE.
  */
 
-package io.github.mzattera.predictivepowers.openai.util.tokeniser;
+package io.github.mzattera.predictivepowers.util.tikoken;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;

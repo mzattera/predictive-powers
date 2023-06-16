@@ -18,24 +18,20 @@ package io.github.mzattera.predictivepowers.openai.services;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.github.mzattera.predictivepowers.TokenCounter;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsChoice;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
 import io.github.mzattera.predictivepowers.services.AbstractChatService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
+import io.github.mzattera.predictivepowers.services.ModelService;
+import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.TextResponse;
 import lombok.Getter;
 import lombok.NonNull;
 
 /**
- * This class manages a chat with an agent.
- * 
- * Chat history is kept in memory and updated as chat progresses. At the same
- * time, methods to use chat service as a simple completion service are
- * provided.
+ * Hugging Face based chat service.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -45,7 +41,9 @@ public class OpenAiChatService extends AbstractChatService {
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
 	// values from a Map
 
-	public static final String DEFAULT_MODEL = "gpt-3.5-turbo";
+	// TODO switch back to 3.5 after On June 27th, 2023
+//	public static final String DEFAULT_MODEL = "gpt-3.5-turbo";
+	public static final String DEFAULT_MODEL = "gpt-3.5-turbo-0613";
 
 	public OpenAiChatService(OpenAiEndpoint ep) {
 		this(ep, ChatCompletionsRequest.builder().model(DEFAULT_MODEL).build());
@@ -54,7 +52,7 @@ public class OpenAiChatService extends AbstractChatService {
 	public OpenAiChatService(OpenAiEndpoint ep, ChatCompletionsRequest defaultReq) {
 		this.endpoint = ep;
 		this.defaultReq = defaultReq;
-		setMaxConversationTokens(Math.max(ModelUtil.getContextSize(defaultReq.getModel()), 2046) * 3 / 4);
+		setMaxConversationTokens(Math.max(ep.getModelService().getContextSize(defaultReq.getModel()), 2046) * 3 / 4);
 	}
 
 	@NonNull
@@ -132,7 +130,7 @@ public class OpenAiChatService extends AbstractChatService {
 	 * This service will try to calculate this so to allow the longest possible
 	 * output, if it is null.
 	 */
-	@Override
+//	@Override
 	public Integer getMaxNewTokens() {
 		return defaultReq.getMaxTokens();
 	}
@@ -141,21 +139,9 @@ public class OpenAiChatService extends AbstractChatService {
 	 * This service will try to calculate this so to allow the longest possible
 	 * output, if it is null.
 	 */
-	@Override
+//	@Override
 	public void setMaxNewTokens(Integer maxNewTokens) {
 		defaultReq.setMaxTokens(maxNewTokens);
-	}
-
-	@Override
-	public int getN() {
-		if (defaultReq.getN() == null)
-			return 1;
-		return defaultReq.getN();
-	}
-
-	@Override
-	public void setN(int n) {
-		defaultReq.setN(n);
 	}
 
 	/**
@@ -170,8 +156,8 @@ public class OpenAiChatService extends AbstractChatService {
 
 		try {
 
-			ChatCompletionsChoice choice = chatCompletion(trimChat(history, ModelUtil.getTokenCounter(req.getModel())),
-					req);
+			ChatCompletionsChoice choice = chatCompletion(
+					trimChat(history, endpoint.getModelService().getTokenizer(req.getModel())), req);
 			TextResponse result = TextResponse.fromGptApi(choice.getMessage().getContent(), choice.getFinishReason());
 			history.add(choice.getMessage());
 			return result;
@@ -247,17 +233,18 @@ public class OpenAiChatService extends AbstractChatService {
 	 */
 	private ChatCompletionsChoice chatCompletion(List<ChatMessage> messages, ChatCompletionsRequest req) {
 
+		ModelService ms = endpoint.getModelService();
 		String model = req.getModel();
-		TokenCounter counter = ModelUtil.getTokenCounter(model);
+		Tokenizer counter = ms.getTokenizer(model);
 
 		req.setMessages(messages);
 
 		// Adjust token limit if needed
-		boolean autofit = (req.getMaxTokens() == null) && (ModelUtil.getContextSize(model) != -1);
+		boolean autofit = (req.getMaxTokens() == null) && (ms.getContextSize(model, -1) != -1);
 		try {
 			if (autofit) {
 				int tok = counter.count(messages);
-				req.setMaxTokens(ModelUtil.getContextSize(model) - tok - 10);
+				req.setMaxTokens(ms.getContextSize(model) - tok - 10);
 			}
 
 			ChatCompletionsResponse resp = endpoint.getClient().createChatCompletion(req);

@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
-import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
 import io.github.mzattera.predictivepowers.services.TextResponse;
 
 class CompletionsTest {
@@ -38,7 +37,7 @@ class CompletionsTest {
 
 			cr.setModel(model);
 			cr.setPrompt(prompt);
-			cr.setMaxTokens(ModelUtil.getContextSize(model) - 10);
+			cr.setMaxTokens(oai.getModelService().getContextSize(model) - 10);
 			cr.setStop(new ArrayList<>());
 			cr.getStop().add("feet");
 
@@ -58,7 +57,7 @@ class CompletionsTest {
 
 			cr.setModel(model);
 			cr.setPrompt(prompt);
-			cr.setMaxTokens(ModelUtil.getContextSize(model) - 10);
+			cr.setMaxTokens(oai.getModelService().getContextSize(model) - 10);
 			cr.setN(3);
 
 			CompletionsResponse resp = oai.getClient().createCompletion(cr);
@@ -81,7 +80,7 @@ class CompletionsTest {
 
 			cr.setModel(model);
 			cr.setPrompt(prompt);
-			cr.setMaxTokens(ModelUtil.getContextSize(model) - 10);
+			cr.setMaxTokens(oai.getModelService().getContextSize(model) - 10);
 			cr.setLogprobs(2);
 
 			CompletionsResponse resp = oai.getClient().createCompletion(cr);
@@ -119,7 +118,6 @@ class CompletionsTest {
 			assertTrue(resp.getText().contains("8,848"));
 		} // Close endpoint
 	}
-	
 
 	@Test
 	void test06() {
@@ -130,12 +128,12 @@ class CompletionsTest {
 
 			cr.setModel(model);
 			cr.setPrompt(prompt);
-			cr.setMaxTokens(ModelUtil.getContextSize(model) - 10);
+			cr.setMaxTokens(oai.getModelService().getContextSize(model) - 10);
 			cr.setTopP(0.8);
 			CompletionsResponse resp = oai.getClient().createCompletion(cr);
 
 			assertEquals(resp.getChoices().size(), 1);
 			assertEquals(resp.getChoices().get(0).getFinishReason(), "stop");
 		} // Close endpoint
-	}	
+	}
 }

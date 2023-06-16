@@ -29,7 +29,7 @@
  * SOFTWARE.
  */
 
-package io.github.mzattera.predictivepowers.openai.util.tokeniser;
+package io.github.mzattera.predictivepowers.util.tikoken;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -76,19 +76,19 @@ public class Encoding {
 	static final String ENDOFPROMPT = "<|endofprompt|>";
 	static final String ENDOFTEXT = "<|endoftext|>";
 
-	static final Encoding CL100K_BASE = new Encoding("cl100k_base.tiktoken", new HashMap<>(),
+	public static final Encoding CL100K_BASE = new Encoding("cl100k_base.tiktoken", new HashMap<>(),
 			Map.of(ENDOFTEXT, 100257, FIM_PREFIX, 100258, FIM_MIDDLE, 100259, FIM_SUFFIX, 100260, ENDOFPROMPT, 100276),
 			Pattern.compile(
 					"(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\\r\\n\\p{L}\\p{N}]?\\p{L}+|\\p{N}{1,3}| ?[^\\s\\p{L}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+"));
 
-	static final Encoding P50K_BASE = new Encoding("p50k_base.tiktoken", new HashMap<>(), Map.of(ENDOFTEXT, 50256),
+	public static final Encoding P50K_BASE = new Encoding("p50k_base.tiktoken", new HashMap<>(), Map.of(ENDOFTEXT, 50256),
 			Pattern.compile("'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+"));
 
-	static final Encoding P50K_EDIT = new Encoding("p50k_base.tiktoken", new HashMap<>(),
+	public static final Encoding P50K_EDIT = new Encoding("p50k_base.tiktoken", new HashMap<>(),
 			Map.of(ENDOFTEXT, 50256, FIM_PREFIX, 50281, FIM_MIDDLE, 50282, FIM_SUFFIX, 50283),
 			Pattern.compile("'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+"));
 
-	static final Encoding R50K_BASE = new Encoding("r50k_base.tiktoken", new HashMap<>(), Map.of(ENDOFTEXT, 50256),
+	public static final Encoding R50K_BASE = new Encoding("r50k_base.tiktoken", new HashMap<>(), Map.of(ENDOFTEXT, 50256),
 			Pattern.compile("'s|'t|'re|'ve|'m|'ll|'d| ?\\p{L}+| ?\\p{N}+| ?[^\\s\\p{L}\\p{N}]+|\\s+(?!\\S)|\\s+"));
 
 	private final String tiktokenFilename;
@@ -135,46 +135,46 @@ public class Encoding {
 	private final static class Lookup {
 		private static final Map<String, String> modelPrefixToEncoding;
 		private static final Map<String, String> modelToEncoding;
-		static {
-			var mp2e = new HashMap<String, String>();
-			mp2e.put("gpt-4-", "cl100k_base");
-			mp2e.put("gpt-3.5-turbo-", "cl100k_base");
-			modelPrefixToEncoding = mp2e;
-
-			var m2e = new HashMap<String, String>();
-			m2e.put("gpt-4", "cl100k_base");
-			m2e.put("gpt-3.5-turbo", "cl100k_base");
-			m2e.put("text-davinci-003", "p50k_base");
-			m2e.put("text-davinci-002", "p50k_base");
-			m2e.put("text-davinci-001", "r50k_base");
-			m2e.put("text-curie-001", "r50k_base");
-			m2e.put("text-babbage-001", "r50k_base");
-			m2e.put("text-ada-001", "r50k_base");
-			m2e.put("davinci", "r50k_base");
-			m2e.put("curie", "r50k_base");
-			m2e.put("babbage", "r50k_base");
-			m2e.put("ada", "r50k_base");
-			m2e.put("code-davinci-002", "p50k_base");
-			m2e.put("code-davinci-001", "p50k_base");
-			m2e.put("code-cushman-002", "p50k_base");
-			m2e.put("code-cushman-001", "p50k_base");
-			m2e.put("davinci-codex", "p50k_base");
-			m2e.put("cushman-codex", "p50k_base");
-			m2e.put("text-davinci-edit-001", "p50k_edit");
-			m2e.put("code-davinci-edit-001", "p50k_edit");
-			m2e.put("text-embedding-ada-002", "cl100k_base");
-			m2e.put("text-similarity-davinci-001", "r50k_base");
-			m2e.put("text-similarity-curie-001", "r50k_base");
-			m2e.put("text-similarity-babbage-001", "r50k_base");
-			m2e.put("text-similarity-ada-001", "r50k_base");
-			m2e.put("text-search-davinci-doc-001", "r50k_base");
-			m2e.put("text-search-curie-doc-001", "r50k_base");
-			m2e.put("text-search-babbage-doc-001", "r50k_base");
-			m2e.put("text-search-ada-doc-001", "r50k_base");
-			m2e.put("code-search-babbage-code-001", "r50k_base");
-			m2e.put("code-search-ada-code-001", "r50k_base");
-			modelToEncoding = m2e;
-		}
+        static {
+            var mp2e = new HashMap<String, String>();
+            mp2e.put("gpt-4-", "cl100k_base");
+            mp2e.put("gpt-3.5-turbo-", "cl100k_base");
+            modelPrefixToEncoding = mp2e;
+     		
+            var m2e = new HashMap<String, String>();
+            m2e.put("gpt-4", "cl100k_base");
+            m2e.put("gpt-3.5-turbo", "cl100k_base");
+            m2e.put("text-davinci-003", "p50k_base");
+            m2e.put("text-davinci-002", "p50k_base");
+            m2e.put("text-davinci-001", "r50k_base");
+            m2e.put("text-curie-001", "r50k_base");
+            m2e.put("text-babbage-001", "r50k_base");
+            m2e.put("text-ada-001", "r50k_base");
+            m2e.put("davinci", "r50k_base");
+            m2e.put("curie", "r50k_base");
+            m2e.put("babbage", "r50k_base");
+            m2e.put("ada", "r50k_base");
+            m2e.put("code-davinci-002", "p50k_base");
+            m2e.put("code-davinci-001", "p50k_base");
+            m2e.put("code-cushman-002", "p50k_base");
+            m2e.put("code-cushman-001", "p50k_base");
+            m2e.put("davinci-codex", "p50k_base");
+            m2e.put("cushman-codex", "p50k_base");
+            m2e.put("text-davinci-edit-001", "p50k_edit");
+            m2e.put("code-davinci-edit-001", "p50k_edit");
+            m2e.put("text-embedding-ada-002", "cl100k_base");
+            m2e.put("text-similarity-davinci-001", "r50k_base");
+            m2e.put("text-similarity-curie-001", "r50k_base");
+            m2e.put("text-similarity-babbage-001", "r50k_base");
+            m2e.put("text-similarity-ada-001", "r50k_base");
+            m2e.put("text-search-davinci-doc-001", "r50k_base");
+            m2e.put("text-search-curie-doc-001", "r50k_base");
+            m2e.put("text-search-babbage-doc-001", "r50k_base");
+            m2e.put("text-search-ada-doc-001", "r50k_base");
+            m2e.put("code-search-babbage-code-001", "r50k_base");
+            m2e.put("code-search-ada-code-001", "r50k_base");
+            modelToEncoding = m2e;
+        }
 
 		static Map<ByteSequence, Integer> loadTiktokenBase(String filename, Map<ByteSequence, Integer> resultMap) {
 			try (InputStream in = ResourceUtil.getResourceStream("/tiktoken/" + filename)) {

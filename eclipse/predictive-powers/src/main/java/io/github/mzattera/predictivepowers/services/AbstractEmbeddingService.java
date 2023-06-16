@@ -33,7 +33,7 @@ import lombok.NonNull;
 import lombok.Setter;
 
 /**
- * Abstract embedding service that can be sub-classed to create other services
+ * Abstract {@link EmbeddingService} that can be sub-classed to create other services
  * faster (hopefully).
  * 
  * @author Massimiliano "Maxi" Zattera

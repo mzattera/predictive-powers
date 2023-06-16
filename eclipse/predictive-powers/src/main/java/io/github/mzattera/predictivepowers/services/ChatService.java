@@ -18,6 +18,16 @@ package io.github.mzattera.predictivepowers.services;
 
 import java.util.List;
 
+/**
+ * Instances of this interface manage a chats with an agent.
+ * 
+ * Chat history is kept in memory and updated as chat progresses. At the same
+ * time, methods to use chat service as a simple completion service are
+ * provided.
+ * 
+ * @author Massimiliano "Maxi" Zattera
+ *
+ */
 public interface ChatService extends Service {
 
 	/**
@@ -57,28 +67,16 @@ public interface ChatService extends Service {
 	 * probability.
 	 */
 	void setTemperature(Double temperature);
-
-	/**
-	 * Maximum amount of tokens to produce (not including the prompt).
-	 */
-	Integer getMaxNewTokens();
-
-	/**
-	 * Maximum amount of tokens to produce (not including the prompt).
-	 */
-	void setMaxNewTokens(Integer maxNewTokens);
-
-	/**
-	 * Number of completions to return for each prompt. Implementations should
-	 * ensure this defaults to 1.
-	 */
-	int getN();
-
-	/**
-	 * Number of completions to return for each prompt. Implementations should
-	 * ensure this defaults to 1.
-	 */
-	void setN(int n);
+//
+//	/**
+//	 * Maximum amount of tokens to produce (not including the prompt).
+//	 */
+//	Integer getMaxNewTokens();
+//
+//	/**
+//	 * Maximum amount of tokens to produce (not including the prompt).
+//	 */
+//	void setMaxNewTokens(Integer maxNewTokens);
 	
 	/**
 	 * These are the messages exchanged in the current chat.
@@ -91,8 +89,10 @@ public interface ChatService extends Service {
 	 */
 	List<ChatMessage> getHistory();
 
+	/** Maximum number of steps to keep in chat history. */
 	int getMaxHistoryLength();
 
+	/** Maximum number of steps to keep in chat history. */
 	void setMaxHistoryLength(int maxHistoryLength);
 
 	/** Personality of the agent. If null, agent has NO personality. */

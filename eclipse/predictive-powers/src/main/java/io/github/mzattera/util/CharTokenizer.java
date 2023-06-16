@@ -14,34 +14,36 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers;
+package io.github.mzattera.util;
 
 import java.util.List;
 
 import io.github.mzattera.predictivepowers.services.ChatMessage;
+import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import lombok.NonNull;
 
 /**
- * This is a TokenCounter that counts characters (that is 1 char = 1 token).
+ * This is a {@link Tokenizer} that counts characters (that is 1 char = 1
+ * token).
  * 
  * This is useful when you do not have a specific tokenizer for a model or you
  * want to count length by chars.
  * 
- * @author mzatt
+ * @author Massimiliano "Maxi" Zattera
  *
  */
-public final class CharCounter implements TokenCounter {
+public final class CharTokenizer implements Tokenizer {
 
-	private CharCounter() {
+	private CharTokenizer() {
 	}
 
-	private final static CharCounter instance = new CharCounter();
+	private final static CharTokenizer instance = new CharTokenizer();
 
 	/**
 	 * 
-	 * @return Singleton fo this class.
+	 * @return Singleton for this class.
 	 */
-	public static CharCounter getInstance() {
+	public static CharTokenizer getInstance() {
 		return instance;
 	}
 

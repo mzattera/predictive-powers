@@ -31,11 +31,10 @@ import org.apache.tika.exception.TikaException;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
-import io.github.mzattera.predictivepowers.CharCounter;
-import io.github.mzattera.predictivepowers.TokenCounter;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
+import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
+import io.github.mzattera.util.CharTokenizer;
 import io.github.mzattera.util.ExtractionUtil;
 import io.github.mzattera.util.ResourceUtil;
 
@@ -118,12 +117,12 @@ public class EmbeddingServiceTest {
 
 	public void test02(EmbeddingService es) {
 
-		TokenCounter counter;
+		Tokenizer counter;
 		try {
-			counter = ModelUtil.getTokenCounter(es.getModel());
-		} catch (IllegalArgumentException e) {
+			counter = es.getEndpoint().getModelService().getTokenizer(es.getModel());
+		} catch (IllegalArgumentException | UnsupportedOperationException e) {
 			// No counter for this model, it is probably Hugging Face one
-			counter = CharCounter.getInstance();
+			counter = CharTokenizer.getInstance();
 		}
 
 		StringBuilder txt = new StringBuilder();

@@ -28,7 +28,9 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiImageGenerationService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionAnsweringService;
+import io.github.mzattera.predictivepowers.services.ModelService;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 import lombok.Getter;
 import lombok.NonNull;
@@ -64,6 +66,11 @@ public class OpenAiEndpoint implements Endpoint {
 	}
 
 	// TODO return each of these as an OpenAI service
+
+	@Override
+	public ModelService getModelService() {
+		return new OpenAiModelService(this);
+	}
 
 	@Override
 	public OpenAiCompletionService getCompletionService() {

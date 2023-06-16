@@ -30,10 +30,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import io.github.mzattera.predictivepowers.Endpoint;
-import io.github.mzattera.predictivepowers.TokenCounter;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
-import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
+import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.util.LlmUtil;
 import lombok.Getter;
 import lombok.NonNull;
@@ -104,8 +103,7 @@ public class QuestionExtractionService implements Service {
 
 	public QuestionExtractionService(OpenAiChatService completionService) {
 		this.completionService = completionService;
-		maxContextTokens = Math.max(ModelUtil.getContextSize(this.completionService.getDefaultReq().getModel()), 2046)
-				* 3 / 4;
+		maxContextTokens = Math.max(getEndpoint().getModelService().getContextSize(getModel()), 2046) * 3 / 4;
 	}
 
 	/**
@@ -338,7 +336,7 @@ public class QuestionExtractionService implements Service {
 	private List<QnAPair> getQuestions(List<ChatMessage> instructions, String text) {
 
 		// Split text, based on prompt size
-		TokenCounter counter = ModelUtil.getTokenCounter(getModel());
+		Tokenizer counter = getEndpoint().getModelService().getTokenizer(getModel());
 		int tok = counter.count(instructions);
 
 		List<QnAPair> result = new ArrayList<>();

@@ -85,6 +85,8 @@ public interface CompletionService extends Service {
 	 */
 	void setEcho(boolean echo);
 
+	// TODO remove these getters / setters as they should be always 1 for the service
+	
 	/**
 	 * Number of completions to return for each prompt. Implementations should
 	 * ensure this defaults to 1.

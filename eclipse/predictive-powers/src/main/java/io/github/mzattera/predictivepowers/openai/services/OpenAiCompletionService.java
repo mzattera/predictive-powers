@@ -15,13 +15,13 @@
  */
 package io.github.mzattera.predictivepowers.openai.services;
 
-import io.github.mzattera.predictivepowers.TokenCounter;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsChoice;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
 import io.github.mzattera.predictivepowers.services.CompletionService;
+import io.github.mzattera.predictivepowers.services.ModelService;
+import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.TextResponse;
 import lombok.Getter;
 import lombok.NonNull;
@@ -194,15 +194,16 @@ public class OpenAiCompletionService implements CompletionService {
 		req.setSuffix(suffix);
 
 		// Adjust token limit if needed
+		ModelService ms = endpoint.getModelService();
 		String model = req.getModel();
-		boolean autofit = (req.getMaxTokens() == null) && (ModelUtil.getContextSize(model) != -1);
+		boolean autofit = (req.getMaxTokens() == null) && (ms.getContextSize(model, -1) != -1);
 		try {
 			if (autofit) {
-				TokenCounter counter = ModelUtil.getTokenCounter(model);
+				Tokenizer counter = ms.getTokenizer(model);
 				int tok = counter.count(prompt);
 				if (suffix != null)
 					tok += counter.count(suffix);
-				req.setMaxTokens(ModelUtil.getContextSize(model) - tok);
+				req.setMaxTokens(ms.getContextSize(model) - tok);
 			}
 
 			CompletionsResponse resp = endpoint.getClient().createCompletion(req);

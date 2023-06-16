@@ -30,12 +30,14 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import io.github.mzattera.predictivepowers.ApiClient;
 import io.github.mzattera.predictivepowers.huggingface.client.multimodal.TextToImageRequest;
+import io.github.mzattera.predictivepowers.huggingface.client.nlp.ConversationalRequest;
+import io.github.mzattera.predictivepowers.huggingface.client.nlp.ConversationalResponse;
+import io.github.mzattera.predictivepowers.huggingface.client.nlp.QuestionAnsweringRequest;
+import io.github.mzattera.predictivepowers.huggingface.client.nlp.QuestionAnsweringResponse;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextClassificationRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextClassificationResponse;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationResponse;
-import io.github.mzattera.predictivepowers.huggingface.nlp.QuestionAnsweringRequest;
-import io.github.mzattera.predictivepowers.huggingface.nlp.QuestionAnsweringResponse;
 import io.github.mzattera.util.ImageUtil;
 import io.reactivex.Single;
 import lombok.NonNull;
@@ -191,6 +193,10 @@ public final class HuggingFaceClient implements ApiClient {
 
 	public QuestionAnsweringResponse questionAnswering(@NonNull String model, QuestionAnsweringRequest req) {
 		return callApi(api.questionAnswering(model, req));
+	}
+
+	public ConversationalResponse conversational(@NonNull String model, ConversationalRequest req) {
+		return callApi(api.conversational(model, req));
 	}
 
 	/// MULTIMODAL //////////////////////////////////////////

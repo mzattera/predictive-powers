@@ -28,14 +28,14 @@ import java.util.Map;
 import org.apache.tika.exception.TikaException;
 import org.xml.sax.SAXException;
 
-import io.github.mzattera.predictivepowers.TokenCounter;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.Embedding;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
 import io.github.mzattera.predictivepowers.services.AbstractEmbeddingService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
+import io.github.mzattera.predictivepowers.services.ModelService;
+import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.util.ExtractionUtil;
 import io.github.mzattera.util.LlmUtil;
 import lombok.Getter;
@@ -149,9 +149,10 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 	 */
 	public List<EmbeddedText> embed(Collection<String> text, EmbeddingsRequest req) {
 
+		ModelService ms = endpoint.getModelService();
 		String model = req.getModel();
-		int modelSize = Math.min(ModelUtil.getContextSize(model), 8192);
-		TokenCounter counter = ModelUtil.getTokenCounter(model);
+		int modelSize = Math.min(ms.getContextSize(model), 8192);
+		Tokenizer counter = ms.getTokenizer(model);
 		req.getInput().clear();
 
 		// Put all pieces of text to be embedded in a list

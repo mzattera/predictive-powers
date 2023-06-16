@@ -19,12 +19,14 @@ package io.github.mzattera.predictivepowers.huggingface.client;
 import java.util.List;
 
 import io.github.mzattera.predictivepowers.huggingface.client.multimodal.TextToImageRequest;
+import io.github.mzattera.predictivepowers.huggingface.client.nlp.ConversationalRequest;
+import io.github.mzattera.predictivepowers.huggingface.client.nlp.ConversationalResponse;
+import io.github.mzattera.predictivepowers.huggingface.client.nlp.QuestionAnsweringRequest;
+import io.github.mzattera.predictivepowers.huggingface.client.nlp.QuestionAnsweringResponse;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextClassificationRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextClassificationResponse;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationResponse;
-import io.github.mzattera.predictivepowers.huggingface.nlp.QuestionAnsweringRequest;
-import io.github.mzattera.predictivepowers.huggingface.nlp.QuestionAnsweringResponse;
 import io.reactivex.Single;
 import lombok.NonNull;
 import okhttp3.ResponseBody;
@@ -55,6 +57,9 @@ public interface HuggingFaceApi {
 
 	@POST
 	Single<QuestionAnsweringResponse> questionAnswering(@Url @NonNull String model, @Body QuestionAnsweringRequest req);
+
+	@POST
+	Single<ConversationalResponse> conversational(@Url @NonNull String model, @Body ConversationalRequest req);
 
 	/// MULTIMODAL //////////////////////////////////////////
 

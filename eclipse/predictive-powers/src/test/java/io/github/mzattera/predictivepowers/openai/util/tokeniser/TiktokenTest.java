@@ -24,8 +24,12 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.services.ChatMessage;
+import io.github.mzattera.predictivepowers.util.tikoken.ChatFormatDescriptor;
+import io.github.mzattera.predictivepowers.util.tikoken.Encoding;
+import io.github.mzattera.predictivepowers.util.tikoken.GPT3Tokenizer;
+import io.github.mzattera.predictivepowers.util.tikoken.TokenCount;
 
-public class TokenizerTest {
+public class TiktokenTest {
 
 	private final static String TEXT = "banana are great things to eat, really!";
 

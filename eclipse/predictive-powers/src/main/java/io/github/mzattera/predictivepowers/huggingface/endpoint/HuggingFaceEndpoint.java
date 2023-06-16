@@ -27,6 +27,7 @@ import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceEmbed
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceImageGenerationService;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.ChatService;
+import io.github.mzattera.predictivepowers.services.ModelService;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 import lombok.Getter;
 import lombok.NonNull;
@@ -58,6 +59,11 @@ public class HuggingFaceEndpoint implements Endpoint {
 
 	public HuggingFaceEndpoint(@NonNull HuggingFaceClient client) {
 		this.client = client;
+	}
+
+	@Override
+	public ModelService getModelService() {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override

@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 
 class ChatCompletionsTest {
@@ -37,7 +36,7 @@ class ChatCompletionsTest {
 
 			cr.setModel(model);
 			cr.getMessages().add(ChatMessage.builder().role(ChatMessage.Role.USER).content(prompt).build());
-			cr.setMaxTokens(ModelUtil.getContextSize(model) - 15);
+			cr.setMaxTokens(endpoint.getModelService().getContextSize(model) - 15);
 			cr.setStop(new ArrayList<>());
 			cr.getStop().add("feet");
 
@@ -60,9 +59,9 @@ class ChatCompletionsTest {
 
 			cr.setModel(model);
 			cr.getMessages().add(ChatMessage.builder().role(ChatMessage.Role.USER).content(prompt).build());
-			cr.setMaxTokens(ModelUtil.getContextSize(model) - 15);
+			cr.setMaxTokens(endpoint.getModelService().getContextSize(model) - 15);
 			cr.setTopP(0.8);
-			
+
 			ChatCompletionsResponse resp = endpoint.getClient().createChatCompletion(cr);
 
 			assertEquals(resp.getChoices().size(), 1);

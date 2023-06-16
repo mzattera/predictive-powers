@@ -27,7 +27,7 @@
  * SOFTWARE.
  */
 
-package io.github.mzattera.predictivepowers.openai.util.tokeniser;
+package io.github.mzattera.predictivepowers.util.tikoken;
 
 import java.util.List;
 import java.util.stream.StreamSupport;

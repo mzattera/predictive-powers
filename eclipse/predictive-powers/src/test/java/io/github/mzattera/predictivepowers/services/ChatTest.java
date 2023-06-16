@@ -22,7 +22,6 @@ import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
-import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
 
 /**
  * Test the OpenAI chat API & Service
@@ -88,7 +87,7 @@ public class ChatTest {
 			cs.setMaxHistoryLength(3);
 			cs.setMaxConversationSteps(2);
 			assertEquals(cs.getMaxConversationTokens(),
-					Math.max(ModelUtil.getContextSize(cs.getDefaultReq().getModel()), 2046) * 3 / 4);
+					Math.max(ep.getModelService().getContextSize(cs.getDefaultReq().getModel()), 2046) * 3 / 4);
 
 			String question = "How high is Mt.Everest?";
 			TextResponse resp = cs.chat(question);

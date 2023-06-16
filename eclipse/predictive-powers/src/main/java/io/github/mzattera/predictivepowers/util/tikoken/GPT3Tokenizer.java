@@ -29,7 +29,7 @@
  * SOFTWARE.
  */
 
-package io.github.mzattera.predictivepowers.openai.util.tokeniser;
+package io.github.mzattera.predictivepowers.util.tikoken;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;

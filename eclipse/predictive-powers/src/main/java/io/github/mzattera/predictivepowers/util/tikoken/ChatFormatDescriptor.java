@@ -27,7 +27,7 @@
  * SOFTWARE.
  */
 
-package io.github.mzattera.predictivepowers.openai.util.tokeniser;
+package io.github.mzattera.predictivepowers.util.tikoken;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -49,16 +49,19 @@ public class ChatFormatDescriptor {
 
 	public static ChatFormatDescriptor forModel(String modelName) {
 		switch (modelName) {
+
 		case "gpt-3.5-turbo":
-			return forModel("gpt-3.5-turbo-0301");
-		case "gpt-4":
-			return forModel("gpt-4-0314");
+		case "gpt-3.5-turbo-16k":
 		case "gpt-3.5-turbo-0301":
+		case "gpt-3.5-turbo-0613":
+		case "gpt-3.5-turbo-16k-0613":
 			return new ChatFormatDescriptor(Encoding.forModel(modelName), 4, 3);
-		case "gpt-4-0314":
+		case "gpt-4":
+		case "gpt-4-32k":
 			return new ChatFormatDescriptor(Encoding.forModel(modelName), 3, 3);
 		default:
-			// If we get here, it might be we are not using a chat model let's not block the execution for that, it might not be needed.
+			// If we get here, it might be we are not using a chat model let's not block the
+			// execution for that, it might not be needed.
 			return null;
 //			throw new IllegalArgumentException(String.format("Model `%s` not found", modelName));
 		}

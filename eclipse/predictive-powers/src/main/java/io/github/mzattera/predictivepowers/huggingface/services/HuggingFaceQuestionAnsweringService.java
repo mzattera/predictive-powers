@@ -25,9 +25,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
+import io.github.mzattera.predictivepowers.huggingface.client.nlp.QuestionAnsweringRequest;
+import io.github.mzattera.predictivepowers.huggingface.client.nlp.QuestionAnsweringResponse;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.nlp.QuestionAnsweringRequest;
-import io.github.mzattera.predictivepowers.huggingface.nlp.QuestionAnsweringResponse;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;

@@ -27,11 +27,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import io.github.mzattera.predictivepowers.Endpoint;
-import io.github.mzattera.predictivepowers.TokenCounter;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
+import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.TextResponse;
@@ -58,7 +57,7 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 
 	public OpenAiQuestionAnsweringService(OpenAiChatService completionService) {
 		this.completionService = completionService;
-		maxContextTokens = ModelUtil.getContextSize(completionService.getModel()) * 3 / 4;
+		maxContextTokens = getEndpoint().getModelService().getContextSize(getModel()) * 3 / 4;
 	}
 
 	// Maps from-to POJO <-> JSON
@@ -88,7 +87,8 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 	/**
 	 * This underlying service is used for executing required prompts.
 	 * 
-	 * You can configure this underlying service to fine tune behavior of this instance.
+	 * You can configure this underlying service to fine tune behavior of this
+	 * instance.
 	 */
 	@NonNull
 	@Getter
@@ -115,13 +115,11 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 	@Override
 	public QnAPair answer(String question, String context) {
 
+		Tokenizer counter = getEndpoint().getModelService().getTokenizer(getModel());
 		List<String> l = new ArrayList<>();
 		// TODO better calculation of sizes
 		// 400 is to keep space for instructions and examples
-		l.add(LlmUtil
-				.splitByTokens(context, maxContextTokens - ModelUtil.getTokenCounter(getModel()).count(question) - 400,
-						ModelUtil.getTokenCounter(getModel()))
-				.get(0));
+		l.add(LlmUtil.splitByTokens(context, maxContextTokens - counter.count(question) - 400, counter).get(0));
 
 		return answer(question, l);
 	}
@@ -146,12 +144,13 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 	public QnAPair answer(String question, List<String> context) {
 
 		String qMsg = "\nQuestion: " + question;
-		TokenCounter counter = ModelUtil.getTokenCounter(getModel());
+		Tokenizer counter = getEndpoint().getModelService().getTokenizer(getModel());
 
 		// Provides instructions and examples
 		List<ChatMessage> instructions = new ArrayList<>();
 		if (completionService.getPersonality() == null)
-			instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM, "You are an AI assistant answering questions truthfully."));
+			instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM,
+					"You are an AI assistant answering questions truthfully."));
 		instructions.add(new ChatMessage(ChatMessage.Role.USER,
 				"Answer the below questions truthfully, strictly using only the information in the context. " + //
 						"When providing an answer, provide your reasoning as well, step by step. " + //

@@ -25,7 +25,6 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
 
 class ModelsTest {
 
@@ -82,11 +81,9 @@ class ModelsTest {
 				if (oldModels.contains(m.getId()))
 					continue; // Skip old models
 
-				int contextSize = ModelUtil.getContextSize(m.getId());
-				if (contextSize < 0)
-					System.out.println("No context size defined for model: " + m.getId());
-
-				assertTrue(contextSize > 0);
+				assertTrue(oai.getModelService().getContextSize(m.getId()) > 0);
+				
+				// TODO test tokenizers are available here
 			}
 		} // Close endpoint
 	}

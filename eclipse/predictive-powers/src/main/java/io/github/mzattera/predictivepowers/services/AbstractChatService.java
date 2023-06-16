@@ -18,22 +18,12 @@ package io.github.mzattera.predictivepowers.services;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.github.mzattera.predictivepowers.TokenCounter;
-import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsChoice;
-import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
-import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.util.ModelUtil;
-import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.services.Service;
-import io.github.mzattera.predictivepowers.services.TextResponse;
-import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
+import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.Setter;
 
 /**
- * Abstract embedding service that can be sub-classed to create other services
+ * Abstract {@link ChatService} that can be sub-classed to create other services
  * faster (hopefully).
  * 
  * @author Massimiliano "Maxi" Zattera
@@ -83,31 +73,32 @@ public abstract class AbstractChatService implements ChatService {
 	/**
 	 * Trims given conversation history, so it fits the limits set in this instance.
 	 * 
-	 * @param counter A {@link TokenCounter} used to count tokens for trimming the chat history.
+	 * @param counter A {@link TokenCounter} used to count tokens for trimming the
+	 *                chat history.
 	 * 
 	 * @return A new conversation, including agent personality and as many messages
 	 *         as can fit, given current settings.
 	 */
-	protected List<ChatMessage> trimChat(List<ChatMessage> messages, TokenCounter counter) {
+	protected List<ChatMessage> trimChat(List<ChatMessage> messages, Tokenizer counter) {
 		List<ChatMessage> result = new ArrayList<>(messages.size());
-	
+
 		int numTokens = 3; // these are in the chat response, always
 		if (getPersonality() != null) {
 			ChatMessage m = new ChatMessage(ChatMessage.Role.SYSTEM, getPersonality());
 			result.add(m);
 			numTokens = counter.count(m);
 		}
-	
+
 		int numMsg = 0;
 		for (int i = messages.size() - 1; i >= 0; --i) {
 			if (numMsg >= maxConversationSteps)
 				break;
-	
+
 			ChatMessage msg = messages.get(i);
 			int t = counter.count(msg);
 			if ((numMsg > 0) && ((numTokens + t) > maxConversationTokens))
 				break;
-	
+
 			if (getPersonality() != null) {
 				// Skip ChatMessage.Role.SYSTEM message when inserting
 				result.add(1, msg);
@@ -117,7 +108,7 @@ public abstract class AbstractChatService implements ChatService {
 			++numMsg;
 			numTokens += t;
 		}
-	
+
 		return result;
 	}
 }

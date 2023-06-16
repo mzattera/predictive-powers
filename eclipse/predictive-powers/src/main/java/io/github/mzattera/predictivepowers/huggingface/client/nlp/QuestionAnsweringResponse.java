@@ -14,14 +14,9 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.huggingface.nlp;
+package io.github.mzattera.predictivepowers.huggingface.client.nlp;
 
-import io.github.mzattera.predictivepowers.huggingface.client.Options;
-import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -32,35 +27,10 @@ import lombok.ToString;
  */
 @Getter
 @Setter
-@Builder
-@NoArgsConstructor
-@RequiredArgsConstructor
-//@AllArgsConstructor
 @ToString
-public class QuestionAnsweringRequest {
-
-	@Getter
-	@Setter
-	@Builder
-	@NoArgsConstructor
-	@RequiredArgsConstructor
-//	@AllArgsConstructor
-	@ToString
-	public static class Inputs {
-
-		@NonNull
-		String question;
-
-		@NonNull
-		String context;
-	}
-
-	@NonNull
-	@Builder.Default
-	Inputs inputs = new Inputs();
-
-	// This is undocumented, but it seems to work.
-	@NonNull
-	@Builder.Default
-	Options options = new Options();
+public class QuestionAnsweringResponse {
+	String answer;
+	double score;
+	int start;
+	int stop;
 }

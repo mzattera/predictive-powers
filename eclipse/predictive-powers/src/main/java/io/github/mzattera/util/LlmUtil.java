@@ -21,8 +21,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.github.mzattera.predictivepowers.CharCounter;
-import io.github.mzattera.predictivepowers.TokenCounter;
+import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 
 /**
  * Some utility methods to deal with Large Language Models.
@@ -34,25 +33,24 @@ public final class LlmUtil {
 
 	/**
 	 * 
-	 * @param text      A text to be split.
-	 * @param maxChars Maximum number of characters in each piece of the split
-	 *                  text.
+	 * @param text     A text to be split.
+	 * @param maxChars Maximum number of characters in each piece of the split text.
 	 * 
 	 * @return Input text, split in parts smaller than given number of characters.
 	 */
 	public static List<String> splitByChars(String text, int maxChars) {
-		return splitByTokens(text, maxChars, CharCounter.getInstance());
+		return splitByTokens(text, maxChars, CharTokenizer.getInstance());
 	}
 
 	/**
 	 * 
 	 * @param text      A text to be split.
 	 * @param maxTokens Maximum number of tokens in each piece of the split text.
-	 * @param counter   {@link TokenCounter} used to calculate tokens.
+	 * @param counter   {@link Tokenizer} used to count tokens.
 	 * 
 	 * @return Input text, split in parts smaller than given number of tokens.
 	 */
-	public static List<String> splitByTokens(String text, int maxTokens, TokenCounter counter) {
+	public static List<String> splitByTokens(String text, int maxTokens, Tokenizer counter) {
 
 		List<String> result = new ArrayList<>();
 		result.add(text);
@@ -82,7 +80,7 @@ public final class LlmUtil {
 	 * Splits pieces bigger than max length into smaller pieces, using given regex
 	 * as separator. Notice pieces already small enough are not touched.
 	 */
-	private static List<String> split(List<String> text, int maxTokens, String regex, TokenCounter counter) {
+	private static List<String> split(List<String> text, int maxTokens, String regex, Tokenizer counter) {
 		List<String> result = new ArrayList<>();
 		Pattern p = Pattern.compile(regex);
 
@@ -111,7 +109,7 @@ public final class LlmUtil {
 	/**
 	 * Merge text back, when possible.
 	 */
-	private static List<String> merge(List<String> text, int maxTokens, TokenCounter counter) {
+	private static List<String> merge(List<String> text, int maxTokens, Tokenizer counter) {
 		List<String> result = new ArrayList<>();
 
 		StringBuffer tmp = new StringBuffer();

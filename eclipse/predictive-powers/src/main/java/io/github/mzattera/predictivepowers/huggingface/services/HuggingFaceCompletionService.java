@@ -16,6 +16,7 @@
 package io.github.mzattera.predictivepowers.huggingface.services;
 
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationRequest;
+import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationRequest.Parameters;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationResponse;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.CompletionService;
@@ -38,10 +39,8 @@ public class HuggingFaceCompletionService implements CompletionService {
 	public static final String DEFAULT_MODEL = "gpt2-large";
 
 	public HuggingFaceCompletionService(HuggingFaceEndpoint ep) {
-		this(ep, new TextGenerationRequest());
-		setModel(DEFAULT_MODEL);
-		setEcho(false);
-		setN(1);
+		this(ep, TextGenerationRequest.builder()
+				.parameters(Parameters.builder().returnFullText(false).numReturnSequences(1).build()).build());
 	}
 
 	@NonNull
@@ -63,7 +62,7 @@ public class HuggingFaceCompletionService implements CompletionService {
 
 	@Getter
 	@Setter
-	private String model;
+	private String model = DEFAULT_MODEL;
 
 	@Override
 	public Integer getTopK() {
@@ -123,18 +122,6 @@ public class HuggingFaceCompletionService implements CompletionService {
 	@Override
 	public void setEcho(boolean echo) {
 		defaultReq.getParameters().setReturnFullText(echo);
-	}
-
-	@Override
-	public int getN() {
-		if (defaultReq.getParameters().getNumReturnSequences() == null)
-			return 1;
-		return defaultReq.getParameters().getNumReturnSequences();
-	}
-
-	@Override
-	public void setN(int n) {
-		defaultReq.getParameters().setNumReturnSequences(n);
 	}
 
 	@Override

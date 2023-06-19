@@ -96,9 +96,5 @@ public class CompletionServiceTest {
 		assertFalse(s.getEcho());
 		s.setEcho(true);
 		assertTrue(s.getEcho());
-
-		assertEquals(1, s.getN());
-		s.setN(3);
-		assertEquals(3, s.getN());
 	}
 }

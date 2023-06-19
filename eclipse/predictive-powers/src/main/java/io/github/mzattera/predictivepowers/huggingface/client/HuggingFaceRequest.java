@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-/**
- * 
- */
-
 package io.github.mzattera.predictivepowers.huggingface.client;
 
 import java.util.ArrayList;
@@ -25,8 +21,8 @@ import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -38,8 +34,9 @@ import lombok.ToString;
  */
 @Getter
 @Setter
-//@NoArgsConstructor
-@RequiredArgsConstructor
+//@Builder
+@NoArgsConstructor
+//@RequiredArgsConstructor
 @AllArgsConstructor
 @ToString
 public class HuggingFaceRequest {

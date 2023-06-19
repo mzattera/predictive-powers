@@ -16,30 +16,59 @@
 
 package io.github.mzattera.predictivepowers.huggingface.client.nlp;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.Options;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-/**
- * @author Massimiliano "Maxi" Zattera
- *
- */
 @Getter
 @Setter
-//@NoArgsConstructor
+@Builder
+@NoArgsConstructor
 @RequiredArgsConstructor
 @AllArgsConstructor
 @ToString
-public class TextGenerationRequest extends HuggingFaceRequest {
+public class ConversationalRequest {
 
-	// TODO check if it supports wait for model and if so use it in services
+	@Getter
+	@Setter
+	@Builder
+	@NoArgsConstructor
+	@RequiredArgsConstructor
+//	@AllArgsConstructor
+	@ToString
+	public static class Inputs {
+
+		/**
+		 * (required) The last input from the user in the conversation.
+		 * 
+		 */
+		@NonNull
+		String text;
+
+		/**
+		 * A list of strings corresponding to the earlier replies from the model.
+		 */
+		@NonNull
+		@Builder.Default
+		List<String> generatedResponses = new ArrayList<>();
+
+		/**
+		 * A list of strings corresponding to the earlier replies from the user. Should
+		 * be of the same length of generated_responses.
+		 */
+		@NonNull
+		@Builder.Default
+		List<String> pastUserInputs = new ArrayList<>();
+	}
 
 	@Getter
 	@Setter
@@ -49,6 +78,19 @@ public class TextGenerationRequest extends HuggingFaceRequest {
 	@AllArgsConstructor
 	@ToString
 	public static class Parameters {
+
+		/**
+		 * (Default: None). Integer to define the minimum length in tokens of the output
+		 * summary.
+		 */
+		Integer minLength;
+
+		/**
+		 * (Default: None). Integer to define the maximum length in tokens of the output
+		 * summary.
+		 */
+		Integer maxLength;
+
 		/**
 		 * (Default: None). Integer to define the top tokens considered within the
 		 * sample operation to create new text.
@@ -77,43 +119,20 @@ public class TextGenerationRequest extends HuggingFaceRequest {
 		Double repetitionPenalty;
 
 		/**
-		 * (Default: None). Int (0-250). The amount of new tokens to be generated, this
-		 * does not include the input length it is a estimate of the size of generated
-		 * text you want. Each new tokens slows down the request, so look for balance
-		 * between response times and length of text generated.
-		 */
-		Integer maxNewTokens;
-
-		/**
 		 * (Default: None). Float (0-120.0). The amount of time in seconds that the
 		 * query should take maximum. Network can cause some overhead so it will be a
-		 * soft limit. Use that in combination with max_new_tokens for best results.
+		 * soft limit.
 		 */
 		Double maxTime;
-
-		/**
-		 * (Default: True). Bool. If set to False, the return results will not contain
-		 * the original query making it easier for prompting.
-		 */
-		Boolean returnFullText;
-
-		/**
-		 * (Default: 1). Integer. The number of proposition you want to be returned.
-		 */
-		Integer numReturnSequences;
-
-		/**
-		 * (Optional: True). Bool. Whether or not to use sampling, use greedy decoding
-		 * otherwise.
-		 */
-		Boolean doSample;
 	}
 
+	@Builder.Default
 	Parameters parameters = new Parameters();
 
-	@Builder
-	TextGenerationRequest(Parameters parameters, List<String> inputs, Options options) {
-		super(inputs, options);
-		this.parameters = parameters;
-	}
+	@NonNull
+	@Builder.Default
+	Inputs inputs = new Inputs();
+
+	@Builder.Default
+	Options options = new Options();
 }

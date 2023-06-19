@@ -75,29 +75,13 @@ public interface CompletionService extends Service {
 
 	/**
 	 * If true, returns the prompt in addition to the generated text.
-	 * Implementations should ensure this defaults to false.
 	 */
 	boolean getEcho();
 
 	/**
 	 * If true, returns the prompt in addition to the generated text.
-	 * Implementations should ensure this defaults to false.
 	 */
 	void setEcho(boolean echo);
-
-	// TODO remove these getters / setters as they should be always 1 for the service
-	
-	/**
-	 * Number of completions to return for each prompt. Implementations should
-	 * ensure this defaults to 1.
-	 */
-	int getN();
-
-	/**
-	 * Number of completions to return for each prompt. Implementations should
-	 * ensure this defaults to 1.
-	 */
-	void setN(int n);
 
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
 	// values from a Map

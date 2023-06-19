@@ -134,7 +134,7 @@ public class HuggingFaceQuestionAnsweringService implements QuestionAnsweringSer
 	}
 
 	public QnAPair answer(String question, List<String> context, QuestionAnsweringRequest req) {
-		StringBuffer ctx = new StringBuffer();
+		StringBuilder ctx = new StringBuilder();
 		for (String c : context) {
 			ctx.append(c.trim()).append('\n');
 		}

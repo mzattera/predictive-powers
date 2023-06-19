@@ -18,7 +18,6 @@ package io.github.mzattera.predictivepowers.services;
 
 import java.util.Map;
 
-import io.github.mzattera.predictivepowers.services.ModelService.ModelData;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -37,13 +36,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public abstract class AbstractModelService implements ModelService {
 
-	@NonNull protected final Map<String, ModelData> data;
+	@NonNull
+	protected final Map<String, ModelData> data;
 
-	/**
-	 * 
-	 * @param model
-	 * @return {@link ModelData} for given model, or null if it cannot be found.
-	 */
+	@Override
 	public ModelData get(@NonNull String model) {
 		return data.get(model);
 	}

@@ -19,6 +19,7 @@
 		<lombok.version>1.18.26</lombok.version>
 		<retrofit.version>2.9.0</retrofit.version>
 		<tika.version>2.7.0</tika.version>
+		<djl.tokenizers.version>0.22.1</djl.tokenizers.version>
 	</properties>
 	<dependencies>
 
@@ -90,6 +91,13 @@
 		<version>2.7.0</version>
 		  </dependency>	
   		-->
+		<!-- This allows to dynamically load Hugging Face tokenizers using DJL
+		tokenizer library -->
+		<dependency>
+			<groupId>ai.djl.huggingface</groupId>
+			<artifactId>tokenizers</artifactId>
+			<version>${djl.tokenizers.version}</version>
+		</dependency>
 
 		<!--
 		Below dependencies are needed to disable annoying SLF4J log
@@ -114,9 +122,10 @@
 		</dependency>
 	</dependencies>
 
-	<build>		
+	<build>
 		<plugins>
-			<!-- This Mave plugin creates a single JAR with all dependencies, when "package" runs -->
+			<!-- This Mave plugin creates a single JAR with all dependencies,
+			when "package" runs -->
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<version>3.6.0</version>

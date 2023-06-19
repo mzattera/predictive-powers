@@ -22,12 +22,12 @@ import org.slf4j.LoggerFactory;
 import io.github.mzattera.predictivepowers.Endpoint;
 import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceClient;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationRequest;
+import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceChatService;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceCompletionService;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceEmbeddingService;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceImageGenerationService;
+import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceModelService;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceQuestionAnsweringService;
-import io.github.mzattera.predictivepowers.services.ChatService;
-import io.github.mzattera.predictivepowers.services.ModelService;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 import lombok.Getter;
 import lombok.NonNull;
@@ -62,8 +62,8 @@ public class HuggingFaceEndpoint implements Endpoint {
 	}
 
 	@Override
-	public ModelService getModelService() {
-		throw new UnsupportedOperationException();
+	public HuggingFaceModelService getModelService() {
+		return new HuggingFaceModelService(this);
 	}
 
 	@Override
@@ -81,13 +81,13 @@ public class HuggingFaceEndpoint implements Endpoint {
 	}
 
 	@Override
-	public ChatService getChatService() {
-		throw new UnsupportedOperationException();
+	public HuggingFaceChatService getChatService() {
+		return new HuggingFaceChatService(this);
 	}
 
 	@Override
-	public ChatService getChatService(String personality) {
-		ChatService s = getChatService();
+	public HuggingFaceChatService getChatService(String personality) {
+		HuggingFaceChatService s = getChatService();
 		s.setPersonality(personality);
 		return s;
 	}

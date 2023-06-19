@@ -6,9 +6,9 @@ GitHub repository: https://github.com/mzattera/predictive-powers
 
 =============
 
-Files in package io.github.mzattera.predictivepowers.openai.util.tokeniser
+Files in package io.github.mzattera.predictivepowers.util.tikoken
 have been ported from https://github.com/didalgolab/gpt3-tokenizer-java
-which is partially a  transpiled version of the code from https://github.com/openai/tiktoken
+which is partially a transpiled version of the code from https://github.com/openai/tiktoken
 
 These files were distributed under MIT license and retain their respective copyrights.
 

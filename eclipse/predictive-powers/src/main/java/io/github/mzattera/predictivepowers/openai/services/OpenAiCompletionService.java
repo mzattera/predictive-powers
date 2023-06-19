@@ -39,10 +39,7 @@ public class OpenAiCompletionService implements CompletionService {
 	public static final String DEFAULT_MODEL = "text-davinci-003";
 
 	public OpenAiCompletionService(OpenAiEndpoint ep) {
-		this(ep, new CompletionsRequest());
-		setModel(DEFAULT_MODEL);
-		setEcho(false);
-		setN(1);
+		this(ep, CompletionsRequest.builder().model(DEFAULT_MODEL).echo(false).n(1).build());
 	}
 
 	@NonNull
@@ -137,18 +134,6 @@ public class OpenAiCompletionService implements CompletionService {
 	@Override
 	public void setEcho(boolean echo) {
 		defaultReq.setEcho(echo);
-	}
-
-	@Override
-	public int getN() {
-		if (defaultReq.getN() == null)
-			return 1;
-		return defaultReq.getN();
-	}
-
-	@Override
-	public void setN(int n) {
-		defaultReq.setN(n);
 	}
 
 	/**

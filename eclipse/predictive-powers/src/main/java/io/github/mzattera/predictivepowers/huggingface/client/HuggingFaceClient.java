@@ -29,12 +29,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import io.github.mzattera.predictivepowers.ApiClient;
-import io.github.mzattera.predictivepowers.huggingface.client.multimodal.TextToImageRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.ConversationalRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.ConversationalResponse;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.QuestionAnsweringRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.QuestionAnsweringResponse;
-import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextClassificationRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextClassificationResponse;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationResponse;
@@ -178,8 +176,7 @@ public final class HuggingFaceClient implements ApiClient {
 
 	/// NLP //////////////////////////////////////////////////
 
-	public List<List<TextClassificationResponse>> textClassification(@NonNull String model,
-			TextClassificationRequest req) {
+	public List<List<TextClassificationResponse>> textClassification(@NonNull String model, HuggingFaceRequest req) {
 		return callApi(api.textClassification(model, req));
 	}
 
@@ -201,7 +198,7 @@ public final class HuggingFaceClient implements ApiClient {
 
 	/// MULTIMODAL //////////////////////////////////////////
 
-	public BufferedImage textToImage(@NonNull String model, TextToImageRequest req) throws IOException {
+	public BufferedImage textToImage(@NonNull String model, SingleHuggingFaceRequest req) throws IOException {
 		return ImageUtil.fromBytes(callApi(api.textToImage(model, req)).bytes());
 	}
 

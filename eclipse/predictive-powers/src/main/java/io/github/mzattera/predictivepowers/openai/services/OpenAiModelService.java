@@ -31,14 +31,17 @@ import io.github.mzattera.predictivepowers.util.tikoken.ChatFormatDescriptor;
 import io.github.mzattera.predictivepowers.util.tikoken.Encoding;
 import io.github.mzattera.predictivepowers.util.tikoken.GPT3Tokenizer;
 import io.github.mzattera.predictivepowers.util.tikoken.TokenCount;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
  * This class provides {@link ModelService}s for OpenAI.
  * 
- * The class is tread-safe and uses a single data repository fro all of its
+ * The class is tread-safe and uses a single data repository for all of its
  * instances.
  * 
  * @author Massimiliano "Maxi" Zattera
@@ -47,7 +50,12 @@ import lombok.RequiredArgsConstructor;
 public class OpenAiModelService extends AbstractModelService {
 
 	@Getter
+	@Setter
+	@Builder
+//	@NoArgsConstructor
 	@RequiredArgsConstructor
+//	@AllArgsConstructor
+	@ToString
 	public static class OpenAiTokenizer implements Tokenizer {
 
 		@NonNull

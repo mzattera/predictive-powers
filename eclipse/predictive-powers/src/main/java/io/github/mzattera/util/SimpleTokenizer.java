@@ -14,30 +14,33 @@
  * limitations under the License.
  */
 
-/**
- * 
- */
+package io.github.mzattera.util;
 
-package io.github.mzattera.predictivepowers.huggingface.client.nlp;
-
-import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceRequest;
-import lombok.Builder;
+import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
 
 /**
- * Request for Hugging Face Text Completion task.
+ * This is a {@link Tokenizer} that uses a fixed token-to-char ratio.
+ * 
+ * This is useful when you do not have a specific tokenizer for a model and you
+ * are happy with approximate results.
  * 
  * @author Massimiliano "Maxi" Zattera
+ *
  */
-@Getter
-@Setter
-@Builder
-// @NoArgsConstructor
 @RequiredArgsConstructor
-// @AllArgsConstructor
-@ToString
-public class TextClassificationRequest extends HuggingFaceRequest {
+public final class SimpleTokenizer extends AbstractTokenizer {
+
+	/**
+	 * How many characters in a token (on average).
+	 */
+	@Getter
+	private final double ratio;
+
+	@Override
+	public int count(@NonNull String text) {
+		return (int) (text.length() / ratio + 0.5);
+	}
 }

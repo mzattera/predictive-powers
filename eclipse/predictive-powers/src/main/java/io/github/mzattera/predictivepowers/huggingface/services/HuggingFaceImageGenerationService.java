@@ -16,33 +16,35 @@
 
 package io.github.mzattera.predictivepowers.huggingface.services;
 
-/**
- * Image generation service over Hugging Face.
- * 
- * @author Massimiliano "Maxi" Zattera
- */
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.github.mzattera.predictivepowers.huggingface.client.multimodal.TextToImageRequest;
+import io.github.mzattera.predictivepowers.huggingface.client.Options;
+import io.github.mzattera.predictivepowers.huggingface.client.SingleHuggingFaceRequest;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.ImageGenerationService;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Image generation service over Hugging Face.
+ * 
+ * @author Massimiliano "Maxi" Zattera
+ */
+@RequiredArgsConstructor
 public class HuggingFaceImageGenerationService implements ImageGenerationService {
 
 	// This was the first one I found that works fine
 	public static final String DEFAULT_MODEL = "prompthero/openjourney-v4";
 
 	public HuggingFaceImageGenerationService(HuggingFaceEndpoint ep) {
-		this.endpoint = ep;
-		defaultReq = new TextToImageRequest();
-		defaultReq.getOptions().setWaitForModel(true); // TODO remove? Improve?
-		defaultReq.getOptions().setUseCache(false);
+		this(ep, new SingleHuggingFaceRequest("", Options.builder().useCache(false).waitForModel(true).build())); // TODO
+																													// remove?
+																													// Improve?
 	}
 
 	@NonNull
@@ -62,14 +64,14 @@ public class HuggingFaceImageGenerationService implements ImageGenerationService
 	 */
 	@Getter
 	@NonNull
-	private final TextToImageRequest defaultReq;
+	private final SingleHuggingFaceRequest defaultReq;
 
 	@Override
 	public List<BufferedImage> createImage(String prompt, int n, int width, int height) throws IOException {
 		return createImage(prompt, n, width, height, defaultReq);
 	}
 
-	public List<BufferedImage> createImage(String prompt, int n, int width, int height, TextToImageRequest req)
+	public List<BufferedImage> createImage(String prompt, int n, int width, int height, SingleHuggingFaceRequest req)
 			throws IOException {
 
 		req.setInputs(prompt);
@@ -88,7 +90,7 @@ public class HuggingFaceImageGenerationService implements ImageGenerationService
 	}
 
 	public List<BufferedImage> createImageVariation(BufferedImage prompt, int n, int width, int height,
-			TextToImageRequest req) throws IOException {
+			SingleHuggingFaceRequest req) throws IOException {
 		throw new UnsupportedOperationException();
 	}
 

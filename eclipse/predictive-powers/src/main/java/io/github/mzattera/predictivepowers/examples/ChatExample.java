@@ -23,7 +23,7 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 
 public class ChatExample {
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
 
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 

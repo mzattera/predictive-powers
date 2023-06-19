@@ -112,14 +112,14 @@ public final class LlmUtil {
 	private static List<String> merge(List<String> text, int maxTokens, Tokenizer counter) {
 		List<String> result = new ArrayList<>();
 
-		StringBuffer tmp = new StringBuffer();
+		StringBuilder tmp = new StringBuilder();
 		int tok = 0;
 		for (String s : text) {
 			int t = counter.count(s);
 			if ((t + tok) > maxTokens) { // we are exceeding max length, output what we have so far
 				if (tmp.length() > 0) { // output any merged text
 					result.add(tmp.toString());
-					tmp = new StringBuffer();
+					tmp = new StringBuilder();
 					tok = 0;
 				}
 				if (t > maxTokens) { // s is so big that it must stay alone

@@ -36,6 +36,7 @@ import lombok.ToString;
  */
 @Getter
 @Setter
+//@Builder
 @NoArgsConstructor
 @RequiredArgsConstructor
 @AllArgsConstructor

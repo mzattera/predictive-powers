@@ -22,8 +22,6 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import io.github.mzattera.predictivepowers.huggingface.client.multimodal.TextToImageRequest;
-import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextClassificationRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextClassificationResponse;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationResponse;
@@ -36,7 +34,7 @@ public class HuggingFaceClientTest {
 
 		try (HuggingFaceClient cli = new HuggingFaceClient()) {
 
-			TextClassificationRequest req = new TextClassificationRequest();
+			HuggingFaceRequest req = new HuggingFaceRequest();
 			req.getInputs().add("Life sucks!");
 			req.getInputs().add("I like my new kangaroo.");
 
@@ -79,7 +77,7 @@ public class HuggingFaceClientTest {
 
 		try (HuggingFaceClient cli = new HuggingFaceClient()) {
 
-			TextToImageRequest req = new TextToImageRequest();
+			SingleHuggingFaceRequest req = new SingleHuggingFaceRequest();
 			req.setInputs(
 					"mdjrny-v4 Detailed and realistic photography of a woman next to a pole, soft natural lighting, hyper realistic, 85mm lens, magical photography, dramatic lighting, photo realism, ultra-detailed, Cinestill 800T");
 

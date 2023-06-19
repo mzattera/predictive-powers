@@ -174,7 +174,7 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 						"3. Therefore, biglydoos eat fruits.\"}"));
 		int instTok = counter.count(new ChatMessage(ChatMessage.Role.USER, qMsg)) + counter.count(instructions);
 
-		StringBuffer ctx = new StringBuffer("Context:\n");
+		StringBuilder ctx = new StringBuilder("Context:\n");
 		int i = 0;
 		for (; i < context.size(); ++i) {
 			ChatMessage m = new ChatMessage(ChatMessage.Role.USER, ctx.toString() + "\n" + context.get(i));

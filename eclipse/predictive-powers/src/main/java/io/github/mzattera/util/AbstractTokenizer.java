@@ -16,36 +16,37 @@
 
 package io.github.mzattera.util;
 
+import java.util.List;
+
+import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import lombok.NonNull;
 
 /**
- * This is a {@link Tokenizer} that counts characters (that is 1 char = 1
- * token).
+ * Tokenizer that has a default implementation of {@link #count(ChatMessage)}
+ * and {@link #count(List)}.
  * 
- * This is useful when you do not have a specific tokenizer for a model or you
- * want to count length by chars.
+ * The default implementation simply put all message in a single list of texts,
+ * with the role used as prefix.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public final class CharTokenizer extends AbstractTokenizer {
+public abstract class AbstractTokenizer implements Tokenizer {
 
-	private CharTokenizer() {
-	}
-
-	private final static CharTokenizer instance = new CharTokenizer();
-
-	/**
-	 * 
-	 * @return Singleton for this class.
-	 */
-	public static CharTokenizer getInstance() {
-		return instance;
+	@Override
+	public int count(@NonNull ChatMessage msg) {
+		return count(msg.getRole().toString() + ": " + msg.getContent());
 	}
 
 	@Override
-	public int count(@NonNull String text) {
-		return text.length();
+	public int count(@NonNull List<ChatMessage> msgs) {
+		StringBuilder sb = new StringBuilder();
+		for (ChatMessage m : msgs) {
+			if (sb.length() > 0)
+				sb.append('\n');
+			sb.append(m.getRole().toString() + ": " + m.getContent());
+		}
+		return count(sb.toString());
 	}
 }

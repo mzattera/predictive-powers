@@ -285,17 +285,19 @@ public class DefaultConfigurationExample {
  Some examples about how to use a knowledge base can be found [below](#oracle).
   
 
-### Tokens
+### Tokens, tokenizers and other model data
 
 Some services, namely those using GPT models, have limits on number of tokens in input and output.
 
-An interface `TokenCounter` is provided, to count number of tokens in text. As tokenization depends on the target model being used, you need to pay attention to provide right `TokenCounter` instance;
-however, this should be hanled transparently by services.
+`ModelService`s are provided to get data about models, such as maximum context size or a suitable tokenizer for a model.
+Normally developers do not need to care about these details as services will handle them transparently. However, in order for services to do so,
+proper model data needs to be available to the `ModelService`. This means that, in case you create a new model (e.g. by training an existing OpenAI one), you need to make its data known to the 
+`ModelService` by "registering" the model with `ModelService.put(String,ModelData)`; please refer to the JavaDoc for details.
 
-For OpenAI models, `ModelUtil.getTokenCounter()`can be used to return the tokenizer for a model. In addition, in package `io.github.mzattera.predictivepowers.openai.util.tokeniser`
-you can find classes ported from [gpt3-tokenizer-java](https://github.com/didalgolab/gpt3-tokenizer-java) that provide methods to tokenize strings for GPT models.
+For OpenAI models, the package `iio.github.mzattera.predictivepowers.util.tikoken` contains 
+classes ported from [gpt3-tokenizer-java](https://github.com/didalgolab/gpt3-tokenizer-java) which include tokenizers for GPT models, should you ever need it.
 
-Class `CharCounter` is a `TokenCounter` that simply counts number of characters in a text.
+Class `CharTokenizer` and `SimpleTokenizer` provides naive tokenizers that can be used when an apporximate count of token is enough, and no specific tokenizer is available for a model.
 
 
 ## <a name="examples"></a>Examples
@@ -317,7 +319,7 @@ import io.github.mzattera.predictivepowers.services.ChatService;
 
 public class ChatExample {
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
 
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 

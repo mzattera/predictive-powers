@@ -14,28 +14,49 @@
  * limitations under the License.
  */
 
-/**
- * 
- */
+package io.github.mzattera.predictivepowers.huggingface.client.nlp;
 
-package io.github.mzattera.predictivepowers.huggingface.client.multimodal;
+import java.util.List;
 
-import io.github.mzattera.predictivepowers.huggingface.client.SingleHuggingFaceRequest;
-import lombok.Builder;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
 /**
+ * Response from Hugging Face conversaation task.
+ * 
  * @author Massimiliano "Maxi" Zattera
+ *
  */
 @Getter
 @Setter
-@Builder
-//@NoArgsConstructor
-@RequiredArgsConstructor
-//@AllArgsConstructor
 @ToString
-public class TextToImageRequest extends SingleHuggingFaceRequest {
+public class ConversationalResponse {
+
+	/**
+	 * A facility dictionary to send back for the next input (with the new user
+	 * input addition).
+	 */
+	@Getter
+	@Setter
+	@ToString
+	public static class Conversation {
+
+		/**
+		 * List of strings. The last inputs from the user in the conversation, <em>after
+		 * the model has run.
+		 */
+		List<String> pastUserInputs;
+
+		/**
+		 * List of strings. The last outputs from the model in the conversation,
+		 * <em>after the model has run.
+		 */
+		List<String> generatedResponses;
+	}
+
+	Conversation conversaton;
+
+	/** The answer of the bot */
+	String generatedText;
 }

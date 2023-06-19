@@ -126,20 +126,12 @@ public class OpenAiChatService extends AbstractChatService {
 			defaultReq.setTemperature(temperature / 50);
 	}
 
-	/**
-	 * This service will try to calculate this so to allow the longest possible
-	 * output, if it is null.
-	 */
-//	@Override
+	@Override
 	public Integer getMaxNewTokens() {
 		return defaultReq.getMaxTokens();
 	}
 
-	/**
-	 * This service will try to calculate this so to allow the longest possible
-	 * output, if it is null.
-	 */
-//	@Override
+	@Override
 	public void setMaxNewTokens(Integer maxNewTokens) {
 		defaultReq.setMaxTokens(maxNewTokens);
 	}

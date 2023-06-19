@@ -77,7 +77,7 @@ public interface ChatService extends Service {
 //	 * Maximum amount of tokens to produce (not including the prompt).
 //	 */
 //	void setMaxNewTokens(Integer maxNewTokens);
-	
+
 	/**
 	 * These are the messages exchanged in the current chat.
 	 * 
@@ -140,6 +140,16 @@ public interface ChatService extends Service {
 	 * approximated.
 	 */
 	void setMaxConversationTokens(int n);
+
+	/**
+	 * Maximum amount of tokens to produce (not including the prompt).
+	 */
+	Integer getMaxNewTokens();
+
+	/**
+	 * Maximum amount of tokens to produce (not including the prompt).
+	 */
+	void setMaxNewTokens(Integer maxNewTokens);
 
 	/**
 	 * Starts a new chat, clearing current conversation.

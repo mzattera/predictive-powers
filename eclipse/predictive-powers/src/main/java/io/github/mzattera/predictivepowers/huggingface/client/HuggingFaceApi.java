@@ -18,12 +18,10 @@ package io.github.mzattera.predictivepowers.huggingface.client;
 
 import java.util.List;
 
-import io.github.mzattera.predictivepowers.huggingface.client.multimodal.TextToImageRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.ConversationalRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.ConversationalResponse;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.QuestionAnsweringRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.QuestionAnsweringResponse;
-import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextClassificationRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextClassificationResponse;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationResponse;
@@ -46,7 +44,7 @@ public interface HuggingFaceApi {
 
 	@POST
 	Single<List<List<TextClassificationResponse>>> textClassification(@Url @NonNull String model,
-			@Body TextClassificationRequest req);
+			@Body HuggingFaceRequest req);
 
 	@POST
 	Single<List<List<TextGenerationResponse>>> textGeneration(@Url @NonNull String model,
@@ -64,5 +62,5 @@ public interface HuggingFaceApi {
 	/// MULTIMODAL //////////////////////////////////////////
 
 	@POST
-	Single<ResponseBody> textToImage(@Url @NonNull String model, @Body TextToImageRequest req);
+	Single<ResponseBody> textToImage(@Url @NonNull String model, @Body SingleHuggingFaceRequest req);
 }

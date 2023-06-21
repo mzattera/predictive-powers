@@ -161,7 +161,7 @@ public interface ChatService extends Service {
 	 * 
 	 * The exchange is added to the conversation history.
 	 */
-	TextResponse chat(String msg);
+	TextCompletion chat(String msg);
 
 	/**
 	 * Completes text (executes given prompt).
@@ -169,7 +169,7 @@ public interface ChatService extends Service {
 	 * Notice this does not consider or affects chat history but agent personality
 	 * is used, if provided.
 	 */
-	TextResponse complete(String prompt);
+	TextCompletion complete(String prompt);
 
 	/**
 	 * Completes given conversation, using this service as a completion service.
@@ -178,6 +178,5 @@ public interface ChatService extends Service {
 	 * personality is NOT considered, but can be injected as first message in the
 	 * list, for service that support this.
 	 */
-	TextResponse complete(List<ChatMessage> messages);
-
+	TextCompletion complete(List<ChatMessage> messages);
 }

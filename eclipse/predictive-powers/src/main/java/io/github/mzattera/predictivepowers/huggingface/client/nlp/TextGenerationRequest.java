@@ -16,16 +16,14 @@
 
 package io.github.mzattera.predictivepowers.huggingface.client.nlp;
 
-import java.util.List;
-
 import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceRequest;
-import io.github.mzattera.predictivepowers.huggingface.client.Options;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 /**
  * @author Massimiliano "Maxi" Zattera
@@ -33,6 +31,7 @@ import lombok.ToString;
  */
 @Getter
 @Setter
+@SuperBuilder
 //@NoArgsConstructor
 @RequiredArgsConstructor
 @AllArgsConstructor
@@ -109,11 +108,6 @@ public class TextGenerationRequest extends HuggingFaceRequest {
 		Boolean doSample;
 	}
 
+	@Builder.Default
 	Parameters parameters = new Parameters();
-
-	@Builder
-	TextGenerationRequest(Parameters parameters, List<String> inputs, Options options) {
-		super(inputs, options);
-		this.parameters = parameters;
-	}
 }

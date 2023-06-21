@@ -29,7 +29,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public final class File {
+public class File {
 
 	String id;
 	String object;

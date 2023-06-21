@@ -52,6 +52,9 @@ public final class LlmUtil {
 	 */
 	public static List<String> splitByTokens(String text, int maxTokens, Tokenizer counter) {
 
+		if (maxTokens < 1)
+			throw new IllegalArgumentException("Chunks need to be of at least 1 token in size: " + maxTokens);
+
 		List<String> result = new ArrayList<>();
 		result.add(text);
 		if (counter.count(text) <= maxTokens) { // s short enough it can be ignored

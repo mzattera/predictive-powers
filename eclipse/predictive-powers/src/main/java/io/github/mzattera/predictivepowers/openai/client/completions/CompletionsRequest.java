@@ -41,7 +41,7 @@ import lombok.ToString;
 @RequiredArgsConstructor
 @AllArgsConstructor
 @ToString
-public class CompletionsRequest implements Cloneable {
+public class CompletionsRequest {
 
 	@NonNull
 	String model;

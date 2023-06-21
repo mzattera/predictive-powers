@@ -39,7 +39,7 @@ import lombok.ToString;
 @RequiredArgsConstructor
 @AllArgsConstructor
 @ToString
-public class EmbeddingsRequest implements Cloneable {
+public class EmbeddingsRequest {
 
 	@NonNull
 	String model;

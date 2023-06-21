@@ -21,12 +21,13 @@ import java.util.List;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsChoice;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
+import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractChatService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ModelService;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
-import io.github.mzattera.predictivepowers.services.TextResponse;
+import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -79,16 +80,6 @@ public class OpenAiChatService extends AbstractChatService {
 	@NonNull
 	private final ChatCompletionsRequest defaultReq;
 
-	/**
-	 * Continues current chat, with the provided message.
-	 * 
-	 * The exchange is added to the conversation history.
-	 */
-	@Override
-	public TextResponse chat(String msg) {
-		return chat(msg, defaultReq);
-	}
-
 	@Override
 	public Integer getTopK() {
 		throw new UnsupportedOperationException();
@@ -136,12 +127,41 @@ public class OpenAiChatService extends AbstractChatService {
 		defaultReq.setMaxTokens(maxNewTokens);
 	}
 
+	@Override
+	public OpenAiTextCompletion chat(String msg) {
+		return chat(msg, defaultReq, null);
+	}
+
 	/**
 	 * Continues current chat, with the provided message.
 	 * 
 	 * The exchange is added to the conversation history.
 	 */
-	public TextResponse chat(String msg, ChatCompletionsRequest req) {
+	public OpenAiTextCompletion chat(String msg, ChatCompletionsRequest req) {
+		return chat(msg, req, null);
+	}
+
+	/**
+	 * Continues current chat, with the provided message.
+	 * 
+	 * The exchange is added to the conversation history.
+	 * 
+	 * @param functions List of functions that can be called (possibly empty or
+	 *                  null, to prevent function calls).
+	 */
+	public OpenAiTextCompletion chat(String msg, List<Function> functions) {
+		return chat(msg, defaultReq, functions);
+	}
+
+	/**
+	 * Continues current chat, with the provided message.
+	 * 
+	 * The exchange is added to the conversation history.
+	 * 
+	 * @param functions List of functions that can be called (possibly empty or
+	 *                  null, to prevent function calls).
+	 */
+	public OpenAiTextCompletion chat(String msg, ChatCompletionsRequest req, List<Function> functions) {
 
 		// Update history
 		history.add(new ChatMessage(ChatMessage.Role.USER, msg));
@@ -149,8 +169,9 @@ public class OpenAiChatService extends AbstractChatService {
 		try {
 
 			ChatCompletionsChoice choice = chatCompletion(
-					trimChat(history, endpoint.getModelService().getTokenizer(req.getModel())), req);
-			TextResponse result = TextResponse.fromGptApi(choice.getMessage().getContent(), choice.getFinishReason());
+					trimChat(history, endpoint.getModelService().getTokenizer(req.getModel())), req, functions);
+			OpenAiTextCompletion result = new OpenAiTextCompletion(choice.getMessage().getContent(),
+					FinishReason.fromGptApi(choice.getFinishReason()), choice.getMessage().getFunctionCall());
 			history.add(choice.getMessage());
 			return result;
 
@@ -166,15 +187,9 @@ public class OpenAiChatService extends AbstractChatService {
 		}
 	}
 
-	/**
-	 * Completes text (executes given prompt).
-	 * 
-	 * Notice this does not consider or affects chat history but agent personality
-	 * is used, if provided.
-	 */
 	@Override
-	public TextResponse complete(String prompt) {
-		return complete(prompt, defaultReq);
+	public OpenAiTextCompletion complete(String prompt) {
+		return complete(prompt, defaultReq, null);
 	}
 
 	/**
@@ -183,25 +198,44 @@ public class OpenAiChatService extends AbstractChatService {
 	 * Notice this does not consider or affects chat history but agent personality
 	 * is used, if provided.
 	 */
-	public TextResponse complete(String prompt, ChatCompletionsRequest req) {
+	public OpenAiTextCompletion complete(String prompt, ChatCompletionsRequest req) {
+		return complete(prompt, req, null);
+	}
+
+	/**
+	 * Completes text (executes given prompt) allowing function calls.
+	 * 
+	 * Notice this does not consider or affects chat history but agent personality
+	 * is used, if provided.
+	 * 
+	 * @param functions List of functions that can be called (possibly empty or
+	 *                  null, to prevent function calls).
+	 */
+	public OpenAiTextCompletion complete(String prompt, List<Function> functions) {
+		return complete(prompt, defaultReq, functions);
+	}
+
+	/**
+	 * Completes text (executes given prompt).
+	 * 
+	 * Notice this does not consider or affects chat history but agent personality
+	 * is used, if provided.
+	 * 
+	 * @param functions List of functions that can be called (possibly empty or
+	 *                  null, to prevent function calls).
+	 */
+	public OpenAiTextCompletion complete(String prompt, ChatCompletionsRequest req, List<Function> functions) {
 		List<ChatMessage> msg = new ArrayList<>();
 		if (getPersonality() != null)
 			msg.add(new ChatMessage(ChatMessage.Role.SYSTEM, getPersonality()));
 		msg.add(new ChatMessage(ChatMessage.Role.USER, prompt));
 
-		return complete(msg, req);
+		return complete(msg, req, functions);
 	}
 
-	/**
-	 * Completes given conversation, using this service as a completion service.
-	 * 
-	 * Notice this does not consider or affects chat history. In addition, agent
-	 * personality is NOT considered, but can be injected as first message in the
-	 * list, for service that support this.
-	 */
 	@Override
-	public TextResponse complete(List<ChatMessage> messages) {
-		return complete(messages, defaultReq);
+	public OpenAiTextCompletion complete(List<ChatMessage> messages) {
+		return complete(messages, defaultReq, null);
 	}
 
 	/**
@@ -211,9 +245,8 @@ public class OpenAiChatService extends AbstractChatService {
 	 * personality is NOT considered, but can be injected as first message in the
 	 * list.
 	 */
-	public TextResponse complete(List<ChatMessage> messages, ChatCompletionsRequest req) {
-		ChatCompletionsChoice choice = chatCompletion(messages, req);
-		return TextResponse.fromGptApi(choice.getMessage().getContent(), choice.getFinishReason());
+	public OpenAiTextCompletion complete(List<ChatMessage> messages, ChatCompletionsRequest req) {
+		return complete(messages, req, null);
 	}
 
 	/**
@@ -222,14 +255,52 @@ public class OpenAiChatService extends AbstractChatService {
 	 * Notice this does not consider or affects chat history. In addition, agent
 	 * personality is NOT considered, but can be injected as first message in the
 	 * list.
+	 * 
+	 * @param functions List of functions that can be called (possibly empty or
+	 *                  null, to prevent function calls).
 	 */
-	private ChatCompletionsChoice chatCompletion(List<ChatMessage> messages, ChatCompletionsRequest req) {
+	public OpenAiTextCompletion complete(List<ChatMessage> messages, List<Function> functions) {
+		return complete(messages, defaultReq, null);
+	}
+
+	/**
+	 * Completes given conversation.
+	 * 
+	 * Notice this does not consider or affects chat history. In addition, agent
+	 * personality is NOT considered, but can be injected as first message in the
+	 * list.
+	 * 
+	 * @param functions List of functions that can be called (possibly empty or
+	 *                  null, to prevent function calls).
+	 */
+	public OpenAiTextCompletion complete(List<ChatMessage> messages, ChatCompletionsRequest req, List<Function> functions) {
+		ChatCompletionsChoice choice = chatCompletion(messages, req, functions);
+		return new OpenAiTextCompletion(choice.getMessage().getContent(),
+				FinishReason.fromGptApi(choice.getFinishReason()), choice.getMessage().getFunctionCall());
+	}
+
+	/**
+	 * Completes given conversation.
+	 * 
+	 * Notice this does not consider or affects chat history. In addition, agent
+	 * personality is NOT considered, but can be injected as first message in the
+	 * list.
+	 * 
+	 * @param functions List of functions that can be called (possibly empty or
+	 *                  null, to prevent function calls).
+	 */
+	protected ChatCompletionsChoice chatCompletion(List<ChatMessage> messages, ChatCompletionsRequest req,
+			List<Function> functions) {
 
 		ModelService ms = endpoint.getModelService();
 		String model = req.getModel();
 		Tokenizer counter = ms.getTokenizer(model);
 
 		req.setMessages(messages);
+
+		if ((functions != null) && (functions.size() > 0)) {
+			req.setFunctions(functions);
+		}
 
 		// Adjust token limit if needed
 		boolean autofit = (req.getMaxTokens() == null) && (ms.getContextSize(model, -1) != -1);

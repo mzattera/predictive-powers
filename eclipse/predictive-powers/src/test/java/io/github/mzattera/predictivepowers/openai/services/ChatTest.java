@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.services;
+package io.github.mzattera.predictivepowers.openai.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
+import io.github.mzattera.predictivepowers.services.ChatMessage;
+import io.github.mzattera.predictivepowers.services.TextCompletion;
 
 /**
  * Test the OpenAI chat API & Service
@@ -48,8 +49,8 @@ public class ChatTest {
 			cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "test"));
 			assertEquals(cs.getHistory().size(), 1);
 			String question = "How high is Mt.Everest?";
-			TextResponse resp = cs.complete(question);
-			assertEquals(resp.getFinishReason(), TextResponse.FinishReason.COMPLETED);
+			TextCompletion resp = cs.complete(question);
+			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 1);
 			assertEquals(cs.getHistory().get(0).getContent(), "test");
 			assertEquals(cs.getDefaultReq().getMessages().size(), 2);
@@ -90,8 +91,8 @@ public class ChatTest {
 					Math.max(ep.getModelService().getContextSize(cs.getDefaultReq().getModel()), 2046) * 3 / 4);
 
 			String question = "How high is Mt.Everest?";
-			TextResponse resp = cs.chat(question);
-			assertEquals(resp.getFinishReason(), TextResponse.FinishReason.COMPLETED);
+			TextCompletion resp = cs.chat(question);
+			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 3);
 			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.USER);
 			assertEquals(cs.getHistory().get(0).getContent(), "" + 9);
@@ -120,7 +121,7 @@ public class ChatTest {
 			cs.getDefaultReq().setMaxTokens(100);
 
 			resp = cs.chat(question);
-			assertEquals(resp.getFinishReason(), TextResponse.FinishReason.COMPLETED);
+			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 3);
 			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.USER);
 			assertEquals(cs.getHistory().get(0).getContent(), "" + 9);
@@ -149,7 +150,7 @@ public class ChatTest {
 			cs.setMaxConversationTokens(1);
 
 			resp = cs.chat(question);
-			assertEquals(resp.getFinishReason(), TextResponse.FinishReason.COMPLETED);
+			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 3);
 			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.USER);
 			assertEquals(cs.getHistory().get(0).getContent(), "" + 9);
@@ -178,7 +179,7 @@ public class ChatTest {
 			cs.setMaxConversationTokens(1);
 
 			resp = cs.chat(question);
-			assertEquals(resp.getFinishReason(), TextResponse.FinishReason.COMPLETED);
+			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 3);
 			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.USER);
 			assertEquals(cs.getHistory().get(0).getContent(), "" + 9);
@@ -217,7 +218,7 @@ public class ChatTest {
 			String question = "How high is Mt.Everest?";
 
 			@SuppressWarnings("unused")
-			TextResponse resp = null;
+			TextCompletion resp = null;
 			try {
 				resp = cs.chat(question);
 			} catch (Exception e) {

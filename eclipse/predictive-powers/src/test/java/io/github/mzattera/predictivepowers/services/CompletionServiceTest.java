@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
-import io.github.mzattera.predictivepowers.services.TextResponse.FinishReason;
+import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 
 /**
  * @author Massimiliano "Maxi" Zattera.
@@ -53,7 +53,7 @@ public class CompletionServiceTest {
 	private void doTests(CompletionService s) {
 		testSetGet(s);
 
-		TextResponse resp = s.complete("Name a mammal.");
+		TextCompletion resp = s.complete("Name a mammal.");
 		assertTrue((resp.getFinishReason() == FinishReason.OK) || (resp.getFinishReason() == FinishReason.COMPLETED));
 		
 		System.out.println(resp.getText());

@@ -20,8 +20,8 @@ import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGeneration
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationResponse;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.CompletionService;
-import io.github.mzattera.predictivepowers.services.TextResponse;
-import io.github.mzattera.predictivepowers.services.TextResponse.FinishReason;
+import io.github.mzattera.predictivepowers.services.TextCompletion;
+import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -125,7 +125,7 @@ public class HuggingFaceCompletionService implements CompletionService {
 	}
 
 	@Override
-	public TextResponse complete(String prompt) {
+	public TextCompletion complete(String prompt) {
 		return complete(prompt, defaultReq);
 	}
 
@@ -133,17 +133,17 @@ public class HuggingFaceCompletionService implements CompletionService {
 	 * Completes text (executes given prompt); uses provided
 	 * {@link TextGenerationRequest} to get parameters for the call.
 	 */
-	public TextResponse complete(String prompt, TextGenerationRequest req) {
+	public TextCompletion complete(String prompt, TextGenerationRequest req) {
 		req.getInputs().clear();
 		req.getInputs().add(prompt);
 		req.getOptions().setWaitForModel(true); // TODO remove? Improve?
 
 		TextGenerationResponse resp = endpoint.getClient().textGeneration(model, req).get(0).get(0);
-		return TextResponse.builder().text(resp.getGeneratedText()).finishReason(FinishReason.OK).build();
+		return TextCompletion.builder().text(resp.getGeneratedText()).finishReason(FinishReason.OK).build();
 	}
 
 	@Override
-	public TextResponse insert(String prompt, String suffix) {
+	public TextCompletion insert(String prompt, String suffix) {
 		// TODO maybe find a workaround with completion?
 		return insert(prompt, suffix, defaultReq);
 	}
@@ -152,7 +152,7 @@ public class HuggingFaceCompletionService implements CompletionService {
 	 * Inserts text between given prompt and the suffix (executes given prompt);
 	 * uses provided {@link TextGenerationRequest} to get parameters for the call.
 	 */
-	public TextResponse insert(String prompt, String suffix, TextGenerationRequest req) {
+	public TextCompletion insert(String prompt, String suffix, TextGenerationRequest req) {
 		// TODO maybe find a workaround with completion?
 		throw new UnsupportedOperationException();
 	}

@@ -20,12 +20,26 @@ import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+import lombok.NonNull;
+
+/**
+ * Implementations of this interface can answer questions relying on a context
+ * that is provided.
+ * 
+ * @author Massimiliano "Maxi" Zattera
+ *
+ */
 public interface QuestionAnsweringService extends Service {
 
 	/**
-	 * Answer a question, no context provided.
+	 * Maximum number of tokens to keep in the question context when answering.
 	 */
-	QnAPair answer(String question);
+	int getMaxContextTokens();
+
+	/**
+	 * Maximum number of tokens to keep in the question context when answering.
+	 */
+	void setMaxContextTokens(int n);
 
 	/**
 	 * Answer a question, using only information from provided context.
@@ -33,7 +47,7 @@ public interface QuestionAnsweringService extends Service {
 	 * @param context The information to be used to answer the question. Notice this
 	 *                might be shortened if it is too big for the model being used.
 	 */
-	QnAPair answer(String question, String context);
+	QnAPair answer(String question, @NonNull String context);
 
 	/**
 	 * Answer a question, using only information from provided context.
@@ -41,7 +55,7 @@ public interface QuestionAnsweringService extends Service {
 	 * @param context The information to be used to answer the question. Notice this
 	 *                might be shortened if it is too big for the model being used.
 	 */
-	QnAPair answerWithEmbeddings(String question, List<Pair<EmbeddedText, Double>> context);
+	QnAPair answer(String question, @NonNull List<String> context);
 
 	/**
 	 * Answer a question, using only information from provided context.
@@ -49,5 +63,5 @@ public interface QuestionAnsweringService extends Service {
 	 * @param context The information to be used to answer the question. Notice this
 	 *                might be shortened if it is too big for the model being used.
 	 */
-	QnAPair answer(String question, List<String> context);
+	QnAPair answerWithEmbeddings(String question, @NonNull List<Pair<EmbeddedText, Double>> context);
 }

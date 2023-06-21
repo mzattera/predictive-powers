@@ -20,13 +20,14 @@
 
 package io.github.mzattera.predictivepowers.huggingface.client;
 
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 /**
  * Minimal request for Hugging Face Inference API, it provides standard inputs
@@ -36,10 +37,10 @@ import lombok.ToString;
  */
 @Getter
 @Setter
-//@Builder
+@SuperBuilder
 @NoArgsConstructor
 @RequiredArgsConstructor
-@AllArgsConstructor
+//@AllArgsConstructor
 @ToString
 public class SingleHuggingFaceRequest {
 
@@ -47,5 +48,6 @@ public class SingleHuggingFaceRequest {
 	String inputs;
 
 	@NonNull
+	@Builder.Default
 	Options options = new Options();
 }

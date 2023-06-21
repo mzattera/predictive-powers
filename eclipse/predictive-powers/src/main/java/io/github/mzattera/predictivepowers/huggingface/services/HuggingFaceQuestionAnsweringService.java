@@ -20,48 +20,43 @@ import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.QuestionAnsweringRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.QuestionAnsweringResponse;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.services.AbstractQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
+import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
+import io.github.mzattera.util.LlmUtil;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 
 /**
- * This class provides method to answer questions relying on a context that is
- * provided.
+ * OpenAI implementation of {@link QuestionAnsweringService}.
+ * 
+ * Notice that Inference API does not put a limit on context size, however we
+ * set it to {@link DEFAULT_MAX_CONTEXT_SIZE} tokens by default.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public class HuggingFaceQuestionAnsweringService implements QuestionAnsweringService {
+public class HuggingFaceQuestionAnsweringService extends AbstractQuestionAnsweringService {
 
 	public final static String DEFAULT_MODEL = "allenai/longformer-large-4096-finetuned-triviaqa";
+
+	public final static int DEFAULT_MAX_CONTEXT_SIZE = 2000;
+
 //	public final static String DEFAULT_MODEL = "deepset/roberta-base-squad2"; // Always super busy
 //	public final static String DEFAULT_MODEL = "deepset/tinyroberta-squad2";
 //	public final static String DEFAULT_MODEL = "deepset/roberta-large-squad2";
-
-	// Maps from-to POJO <-> JSON
-	private final static ObjectMapper mapper;
-	static {
-		mapper = new ObjectMapper();
-		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-		mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
-	}
 
 	public HuggingFaceQuestionAnsweringService(HuggingFaceEndpoint ep) {
 		this.endpoint = ep;
 		defaultReq = new QuestionAnsweringRequest();
 		defaultReq.getOptions().setWaitForModel(true); // TODO remove? Improve?
+		setModel(DEFAULT_MODEL);
+		setMaxContextTokens(DEFAULT_MAX_CONTEXT_SIZE);
 	}
 
 	@NonNull
@@ -78,42 +73,74 @@ public class HuggingFaceQuestionAnsweringService implements QuestionAnsweringSer
 	@NonNull
 	private final QuestionAnsweringRequest defaultReq;
 
-	@NonNull
-	@Getter
-	@Setter
-	private String model = DEFAULT_MODEL;
-
-	@Override
-	public QnAPair answer(String question) {
-		return answer(question, "");
-	}
-
-	@Override
-	public QnAPair answer(String question, String context) {
-
-		return answer(question, context, defaultReq);
-	}
-
-	public QnAPair answer(String question, String context, QuestionAnsweringRequest req) {
-
-		req.getInputs().setQuestion(question);
-		req.getInputs().setContext(context);
-
-		QuestionAnsweringResponse resp = endpoint.getClient().questionAnswering(model, req);
+	/**
+	 * Answer a question, using only information from provided context.
+	 * 
+	 * @param context The information to be used to answer the question. Notice this
+	 *                might be shortened if it is too big for the model being used.
+	 * @param req     Request to use in the API call.
+	 */
+	public QnAPair answer(String question, @NonNull String context, @NonNull QuestionAnsweringRequest req) {
 
 		List<String> l = new ArrayList<>();
 		l.add(context);
-		return QnAPair.builder().question(question).answer(resp.getAnswer()).context(l)
-				.explanation("Unfortunately, this model cannot provide any explanation.").build();
+
+		return answer(question, l, req);
 	}
 
 	@Override
-	public QnAPair answerWithEmbeddings(String question, List<Pair<EmbeddedText, Double>> context) {
-		return answerWithEmbeddings(question, context, defaultReq);
+	public QnAPair answer(String question, @NonNull List<String> context) {
+		return answer(question, context, defaultReq);
 	}
 
-	public QnAPair answerWithEmbeddings(String question, List<Pair<EmbeddedText, Double>> context,
-			QuestionAnsweringRequest req) {
+	/**
+	 * Answer a question, using only information from provided context.
+	 * 
+	 * @param context The information to be used to answer the question. Notice this
+	 *                might be shortened if it is too big for the model being used.
+	 * @param req     Request to use in the API call.
+	 */
+	public QnAPair answer(String question, @NonNull List<String> context, @NonNull QuestionAnsweringRequest req) {
+
+		// No context, no answer
+		if (context.size() == 0)
+			return QnAPair.builder().question(question).answer("I do not know.").explanation("No context was provided.")
+					.build();
+
+		// Builds biggest context possible
+		Tokenizer counter = getEndpoint().getModelService().getTokenizer(getModel());
+		int instTok = 0;
+		StringBuilder ctx = new StringBuilder();
+		int i = 0;
+		for (; i < context.size(); ++i) {
+			if ((instTok + counter.count("\n" + context.get(i))) > getMaxContextTokens())
+				break;
+			ctx.append(context.get(i)).append('\n');
+		}
+
+		if (i == 0) { // The first context was too big already, take a share
+			ctx.append(LlmUtil.splitByTokens(context.get(0), getMaxContextTokens(), counter).get(0));
+		}
+
+		req.getInputs().setQuestion(question);
+		req.getInputs().setContext(ctx.toString());
+
+		QuestionAnsweringResponse resp = endpoint.getClient().questionAnswering(getModel(), req);
+
+		return QnAPair.builder().question(question).answer(resp.getAnswer()).context(context.subList(0, Math.max(1, i)))
+				.explanation("Unfortunately, this model cannot provide any explanation.").build();
+
+	}
+
+	/**
+	 * Answer a question, using only information from provided context.
+	 * 
+	 * @param context The information to be used to answer the question. Notice this
+	 *                might be shortened if it is too big for the model being used.
+	 * @param req     Request to use in the API call.
+	 */
+	public QnAPair answerWithEmbeddings(String question, @NonNull List<Pair<EmbeddedText, Double>> context,
+			@NonNull QuestionAnsweringRequest req) {
 
 		List<String> l = new ArrayList<>(context.size());
 		for (Pair<EmbeddedText, Double> p : context)
@@ -126,19 +153,5 @@ public class HuggingFaceQuestionAnsweringService implements QuestionAnsweringSer
 			result.getEmbeddingContext().add(context.get(i).getLeft());
 
 		return result;
-	}
-
-	@Override
-	public QnAPair answer(String question, List<String> context) {
-		return answer(question, context, defaultReq);
-	}
-
-	public QnAPair answer(String question, List<String> context, QuestionAnsweringRequest req) {
-		StringBuilder ctx = new StringBuilder();
-		for (String c : context) {
-			ctx.append(c.trim()).append('\n');
-		}
-
-		return answer(question, ctx.toString().trim(), req);
 	}
 }

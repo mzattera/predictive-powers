@@ -29,7 +29,7 @@ import lombok.NonNull;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public final class CharTokenizer extends AbstractTokenizer {
+public class CharTokenizer extends AbstractTokenizer {
 
 	private CharTokenizer() {
 	}

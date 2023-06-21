@@ -52,7 +52,7 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public final class HuggingFaceClient implements ApiClient {
+public class HuggingFaceClient implements ApiClient {
 
 	private final static Logger LOG = LoggerFactory.getLogger(HuggingFaceClient.class);
 

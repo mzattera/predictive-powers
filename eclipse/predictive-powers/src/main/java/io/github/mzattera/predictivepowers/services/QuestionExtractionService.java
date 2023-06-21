@@ -75,7 +75,7 @@ public class QuestionExtractionService implements Service {
 
 	public void setMaxContextTokens(int n) {
 		if (n < 1)
-			throw new IllegalArgumentException("Must keep at least 1 token.");
+			throw new IllegalArgumentException("Must keep at least 1 token");
 		maxContextTokens = n;
 	}
 
@@ -343,7 +343,7 @@ public class QuestionExtractionService implements Service {
 
 		// TODO better token calculation maybe
 		// adding a message is additional tokens
-		for (String t : LlmUtil.splitByTokens(text, maxContextTokens - tok - 10, counter)) {
+		for (String t : LlmUtil.splitByTokens(text, Math.max(1, maxContextTokens - tok - 10), counter)) {
 			result.addAll(getQuestionsShort(instructions, t));
 		}
 

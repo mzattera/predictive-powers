@@ -33,8 +33,8 @@ import lombok.NonNull;
 import lombok.Setter;
 
 /**
- * Abstract {@link EmbeddingService} that can be sub-classed to create other services
- * faster (hopefully).
+ * Abstract {@link EmbeddingService} that can be sub-classed to create other
+ * services faster (hopefully).
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -50,11 +50,12 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 	private int maxTextTokens = 150;
 
 	@Override
-	public void setMaxTokens(int maxTokens) {
-		if (maxTokens <= 0)
-			throw new IllegalArgumentException("maxTokens must be > 0: " + maxTokens);
+	public void setMaxTokens(int maxTextTokens) {
+		if (maxTextTokens < 1)
+			throw new IllegalArgumentException(
+					"Embedded text needs to be of at least 1 token in size: " + maxTextTokens);
 
-		this.maxTextTokens = maxTokens;
+		this.maxTextTokens = maxTextTokens;
 	}
 
 	@Override

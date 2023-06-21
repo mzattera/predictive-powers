@@ -14,40 +14,39 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.huggingface.client;
+package io.github.mzattera.predictivepowers.openai.services;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import io.github.mzattera.predictivepowers.services.ChatMessage.FunctionCall;
+import io.github.mzattera.predictivepowers.services.TextCompletion;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 /**
- * Minimal request for Hugging Face Inference API, it provides standard inputs
- * and options fields. It is meant to be extended by other requests.
+ * This extends {@link TextCompletion} allowing to return function calls.
  * 
- * @author Massimiliano "Maxi" Zattera
+ * @author mzatt
  */
 @Getter
 @Setter
 @SuperBuilder
-@NoArgsConstructor
-//@RequiredArgsConstructor
+//@NoArgsConstructor
+@RequiredArgsConstructor
 @AllArgsConstructor
 @ToString
-public class HuggingFaceRequest {
+public class OpenAiTextCompletion extends TextCompletion {
 
-	@NonNull
-	@Builder.Default
-	List<String> inputs = new ArrayList<>();
+	private FunctionCall functionCall;
 
-	@NonNull
-	@Builder.Default
-	Options options = new Options();
+	public boolean isFunctionCall() {
+		return (functionCall != null);
+	}
+
+	public OpenAiTextCompletion(String text, FinishReason finishReason, FunctionCall functionCall) {
+		super(text, finishReason);
+		this.functionCall = functionCall;
+	}
 }

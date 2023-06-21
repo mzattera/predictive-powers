@@ -16,16 +16,16 @@
 
 package io.github.mzattera.predictivepowers.services;
 
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 /**
- * This class encapsulates a text response from the language model.
+ * This class encapsulates a text completion response from the language model.
  * 
  * In addition to providing the returned text, this also contains a reason why
  * the response terminated, which allows the developer to take corrective
@@ -36,12 +36,12 @@ import lombok.ToString;
  */
 @Getter
 @Setter
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @RequiredArgsConstructor
 //@AllArgsConstructor
 @ToString
-public final class TextResponse {
+public class TextCompletion {
 
 	/** Reason why the language model finished responding. */
 	public enum FinishReason {
@@ -69,7 +69,22 @@ public final class TextResponse {
 		/** Omitted content due to content filters */
 		INAPPROPRIATE,
 
-		UNKNOWN
+		UNKNOWN;
+
+		public static FinishReason fromGptApi(String reason) {
+			switch (reason) {
+			case "stop":
+				return FinishReason.COMPLETED;
+			case "length":
+				return FinishReason.LENGTH_LIMIT_REACHED;
+			case "content_filter":
+				return FinishReason.INAPPROPRIATE;
+			case "null":
+				return FinishReason.INCOMPLETE;
+			default:
+				return FinishReason.UNKNOWN;
+			}
+		}
 	}
 
 	@Getter
@@ -79,16 +94,4 @@ public final class TextResponse {
 	@Getter
 	@NonNull
 	private FinishReason finishReason;
-
-	public static TextResponse fromGptApi(String text, String reason) {
-		if (reason.equals("stop"))
-			return new TextResponse(text, FinishReason.COMPLETED);
-		if (reason.equals("length"))
-			return new TextResponse(text, FinishReason.LENGTH_LIMIT_REACHED);
-		if (reason.equals("content_filter"))
-			return new TextResponse(text, FinishReason.INAPPROPRIATE);
-		if (reason.equals("null"))
-			return new TextResponse(text, FinishReason.INCOMPLETE);
-		return new TextResponse(text, FinishReason.UNKNOWN);
-	}
 }

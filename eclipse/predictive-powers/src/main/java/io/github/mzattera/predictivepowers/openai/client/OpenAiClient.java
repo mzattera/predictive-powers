@@ -71,7 +71,7 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public final class OpenAiClient implements ApiClient {
+public class OpenAiClient implements ApiClient {
 
 	// TODO add client/endpoint for Azure OpenAI Services
 

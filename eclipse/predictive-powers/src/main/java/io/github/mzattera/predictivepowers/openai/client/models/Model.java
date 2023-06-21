@@ -31,7 +31,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public final class Model {
+public class Model {
 	
 	String id;
 	String object;

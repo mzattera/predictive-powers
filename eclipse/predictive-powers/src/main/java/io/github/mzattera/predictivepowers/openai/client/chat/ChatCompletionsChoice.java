@@ -12,7 +12,8 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package io.github.mzattera.predictivepowers.openai.client.chat;
+ */
+package io.github.mzattera.predictivepowers.openai.client.chat;
 
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import lombok.Getter;
@@ -29,7 +30,7 @@ import lombok.ToString;
 @Setter
 @ToString
 public class ChatCompletionsChoice {
-	
+
 	int index;
 	ChatMessage message;
 	String finishReason;

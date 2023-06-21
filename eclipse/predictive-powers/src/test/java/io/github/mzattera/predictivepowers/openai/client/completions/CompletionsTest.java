@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
-import io.github.mzattera.predictivepowers.services.TextResponse;
+import io.github.mzattera.predictivepowers.services.TextCompletion;
 
 class CompletionsTest {
 
@@ -98,7 +98,7 @@ class CompletionsTest {
 			cs.getDefaultReq().setEcho(true);
 			cs.getDefaultReq().setTemperature(0.0);
 			String prompt = "Mt. Everest is";
-			TextResponse resp = cs.complete(prompt);
+			TextCompletion resp = cs.complete(prompt);
 
 			assertTrue(resp.getText().startsWith(prompt));
 		} // Close endpoint
@@ -113,7 +113,7 @@ class CompletionsTest {
 			cs.getDefaultReq().setTemperature(0.0);
 			String prompt = "Mt. Everest is";
 			String suffix = "meters high.";
-			TextResponse resp = cs.insert(prompt, suffix);
+			TextCompletion resp = cs.insert(prompt, suffix);
 
 			assertTrue(resp.getText().contains("8,848"));
 		} // Close endpoint

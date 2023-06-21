@@ -89,10 +89,10 @@ public interface CompletionService extends Service {
 	/**
 	 * Completes text (executes given prompt).
 	 */
-	TextResponse complete(String prompt);
+	TextCompletion complete(String prompt);
 
 	/**
 	 * Inserts text between given prompt and the suffix.
 	 */
-	TextResponse insert(String prompt, String suffix);
+	TextCompletion insert(String prompt, String suffix);
 }

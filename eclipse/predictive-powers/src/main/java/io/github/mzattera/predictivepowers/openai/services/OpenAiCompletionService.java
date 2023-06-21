@@ -22,7 +22,8 @@ import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 import io.github.mzattera.predictivepowers.services.ModelService;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
-import io.github.mzattera.predictivepowers.services.TextResponse;
+import io.github.mzattera.predictivepowers.services.TextCompletion;
+import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -142,7 +143,7 @@ public class OpenAiCompletionService implements CompletionService {
 	 * It uses parameters specified in {@link #getDefaultReq()}.
 	 */
 	@Override
-	public TextResponse complete(String prompt) {
+	public TextCompletion complete(String prompt) {
 		return insert(prompt, null, defaultReq);
 	}
 
@@ -153,7 +154,7 @@ public class OpenAiCompletionService implements CompletionService {
 	 * Notice that if maxToxens is null, this method will try to set it
 	 * automatically, based on prompt length.
 	 */
-	public TextResponse complete(String prompt, CompletionsRequest req) {
+	public TextCompletion complete(String prompt, CompletionsRequest req) {
 		return insert(prompt, null, req);
 	}
 
@@ -163,7 +164,7 @@ public class OpenAiCompletionService implements CompletionService {
 	 * It uses {@link #getDefaultReq()} parameters.
 	 */
 	@Override
-	public TextResponse insert(String prompt, String suffix) {
+	public TextCompletion insert(String prompt, String suffix) {
 		return insert(prompt, suffix, defaultReq);
 	}
 
@@ -174,7 +175,7 @@ public class OpenAiCompletionService implements CompletionService {
 	 * Notice that if maxToxens is null, this method will try to set it
 	 * automatically, based on prompt length.
 	 */
-	public TextResponse insert(String prompt, String suffix, CompletionsRequest req) {
+	public TextCompletion insert(String prompt, String suffix, CompletionsRequest req) {
 		req.setPrompt(prompt);
 		req.setSuffix(suffix);
 
@@ -193,7 +194,7 @@ public class OpenAiCompletionService implements CompletionService {
 
 			CompletionsResponse resp = endpoint.getClient().createCompletion(req);
 			CompletionsChoice choice = resp.getChoices().get(0);
-			return TextResponse.fromGptApi(choice.getText(), choice.getFinishReason());
+			return new TextCompletion(choice.getText(), FinishReason.fromGptApi(choice.getFinishReason()));
 
 		} finally {
 

@@ -18,8 +18,6 @@ package io.github.mzattera.predictivepowers.openai.services;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang3.tuple.Pair;
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -28,25 +26,40 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import io.github.mzattera.predictivepowers.Endpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.services.AbstractQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
-import io.github.mzattera.predictivepowers.services.TextResponse;
+import io.github.mzattera.predictivepowers.services.TextCompletion;
 import io.github.mzattera.util.LlmUtil;
 import lombok.Getter;
 import lombok.NonNull;
 
 /**
- * This class provides method to answer questions relying on a context that is
- * provided. The service tries to prevent hallucinations (answers that do not
- * use the information in the context).
+ * OpenAI implementation of {@link QuestionAnsweringService}.
+ * 
+ * The service tries to prevent hallucinations (answers that do not use the
+ * information in the context).
+ * 
+ * The service relies on an underlying {@link OpenAiChatService} to answer
+ * questions. If you want to fine-tune this service, you can get the underlying
+ * service (by calling {@link #getCompletionService()} and fine-tune that
+ * instead.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public class OpenAiQuestionAnsweringService implements QuestionAnsweringService {
+public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringService {
+
+	// Maps from-to POJO <-> JSON
+	private final static ObjectMapper mapper;
+	static {
+		mapper = new ObjectMapper();
+		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+	}
 
 	public OpenAiQuestionAnsweringService(OpenAiEndpoint ep) {
 		this(ep.getChatService());
@@ -57,16 +70,7 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 
 	public OpenAiQuestionAnsweringService(OpenAiChatService completionService) {
 		this.completionService = completionService;
-		maxContextTokens = getEndpoint().getModelService().getContextSize(getModel()) * 3 / 4;
-	}
-
-	// Maps from-to POJO <-> JSON
-	private final static ObjectMapper mapper;
-	static {
-		mapper = new ObjectMapper();
-		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-		mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+		setMaxContextTokens(getEndpoint().getModelService().getContextSize(getModel()) * 3 / 4);
 	}
 
 	@Override
@@ -95,53 +99,21 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 	private final OpenAiChatService completionService;
 
 	/**
-	 * Maximum number of tokens to keep in the question context when answering.
+	 * Answer a question, using completion service.
 	 */
-	@Getter
-	private int maxContextTokens;
-
-	public void setMaxContextTokens(int n) {
-		if (n < 1)
-			throw new IllegalArgumentException("Must keep at least 1 token.");
-		maxContextTokens = n;
-	}
-
-	@Override
 	public QnAPair answer(String question) {
-		TextResponse answer = completionService.complete(question);
-		return QnAPair.builder().question(question).answer(answer.getText()).build();
-	}
-
-	@Override
-	public QnAPair answer(String question, String context) {
-
-		Tokenizer counter = getEndpoint().getModelService().getTokenizer(getModel());
-		List<String> l = new ArrayList<>();
-		// TODO better calculation of sizes
-		// 400 is to keep space for instructions and examples
-		l.add(LlmUtil.splitByTokens(context, maxContextTokens - counter.count(question) - 400, counter).get(0));
-
-		return answer(question, l);
-	}
-
-	@Override
-	public QnAPair answerWithEmbeddings(String question, List<Pair<EmbeddedText, Double>> context) {
-
-		List<String> l = new ArrayList<>(context.size());
-		for (Pair<EmbeddedText, Double> p : context)
-			l.add(p.getLeft().getText());
-
-		QnAPair result = answer(question, l);
-
-		// Enrich answer with embeddings, as they have in some case useful properties
-		for (int i = 0; i < result.getContext().size(); ++i)
-			result.getEmbeddingContext().add(context.get(i).getLeft());
-
-		return result;
+		TextCompletion resp = completionService.complete(question);
+		return QnAPair.builder().question(question).answer(resp.getText())
+				.explanation("Answer provided by OpenAI competions API.").build();
 	}
 
 	@Override
 	public QnAPair answer(String question, List<String> context) {
+
+		// No context, no answer
+		if (context.size() == 0)
+			return QnAPair.builder().question(question).answer("I do not know.").explanation("No context was provided.")
+					.build();
 
 		String qMsg = "\nQuestion: " + question;
 		Tokenizer counter = getEndpoint().getModelService().getTokenizer(getModel());
@@ -172,25 +144,26 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 						"\"1. The context states: \"Biglydoos eat cranberries.\"\\n" + //
 						"2. Cranberries are a kind of fruit.\\n" + //
 						"3. Therefore, biglydoos eat fruits.\"}"));
-		int instTok = counter.count(new ChatMessage(ChatMessage.Role.USER, qMsg)) + counter.count(instructions);
 
+		// Builds biggest context possible
+		int instTok = counter.count(new ChatMessage(ChatMessage.Role.USER, qMsg)) + counter.count(instructions);
 		StringBuilder ctx = new StringBuilder("Context:\n");
 		int i = 0;
 		for (; i < context.size(); ++i) {
 			ChatMessage m = new ChatMessage(ChatMessage.Role.USER, ctx.toString() + "\n" + context.get(i));
-			if ((instTok + counter.count(m)) > maxContextTokens)
+			if ((instTok + counter.count(m)) > getMaxContextTokens())
 				break;
 			ctx.append('\n').append(context.get(i));
 		}
+
+		if (i == 0) { // The first context was too big already, take a share
+			ctx.append(LlmUtil.splitByTokens(context.get(0), Math.max(1, getMaxContextTokens() - instTok), counter).get(0));
+		}
+
 		ctx.append(qMsg);
 		instructions.add(new ChatMessage(ChatMessage.Role.USER, ctx.toString()));
 
-		// No context, no answer
-		if (i == 0)
-			return QnAPair.builder().question(question).answer("I do not know.").explanation("No context was provided.")
-					.build();
-
-		TextResponse answerJson = completionService.complete(instructions);
+		TextCompletion answerJson = completionService.complete(instructions);
 		QnAPair result = null;
 		try {
 			result = mapper.readValue(answerJson.getText(), QnAPair.class);
@@ -200,7 +173,7 @@ public class OpenAiQuestionAnsweringService implements QuestionAnsweringService 
 			result = QnAPair.builder().question(question).answer(answerJson.getText()).build();
 		}
 
-		for (int j = 0; j < i; ++j) {
+		for (int j = 0; j < Math.max(1, i); ++j) {
 			result.getContext().add(context.get(j));
 		}
 

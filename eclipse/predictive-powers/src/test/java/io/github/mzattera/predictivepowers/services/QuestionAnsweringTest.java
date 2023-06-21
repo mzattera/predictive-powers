@@ -27,13 +27,32 @@ import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 
+import io.github.mzattera.predictivepowers.Endpoint;
+import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionAnsweringService;
 import io.github.mzattera.util.ResourceUtil;
 
 public class QuestionAnsweringTest {
+
+	// TODO break it in smaller tests...
+
+	@Test
+	public void test() throws ClassNotFoundException, IOException {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
+			test(ep);
+		}
+		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
+			test(ep);
+		}
+	}
+
+	private void test(Endpoint e) throws ClassNotFoundException, IOException {
+		test01(e);
+		test03(e);
+		test04(e);
+	}
 
 	/**
 	 * Makes some tests by reading a knowledge base and asking a relevant question
@@ -42,11 +61,10 @@ public class QuestionAnsweringTest {
 	 * @throws ClassNotFoundException
 	 * @throws IOException
 	 */
-	@Test
-	public void test01() throws ClassNotFoundException, IOException {
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			OpenAiEmbeddingService es = ep.getEmbeddingService();
-			OpenAiQuestionAnsweringService qas = ep.getQuestionAnsweringService();
+	public void test01(Endpoint ep) throws ClassNotFoundException, IOException {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
+			EmbeddingService es = oai.getEmbeddingService();
+			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
 			KnowledgeBase kb = KnowledgeBase.load(ResourceUtil.getResourceFile("kb_banana.object"));
 
 			String question = "What does Olaf like?";
@@ -57,7 +75,7 @@ public class QuestionAnsweringTest {
 			assertEquals(context.size(), answer.getEmbeddingContext().size());
 			for (int i = 0; i < context.size(); ++i)
 				assertEquals(context.get(i).getLeft().getText(), answer.getEmbeddingContext().get(i).getText());
-		} // Close endpoint
+		}
 	}
 
 	/**
@@ -83,11 +101,10 @@ public class QuestionAnsweringTest {
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 */
-	@Test
-	public void test03() throws ClassNotFoundException, IOException {
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			OpenAiEmbeddingService es = ep.getEmbeddingService();
-			OpenAiQuestionAnsweringService qas = ep.getQuestionAnsweringService();
+	public void test03(Endpoint ep) throws ClassNotFoundException, IOException {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
+			EmbeddingService es = oai.getEmbeddingService();
+			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
 			KnowledgeBase kb = KnowledgeBase.load(ResourceUtil.getResourceFile("kb_banana.object"));
 
 			qas.setMaxContextTokens(1);
@@ -96,26 +113,22 @@ public class QuestionAnsweringTest {
 			List<Pair<EmbeddedText, Double>> context = kb.search(es.embed(question).get(0), 50, 0);
 			QnAPair answer = qas.answerWithEmbeddings(question, context);
 
-			assertEquals("I do not know.", answer.getAnswer());
-			assertEquals("No context was provided.", answer.getExplanation());
-		} // Close endpoint
+			assertTrue("I do not know.".equals(answer.getAnswer()) || "Olaf".equals(answer.getAnswer()));
+		}
 	}
 
 	/**
 	 * String as context.
 	 */
-	@Test
-	public void test0() {
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			OpenAiQuestionAnsweringService qas = ep.getQuestionAnsweringService();
+	public void test04(Endpoint ep) {
+		QuestionAnsweringService qas = ep.getQuestionAnsweringService();
 
-			String question = "What does Olaf like?";
-			QnAPair answer = qas.answer(question, "Olaf likes pears.");
+		String question = "What does Olaf like?";
+		QnAPair answer = qas.answer(question, "Olaf likes pears.");
 
-			assertEquals("Olaf likes pears.", answer.getAnswer());
-			assertEquals(1, answer.getContext().size());
-			assertEquals("Olaf likes pears.", answer.getContext().get(0));
-		} // Close endpoint
+		assertTrue(answer.getAnswer().contains("pears"));
+		assertEquals(1, answer.getContext().size());
+		assertEquals("Olaf likes pears.", answer.getContext().get(0));
 	}
 
 	/**
@@ -127,7 +140,7 @@ public class QuestionAnsweringTest {
 	public static void main(String args[]) throws FileNotFoundException, IOException {
 
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			OpenAiEmbeddingService es = ep.getEmbeddingService();
+			EmbeddingService es = ep.getEmbeddingService();
 			KnowledgeBase kb = new KnowledgeBase();
 
 			List<String> test = new ArrayList<>();

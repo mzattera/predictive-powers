@@ -70,7 +70,12 @@ public class ChatMessage {
 		 * Marks text used for bot configuration (e.g. in OpenAI ChatGPT). It might not
 		 * be supported by all services.
 		 */
-		SYSTEM("system");
+		SYSTEM("system"),
+
+		/**
+		 * Marks text returned by a function (?). OpenAI API.
+		 */
+		FUNCTION("function");
 
 		private final String label;
 
@@ -164,20 +169,30 @@ public class ChatMessage {
 	Role role;
 
 	/**
-	 * Message content, can be null if a function call is provided instead.
+	 * Message content, can be null if a function call is returned instead.
 	 */
 	@JsonInclude(JsonInclude.Include.ALWAYS) // Needed for OpenAI function call API or it will throw HTTP 400 for
 												// function calls messages
 	String content;
 
+	// TODO add a time stamp?
+	
 	/**
-	 * This will contain generated function call, if any.
+	 * The name of the author of this message.
+	 * 
+	 * For OpenAI API, name is required if role is FUNCTION, and it should be the
+	 * name of the function whose response is in the content. May contain a-z, A-Z,
+	 * 0-9, and underscores, with a maximum length of 64 characters.
+	 */
+	String name;
+
+	/**
+	 * This will contain generated function call, if any. For the time being, this
+	 * is supported only by OpenAI API.
 	 */
 	FunctionCall functionCall;
 
 	// TODO add a time stamp?
-
-	String name;
 
 	public ChatMessage(Role role, String content) {
 		this.role = role;

@@ -51,18 +51,19 @@ import lombok.ToString;
 @ToString
 public class Function {
 
+	/** Used for JSON (de)serialization of function parameters as schema */
+	@Getter
+	private final static JsonSchemaGenerator schemaGenerator = new JsonSchemaGenerator(new ObjectMapper());
+
 	/**
 	 * Custom serializer to create JSON schema for function parameters.
 	 */
 	private static class ParametersSerializer extends JsonSerializer<Class<?>> {
 
-		// Note it is safe to have these static
-		private final static JsonSchemaGenerator GENERATOR = new JsonSchemaGenerator(new ObjectMapper());
-
 		@Override
 		public void serialize(Class<?> c, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
 				throws IOException, JsonProcessingException {
-			jsonGenerator.writeTree(GENERATOR.generateJsonSchema(c));
+			jsonGenerator.writeTree(schemaGenerator.generateJsonSchema(c));
 		}
 	}
 

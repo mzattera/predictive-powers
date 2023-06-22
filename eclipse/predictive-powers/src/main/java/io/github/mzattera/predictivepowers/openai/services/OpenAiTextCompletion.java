@@ -45,6 +45,10 @@ public class OpenAiTextCompletion extends TextCompletion {
 		return (functionCall != null);
 	}
 
+	public OpenAiTextCompletion(String text, String finishReason, FunctionCall functionCall) {
+		this(text, FinishReason.fromGptApi(finishReason), functionCall);
+	}
+
 	public OpenAiTextCompletion(String text, FinishReason finishReason, FunctionCall functionCall) {
 		super(text, finishReason);
 		this.functionCall = functionCall;

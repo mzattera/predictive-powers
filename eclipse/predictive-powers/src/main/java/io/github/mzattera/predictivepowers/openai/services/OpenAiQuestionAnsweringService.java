@@ -18,7 +18,6 @@ package io.github.mzattera.predictivepowers.openai.services;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,12 +51,11 @@ import lombok.NonNull;
  */
 public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringService {
 
-	// Maps from-to POJO <-> JSON
+	// De-searilize JSON answers
 	private final static ObjectMapper mapper;
 	static {
 		mapper = new ObjectMapper();
 		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 		mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 	}
 
@@ -123,27 +121,30 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 		if (completionService.getPersonality() == null)
 			instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM,
 					"You are an AI assistant answering questions truthfully."));
-		instructions.add(new ChatMessage(ChatMessage.Role.USER,
+		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM,
 				"Answer the below questions truthfully, strictly using only the information in the context. " + //
 						"When providing an answer, provide your reasoning as well, step by step. " + //
 						"If the answer cannot be found in the context, reply with \"I do not know.\". " + //
-						"Strictly return the answer and explanation in JSON format, as shown below."));
+						"Strictly return the answer and explanation in JSON format, as shown below.",
+				"example_user", null));
+		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM, "Context:\n" + //
+				"Biglydoos are small rodent similar to mice.\n" + //
+				"Biglydoos eat cranberries.\n" + //
+				"Question: What color are biglydoos?", "example_user", null));
+		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM, //
+				"{\"answer\": \"I do not know.\", \"explanation\": \"1. This information is not provided in the context.\"}",
+				"example_assistant", null));
 		instructions.add(new ChatMessage(ChatMessage.Role.USER, "Context:\n" + //
 				"Biglydoos are small rodent similar to mice.\n" + //
 				"Biglydoos eat cranberries.\n" + //
-				"Question: What color are biglydoos?"));
-		instructions.add(new ChatMessage(ChatMessage.Role.BOT, //
-				"{\"answer\": \"I do not know.\", \"explanation\": \"1. This information is not provided in the context.\"}"));
-		instructions.add(new ChatMessage(ChatMessage.Role.USER, "Context:\n" + //
-				"Biglydoos are small rodent similar to mice.\n" + //
-				"Biglydoos eat cranberries.\n" + //
-				"Question: Do biglydoos eat fruits?"));
-		instructions.add(new ChatMessage(ChatMessage.Role.BOT, //
+				"Question: Do biglydoos eat fruits?", "example_user", null));
+		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM, //
 				"{\"answer\": \"Yes, biglydoos eat fruits.\", " + //
 						"\"explanation\": " + //
 						"\"1. The context states: \"Biglydoos eat cranberries.\"\\n" + //
 						"2. Cranberries are a kind of fruit.\\n" + //
-						"3. Therefore, biglydoos eat fruits.\"}"));
+						"3. Therefore, biglydoos eat fruits.\"}",
+				"example_assistant", null));
 
 		// Builds biggest context possible
 		int instTok = counter.count(new ChatMessage(ChatMessage.Role.USER, qMsg)) + counter.count(instructions);
@@ -157,7 +158,8 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 		}
 
 		if (i == 0) { // The first context was too big already, take a share
-			ctx.append(LlmUtil.splitByTokens(context.get(0), Math.max(1, getMaxContextTokens() - instTok), counter).get(0));
+			ctx.append(LlmUtil.splitByTokens(context.get(0), Math.max(1, getMaxContextTokens() - instTok), counter)
+					.get(0));
 		}
 
 		ctx.append(qMsg);

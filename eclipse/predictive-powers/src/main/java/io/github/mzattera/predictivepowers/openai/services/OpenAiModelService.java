@@ -27,8 +27,6 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.fastjson2.JSONObject;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kjetland.jackson.jsonSchema.JsonSchemaGenerator;
 
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
@@ -38,8 +36,6 @@ import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractModelService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ChatMessage.FunctionCall;
-import io.github.mzattera.predictivepowers.services.ModelService.ModelData;
-import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.ModelService;
 import lombok.Builder;
 import lombok.Getter;
@@ -135,6 +131,9 @@ public class OpenAiModelService extends AbstractModelService {
 			case SYSTEM:
 				role = ChatMessageRole.SYSTEM;
 				break;
+			case FUNCTION:
+				role = ChatMessageRole.FUNCTION;
+				break;
 			default:
 				throw new IllegalArgumentException(); // Guard
 			}
@@ -146,7 +145,7 @@ public class OpenAiModelService extends AbstractModelService {
 			if (call != null) {
 				String arguments = null;
 				try {
-					arguments = OpenAiClient.JSON_MAPPER.writerWithDefaultPrettyPrinter()
+					arguments = OpenAiClient.getJsonMapper().writerWithDefaultPrettyPrinter()
 							.writeValueAsString(call.getArguments());
 				} catch (JsonProcessingException e) {
 					LOG.error("Error while parsing function call arguments", e);
@@ -158,13 +157,9 @@ public class OpenAiModelService extends AbstractModelService {
 			return result;
 		}
 
-		// Note it is safe to have these static
-		// TODO URGENT make this public on other side instead?
-		private final static JsonSchemaGenerator GENERATOR = new JsonSchemaGenerator(new ObjectMapper());
-
 		private xyz.felh.openai.completion.chat.func.Function translate(Function f) {
-
-			JSONObject json = JSONObject.parseObject(GENERATOR.generateJsonSchema(f.getParameters()).toString());
+			JSONObject json = JSONObject
+					.parseObject(Function.getSchemaGenerator().generateJsonSchema(f.getParameters()).toString());
 			return new xyz.felh.openai.completion.chat.func.Function(f.getName(), f.getDescription(), json);
 		}
 	}
@@ -252,12 +247,12 @@ public class OpenAiModelService extends AbstractModelService {
 
 	@Override
 	public OpenAiTokenizer getTokenizer(@NonNull String model) throws IllegalArgumentException {
-		return (OpenAiTokenizer)super.getTokenizer(model);
+		return (OpenAiTokenizer) super.getTokenizer(model);
 	}
 
 	@Override
 	public OpenAiTokenizer getTokenizer(@NonNull String model, Tokenizer def) {
-		return (OpenAiTokenizer)super.getTokenizer(model, def);
+		return (OpenAiTokenizer) super.getTokenizer(model, def);
 	}
 
 	@Override

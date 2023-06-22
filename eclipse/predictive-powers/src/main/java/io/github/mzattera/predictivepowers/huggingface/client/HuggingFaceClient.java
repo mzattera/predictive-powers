@@ -38,6 +38,7 @@ import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGeneration
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationResponse;
 import io.github.mzattera.util.ImageUtil;
 import io.reactivex.Single;
+import lombok.Getter;
 import lombok.NonNull;
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
@@ -75,13 +76,14 @@ public class HuggingFaceClient implements ApiClient {
 
 	private final OkHttpClient client;
 
-	// Maps from-to POJO <-> JSON
-	private final static ObjectMapper JSON_MAPPER;
+	/** Used for JSON (de)serialization in API calls */
+	@Getter
+	private final static ObjectMapper jsonMapper;
 	static {
-		JSON_MAPPER = new ObjectMapper();
-		JSON_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		JSON_MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-		JSON_MAPPER.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+		jsonMapper = new ObjectMapper();
+		jsonMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		jsonMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		jsonMapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 	}
 
 	/**
@@ -155,7 +157,7 @@ public class HuggingFaceClient implements ApiClient {
 //		}).build();
 
 		Retrofit retrofit = new Retrofit.Builder().baseUrl(API_BASE_URL).client(client)
-				.addConverterFactory(JacksonConverterFactory.create(JSON_MAPPER))
+				.addConverterFactory(JacksonConverterFactory.create(jsonMapper))
 				.addCallAdapterFactory(RxJava2CallAdapterFactory.create()).build();
 
 		api = retrofit.create(HuggingFaceApi.class);

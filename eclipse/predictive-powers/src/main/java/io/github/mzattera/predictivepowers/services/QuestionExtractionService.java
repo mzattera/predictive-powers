@@ -23,7 +23,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -48,12 +47,11 @@ public class QuestionExtractionService implements Service {
 
 	private final static Logger LOG = LoggerFactory.getLogger(QuestionExtractionService.class);
 
-	// Maps from-to POJO <-> JSON
+	// De-serialize extracted questions.
 	private final static ObjectMapper mapper;
 	static {
 		mapper = new ObjectMapper();
 		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 		mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 	}
 
@@ -98,12 +96,12 @@ public class QuestionExtractionService implements Service {
 		this(ep.getChatService());
 
 		// TODO test best settings.
-		completionService.getDefaultReq().setTemperature(0.2);
+		completionService.getDefaultReq().setTemperature(0.0);
 	}
 
 	public QuestionExtractionService(OpenAiChatService completionService) {
 		this.completionService = completionService;
-		maxContextTokens = Math.max(getEndpoint().getModelService().getContextSize(getModel()), 2046) * 3 / 4;
+		maxContextTokens = getEndpoint().getModelService().getContextSize(getModel()) * 3 / 4;
 	}
 
 	/**
@@ -115,13 +113,14 @@ public class QuestionExtractionService implements Service {
 		List<ChatMessage> instructions = new ArrayList<>();
 		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM,
 				"You are a teacher and you are preparing an assessment from some text materials."));
-		instructions.add(new ChatMessage(ChatMessage.Role.USER,
-				"Given a context, extract a set of questions and corresponding answers, then format them as a JSON array. Some examples are provided below."));
-		instructions.add(new ChatMessage(ChatMessage.Role.USER, "Context:\n'''\n" //
+		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM,
+				"Given a context, extract a set of questions and corresponding answers, then format them as a JSON array. Some examples are provided below.",
+				"example_user", null));
+		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM, "Context:\n'''\n" //
 				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China–Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1⁄2 in) was most recently established in 2020 by the Chinese and Nepali authorities.\n" //
 				+ "Mount Everest attracts many climbers, including highly experienced mountaineers. There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the 'standard route') and the other from the north in Tibet. While not posing substantial technical climbing challenges on the standard route, Everest presents dangers such as altitude sickness, weather, and wind, as well as hazards from avalanches and the Khumbu Icefall. As of 2019, over 300 people have died on Everest, many of whose bodies remain on the mountain.\n" //
-				+ "'''"));
-		instructions.add(new ChatMessage(ChatMessage.Role.BOT, "[\n" //
+				+ "'''", "example_user", null));
+		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM, "[\n" //
 				+ "   {\n" //
 				+ "      \"question\":\"What is the highest mountain on Earth?\",\n" //
 				+ "      \"answer\":\"Mount Everest is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas.\"\n" //
@@ -134,7 +133,7 @@ public class QuestionExtractionService implements Service {
 				+ "      \"question\":\"How many people have died on Everest as of 2019?\",\n" //
 				+ "      \"answer\":\"As of 2019, over 300 people have died on Everest.\"\n" //
 				+ "   }\n" //
-				+ "]"));
+				+ "]", "example_assistant", null));
 
 		return getQuestions(instructions, text);
 	}
@@ -148,12 +147,13 @@ public class QuestionExtractionService implements Service {
 		List<ChatMessage> instructions = new ArrayList<>();
 		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM,
 				"You are a teacher and you are preparing an assessment from some text materials."));
-		instructions.add(new ChatMessage(ChatMessage.Role.USER,
-				"Given a context, extract a set of true/false exercise and corresponding answers; make sure some questions require a 'true' answer and  some require a 'false' answer, then format them as a JSON array. Some examples are provided below."));
-		instructions.add(new ChatMessage(ChatMessage.Role.USER, "Context:\n'''\n" //
+		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM,
+				"Given a context, extract a set of true/false exercise and corresponding answers; make sure some questions require a 'true' answer and  some require a 'false' answer, then format them as a JSON array. Some examples are provided below.",
+				"example_user", null));
+		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM, "Context:\n'''\n" //
 				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China–Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1⁄2 in) was most recently established in 2020 by the Chinese and Nepali authorities.\n" //
 				+ "Mount Everest attracts many climbers, including highly experienced mountaineers. There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the 'standard route') and the other from the north in Tibet. While not posing substantial technical climbing challenges on the standard route, Everest presents dangers such as altitude sickness, weather, and wind, as well as hazards from avalanches and the Khumbu Icefall. As of 2019, over 300 people have died on Everest, many of whose bodies remain on the mountain.\n" //
-				+ "'''"));
+				+ "'''", "example_user", null));
 		instructions.add(new ChatMessage(ChatMessage.Role.BOT, "[\n" //
 				+ "   {\n" //
 				+ "      \"question\":\"Mount Everest is the highest mountain on Earth.\",\n" //
@@ -167,7 +167,7 @@ public class QuestionExtractionService implements Service {
 				+ "      \"question\":\"As of 2019, less than 300 people have died on Everest.\",\n" //
 				+ "      \"answer\":\"false\"\n" //
 				+ "   }\n" //
-				+ "]"));
+				+ "]", "example_assistant", null));
 
 		List<QnAPair> result = getQuestions(instructions, text);
 		Iterator<QnAPair> it = result.iterator();
@@ -196,21 +196,24 @@ public class QuestionExtractionService implements Service {
 		List<ChatMessage> instructions = new ArrayList<>();
 		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM,
 				"You are a teacher and you are preparing an assessment from some text materials."));
-		instructions.add(new ChatMessage(ChatMessage.Role.USER,
-				"Create 'fill the blank' exercises with corresponding fill words from the given context, and format them as a JSON array. Make sure to generate questions where a missing word is replaced with a blank, denoted as '______', and provide the missing word as the answer."));
-		instructions.add(new ChatMessage(ChatMessage.Role.USER, "Context:\r\n" + "'''\r\n"
+		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM,
+				"Create 'fill the blank' exercises with corresponding fill words from the given context, and format them as a JSON array. Make sure to generate questions where a missing word is replaced with a blank, denoted as '______', and provide the missing word as the answer.",
+				"example_user", null));
+		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM, "Context:\r\n" + "'''\r\n"
 				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China\u2013Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1\u20442 in) was most recently established in 2020 by the Chinese and Nepali authorities.\r\n"
-				+ "'''"));
-		instructions.add(new ChatMessage(ChatMessage.Role.BOT,
+				+ "'''", "example_user", null));
+		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM,
 				"[\r\n" + "   {\r\n" + "      \"question\":\"Which is Earth's highest mountain above sea level?\",\r\n"
-						+ "      \"answer\":\"Mount Everest\"\r\n" + "   }\r\n" + "]"));
-		instructions.add(new ChatMessage(ChatMessage.Role.USER,
-				"This is wrong, this is not a  'fill the blank' exercises. Try again."));
-		instructions.add(new ChatMessage(ChatMessage.Role.BOT,
+						+ "      \"answer\":\"Mount Everest\"\r\n" + "   }\r\n" + "]",
+				"example_assistant", null));
+		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM,
+				"This is wrong, this is not a  'fill the blank' exercises. Try again.", "example_user", null));
+		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM,
 				"[\r\n" + "   {\r\n"
 						+ "      \"question\":\"Mount ______ is Earth's highest mountain above sea level.\",\r\n"
-						+ "      \"answer\":\"Everest\"\r\n" + "   }\r\n" + "]"));
-		instructions.add(new ChatMessage(ChatMessage.Role.USER, "This is correct."));
+						+ "      \"answer\":\"Everest\"\r\n" + "   }\r\n" + "]",
+				"example_assistant", null));
+		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM, "This is correct.", "example_user", null));
 
 		List<QnAPair> result = getQuestions(instructions, text);
 		Iterator<QnAPair> it = result.iterator();
@@ -251,13 +254,14 @@ public class QuestionExtractionService implements Service {
 		List<ChatMessage> instructions = new ArrayList<>();
 		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM,
 				"You are a teacher and you are preparing an assessment from some text materials."));
-		instructions.add(new ChatMessage(ChatMessage.Role.USER,
-				"Given a context, extract a set of multiple-choice questions, corresponding answers, and a list of options for each question, then format them as a JSON array. Make sure the options for one question are all different. Some examples are provided below."));
-		instructions.add(new ChatMessage(ChatMessage.Role.USER, "Context:\n'''\n" //
+		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM,
+				"Given a context, extract a set of multiple-choice questions, corresponding answers, and a list of options for each question, then format them as a JSON array. Make sure the options for one question are all different. Some examples are provided below.",
+				"example_user", null));
+		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM, "Context:\n'''\n" //
 				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China–Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1⁄2 in) was most recently established in 2020 by the Chinese and Nepali authorities.\n" //
 				+ "Mount Everest attracts many climbers, including highly experienced mountaineers. There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the 'standard route') and the other from the north in Tibet. While not posing substantial technical climbing challenges on the standard route, Everest presents dangers such as altitude sickness, weather, and wind, as well as hazards from avalanches and the Khumbu Icefall. As of 2019, over 300 people have died on Everest, many of whose bodies remain on the mountain.\n" //
-				+ "'''"));
-		instructions.add(new ChatMessage(ChatMessage.Role.BOT, "[\n" //
+				+ "'''", "example_user", null));
+		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM, "[\n" //
 				+ "   {\n" //
 				+ "      \"question\":\"What is the highest mountain on Earth?\",\n" //
 				+ "      \"options\":[\n" //
@@ -291,7 +295,7 @@ public class QuestionExtractionService implements Service {
 				+ "      ],\n" //
 				+ "      \"answer\":\"3\"\n" //
 				+ "   }\n" //
-				+ "]"));
+				+ "]", "example_assistant", null));
 
 		List<QnAPair> result = getQuestions(instructions, text);
 		Iterator<QnAPair> it = result.iterator();

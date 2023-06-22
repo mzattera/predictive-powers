@@ -148,10 +148,13 @@ public class ChatCompletionsRequest {
 	List<ChatMessage> messages = new ArrayList<>();
 
 	/**
-	 * Notice: it seems there is HTTP 400 error if this is an empty list.
+	 * Notice: HTTP 400 error is generated if this is an empty list.
 	 */
 	List<Function> functions;
 
+	/**
+	 * Notice: Setting this with no {@link #functions} causes an  HTTP 400 error.
+	 */
 	FunctionCallSetting functionCall;
 
 	Double temperature;

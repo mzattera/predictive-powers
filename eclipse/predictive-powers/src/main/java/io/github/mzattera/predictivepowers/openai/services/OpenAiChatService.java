@@ -26,7 +26,6 @@ import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiTokenizer;
 import io.github.mzattera.predictivepowers.services.AbstractChatService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.services.ModelService;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import lombok.Getter;
 import lombok.NonNull;
@@ -52,6 +51,7 @@ public class OpenAiChatService extends AbstractChatService {
 
 	public OpenAiChatService(OpenAiEndpoint ep, ChatCompletionsRequest defaultReq) {
 		this.endpoint = ep;
+		this.models = this.endpoint.getModelService();
 		this.defaultReq = defaultReq;
 		setMaxConversationTokens(Math.max(ep.getModelService().getContextSize(defaultReq.getModel()), 2046) * 3 / 4);
 	}
@@ -59,6 +59,8 @@ public class OpenAiChatService extends AbstractChatService {
 	@NonNull
 	@Getter
 	protected final OpenAiEndpoint endpoint;
+
+	protected final OpenAiModelService models;
 
 	@Override
 	public String getModel() {
@@ -171,7 +173,7 @@ public class OpenAiChatService extends AbstractChatService {
 			ChatCompletionsChoice choice = chatCompletion(
 					trimChat(history, endpoint.getModelService().getTokenizer(req.getModel())), req, functions);
 			OpenAiTextCompletion result = new OpenAiTextCompletion(choice.getMessage().getContent(),
-					FinishReason.fromGptApi(choice.getFinishReason()), choice.getMessage().getFunctionCall());
+					choice.getFinishReason(), choice.getMessage().getFunctionCall());
 			history.add(choice.getMessage());
 			return result;
 
@@ -273,7 +275,8 @@ public class OpenAiChatService extends AbstractChatService {
 	 * @param functions List of functions that can be called (possibly empty or
 	 *                  null, to prevent function calls).
 	 */
-	public OpenAiTextCompletion complete(List<ChatMessage> messages, ChatCompletionsRequest req, List<Function> functions) {
+	public OpenAiTextCompletion complete(List<ChatMessage> messages, ChatCompletionsRequest req,
+			List<Function> functions) {
 		ChatCompletionsChoice choice = chatCompletion(messages, req, functions);
 		return new OpenAiTextCompletion(choice.getMessage().getContent(),
 				FinishReason.fromGptApi(choice.getFinishReason()), choice.getMessage().getFunctionCall());
@@ -293,22 +296,19 @@ public class OpenAiChatService extends AbstractChatService {
 			List<Function> functions) {
 
 		String model = req.getModel();
-		// TODO: create only once
-		OpenAiModelService ms = endpoint.getModelService();
-		OpenAiTokenizer counter = ms.getTokenizer(model);
+		OpenAiTokenizer counter = models.getTokenizer(model);
 
 		req.setMessages(messages);
-
 		if ((functions != null) && (functions.size() > 0)) {
 			req.setFunctions(functions);
 		}
 
 		// Adjust token limit if needed
-		boolean autofit = (req.getMaxTokens() == null) && (ms.getContextSize(model, -1) != -1);
+		boolean autofit = (req.getMaxTokens() == null) && (models.getContextSize(model, -1) != -1);
 		try {
 			if (autofit) {
 				int tok = counter.count(req); // Notice we must count function definitions too
-				req.setMaxTokens(ms.getContextSize(model) - tok - 10);
+				req.setMaxTokens(models.getContextSize(model) - tok - 5);
 			}
 
 			ChatCompletionsResponse resp = endpoint.getClient().createChatCompletion(req);

@@ -52,17 +52,14 @@ import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsRequest;
 import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsResponse;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService;
 import io.github.mzattera.util.ImageUtil;
 import io.reactivex.Single;
+import lombok.Getter;
 import lombok.NonNull;
-import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
-import okhttp3.Response;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
@@ -100,13 +97,14 @@ public class OpenAiClient implements ApiClient {
 
 	private final OkHttpClient client;
 
-	// Maps from-to POJO <-> JSON
-	public final static ObjectMapper JSON_MAPPER;
+	/** Used for JSON (de)serialization in API calls */
+	@Getter
+	private final static ObjectMapper jsonMapper;
 	static {
-		JSON_MAPPER = new ObjectMapper();
-		JSON_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		JSON_MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-		JSON_MAPPER.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+		jsonMapper = new ObjectMapper();
+		jsonMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		jsonMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		jsonMapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 	}
 
 	/**
@@ -150,21 +148,10 @@ public class OpenAiClient implements ApiClient {
 	 * full customization {@link #getDefaultHttpClient(String, int, int, int)}
 	 */
 	public OpenAiClient(OkHttpClient http) {
-
-//		client = http;
-		
-		// TODO URGENT Remove
-		client = http.newBuilder().addInterceptor(new Interceptor(){
-
-			@Override
-			public Response intercept(Chain chain) throws IOException {
-				Response resp = chain.proceed(chain.request());
-				System.out.println("\nRESP ===\n"+resp.body().string());
-				return chain.proceed(chain.request());
-			}}).build();
+		client = http;
 
 		Retrofit retrofit = new Retrofit.Builder().baseUrl(API_BASE_URL).client(client)
-				.addConverterFactory(JacksonConverterFactory.create(JSON_MAPPER))
+				.addConverterFactory(JacksonConverterFactory.create(jsonMapper))
 				.addCallAdapterFactory(RxJava2CallAdapterFactory.create()).build();
 
 		api = retrofit.create(OpenAiApi.class);
@@ -196,15 +183,22 @@ public class OpenAiClient implements ApiClient {
 	}
 
 	public ChatCompletionsResponse createChatCompletion(ChatCompletionsRequest req) {
-		
+				
 		// TODO URGENT Remove
-//		try {
-//			System.out.println("\nREQ ===\n"+JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(req));
-//		} catch (JsonProcessingException e) {
-//			e.printStackTrace();
-//		}
-		OpenAiModelService svc = (new OpenAiEndpoint()).getModelService();
-		System.out.println("\nTOK === "+svc.getTokenizer(req.getModel()).count(req));
+		try {
+			System.out.println("\nREQ ===\n" + jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(req));
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		try {
+			ChatCompletionsResponse resp = callApi(api.chatCompletions(req));
+			System.out.println("\nRESP ===\n" + jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(resp));
+			return resp;
+		} catch (JsonProcessingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 		return callApi(api.chatCompletions(req));
 	}
@@ -464,7 +458,7 @@ public class OpenAiClient implements ApiClient {
 			// that allows counting tokens?
 			OpenAiException oaie;
 			try {
-				oaie = new OpenAiException(JSON_MAPPER.readValue(e.response().errorBody().string(), OpenAiError.class),
+				oaie = new OpenAiException(jsonMapper.readValue(e.response().errorBody().string(), OpenAiError.class),
 						e);
 			} catch (Exception ex) {
 				throw e;

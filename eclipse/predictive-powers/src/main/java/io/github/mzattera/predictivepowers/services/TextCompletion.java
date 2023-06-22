@@ -69,8 +69,13 @@ public class TextCompletion {
 
 		/** Omitted content due to content filters */
 		INAPPROPRIATE,
-		
-		/** The API generated a function call (e.g. OpenAI function calling). */
+
+		/**
+		 * The API generated a function call (e.g. OpenAI function calling).
+		 * 
+		 * Notice that OpenAI API returns {@link #COMPLETED} if a function call was
+		 * forced when setting a function name with function_call request parameter.
+		 */
 		FUNCTION_CALL,
 
 		UNKNOWN;
@@ -85,7 +90,7 @@ public class TextCompletion {
 				return FinishReason.INAPPROPRIATE;
 			case "null":
 				return FinishReason.INCOMPLETE;
-			case "function_call:":
+			case "function_call":
 				return FinishReason.FUNCTION_CALL;
 			default:
 				return FinishReason.UNKNOWN;

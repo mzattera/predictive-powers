@@ -30,7 +30,7 @@ import io.github.mzattera.predictivepowers.services.TextCompletion;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public class ChatTest {
+public class OpenAiChatServiceTest {
 
 	/**
 	 * Check completions not affecting history.
@@ -217,10 +217,8 @@ public class ChatTest {
 
 			String question = "How high is Mt.Everest?";
 
-			@SuppressWarnings("unused")
-			TextCompletion resp = null;
 			try {
-				resp = cs.chat(question);
+				cs.chat(question);
 			} catch (Exception e) {
 			}
 

@@ -22,21 +22,33 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.alibaba.fastjson2.JSONObject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kjetland.jackson.jsonSchema.JsonSchemaGenerator;
+
+import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
+import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
+import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractModelService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
+import io.github.mzattera.predictivepowers.services.ChatMessage.FunctionCall;
+import io.github.mzattera.predictivepowers.services.ModelService.ModelData;
+import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.ModelService;
-import io.github.mzattera.predictivepowers.util.tikoken.ChatFormatDescriptor;
-import io.github.mzattera.predictivepowers.util.tikoken.Encoding;
-import io.github.mzattera.predictivepowers.util.tikoken.GPT3Tokenizer;
-import io.github.mzattera.predictivepowers.util.tikoken.TokenCount;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import xyz.felh.openai.completion.chat.ChatMessageRole;
+import xyz.felh.openai.jtokkit.utils.TikTokenUtils;
 
 /**
  * This class provides {@link ModelService}s for OpenAI.
@@ -49,6 +61,14 @@ import lombok.ToString;
  */
 public class OpenAiModelService extends AbstractModelService {
 
+	private final static Logger LOG = LoggerFactory.getLogger(OpenAiModelService.class);
+
+	/**
+	 * Tokenizer for OpenAI models.
+	 * 
+	 * @author Massimiliano "Maxi" Zattera
+	 *
+	 */
 	@Getter
 	@Setter
 	@Builder
@@ -58,16 +78,13 @@ public class OpenAiModelService extends AbstractModelService {
 	@ToString
 	public static class OpenAiTokenizer implements Tokenizer {
 
+		@Getter
 		@NonNull
-		private final GPT3Tokenizer tokenizer;
-		private final ChatFormatDescriptor chatFormat;
+		private final String model;
 
-		/**
-		 * 
-		 */
 		@Override
 		public int count(@NonNull String text) {
-			return TokenCount.fromString(text, tokenizer);
+			return TikTokenUtils.tokens(model, text);
 		}
 
 		@Override
@@ -79,7 +96,76 @@ public class OpenAiModelService extends AbstractModelService {
 
 		@Override
 		public int count(@NonNull List<ChatMessage> msgs) {
-			return TokenCount.fromMessages(msgs, tokenizer, chatFormat);
+			List<xyz.felh.openai.completion.chat.ChatMessage> l = new ArrayList<>(msgs.size());
+			for (ChatMessage m : msgs)
+				l.add(translate(m));
+			return TikTokenUtils.tokens(model, l);
+		}
+
+		/**
+		 * Counts tokens required to encode given request.
+		 */
+		public int count(@NonNull ChatCompletionsRequest req) {
+			return count(req.getMessages()) + countFunctions(req.getFunctions());
+		}
+
+		/**
+		 * Counts tokens required to encode given list of functions.
+		 */
+		public int countFunctions(List<Function> functions) {
+			if ((functions == null) || (functions.size() == 0))
+				return 0;
+
+			List<xyz.felh.openai.completion.chat.func.Function> l = new ArrayList<>(functions.size());
+			for (Function f : functions)
+				l.add(translate(f));
+			return TikTokenUtils.tokens(model, null, l);
+		}
+
+		private xyz.felh.openai.completion.chat.ChatMessage translate(ChatMessage m) {
+
+			ChatMessageRole role;
+			switch (m.getRole()) {
+			case USER:
+				role = ChatMessageRole.USER;
+				break;
+			case BOT:
+				role = ChatMessageRole.ASSISTANT;
+				break;
+			case SYSTEM:
+				role = ChatMessageRole.SYSTEM;
+				break;
+			default:
+				throw new IllegalArgumentException(); // Guard
+			}
+
+			xyz.felh.openai.completion.chat.ChatMessage result = new xyz.felh.openai.completion.chat.ChatMessage(role,
+					m.getContent(), m.getName());
+
+			FunctionCall call = m.getFunctionCall();
+			if (call != null) {
+				String arguments = null;
+				try {
+					arguments = OpenAiClient.JSON_MAPPER.writerWithDefaultPrettyPrinter()
+							.writeValueAsString(call.getArguments());
+				} catch (JsonProcessingException e) {
+					LOG.error("Error while parsing function call arguments", e);
+				}
+				result.setFunctionCall(
+						new xyz.felh.openai.completion.chat.func.FunctionCall(call.getName(), arguments));
+			}
+
+			return result;
+		}
+
+		// Note it is safe to have these static
+		// TODO URGENT make this public on other side instead?
+		private final static JsonSchemaGenerator GENERATOR = new JsonSchemaGenerator(new ObjectMapper());
+
+		private xyz.felh.openai.completion.chat.func.Function translate(Function f) {
+
+			JSONObject json = JSONObject.parseObject(GENERATOR.generateJsonSchema(f.getParameters()).toString());
+			return new xyz.felh.openai.completion.chat.func.Function(f.getName(), f.getDescription(), json);
 		}
 	}
 
@@ -134,14 +220,7 @@ public class OpenAiModelService extends AbstractModelService {
 	private final static Map<String, ModelData> data = new ConcurrentHashMap<>();
 	static {
 		for (String model : CONTEXT_SIZES.keySet()) {
-			Tokenizer tok = null;
-			try { // Get a tokenizer, if possible
-				GPT3Tokenizer tokenizer = new GPT3Tokenizer(Encoding.forModel(model));
-				ChatFormatDescriptor chatFormat = ChatFormatDescriptor.forModel(model);
-				tok = new OpenAiTokenizer(tokenizer, chatFormat);
-			} catch (IllegalArgumentException e) { // No tokenizer found for the model
-			}
-
+			Tokenizer tok = new OpenAiTokenizer(model);
 			data.put(model, ModelData.builder().contextSize(CONTEXT_SIZES.get(model)).tokenizer(tok).build());
 		}
 	}
@@ -169,6 +248,16 @@ public class OpenAiModelService extends AbstractModelService {
 	public OpenAiModelService(OpenAiEndpoint endpoint) {
 		super(data);
 		this.endpoint = endpoint;
+	}
+
+	@Override
+	public OpenAiTokenizer getTokenizer(@NonNull String model) throws IllegalArgumentException {
+		return (OpenAiTokenizer)super.getTokenizer(model);
+	}
+
+	@Override
+	public OpenAiTokenizer getTokenizer(@NonNull String model, Tokenizer def) {
+		return (OpenAiTokenizer)super.getTokenizer(model, def);
 	}
 
 	@Override

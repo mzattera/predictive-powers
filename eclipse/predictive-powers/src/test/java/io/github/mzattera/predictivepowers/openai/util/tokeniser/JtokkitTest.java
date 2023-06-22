@@ -23,43 +23,46 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.util.tikoken.ChatFormatDescriptor;
-import io.github.mzattera.predictivepowers.util.tikoken.Encoding;
-import io.github.mzattera.predictivepowers.util.tikoken.GPT3Tokenizer;
-import io.github.mzattera.predictivepowers.util.tikoken.TokenCount;
+import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
+import xyz.felh.openai.jtokkit.api.Encoding;
+import xyz.felh.openai.jtokkit.utils.TikTokenUtils;
 
-public class TiktokenTest {
+public class JtokkitTest {
+
+	private final static OpenAiModelService svc = (new OpenAiEndpoint()).getModelService();
 
 	private final static String TEXT = "banana are great things to eat, really!";
 
 	@Test
 	void test01() {
-		GPT3Tokenizer tokenizer = new GPT3Tokenizer(Encoding.forModel("gpt-3.5-turbo"));
-		assertEquals(9, TokenCount.fromString(TEXT, tokenizer));
+		Encoding tokenizer = TikTokenUtils.getEncoding("gpt-3.5-turbo");
+		assertEquals(9, tokenizer.countTokens(TEXT));
 
-		tokenizer = new GPT3Tokenizer(Encoding.forModel("text-davinci-003"));
-		assertEquals(10, TokenCount.fromString(TEXT, tokenizer));
+		tokenizer = TikTokenUtils.getEncoding("text-davinci-003");
+		assertEquals(10, tokenizer.countTokens(TEXT));
 	}
 
 	@Test
 	void test02() {
-		GPT3Tokenizer tokenizer = new GPT3Tokenizer(Encoding.CL100K_BASE);
+		Encoding tokenizer = TikTokenUtils.getEncoding("gpt-3.5-turbo"); // CL100K_BASE
 		List<Integer> tokens = tokenizer.encode(TEXT);
 		String text = tokenizer.decode(tokens);
 		assertEquals(TEXT, text);
 
-		tokenizer = new GPT3Tokenizer(Encoding.P50K_BASE);
+		tokenizer = TikTokenUtils.getEncoding("text-davinci-003"); // P50K_BASE
 		tokens = tokenizer.encode(TEXT);
 		text = tokenizer.decode(tokens);
 		assertEquals(TEXT, text);
 
-		tokenizer = new GPT3Tokenizer(Encoding.P50K_EDIT);
-		tokens = tokenizer.encode(TEXT);
-		text = tokenizer.decode(tokens);
-		assertEquals(TEXT, text);
+//		tokenizer = new Encoding(Encoding.P50K_EDIT);
+//		tokens = tokenizer.encode(TEXT);
+//		text = tokenizer.decode(tokens);
+//		assertEquals(TEXT, text);
 
-		tokenizer = new GPT3Tokenizer(Encoding.R50K_BASE);
+		tokenizer = TikTokenUtils.getEncoding("davinci"); // R50K_BASE
 		tokens = tokenizer.encode(TEXT);
 		text = tokenizer.decode(tokens);
 		assertEquals(TEXT, text);
@@ -72,16 +75,7 @@ public class TiktokenTest {
 		l.add(new ChatMessage(ChatMessage.Role.USER, "Hello"));
 		l.add(new ChatMessage(ChatMessage.Role.BOT, "Hi, how cna I help?"));
 
-		GPT3Tokenizer tokenizer = new GPT3Tokenizer(Encoding.forModel("gpt-3.5-turbo"));
-		assertEquals(33, TokenCount.fromMessages(l, tokenizer, ChatFormatDescriptor.forModel("gpt-3.5-turbo")));
-	}
-
-	@Test
-	void fromLinesJoined_gives_total_token_count_including_newlines() {
-		GPT3Tokenizer tokenizer = new GPT3Tokenizer(Encoding.CL100K_BASE);
-		assertEquals(0, TokenCount.fromLinesJoined(List.of(), tokenizer));
-		assertEquals(1, TokenCount.fromLinesJoined(List.of("1"), tokenizer));
-		assertEquals(3, TokenCount.fromLinesJoined(List.of("1", "2"), tokenizer));
-		assertEquals(5, TokenCount.fromLinesJoined(List.of("1", "2", "3"), tokenizer));
+		Tokenizer tokenizer = svc.getTokenizer("gpt-3.5-turbo");
+		assertEquals(33, tokenizer.count(l));
 	}
 }

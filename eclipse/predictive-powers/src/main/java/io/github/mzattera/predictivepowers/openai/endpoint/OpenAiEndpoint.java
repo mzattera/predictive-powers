@@ -68,7 +68,7 @@ public class OpenAiEndpoint implements Endpoint {
 	// TODO return each of these as an OpenAI service
 
 	@Override
-	public ModelService getModelService() {
+	public OpenAiModelService getModelService() {
 		return new OpenAiModelService(this);
 	}
 

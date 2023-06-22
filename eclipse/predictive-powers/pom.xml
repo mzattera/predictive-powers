@@ -21,6 +21,7 @@
 		<retrofit.version>2.9.0</retrofit.version>
 		<tika.version>2.7.0</tika.version>
 		<djl.tokenizers.version>0.22.1</djl.tokenizers.version>
+		<jtokkit.version>1.4.4</jtokkit.version>
 	</properties>
 	<dependencies>
 
@@ -99,12 +100,20 @@
 		<version>2.7.0</version>
 		  </dependency>	
   		-->
+
 		<!-- This allows to dynamically load Hugging Face tokenizers using DJL
 		tokenizer library -->
 		<dependency>
 			<groupId>ai.djl.huggingface</groupId>
 			<artifactId>tokenizers</artifactId>
 			<version>${djl.tokenizers.version}</version>
+		</dependency>
+
+		<!-- Tokens count for OpenAI models -->
+		<dependency>
+			<groupId>xyz.felh</groupId>
+			<artifactId>jtokkit</artifactId>
+			<version>${jtokkit.version}</version>
 		</dependency>
 
 		<!--

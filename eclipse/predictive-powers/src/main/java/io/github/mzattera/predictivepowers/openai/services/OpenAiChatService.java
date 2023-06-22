@@ -23,10 +23,10 @@ import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsReq
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiTokenizer;
 import io.github.mzattera.predictivepowers.services.AbstractChatService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ModelService;
-import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import lombok.Getter;
 import lombok.NonNull;
@@ -292,9 +292,10 @@ public class OpenAiChatService extends AbstractChatService {
 	protected ChatCompletionsChoice chatCompletion(List<ChatMessage> messages, ChatCompletionsRequest req,
 			List<Function> functions) {
 
-		ModelService ms = endpoint.getModelService();
 		String model = req.getModel();
-		Tokenizer counter = ms.getTokenizer(model);
+		// TODO: create only once
+		OpenAiModelService ms = endpoint.getModelService();
+		OpenAiTokenizer counter = ms.getTokenizer(model);
 
 		req.setMessages(messages);
 
@@ -306,7 +307,7 @@ public class OpenAiChatService extends AbstractChatService {
 		boolean autofit = (req.getMaxTokens() == null) && (ms.getContextSize(model, -1) != -1);
 		try {
 			if (autofit) {
-				int tok = counter.count(messages);
+				int tok = counter.count(req); // Notice we must count function definitions too
 				req.setMaxTokens(ms.getContextSize(model) - tok - 10);
 			}
 

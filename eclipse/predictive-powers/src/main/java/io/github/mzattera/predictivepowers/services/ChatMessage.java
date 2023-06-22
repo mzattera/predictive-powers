@@ -18,6 +18,7 @@ package io.github.mzattera.predictivepowers.services;
 import java.io.IOException;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
@@ -87,7 +88,8 @@ public class ChatMessage {
 	/**
 	 * Function call that a completion model might return.
 	 * 
-	 * This is supported only by OpenAI at the moment; it will be null in all other cases.
+	 * This is supported only by OpenAI at the moment; it will be null in all other
+	 * cases.
 	 * 
 	 * @author Massimiliano "Maxi" Zattera
 	 *
@@ -164,6 +166,8 @@ public class ChatMessage {
 	/**
 	 * Message content, can be null if a function call is provided instead.
 	 */
+	@JsonInclude(JsonInclude.Include.ALWAYS) // Needed for OpenAI function call API or it will throw HTTP 400 for
+												// function calls messages
 	String content;
 
 	/**

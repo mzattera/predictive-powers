@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
@@ -51,13 +52,17 @@ import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsRequest;
 import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsResponse;
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService;
 import io.github.mzattera.util.ImageUtil;
 import io.reactivex.Single;
 import lombok.NonNull;
+import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
@@ -96,7 +101,7 @@ public class OpenAiClient implements ApiClient {
 	private final OkHttpClient client;
 
 	// Maps from-to POJO <-> JSON
-	private final static ObjectMapper JSON_MAPPER;
+	public final static ObjectMapper JSON_MAPPER;
 	static {
 		JSON_MAPPER = new ObjectMapper();
 		JSON_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -146,7 +151,17 @@ public class OpenAiClient implements ApiClient {
 	 */
 	public OpenAiClient(OkHttpClient http) {
 
-		client = http;
+//		client = http;
+		
+		// TODO URGENT Remove
+		client = http.newBuilder().addInterceptor(new Interceptor(){
+
+			@Override
+			public Response intercept(Chain chain) throws IOException {
+				Response resp = chain.proceed(chain.request());
+				System.out.println("\nRESP ===\n"+resp.body().string());
+				return chain.proceed(chain.request());
+			}}).build();
 
 		Retrofit retrofit = new Retrofit.Builder().baseUrl(API_BASE_URL).client(client)
 				.addConverterFactory(JacksonConverterFactory.create(JSON_MAPPER))
@@ -181,6 +196,16 @@ public class OpenAiClient implements ApiClient {
 	}
 
 	public ChatCompletionsResponse createChatCompletion(ChatCompletionsRequest req) {
+		
+		// TODO URGENT Remove
+//		try {
+//			System.out.println("\nREQ ===\n"+JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(req));
+//		} catch (JsonProcessingException e) {
+//			e.printStackTrace();
+//		}
+		OpenAiModelService svc = (new OpenAiEndpoint()).getModelService();
+		System.out.println("\nTOK === "+svc.getTokenizer(req.getModel()).count(req));
+
 		return callApi(api.chatCompletions(req));
 	}
 

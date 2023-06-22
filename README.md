@@ -6,10 +6,9 @@ Currently the library:
 
   1. Provides low-level access to OpeanAi API similar to [OpenAI-Java](https://github.com/TheoKanning/openai-java).
   
-    It adds access to audio API which, at the time of writing (May 2023),
-	is not supported by OpenAI-Java (and [not really working](https://community.openai.com/t/whisper-api-cannot-read-files-correctly/93420), TBH).
+    It adds support for function calling which, at the time of writing (June 20th, 2023), is not supported by OpenAI-Java.
 	
-	In addition, it provides proper OpenAi tokenizers form [gpt3-tokenizer-java](https://github.com/didalgolab/gpt3-tokenizer-java).
+	In addition, it provides proper OpenAi tokenizers form [jtokkit](https://github.com/forestwanglin/openai-java).
 
   2. Provides (limited) low-level access to Hugging Face Hosted Inference API.
 	  
@@ -293,9 +292,6 @@ Some services, namely those using GPT models, have limits on number of tokens in
 Normally developers do not need to care about these details as services will handle them transparently. However, in order for services to do so,
 proper model data needs to be available to the `ModelService`. This means that, in case you create a new model (e.g. by training an existing OpenAI one), you need to make its data known to the 
 `ModelService` by "registering" the model with `ModelService.put(String,ModelData)`; please refer to the JavaDoc for details.
-
-For OpenAI models, the package `iio.github.mzattera.predictivepowers.util.tikoken` contains 
-classes ported from [gpt3-tokenizer-java](https://github.com/didalgolab/gpt3-tokenizer-java) which include tokenizers for GPT models, should you ever need it.
 
 Class `CharTokenizer` and `SimpleTokenizer` provides naive tokenizers that can be used when an apporximate count of token is enough, and no specific tokenizer is available for a model.
 

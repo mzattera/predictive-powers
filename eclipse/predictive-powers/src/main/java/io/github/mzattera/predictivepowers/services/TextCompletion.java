@@ -16,6 +16,7 @@
 
 package io.github.mzattera.predictivepowers.services;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -39,7 +40,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 @RequiredArgsConstructor
-//@AllArgsConstructor
+@AllArgsConstructor
 @ToString
 public class TextCompletion {
 
@@ -68,6 +69,9 @@ public class TextCompletion {
 
 		/** Omitted content due to content filters */
 		INAPPROPRIATE,
+		
+		/** The API generated a function call (e.g. OpenAI function calling). */
+		FUNCTION_CALL,
 
 		UNKNOWN;
 
@@ -81,6 +85,8 @@ public class TextCompletion {
 				return FinishReason.INAPPROPRIATE;
 			case "null":
 				return FinishReason.INCOMPLETE;
+			case "function_call:":
+				return FinishReason.FUNCTION_CALL;
 			default:
 				return FinishReason.UNKNOWN;
 			}
@@ -88,7 +94,6 @@ public class TextCompletion {
 	}
 
 	@Getter
-	@NonNull
 	private String text;
 
 	@Getter

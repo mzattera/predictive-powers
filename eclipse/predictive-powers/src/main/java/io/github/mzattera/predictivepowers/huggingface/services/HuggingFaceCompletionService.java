@@ -115,7 +115,7 @@ public class HuggingFaceCompletionService implements CompletionService {
 	@Override
 	public boolean getEcho() {
 		if (defaultReq.getParameters().getReturnFullText() == null)
-			return true;
+			return false;
 		return defaultReq.getParameters().getReturnFullText();
 	}
 
@@ -144,7 +144,6 @@ public class HuggingFaceCompletionService implements CompletionService {
 
 	@Override
 	public TextCompletion insert(String prompt, String suffix) {
-		// TODO maybe find a workaround with completion?
 		return insert(prompt, suffix, defaultReq);
 	}
 
@@ -153,7 +152,7 @@ public class HuggingFaceCompletionService implements CompletionService {
 	 * uses provided {@link TextGenerationRequest} to get parameters for the call.
 	 */
 	public TextCompletion insert(String prompt, String suffix, TextGenerationRequest req) {
-		// TODO maybe find a workaround with completion?
+		// TODO maybe find a workaround with completion? Or move insertion into a different model?
 		throw new UnsupportedOperationException();
 	}
 }

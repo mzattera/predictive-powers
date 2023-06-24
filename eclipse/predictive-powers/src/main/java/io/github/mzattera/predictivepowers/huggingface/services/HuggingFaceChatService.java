@@ -239,13 +239,9 @@ public class HuggingFaceChatService extends AbstractChatService {
 		for (; i < msgs.size(); ++i) {
 			ChatMessage m = msgs.get(i);
 
-			if (m.getRole() == Role.SYSTEM)
-				continue;
-
 			if (m.getRole() != lastRole) { // must save conversation we accumulated so far
 				switch (m.getRole()) {
 				case USER:
-				case FUNCTION: // TODO URGENT verify it makes sense
 					result[1].add(sb.toString());
 					break;
 				case BOT:
@@ -270,7 +266,6 @@ public class HuggingFaceChatService extends AbstractChatService {
 		if (sb.length() > 0) { // must save conversation we accumulated so far
 			switch (lastRole) {
 			case USER:
-			case FUNCTION: // TODO URGENT verify it makes sense
 				result[0].add(sb.toString());
 				break;
 			case BOT:

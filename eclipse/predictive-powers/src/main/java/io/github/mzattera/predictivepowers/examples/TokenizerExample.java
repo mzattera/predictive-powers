@@ -24,6 +24,7 @@ import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 
 public class TokenizerExample {
 
+	@SuppressWarnings("unused")
 	public static void main(String args[]) throws IOException {
 		
 		try (Endpoint endpoint = new OpenAiEndpoint()) {

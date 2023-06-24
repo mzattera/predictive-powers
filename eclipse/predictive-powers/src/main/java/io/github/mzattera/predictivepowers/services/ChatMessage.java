@@ -192,6 +192,10 @@ public class ChatMessage {
 	 */
 	FunctionCall functionCall;
 
+	public boolean isFunctionCall() {
+		return (functionCall != null);
+	}
+
 	// TODO add a time stamp?
 
 	public ChatMessage(Role role, String content) {

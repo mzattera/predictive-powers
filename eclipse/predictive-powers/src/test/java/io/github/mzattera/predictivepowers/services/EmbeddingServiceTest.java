@@ -51,29 +51,29 @@ public class EmbeddingServiceTest {
 	@Test
 	public void test00() throws IOException, SAXException, TikaException {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			test(ep.getEmbeddingService());
+			test01(ep.getEmbeddingService());
+			test02(ep.getEmbeddingService());
+			test03(ep.getEmbeddingService());
+			test04(ep.getEmbeddingService());
+			test05(ep.getEmbeddingService());
 		}
 		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
-			test(ep.getEmbeddingService());
+			test01(ep.getEmbeddingService());
+			test02(ep.getEmbeddingService());
+			test03(ep.getEmbeddingService());
+			test04(ep.getEmbeddingService());
+			test05(ep.getEmbeddingService());
 		}
-	}
-
-	private void test(EmbeddingService e) throws IOException, SAXException, TikaException {
-		test01(e);
-		test02(e);
-		test03(e);
-		test04(e);
-		test05(e);
 	}
 
 	public void test01(EmbeddingService es) {
 		Random rnd = new Random();
 
 		List<String> test = new ArrayList<>();
-		test.add("La somma delle parti e' maggiore del tutto");
+		test.add("La somma delle parti ep.getEmbeddingService()' maggiore del tutto");
 		test.add("Una tigre corre nella foresta.");
 		test.add("Non esistono numeri primi minori di 1");
-		test.add("Giove e' il quinto pianeta del sistema solare");
+		test.add("Giove ep.getEmbeddingService()' il quinto pianeta del sistema solare");
 
 		List<EmbeddedText> testEmb = new ArrayList<>();
 		for (String s : test) {

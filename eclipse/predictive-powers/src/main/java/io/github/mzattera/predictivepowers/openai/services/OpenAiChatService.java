@@ -27,7 +27,6 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.Op
 import io.github.mzattera.predictivepowers.services.AbstractChatService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
-import io.github.mzattera.predictivepowers.services.TextCompletion;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -261,7 +260,7 @@ public class OpenAiChatService extends AbstractChatService {
 	}
 
 	@Override
-	public TextCompletion complete(ChatMessage prompt) {
+	public OpenAiTextCompletion complete(ChatMessage prompt) {
 		return complete(prompt, defaultReq, null);
 	}
 

@@ -72,12 +72,13 @@ public class OpenAiCompletionService implements CompletionService {
 
 	@Override
 	public Integer getTopK() {
-		throw new UnsupportedOperationException();
+		return null;
 	}
 
 	@Override
 	public void setTopK(Integer topK) {
-		throw new UnsupportedOperationException();
+		if (topK != null)
+			throw new UnsupportedOperationException();
 	}
 
 	@Override

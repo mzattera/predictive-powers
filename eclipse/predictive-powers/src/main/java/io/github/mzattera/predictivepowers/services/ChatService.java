@@ -67,19 +67,13 @@ public interface ChatService extends Service {
 	 * probability.
 	 */
 	void setTemperature(Double temperature);
-//
-//	/**
-//	 * Maximum amount of tokens to produce (not including the prompt).
-//	 */
-//	Integer getMaxNewTokens();
-//
-//	/**
-//	 * Maximum amount of tokens to produce (not including the prompt).
-//	 */
-//	void setMaxNewTokens(Integer maxNewTokens);
 
 	/**
-	 * These are the messages exchanged in the current chat.
+	 * These are the messages exchanged in the current chat. Implementations of this
+	 * interface are supposed to keep history updated by adding each user utterance
+	 * and the corresponding agent reply. If the history is manipulated differently,
+	 * it is up o the developer to make sure the corresponding service still works
+	 * properly.
 	 * 
 	 * They can be manipulated in order to alter chat flow.
 	 * 
@@ -89,10 +83,20 @@ public interface ChatService extends Service {
 	 */
 	List<ChatMessage> getHistory();
 
-	/** Maximum number of steps to keep in chat history. */
+	/**
+	 * Maximum number of steps to keep in chat history.
+	 * 
+	 * A step is a {@link ChatMessage} in the conversation, regardless the
+	 * associated role (so system message also count).
+	 */
 	int getMaxHistoryLength();
 
-	/** Maximum number of steps to keep in chat history. */
+	/**
+	 * Maximum number of steps to keep in chat history.
+	 * 
+	 * A step is a {@link ChatMessage} in the conversation, regardless the
+	 * associated role (so system message also count).
+	 */
 	void setMaxHistoryLength(int maxHistoryLength);
 
 	/** Personality of the agent. If null, agent has NO personality. */
@@ -102,8 +106,8 @@ public interface ChatService extends Service {
 	void setPersonality(String personality);
 
 	/**
-	 * Maximum number of steps in the conversation to consider when interacting with
-	 * chat service.
+	 * Maximum number of history steps to consider when interacting with chat
+	 * service (ignoring last prompt).
 	 * 
 	 * Notice this does NOT limit length of conversation history (see
 	 * {@link #maxHistoryLength}).
@@ -111,8 +115,8 @@ public interface ChatService extends Service {
 	int getMaxConversationSteps();
 
 	/**
-	 * Maximum number of steps in the conversation to consider when interacting with
-	 * chat service.
+	 * Maximum number of history steps to consider when interacting with chat
+	 * service (ignoring last prompt).
 	 * 
 	 * Notice this does NOT limit length of conversation history (see
 	 * {@link #maxHistoryLength}).
@@ -120,34 +124,32 @@ public interface ChatService extends Service {
 	void setMaxConversationSteps(int l);
 
 	/**
-	 * Maximum number of tokens to keep in conversation steps when interacting with
-	 * chat service.
+	 * Maximum number of tokens to keep in conversation when interacting with chat
+	 * service.
 	 * 
-	 * The higher this parameter, the smaller the allowed size of the reply.
-	 * 
-	 * As there is no Java code available for an exact calculation, this is
-	 * approximated.
+	 * For some models, the higher this parameter, the smaller the allowed size of
+	 * the reply.
 	 */
 	int getMaxConversationTokens();
 
 	/**
-	 * Maximum number of tokens to keep in conversation steps when interacting with
-	 * chat service.
+	 * Maximum number of tokens to keep in conversation when interacting with chat
+	 * service.
 	 * 
-	 * The higher this parameter, the smaller the allowed size of the reply.
-	 * 
-	 * As there is no Java code available for an exact calculation, this is
-	 * approximated.
+	 * For some models, the higher this parameter, the smaller the allowed size of
+	 * the reply.
 	 */
 	void setMaxConversationTokens(int n);
 
 	/**
-	 * Maximum amount of tokens to produce (not including the prompt).
+	 * Maximum amount of tokens to produce (not including the prompt and
+	 * conversation history).
 	 */
 	Integer getMaxNewTokens();
 
 	/**
-	 * Maximum amount of tokens to produce (not including the prompt).
+	 * Maximum amount of tokens to produce (not including the prompt and
+	 * conversation history).
 	 */
 	void setMaxNewTokens(Integer maxNewTokens);
 
@@ -164,7 +166,14 @@ public interface ChatService extends Service {
 	TextCompletion chat(String msg);
 
 	/**
-	 * Completes text (executes given prompt).
+	 * Continues current chat, with the provided message.
+	 * 
+	 * The exchange is added to the conversation history.
+	 */
+	TextCompletion chat(ChatMessage msg);
+
+	/**
+	 * Completes text outside a conversation (executes given prompt).
 	 * 
 	 * Notice this does not consider or affects chat history but agent personality
 	 * is used, if provided.
@@ -172,11 +181,19 @@ public interface ChatService extends Service {
 	TextCompletion complete(String prompt);
 
 	/**
-	 * Completes given conversation, using this service as a completion service.
+	 * Completes text outside a conversation (executes given prompt).
 	 * 
-	 * Notice this does not consider or affects chat history. In addition, agent
-	 * personality is NOT considered, but can be injected as first message in the
-	 * list, for service that support this.
+	 * Notice this does not consider or affects chat history but agent personality
+	 * is used, if provided.
+	 */
+	TextCompletion complete(ChatMessage prompt);
+
+	/**
+	 * Completes text outside a conversation (executes given prompt).
+	 * 
+	 * Notice the list of messages is supposed to be passed as-is to the chat API,
+	 * without modifications, including adding system messages to drive personality
+	 * (for services supporting that).
 	 */
 	TextCompletion complete(List<ChatMessage> messages);
 }

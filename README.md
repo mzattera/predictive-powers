@@ -49,7 +49,7 @@ For example, you can access OpeanAi API directly by instantiating an `OpenAiClie
 Class constructors allow you to pass your API key, which will be used in all subsequent calls.
 Alternatively, the code will try to read the key from your system environment; please refer to the below examples or the JavaDoc for more details.
 
-After that, you can call the provider API directly; 
+After the client is instantiated, you can call the provider API directly; 
 this part of code is not heavily documented but it is meant to match exactly API definitions from service providers.
 
 
@@ -160,8 +160,6 @@ import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 Once the endpoint is created, it can be used to access "services" which are high-level GenAI capabilities. Currently following services are provided:
 
   * `CompletionService` text completion (including insertions): basically, it executes given text prompt.
-     
-	 Provided over both OpenAI (GPT) and Hugging Face (GPT-2 by default) endpoints.
 	 
   * `ChatService` handles conversations with an agent, taking care of agent personality and conversation history.
      
@@ -293,7 +291,26 @@ Normally developers do not need to care about these details as services will han
 proper model data needs to be available to the `ModelService`. This means that, in case you create a new model (e.g. by training an existing OpenAI one), you need to make its data known to the 
 `ModelService` by "registering" the model with `ModelService.put(String,ModelData)`; please refer to the JavaDoc for details.
 
-Class `CharTokenizer` and `SimpleTokenizer` provides naive tokenizers that can be used when an apporximate count of token is enough, and no specific tokenizer is available for a model.
+Class `CharTokenizer` and `SimpleTokenizer` provides naive tokenizers that can be used when an approximate count of token is enough, and no specific tokenizer is available for a model.
+
+Below an example showing how to count tokens in a string and how to get context size for a model.
+
+```java
+		try (Endpoint endpoint = new OpenAiEndpoint()) {
+			
+			// Get a tokenizer for GPT-4
+			Tokenizer counter = endpoint.getModelService().getTokenizer("gpt-4");
+			
+			// Counts tokens in a string
+			int tokens = counter.count("Hello World");
+			
+			// Get model context size
+			int contextSize = endpoint.getModelService().getContextSize("gpt-4");
+
+			// ....
+			
+		} // Close endpoint
+```
 
 
 ## <a name="examples"></a>Examples
@@ -342,6 +359,102 @@ public class ChatExample {
 Below is an example of the code output; notice how conversation context is retained automatically through the conversation.
  
 ![Example of a conversation with GPT-3](./img/Chat.PNG)
+
+
+### More Chat with GPT, Including Function Calling
+ 
+This example shows how to use function calling in conversations.
+ 
+ ```java
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+
+import io.github.mzattera.predictivepowers.openai.client.chat.Function;
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiTextCompletion;
+import io.github.mzattera.predictivepowers.services.ChatMessage;
+import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
+
+public class FunctionCallingExample {
+
+	// Name and description of function to call to get temperature for one town
+	private final static String functionName = "getCurrentWeather";
+	private final static String functionDescription = "Get the current weather in a given location.";
+
+	// The function parameters
+	public static class GetCurrentWeatherParameters {
+
+		public enum TemperatureUnits {
+			CELSIUS, FARENHEIT
+		};
+
+		@JsonProperty(required = true)
+		@JsonPropertyDescription("The city and state, e.g. San Francisco, CA.")
+		public String location;
+
+		@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
+		public TemperatureUnits unit;
+	}
+
+	// List of functions available to the bot (for now it is only 1).
+	private final static List<Function> functions = new ArrayList<>();
+	static {
+		functions.add(
+				Function.builder()
+					.name(functionName)
+					.description(functionDescription)
+					.parameters(GetCurrentWeatherParameters.class)
+				.build());
+	}
+
+	public static void main(String[] args) {
+
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+
+			// Get chat service and set bot personality
+			OpenAiChatService bot = endpoint.getChatService();
+			bot.setPersonality("You are an helpful assistant.");
+
+			// Conversation loop
+			try (Scanner console = new Scanner(System.in)) {
+				while (true) {
+					System.out.print("User     > ");
+					String s = console.nextLine();
+
+					OpenAiTextCompletion reply = bot.chat(s, functions);
+					
+					if (reply.isFunctionCall()) {
+						// The bot generated a function call, show it
+						System.out.println("CALL     > " + reply.getFunctionCall());
+
+						//  Your function call would go here..
+						// We create a fake reply instead
+						ChatMessage functionResult = ChatMessage.builder()
+									.role(Role.FUNCTION)
+									.name(functionName)
+									.content("33°C") // returns 33° Celsius always
+								.build();
+
+						// Pass function result to the bot
+						reply = bot.chat(functionResult);
+					}
+
+					System.out.println("Assistant> " + reply.getText());
+				}
+			}
+
+		} // closes endpoint
+	}
+}```
+
+Below is a conversation example.
+ 
+![Example of a conversation using function calling](./img/FunctionCall.PNG)
  
  
  ### <a name="oracle"></a>All-knowing Oracle

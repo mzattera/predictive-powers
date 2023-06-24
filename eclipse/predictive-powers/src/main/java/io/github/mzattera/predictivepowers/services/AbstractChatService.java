@@ -18,8 +18,10 @@ package io.github.mzattera.predictivepowers.services;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -29,25 +31,30 @@ import lombok.Setter;
  * @author Massimiliano "Maxi" Zattera
  *
  */
+@RequiredArgsConstructor
 public abstract class AbstractChatService implements ChatService {
 
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
 	// values from a Map
 
 	@Getter
+	protected final ModelService modelService;
+
+	@Getter
 	protected final List<ChatMessage> history = new ArrayList<>();
 
 	@Getter
 	@Setter
-	private int maxHistoryLength = 100;
+	private int maxHistoryLength = 30;
 
 	@Getter
 	@Setter
 	private String personality = null;
 
 	@Getter
-	private int maxConversationSteps = 14;
+	private int maxConversationSteps = 15;
 
+	@Override
 	public void setMaxConversationSteps(int l) {
 		if (l < 1)
 			throw new IllegalArgumentException("Must keep at least 1 message.");
@@ -55,7 +62,7 @@ public abstract class AbstractChatService implements ChatService {
 	}
 
 	@Getter
-	private int maxConversationTokens;
+	private int maxConversationTokens = Integer.MAX_VALUE;
 
 	public void setMaxConversationTokens(int n) {
 		if (n < 1)
@@ -70,43 +77,57 @@ public abstract class AbstractChatService implements ChatService {
 		history.clear();
 	}
 
+	@Override 
+	public TextCompletion chat(String msg) {
+		return chat( new ChatMessage(Role.USER, msg));
+	}
+
+	@Override 
+	public TextCompletion complete(String prompt){
+		return complete( new ChatMessage(Role.USER, prompt));
+	}
+	
 	/**
-	 * Trims given conversation history, so it fits the limits set in this instance.
+	 * Trims given list of messages (typically a conversation history), so it fits
+	 * the limits set in this instance (that is, maximum conversation steps and
+	 * tokens).
 	 * 
-	 * @param counter A {@link TokenCounter} used to count tokens for trimming the
-	 *                chat history.
+	 * @param addPersonality If true, personality will be added as a system message
+	 *                       at the beginning of the resulting conversation.
 	 * 
 	 * @return A new conversation, including agent personality and as many messages
 	 *         as can fit, given current settings.
 	 */
-	protected List<ChatMessage> trimChat(List<ChatMessage> messages, Tokenizer counter) {
+	protected List<ChatMessage> trimChat(List<ChatMessage> messages, boolean addPersonality) {
 		List<ChatMessage> result = new ArrayList<>(messages.size());
+		Tokenizer counter = modelService.getTokenizer(getModel());
 
-		int numTokens = 3; // these are in the chat response, always
 		if (getPersonality() != null) {
 			ChatMessage m = new ChatMessage(ChatMessage.Role.SYSTEM, getPersonality());
 			result.add(m);
-			numTokens = counter.count(m);
 		}
 
-		int numMsg = 0;
+		int steps = 0; // Only history counts against steps.
+
 		for (int i = messages.size() - 1; i >= 0; --i) {
-			if (numMsg >= maxConversationSteps)
+			if (steps >= maxConversationSteps)
 				break;
 
 			ChatMessage msg = messages.get(i);
-			int t = counter.count(msg);
-			if ((numMsg > 0) && ((numTokens + t) > maxConversationTokens))
-				break;
-
 			if (getPersonality() != null) {
-				// Skip ChatMessage.Role.SYSTEM message when inserting
+				// Insert after ChatMessage.Role.SYSTEM at the beginning of conversation
 				result.add(1, msg);
 			} else {
 				result.add(0, msg);
 			}
-			++numMsg;
-			numTokens += t;
+
+			if (counter.count(result) > maxConversationTokens) {
+				// remove last msg, it exceeded number of tokens, then exit
+				result.remove(result.size() - 1);
+				break;
+			}
+
+			++steps;
 		}
 
 		return result;

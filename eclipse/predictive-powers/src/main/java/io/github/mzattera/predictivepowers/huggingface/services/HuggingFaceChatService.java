@@ -29,7 +29,6 @@ import io.github.mzattera.predictivepowers.services.TextCompletion;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 /**
@@ -38,7 +37,6 @@ import lombok.Setter;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@RequiredArgsConstructor
 public class HuggingFaceChatService extends AbstractChatService {
 
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
@@ -49,6 +47,12 @@ public class HuggingFaceChatService extends AbstractChatService {
 
 	public HuggingFaceChatService(HuggingFaceEndpoint ep) {
 		this(ep, ConversationalRequest.builder().options(Options.builder().waitForModel(true).build()).build());
+	}
+
+	public HuggingFaceChatService(HuggingFaceEndpoint ep, ConversationalRequest defaultReq) {
+		super(ep.getModelService());
+		this.endpoint = ep;
+		this.defaultReq = defaultReq;
 	}
 
 	@NonNull
@@ -112,11 +116,6 @@ public class HuggingFaceChatService extends AbstractChatService {
 		defaultReq.getParameters().setMaxLength(maxNewTokens);
 	}
 
-	/**
-	 * Continues current chat, with the provided message.
-	 * 
-	 * The exchange is added to the conversation history.
-	 */
 	@Override
 	public TextCompletion chat(String msg) {
 		return chat(msg, defaultReq);
@@ -129,11 +128,29 @@ public class HuggingFaceChatService extends AbstractChatService {
 	 */
 	public TextCompletion chat(String msg, ConversationalRequest req) {
 
-		TextCompletion resp = chatCompletion(msg, getHistory(), req);
+		TextCompletion resp = chatCompletion(msg, trimChat(getHistory(), false), req);
 		getHistory().add(new ChatMessage(Role.USER, msg));
 		getHistory().add(new ChatMessage(Role.BOT, resp.getText()));
 
+		// Make sure history is of desired length
+		while (history.size() > getMaxHistoryLength())
+			history.remove(0);
+
 		return resp;
+	}
+
+	@Override
+	public TextCompletion chat(ChatMessage msg) {
+		return chat(msg, defaultReq);
+	}
+
+	/**
+	 * Continues current chat, with the provided message.
+	 * 
+	 * The exchange is added to the conversation history.
+	 */
+	public TextCompletion chat(ChatMessage msg, ConversationalRequest req) {
+		return chat(msg.getContent(), req);
 	}
 
 	@Override
@@ -149,6 +166,21 @@ public class HuggingFaceChatService extends AbstractChatService {
 	 */
 	public TextCompletion complete(String prompt, ConversationalRequest req) {
 		return chatCompletion(prompt, new ArrayList<>(), req);
+	}
+
+	@Override
+	public TextCompletion complete(ChatMessage prompt) {
+		return complete(prompt.getContent(), defaultReq);
+	}
+
+	/**
+	 * Completes text (executes given prompt).
+	 * 
+	 * Notice this does not consider or affects chat history but agent personality
+	 * is used, if provided.
+	 */
+	public TextCompletion complete(ChatMessage prompt, ConversationalRequest req) {
+		return complete(prompt.getContent(), req);
 	}
 
 	@Override
@@ -182,6 +214,8 @@ public class HuggingFaceChatService extends AbstractChatService {
 	/**
 	 * Splits given conversation into two Lists with user utterances and
 	 * corresponding bot replies, respectively, as required by Hugging Face API.
+	 * 
+	 * Notice it also enforce respect of parameters such as max conversation length
 	 */
 	protected List<String>[] buildInputs(List<ChatMessage> msgs) {
 
@@ -194,18 +228,11 @@ public class HuggingFaceChatService extends AbstractChatService {
 			return result;
 
 		// Get to first user message, we want to be compatible with chatbots that have a
-		// personality and use SYSTEM messages
+		// personality and use SYSTEM messages, or with histories that have been
+		// shortened
 		int i = 0;
-		for (; (i < msgs.size()) && (msgs.get(i).getRole() != Role.USER); ++i) {
-			switch (msgs.get(i).getRole()) {
-			case BOT:
-				throw new IllegalArgumentException("Conversation must be initiated by user");
-			case SYSTEM:
-				break;
-			default:
-				throw new IllegalArgumentException("Role not supported");
-			}
-		}
+		for (; (i < msgs.size()) && (msgs.get(i).getRole() != Role.USER); ++i)
+			;
 
 		Role lastRole = Role.USER;
 		StringBuilder sb = new StringBuilder();
@@ -218,6 +245,7 @@ public class HuggingFaceChatService extends AbstractChatService {
 			if (m.getRole() != lastRole) { // must save conversation we accumulated so far
 				switch (m.getRole()) {
 				case USER:
+				case FUNCTION: // TODO URGENT verify it makes sense
 					result[1].add(sb.toString());
 					break;
 				case BOT:
@@ -234,7 +262,7 @@ public class HuggingFaceChatService extends AbstractChatService {
 			// save this message in the buffer
 			if (sb.length() > 0)
 				sb.append('\n');
-			sb.append(m.getContent());
+			sb.append(m.getContent() == null ? "" : m.getContent());
 
 		} // for each message
 
@@ -242,6 +270,7 @@ public class HuggingFaceChatService extends AbstractChatService {
 		if (sb.length() > 0) { // must save conversation we accumulated so far
 			switch (lastRole) {
 			case USER:
+			case FUNCTION: // TODO URGENT verify it makes sense
 				result[0].add(sb.toString());
 				break;
 			case BOT:

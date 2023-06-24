@@ -183,23 +183,6 @@ public class OpenAiClient implements ApiClient {
 	}
 
 	public ChatCompletionsResponse createChatCompletion(ChatCompletionsRequest req) {
-				
-		// TODO URGENT Remove
-		try {
-			System.out.println("\nREQ ===\n" + jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(req));
-		} catch (JsonProcessingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		try {
-			ChatCompletionsResponse resp = callApi(api.chatCompletions(req));
-			System.out.println("\nRESP ===\n" + jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(resp));
-			return resp;
-		} catch (JsonProcessingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
 		return callApi(api.chatCompletions(req));
 	}
 

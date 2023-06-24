@@ -26,7 +26,8 @@ import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiTokenizer;
 import io.github.mzattera.predictivepowers.services.AbstractChatService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
+import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
+import io.github.mzattera.predictivepowers.services.TextCompletion;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -50,8 +51,8 @@ public class OpenAiChatService extends AbstractChatService {
 	}
 
 	public OpenAiChatService(OpenAiEndpoint ep, ChatCompletionsRequest defaultReq) {
+		super(ep.getModelService());
 		this.endpoint = ep;
-		this.models = this.endpoint.getModelService();
 		this.defaultReq = defaultReq;
 		setMaxConversationTokens(Math.max(ep.getModelService().getContextSize(defaultReq.getModel()), 2046) * 3 / 4);
 	}
@@ -59,8 +60,6 @@ public class OpenAiChatService extends AbstractChatService {
 	@NonNull
 	@Getter
 	protected final OpenAiEndpoint endpoint;
-
-	protected final OpenAiModelService models;
 
 	@Override
 	public String getModel() {
@@ -164,29 +163,60 @@ public class OpenAiChatService extends AbstractChatService {
 	 *                  null, to prevent function calls).
 	 */
 	public OpenAiTextCompletion chat(String msg, ChatCompletionsRequest req, List<Function> functions) {
+		return chat(new ChatMessage(Role.USER, msg), req, functions);
+	}
 
-		// Update history
-		history.add(new ChatMessage(ChatMessage.Role.USER, msg));
+	@Override
+	public OpenAiTextCompletion chat(ChatMessage msg) {
+		return chat(msg, defaultReq, null);
+	}
 
-		try {
+	/**
+	 * Continues current chat, with the provided message.
+	 * 
+	 * The exchange is added to the conversation history.
+	 */
+	public OpenAiTextCompletion chat(ChatMessage msg, ChatCompletionsRequest req) {
+		return chat(msg, defaultReq, null);
+	}
 
-			ChatCompletionsChoice choice = chatCompletion(
-					trimChat(history, endpoint.getModelService().getTokenizer(req.getModel())), req, functions);
-			OpenAiTextCompletion result = new OpenAiTextCompletion(choice.getMessage().getContent(),
-					choice.getFinishReason(), choice.getMessage().getFunctionCall());
-			history.add(choice.getMessage());
-			return result;
+	/**
+	 * Continues current chat, with the provided message.
+	 * 
+	 * The exchange is added to the conversation history.
+	 * 
+	 * @param functions List of functions that can be called (possibly empty or
+	 *                  null, to prevent function calls).
+	 */
+	public OpenAiTextCompletion chat(ChatMessage msg, List<Function> functions) {
+		return chat(msg, defaultReq, functions);
+	}
 
-		} catch (Exception e) {
-			// remove last message from history
-			history.remove(history.size() - 1);
+	/**
+	 * Continues current chat, with the provided message.
+	 * 
+	 * The exchange is added to the conversation history.
+	 * 
+	 * @param functions List of functions that can be called (possibly empty or
+	 *                  null, to prevent function calls).
+	 */
+	public OpenAiTextCompletion chat(ChatMessage msg, ChatCompletionsRequest req, List<Function> functions) {
 
-			throw e;
-		} finally {
-			// Make sure history is of desired length
-			while (history.size() > getMaxHistoryLength())
-				history.remove(0);
-		}
+		List<ChatMessage> conversation = trimChat(history, true);
+		conversation.add(msg);
+
+		ChatCompletionsChoice choice = chatCompletion(conversation, req, functions);
+		OpenAiTextCompletion result = new OpenAiTextCompletion(choice.getMessage().getContent(),
+				choice.getFinishReason(), choice.getMessage().getFunctionCall());
+
+		history.add(msg);
+		history.add(choice.getMessage());
+
+		// Make sure history is of desired length
+		while (history.size() > getMaxHistoryLength())
+			history.remove(0);
+
+		return result;
 	}
 
 	@Override
@@ -227,12 +257,55 @@ public class OpenAiChatService extends AbstractChatService {
 	 *                  null, to prevent function calls).
 	 */
 	public OpenAiTextCompletion complete(String prompt, ChatCompletionsRequest req, List<Function> functions) {
-		List<ChatMessage> msg = new ArrayList<>();
-		if (getPersonality() != null)
-			msg.add(new ChatMessage(ChatMessage.Role.SYSTEM, getPersonality()));
-		msg.add(new ChatMessage(ChatMessage.Role.USER, prompt));
+		return complete(new ChatMessage(ChatMessage.Role.USER, prompt), req, functions);
+	}
 
-		return complete(msg, req, functions);
+	@Override
+	public TextCompletion complete(ChatMessage prompt) {
+		return complete(prompt, defaultReq, null);
+	}
+
+	/**
+	 * Completes text outside a conversation (executes given prompt).
+	 * 
+	 * Notice this does not consider or affects chat history but agent personality
+	 * is used, if provided.
+	 */
+	public OpenAiTextCompletion complete(ChatMessage prompt, ChatCompletionsRequest req) {
+		return complete(prompt, req, null);
+	}
+
+	/**
+	 * Completes text outside a conversation (executes given prompt).
+	 * 
+	 * Notice this does not consider or affects chat history but agent personality
+	 * is used, if provided.
+	 * 
+	 * @param functions List of functions that can be called (possibly empty or
+	 *                  null, to prevent function calls).
+	 */
+	public OpenAiTextCompletion complete(ChatMessage prompt, List<Function> functions) {
+		return complete(prompt, defaultReq, functions);
+	}
+
+	/**
+	 * Completes text outside a conversation (executes given prompt).
+	 * 
+	 * Notice this does not consider or affects chat history but agent personality
+	 * is used, if provided.
+	 * 
+	 * 
+	 * 
+	 * @param functions List of functions that can be called (possibly empty or
+	 *                  null, to prevent function calls).
+	 */
+	public OpenAiTextCompletion complete(ChatMessage prompt, ChatCompletionsRequest req, List<Function> functions) {
+		List<ChatMessage> msgs = new ArrayList<>();
+		if (getPersonality() != null)
+			msgs.add(new ChatMessage(ChatMessage.Role.SYSTEM, getPersonality()));
+		msgs.add(prompt);
+
+		return complete(msgs, req, functions);
 	}
 
 	@Override
@@ -278,8 +351,8 @@ public class OpenAiChatService extends AbstractChatService {
 	public OpenAiTextCompletion complete(List<ChatMessage> messages, ChatCompletionsRequest req,
 			List<Function> functions) {
 		ChatCompletionsChoice choice = chatCompletion(messages, req, functions);
-		return new OpenAiTextCompletion(choice.getMessage().getContent(),
-				FinishReason.fromGptApi(choice.getFinishReason()), choice.getMessage().getFunctionCall());
+		return new OpenAiTextCompletion(choice.getMessage().getContent(), choice.getFinishReason(),
+				choice.getMessage().getFunctionCall());
 	}
 
 	/**
@@ -296,19 +369,19 @@ public class OpenAiChatService extends AbstractChatService {
 			List<Function> functions) {
 
 		String model = req.getModel();
-		OpenAiTokenizer counter = models.getTokenizer(model);
+		OpenAiTokenizer counter = (OpenAiTokenizer) modelService.getTokenizer(model);
 
 		req.setMessages(messages);
-		if ((functions != null) && (functions.size() > 0)) {
+		if ((functions != null) && (functions.size() > 0)) { // seems to cause an error if you set it otherwise
 			req.setFunctions(functions);
 		}
 
 		// Adjust token limit if needed
-		boolean autofit = (req.getMaxTokens() == null) && (models.getContextSize(model, -1) != -1);
+		boolean autofit = (req.getMaxTokens() == null) && (modelService.getContextSize(model, -1) != -1);
 		try {
 			if (autofit) {
 				int tok = counter.count(req); // Notice we must count function definitions too
-				req.setMaxTokens(models.getContextSize(model) - tok - 5);
+				req.setMaxTokens(modelService.getContextSize(model) - tok - 5);
 			}
 
 			ChatCompletionsResponse resp = endpoint.getClient().createChatCompletion(req);

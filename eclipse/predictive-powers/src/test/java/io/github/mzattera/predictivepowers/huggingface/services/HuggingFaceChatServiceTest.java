@@ -16,12 +16,18 @@
 
 package io.github.mzattera.predictivepowers.huggingface.services;
 
+import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
+import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.TextCompletion;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 
@@ -168,7 +174,129 @@ public class HuggingFaceChatServiceTest {
 			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().size(), 0);
 			assertEquals(cs.getDefaultReq().getInputs().getText(), question);
 			assertEquals(cs.getMaxNewTokens(), null);
+
+			// Completion
+
+			cs.setPersonality(personality);
+			cs.setMaxNewTokens(null);
+			cs.setMaxHistoryLength(4);
+			cs.setMaxConversationSteps(9999);
+			cs.setMaxConversationTokens(1);
+
+			List<ChatMessage> l = new ArrayList<>();
+			l.add(new ChatMessage(Role.USER, question));
+			resp = cs.complete(l);
+			assertEquals(resp.getFinishReason(), FinishReason.OK);
+			assertEquals(cs.getHistory().size(), 4);
+			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.USER);
+			assertEquals(cs.getHistory().get(0).getContent(), "user_" + 9);
+			assertEquals(cs.getHistory().get(1).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(1).getContent(), "bot_" + 9);
+			assertEquals(cs.getHistory().get(2).getRole(), ChatMessage.Role.USER);
+			assertEquals(cs.getHistory().get(2).getContent(), question);
+			assertEquals(cs.getHistory().get(3).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(3).getContent(), resp.getText());
+			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().size(), 0);
+			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().size(), 0);
+			assertEquals(cs.getDefaultReq().getInputs().getText(), question);
+			assertEquals(cs.getMaxNewTokens(), null);
 		} // Close endpoint
+	}
+
+	/**
+	 * Test special HF way of building conversation hstory.
+	 */
+	@Test
+	public void test05() {
+		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
+			HuggingFaceChatService cs = ep.getChatService();
+			assertEquals(Integer.MAX_VALUE, cs.getMaxConversationTokens());
+			String question = "How high is Mt.Everest?";
+
+			// Double chat message per role 
+			
+			// Fake history
+			for (int i = 0; i < 10; ++i) {
+				cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "U1_" + i));
+				cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "U2_" + i));
+				cs.getHistory().add(new ChatMessage(ChatMessage.Role.BOT, "B1_" + i));
+				cs.getHistory().add(new ChatMessage(ChatMessage.Role.BOT, "B2_" + i));
+			}
+
+			cs.setMaxHistoryLength(4);
+			cs.setMaxConversationSteps(4);
+
+			TextCompletion resp = cs.chat(question);
+			assertEquals(resp.getFinishReason(), FinishReason.OK);
+			assertEquals(cs.getHistory().size(), 4);
+			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(0).getContent(), "B1_" + 9);
+			assertEquals(cs.getHistory().get(1).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(1).getContent(), "B2_" + 9);
+			assertEquals(cs.getHistory().get(2).getRole(), ChatMessage.Role.USER);
+			assertEquals(cs.getHistory().get(2).getContent(), question);
+			assertEquals(cs.getHistory().get(3).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(3).getContent(), resp.getText());
+			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().size(), 1);
+			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().get(0), "U1_9\nU2_9");
+			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().size(), 1);
+			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().get(0), "B1_9\nB2_9");
+			assertEquals(cs.getDefaultReq().getInputs().getText(), question);
+
+			// Double chat message per role, very short conversation steps 
+			
+			// Fake history
+			for (int i = 0; i < 10; ++i) {
+				cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "U1_" + i));
+				cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "U2_" + i));
+				cs.getHistory().add(new ChatMessage(ChatMessage.Role.BOT, "B1_" + i));
+				cs.getHistory().add(new ChatMessage(ChatMessage.Role.BOT, "B2_" + i));
+			}
+
+			cs.setMaxHistoryLength(4);
+			cs.setMaxConversationSteps(2); // Should consider only last 2 bot message, which are ingored
+
+			resp = cs.chat(question);
+			assertEquals(resp.getFinishReason(), FinishReason.OK);
+			assertEquals(cs.getHistory().size(), 4);
+			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(0).getContent(), "B1_" + 9);
+			assertEquals(cs.getHistory().get(1).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(1).getContent(), "B2_" + 9);
+			assertEquals(cs.getHistory().get(2).getRole(), ChatMessage.Role.USER);
+			assertEquals(cs.getHistory().get(2).getContent(), question);
+			assertEquals(cs.getHistory().get(3).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(3).getContent(), resp.getText());
+			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().size(), 0);
+			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().size(), 0);
+			assertEquals(cs.getDefaultReq().getInputs().getText(), question);
+
+			// Double chat message per role, starting with SYSTEM AND BOT
+			
+			// Fake history
+			cs.getHistory().add(new ChatMessage(ChatMessage.Role.SYSTEM, "Should be ignored"));
+			cs.getHistory().add(new ChatMessage(ChatMessage.Role.BOT, "Should be ignored"));
+			for (int i = 0; i < 1; ++i) {
+				cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "U1_" + i));
+				cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "U2_" + i));
+				cs.getHistory().add(new ChatMessage(ChatMessage.Role.BOT, "B1_" + i));
+				cs.getHistory().add(new ChatMessage(ChatMessage.Role.BOT, "B2_" + i));
+			}
+
+			cs.setMaxHistoryLength(6);
+			cs.setMaxConversationSteps(6); // TODO URGENT TESTA CON 2
+
+			resp = cs.chat(question);
+			assertEquals(resp.getFinishReason(), FinishReason.OK);
+			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().size(), 1);
+			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().get(0), "U1_0\nU2_0");
+			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().size(), 1);
+			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().get(0), "B1_0\nB2_0");
+			assertEquals(cs.getDefaultReq().getInputs().getText(), question);
+
+			// Empty list
+			resp = cs.complete(new ArrayList<>());
+		}
 	}
 
 	/**
@@ -204,4 +332,42 @@ public class HuggingFaceChatServiceTest {
 			assertEquals(ChatMessage.Role.BOT, cs.getHistory().get(0).getRole());
 		} // Close endpoint
 	}
+
+	/**
+	 * Getters and setters
+	 */
+	@Test
+	public void test04() {
+		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
+			HuggingFaceChatService s = ep.getChatService();
+			String m = s.getModel();
+			assertNotNull(m);
+			s.setModel("pippo");
+			assertEquals("pippo", s.getModel());
+			s.setModel(m);
+
+			s.setTopK(1);
+			assertEquals(1, s.getTopK());
+			s.setTopK(null);
+			assertNull(s.getTopK());
+
+			s.setTopP(2.0);
+			assertEquals(2.0, s.getTopP());
+			s.setTopP(null);
+			assertNull(s.getTopP());
+
+			s.setTemperature(3.0);
+			assertEquals(3.0, s.getTemperature());
+			s.setTemperature(null);
+			assertNull(s.getTemperature());
+			s.setTemperature(1.0);
+
+			s.setMaxNewTokens(4);
+			assertEquals(4, s.getMaxNewTokens());
+			s.setMaxNewTokens(null);
+			assertNull(s.getMaxNewTokens());
+			s.setMaxNewTokens(15);
+		}
+	}
+
 }

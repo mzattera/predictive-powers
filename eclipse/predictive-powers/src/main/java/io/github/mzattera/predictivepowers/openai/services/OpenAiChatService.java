@@ -82,12 +82,13 @@ public class OpenAiChatService extends AbstractChatService {
 
 	@Override
 	public Integer getTopK() {
-		throw new UnsupportedOperationException();
+		return null;
 	}
 
 	@Override
 	public void setTopK(Integer topK) {
-		throw new UnsupportedOperationException();
+		if (topK != null)
+			throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -176,7 +177,7 @@ public class OpenAiChatService extends AbstractChatService {
 	 * The exchange is added to the conversation history.
 	 */
 	public OpenAiTextCompletion chat(ChatMessage msg, ChatCompletionsRequest req) {
-		return chat(msg, defaultReq, null);
+		return chat(msg, req, null);
 	}
 
 	/**
@@ -334,7 +335,7 @@ public class OpenAiChatService extends AbstractChatService {
 	 *                  null, to prevent function calls).
 	 */
 	public OpenAiTextCompletion complete(List<ChatMessage> messages, List<Function> functions) {
-		return complete(messages, defaultReq, null);
+		return complete(messages, defaultReq, functions);
 	}
 
 	/**

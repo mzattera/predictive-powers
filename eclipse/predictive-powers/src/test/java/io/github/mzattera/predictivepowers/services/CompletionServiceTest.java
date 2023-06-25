@@ -83,8 +83,10 @@ public class CompletionServiceTest {
 		s.setModel(m);
 
 		if (s instanceof OpenAiCompletionService) {
+			assertNull(s.getTopK());
+			s.setTopK(null);
+			assertNull(s.getTopK());
 			assertThrows(UnsupportedOperationException.class, () -> s.setTopK(1));
-			assertThrows(UnsupportedOperationException.class, () -> s.getTopK());
 		} else {
 			s.setTopK(1);
 			assertEquals(1, s.getTopK());

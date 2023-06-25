@@ -162,9 +162,9 @@ Once the endpoint is created, it can be used to access "services" which are high
   * `CompletionService` text completion (including insertions): basically, it executes given text prompt.
 	 
   * `ChatService` handles conversations with an agent, taking care of agent personality and conversation history.
-     
-	 Provided only over OpenAI (ChatGPT) endpoint for now.
-	 
+  
+     OpenAI implementation supports function calls as well.
+     	 
   * `EmbeddingService` embeds text and calculates semantic (cosine) similarity between texts; it takes care of automatically splitting long texts when needed.
      
 	 Provided over both OpenAI and Hugging Face endpoints.

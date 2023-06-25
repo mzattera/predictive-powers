@@ -168,9 +168,7 @@ Once the endpoint is created, it can be used to access "services" which are high
   * `EmbeddingService` embeds text and calculates semantic (cosine) similarity between texts; it takes care of automatically splitting long texts when needed.
 	 
   * `QuestionAnsweringService` answers questions, using a user-provided context. The context can be a list of embeddings from a [knowledge base](#kb).
-     
-	 Provided over both OpenAI and Hugging Face endpoints.
-	 
+     	 
   * `QuestionExtractionService` extracts different kinds of questions from a text (e.g. true/false question, multiple choices quizzes, etc.). It automatically handles long texts.
   
      Provided only over OpenAI endpoint for now.

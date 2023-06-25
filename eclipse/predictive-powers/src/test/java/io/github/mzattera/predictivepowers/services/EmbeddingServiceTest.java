@@ -17,6 +17,7 @@
 package io.github.mzattera.predictivepowers.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
@@ -34,6 +35,7 @@ import org.xml.sax.SAXException;
 import io.github.mzattera.predictivepowers.Endpoint;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceEmbeddingService;
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.util.ExtractionUtil;
 import io.github.mzattera.util.ResourceUtil;
@@ -50,19 +52,21 @@ public class EmbeddingServiceTest {
 
 	@Test
 	public void test00() throws IOException, SAXException, TikaException {
-//		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-//			test01(ep);
-//			test02(ep);
-//			test03(ep);
-//			test04(ep);
-//			test05(ep);
-//		}
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
+			test01(ep);
+			test02(ep);
+			test03(ep);
+			test04(ep);
+			test05(ep);
+			test06(ep);
+		}
 		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
 			test01(ep);
 			test02(ep);
 			test03(ep);
 			test04(ep);
 			test05(ep);
+			test06(ep);
 		}
 	}
 
@@ -191,5 +195,18 @@ public class EmbeddingServiceTest {
 		EmbeddingService es = ep.getEmbeddingService();
 		System.out.println("05");
 		es.embedURL("https://en.wikipedia.org/wiki/Alan_Turing");
+	}
+
+	/**
+	 * Getters and setters
+	 */
+	public void test06(Endpoint ep) {
+		EmbeddingService s = ep.getEmbeddingService();
+
+		String m = s.getModel();
+		assertNotNull(m);
+		s.setModel("pippo");
+		assertEquals("pippo", s.getModel());
+		s.setModel(m);
 	}
 }

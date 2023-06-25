@@ -17,6 +17,7 @@
 package io.github.mzattera.predictivepowers.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.FileNotFoundException;
@@ -28,7 +29,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.Endpoint;
+import io.github.mzattera.predictivepowers.huggingface.client.nlp.QuestionAnsweringRequest;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionAnsweringService;
@@ -43,15 +46,17 @@ public class QuestionAnsweringTest {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			test(ep);
 		}
-		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
-			test(ep);
-		}
+//		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
+//			test(ep);
+//		}
 	}
 
 	private void test(Endpoint e) throws ClassNotFoundException, IOException {
 		test01(e);
 		test03(e);
 		test04(e);
+		test05(e);
+		test06(e);
 	}
 
 	/**
@@ -75,6 +80,32 @@ public class QuestionAnsweringTest {
 			assertEquals(context.size(), answer.getEmbeddingContext().size());
 			for (int i = 0; i < context.size(); ++i)
 				assertEquals(context.get(i).getLeft().getText(), answer.getEmbeddingContext().get(i).getText());
+		}
+	}
+
+	/**
+	 * Same as test01(), but tests HF embedding with specific configuration
+	 * 
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
+	@Test
+	public void test91() throws ClassNotFoundException, IOException {
+		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
+			try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
+				EmbeddingService es = oai.getEmbeddingService();
+				HuggingFaceQuestionAnsweringService qas = ep.getQuestionAnsweringService();
+				KnowledgeBase kb = KnowledgeBase.load(ResourceUtil.getResourceFile("kb_banana.object"));
+
+				String question = "What does Olaf like?";
+				List<Pair<EmbeddedText, Double>> context = kb.search(es.embed(question).get(0), 50, 0);
+				QnAPair answer = qas.answerWithEmbeddings(question, context, new QuestionAnsweringRequest());
+
+				assertTrue(answer.getAnswer().toLowerCase().contains("banana"));
+				assertEquals(context.size(), answer.getEmbeddingContext().size());
+				for (int i = 0; i < context.size(); ++i)
+					assertEquals(context.get(i).getLeft().getText(), answer.getEmbeddingContext().get(i).getText());
+			}
 		}
 	}
 
@@ -118,6 +149,31 @@ public class QuestionAnsweringTest {
 	}
 
 	/**
+	 * Same as test01(), but tests HF embedding with specific configuration
+	 * 
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
+	@Test
+	public void test93() throws ClassNotFoundException, IOException {
+		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
+			try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
+				EmbeddingService es = oai.getEmbeddingService();
+				HuggingFaceQuestionAnsweringService qas = ep.getQuestionAnsweringService();
+				KnowledgeBase kb = KnowledgeBase.load(ResourceUtil.getResourceFile("kb_banana.object"));
+
+				qas.setMaxContextTokens(1);
+
+				String question = "What does Olaf like?";
+				List<Pair<EmbeddedText, Double>> context = kb.search(es.embed(question).get(0), 50, 0);
+				QnAPair answer = qas.answerWithEmbeddings(question, context);
+
+				assertTrue("I do not know.".equals(answer.getAnswer()) || "Olaf".equals(answer.getAnswer()));
+			}
+		}
+	}
+
+	/**
 	 * String as context.
 	 */
 	public void test04(Endpoint ep) {
@@ -129,6 +185,32 @@ public class QuestionAnsweringTest {
 		assertTrue(answer.getAnswer().contains("pears"));
 		assertEquals(1, answer.getContext().size());
 		assertEquals("Olaf likes pears.", answer.getContext().get(0));
+	}
+
+	/**
+	 * Empty context.
+	 */
+	public void test06(Endpoint ep) {
+		QuestionAnsweringService qas = ep.getQuestionAnsweringService();
+
+		String question = "What does Olaf like?";
+		QnAPair answer = qas.answer(question, new ArrayList<>());
+
+		assertEquals("I do not know.", answer.getAnswer());
+		assertEquals("No context was provided.", answer.getExplanation());
+	}
+
+	/**
+	 * Getters and setters
+	 */
+	public void test05(Endpoint ep) {
+		QuestionAnsweringService s = ep.getQuestionAnsweringService();
+
+		String m = s.getModel();
+		assertNotNull(m);
+		s.setModel("pippo");
+		assertEquals("pippo", s.getModel());
+		s.setModel(m);
 	}
 
 	/**

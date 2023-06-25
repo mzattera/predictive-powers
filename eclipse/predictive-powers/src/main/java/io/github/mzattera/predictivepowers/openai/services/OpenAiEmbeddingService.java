@@ -82,14 +82,14 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 	}
 
 	@Override
-	public void setMaxTokens(int maxTokens) {
+	public void setMaxTextTokens(int maxTokens) {
 		if ((maxTokens <= 0) || (maxTokens > 8192))
 			// TODO is this a limitation of the model?
 			// I think the API description mention this, but it might be assuming user is
 			// using text-embedding-ada-002
 			throw new IllegalArgumentException("maxTokens must be 0 < maxTokens <= 8192: " + maxTokens);
 
-		super.setMaxTokens(maxTokens);
+		super.setMaxTextTokens(maxTokens);
 	}
 
 	/**

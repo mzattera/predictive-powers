@@ -45,7 +45,7 @@ public interface EmbeddingService extends Service {
 	 * Maximum number of tokens for each piece of text being embedded. If text is
 	 * longer, it is split in multiple parts before embedding.
 	 */
-	void setMaxTokens(int maxTokens);
+	void setMaxTextTokens(int maxTokens);
 
 	/**
 	 * Create embeddings for given text.

@@ -114,13 +114,14 @@ public class EmbeddingServiceTest {
 		System.out.println("02");
 		EmbeddingService es = ep.getEmbeddingService();
 		if (es instanceof HuggingFaceEmbeddingService)
-			return; // TODO it seems the tokenizer always returns 128, regardless input size; thi
-					// smight affect other aspects, to be investigated
+			return; // TODO it seems the tokenizer always returns 128, regardless input size; this
+					// might affect other aspects, to be investigated
 
 		Tokenizer counter = es.getEndpoint().getModelService().getTokenizer(es.getModel());
+		es.setMaxTextTokens(150);
 
 		StringBuilder txt = new StringBuilder();
-		for (int i = 0; i < 10; ++i)
+		while (counter.count(txt.toString()) < es.getMaxTextTokens())
 			txt.append("Banana! ");
 
 		List<EmbeddedText> resp = es.embed(txt.toString());

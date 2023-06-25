@@ -50,7 +50,7 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 	private int maxTextTokens = 150;
 
 	@Override
-	public void setMaxTokens(int maxTextTokens) {
+	public void setMaxTextTokens(int maxTextTokens) {
 		if (maxTextTokens < 1)
 			throw new IllegalArgumentException(
 					"Embedded text needs to be of at least 1 token in size: " + maxTextTokens);

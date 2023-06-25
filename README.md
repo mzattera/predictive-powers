@@ -166,8 +166,6 @@ Once the endpoint is created, it can be used to access "services" which are high
      OpenAI implementation supports function calls as well.
      	 
   * `EmbeddingService` embeds text and calculates semantic (cosine) similarity between texts; it takes care of automatically splitting long texts when needed.
-     
-	 Provided over both OpenAI and Hugging Face endpoints.
 	 
   * `QuestionAnsweringService` answers questions, using a user-provided context. The context can be a list of embeddings from a [knowledge base](#kb).
      

@@ -82,12 +82,13 @@ public class FunctionCallExample {
 						// The bot generated a function call, show it
 						System.out.println("CALL     > " + reply.getFunctionCall());
 
-						//  Your function call would go here..
-						// We create a fake reply instead
+						// Your function call would go here..
+						// We create a fake reply instead,
+						// always returning 33° Celsius
 						ChatMessage functionResult = ChatMessage.builder()
 									.role(Role.FUNCTION)
 									.name(functionName)
-									.content("33°C") // returns 33° Celsius always
+									.content("33°C") 
 								.build();
 
 						// Pass function result to the bot

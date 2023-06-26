@@ -27,10 +27,10 @@ public class DefaultConfigurationExample {
 
 			OpenAiCompletionService cs = endpoint.getCompletionService();
 
-			// Set "model" parameter in default request, this will affect all further calls
-			cs.getDefaultReq().setModel("text-curie-001");
+			// Set "best_of" parameter in default request, this will affect all further calls
+			cs.getDefaultReq().setBestOf(3);
 
-			// this call now uses text-curie-001 model
+			// this call (and subsequent ones) now uses best_of = 3
 			System.out.println(cs.complete("Alan Turing was").getText());
 			
 		} // closes endpoint

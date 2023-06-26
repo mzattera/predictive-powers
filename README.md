@@ -252,7 +252,7 @@ Normally, developers do not need to care about these details as services will ha
 proper model data needs to be available to the `ModelService`. This means that, in case you create a new model (e.g. by training an existing OpenAI one), you need to make its data known to the 
 corresponding `ModelService` by "registering" the model with `ModelService.put(String,ModelData)`; please refer to the JavaDoc for details.
 
-Class `CharTokenizer` and `SimpleTokenizer` provide naive tokenizers that can be used when an approximate count of token is enough, and no specific tokenizer is available for a model.
+`CharTokenizer` and `SimpleTokenizer` provide naive tokenizers that can be used when an approximate count of token is enough, and no specific tokenizer is available for a model.
 
 Below an example showing how to count tokens in a string and how to get context size for a model.
 
@@ -276,7 +276,7 @@ Below an example showing how to count tokens in a string and how to get context 
 
 ## <a name="examples"></a>Examples
  
-Below some code examples. These examples, and more, can be found in the [example package](eclipse/predictive-powers/src/main/java/io/github/mzattera/predictivepowers/examples).
+Below some code examples. These examples, can be found in the [example package](eclipse/predictive-powers/src/main/java/io/github/mzattera/predictivepowers/examples).
  
  
 ### Chit-chat with GPT
@@ -390,12 +390,13 @@ public class FunctionCallExample {
 						// The bot generated a function call, show it
 						System.out.println("CALL     > " + reply.getFunctionCall());
 
-						//  Your function call would go here..
-						// We create a fake reply instead
+						// Your function call would go here..
+						// We create a fake reply instead,
+						// always returning 33° Celsius
 						ChatMessage functionResult = ChatMessage.builder()
 									.role(Role.FUNCTION)
 									.name(functionName)
-									.content("33°C") // returns 33° Celsius always
+									.content("33°C") 
 								.build();
 
 						// Pass function result to the bot

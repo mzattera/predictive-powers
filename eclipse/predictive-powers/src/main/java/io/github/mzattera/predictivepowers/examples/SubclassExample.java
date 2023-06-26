@@ -21,17 +21,13 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionAnsweri
 
 public class SubclassExample {
 
+	@SuppressWarnings("unused")
 	public static void main(String[] args) {
 
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
-			// Explicitly instantiates a subclass of QuestionAnsweringService
+			// Explicitly instantiates a subclass of QuestionAnsweringService that uses OpenAi API
 			OpenAiQuestionAnsweringService svc = endpoint.getQuestionAnsweringService();
-
-			// This field is provided only in OpenAI service,
-			// to allow for additional configurability
-			svc.getCompletionService()
-				.setPersonality("You are an helpful question ansering assistant");
 
 			// ... use the service here
 

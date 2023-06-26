@@ -52,7 +52,6 @@ Alternatively, the code will try to read the key from your system environment; p
 After the client is instantiated, you can call the provider API directly; 
 this part of code is not heavily documented but it is meant to match exactly API definitions from service providers.
 
-
 ```java
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
@@ -103,7 +102,7 @@ You can create a customized `OkHttpClient` (e.g. to provide logging) to be used 
 The below example shows how to configure an `OpenAiClient` to use a proxy.
 
 ```java
-		...
+[...]
 		
 		String key = "<Your API key goes here>";
 		String host = "<Your proxy host name goes here>";
@@ -137,8 +136,6 @@ When an endpoint is no longer needed, it should be closed to free-up underlying 
 The example below shows how to create an `OpenAiEndpoint`.
 
 ```java
-import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 
 [...]
 
@@ -182,7 +179,6 @@ Notice how the service abstraction allows you to use two different service provi
 
 ```java
 import io.github.mzattera.predictivepowers.Endpoint;
-import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 
@@ -205,34 +201,7 @@ public class CompletionExample {
 ```
 
 As different service providers expose different capabilities at different levels of maturity, concrete service implementations
-might provide additional functionalities not available in the service interface;
-it is always possible to instantiate service subclasses explicitly to access these functionalities, 
-as shown below.
-
-```java
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionAnsweringService;
-
-public class SubclassExample {
-
-	public static void main(String[] args) {
-
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
-
-			// Explicitly instantiates a subclass of QuestionAnsweringService
-			OpenAiQuestionAnsweringService svc = endpoint.getQuestionAnsweringService();
-
-			// This field is provided only in OpenAI service,
-			// to allow for additional configurability
-			svc.getCompletionService()
-				.setPersonality("You are an helpful question answering assistant");
-
-			// ... use the service here
-
-		} // close endpoint
-	}
-}
-```
+might provide additional functionalities not available in the service interface; please refer to JavaDoc for details.
 
 Below we provide some [examples](#examples) about using services; for a detailed description of the functionalities provided, please refer to the library JavaDoc.
 
@@ -322,9 +291,8 @@ The below code handles conversation with a very depressed entity similar to the 
  
  ```java
 import java.util.Scanner;
-
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.services.ChatService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 
 public class ChatExample {
 
@@ -333,7 +301,7 @@ public class ChatExample {
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
 			// Get chat service and set bot personality
-			ChatService bot = endpoint.getChatService();
+			OpenAiChatService bot = endpoint.getChatService();
 			bot.setPersonality("You are a very sad and depressed robot. "
 					+ "Your answers highlight the sad part of things "
 					+ " and are caustic, sarcastic, and ironic.");
@@ -365,10 +333,8 @@ This example shows how to use function calling in conversations.
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-
 import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
@@ -376,7 +342,7 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiTextCompletion;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
 
-public class FunctionCallingExample {
+public class FunctionCallExample {
 
 	// Name and description of function to call to get temperature for one town
 	private final static String functionName = "getCurrentWeather";
@@ -446,7 +412,8 @@ public class FunctionCallingExample {
 
 		} // closes endpoint
 	}
-}```
+}
+```
 
 Below is a conversation example.
  
@@ -465,6 +432,13 @@ Below is a conversation example.
  We also show here how you can easily switch between OpenAI and Hugging Face services.
  
 ```java
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.List;
+import java.util.Scanner;
+import org.apache.commons.lang3.tuple.Pair;
+import org.apache.tika.exception.TikaException;
+import org.xml.sax.SAXException;
 import io.github.mzattera.predictivepowers.Endpoint;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
@@ -550,7 +524,6 @@ The below code downloads a PDF file containing Credit Suisse financial statement
 
 ```java
 import java.util.List;
-
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
@@ -569,8 +542,8 @@ public class FaqExample {
 			// We keep only one piece of 750 characters.
 			String statment = LlmUtil.splitByChars(
 					ExtractionUtil.fromUrl("https://www.credit-suisse.com/media/assets/corporate/docs/about-us/investor-relations/financial-disclosures/financial-reports/csg-ar-2022-en.pdf"),
-					750)
-					.get(2);
+					1000)
+					.get(3);
 
 			// Our query generation service
 			QuestionExtractionService q = endpoint.getQuestionExtractionService();
@@ -654,7 +627,6 @@ The below code generates two images using an `ImageGenerationService`.
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-
 import io.github.mzattera.predictivepowers.Endpoint;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
@@ -663,7 +635,7 @@ import io.github.mzattera.util.ImageUtil;
 
 public class ImageGenerationExample {
 
-	private final static String PROMPT = "male cyborg...";
+	private final static String PROMPT = "full body male cyborg shaggy long gray hair short beard green eyes| shimmering gold metal| lighning| full-length portrait| detailed face| symmetric| steampunk| cyberpunk| cyborg| intricate detailed| to scale| hyperrealistic| cinematic lighting| digital art| concept art| mdjrny-v4 style";
 
 	public static void main(String[] args) throws Exception {
 
@@ -678,7 +650,7 @@ public class ImageGenerationExample {
 			save(img);
 		}
 
-		// OpenJourney
+		// OpenJourney (notice is same code as above)
 		try (Endpoint endpoint = new HuggingFaceEndpoint()) {
 			ImageGenerationService svc = endpoint.getImageGenerationService();
 			BufferedImage img = svc.createImage(PROMPT, 1, 512, 512).get(0);

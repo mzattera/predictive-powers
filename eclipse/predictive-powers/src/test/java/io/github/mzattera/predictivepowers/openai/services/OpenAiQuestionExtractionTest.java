@@ -13,15 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.mzattera.predictivepowers.services;
+package io.github.mzattera.predictivepowers.openai.services;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.services.QnAPair;
+import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 
-public class QuestionExtractionTest {
+public class OpenAiQuestionExtractionTest {
 
 	@Test
 	void test01() throws Exception {
@@ -66,5 +71,27 @@ public class QuestionExtractionTest {
 			}
 			System.out.println();
 		} // Close endpoint
+	}
+
+	/**
+	 * Getters and setters
+	 */
+	@Test
+	public void test02() {
+
+		// OpenAI end-point
+		// Make sure you specify your API key n OPENAI_KEY system environment variable.
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
+			QuestionExtractionService s = ep.getQuestionExtractionService();
+
+			String m = s.getModel();
+			assertNotNull(m);
+			s.setModel("pippo");
+			assertEquals("pippo", s.getModel());
+			s.setModel(m);
+
+			s.setMaxContextTokens(1);
+			assertEquals(1, s.getMaxContextTokens());
+		}
 	}
 }

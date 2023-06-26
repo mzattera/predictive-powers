@@ -174,8 +174,6 @@ public class ChatMessage {
 	@JsonInclude(JsonInclude.Include.ALWAYS) // Needed for OpenAI function call API or it will throw HTTP 400 for
 												// function calls messages
 	String content;
-
-	// TODO add a time stamp?
 	
 	/**
 	 * The name of the author of this message.
@@ -195,8 +193,6 @@ public class ChatMessage {
 	public boolean isFunctionCall() {
 		return (functionCall != null);
 	}
-
-	// TODO add a time stamp?
 
 	public ChatMessage(Role role, String content) {
 		this.role = role;

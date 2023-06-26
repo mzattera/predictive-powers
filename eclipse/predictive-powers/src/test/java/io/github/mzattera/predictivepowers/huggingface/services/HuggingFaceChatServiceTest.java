@@ -284,7 +284,7 @@ public class HuggingFaceChatServiceTest {
 			}
 
 			cs.setMaxHistoryLength(6);
-			cs.setMaxConversationSteps(6); // TODO URGENT TESTA CON 2
+			cs.setMaxConversationSteps(6);
 
 			resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), FinishReason.OK);

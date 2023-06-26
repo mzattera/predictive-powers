@@ -15,6 +15,7 @@
  */
 package io.github.mzattera.predictivepowers.huggingface.services;
 
+import io.github.mzattera.predictivepowers.huggingface.client.Options;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationRequest.Parameters;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationResponse;
@@ -40,7 +41,9 @@ public class HuggingFaceCompletionService implements CompletionService {
 
 	public HuggingFaceCompletionService(HuggingFaceEndpoint ep) {
 		this(ep, TextGenerationRequest.builder()
-				.parameters(Parameters.builder().returnFullText(false).numReturnSequences(1).build()).build());
+				.parameters(Parameters.builder().returnFullText(false).numReturnSequences(1).build())
+				.options(Options.builder().waitForModel(true).build()) // TODO remove? Improve?
+				.build());
 	}
 
 	@NonNull
@@ -136,7 +139,6 @@ public class HuggingFaceCompletionService implements CompletionService {
 	public TextCompletion complete(String prompt, TextGenerationRequest req) {
 		req.getInputs().clear();
 		req.getInputs().add(prompt);
-		req.getOptions().setWaitForModel(true); // TODO remove? Improve?
 
 		TextGenerationResponse resp = endpoint.getClient().textGeneration(model, req).get(0).get(0);
 		return TextCompletion.builder().text(resp.getGeneratedText()).finishReason(FinishReason.OK).build();

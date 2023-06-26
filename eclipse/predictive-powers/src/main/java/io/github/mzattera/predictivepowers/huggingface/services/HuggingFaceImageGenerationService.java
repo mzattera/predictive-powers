@@ -42,9 +42,8 @@ public class HuggingFaceImageGenerationService implements ImageGenerationService
 	public static final String DEFAULT_MODEL = "prompthero/openjourney-v4";
 
 	public HuggingFaceImageGenerationService(HuggingFaceEndpoint ep) {
-		this(ep, new SingleHuggingFaceRequest("", Options.builder().useCache(false).waitForModel(true).build())); // TODO
-																													// remove?
-																													// Improve?
+		 // TODO remove? Improve?
+		this(ep, new SingleHuggingFaceRequest("", Options.builder().useCache(false).waitForModel(true).build()));
 	}
 
 	@NonNull

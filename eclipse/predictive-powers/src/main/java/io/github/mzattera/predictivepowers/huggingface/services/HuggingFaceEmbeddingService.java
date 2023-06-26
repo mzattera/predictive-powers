@@ -35,8 +35,6 @@ import lombok.NonNull;
  */
 public class HuggingFaceEmbeddingService extends AbstractEmbeddingService {
 
-	// TODO allow setting options in HuggingFaceRequest
-
 //	public static final String DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"; // This is sentence similarity
 //	public static final String DEFAULT_MODEL = "facebook/bart-large"; // This is word embedding
 	
@@ -51,7 +49,7 @@ public class HuggingFaceEmbeddingService extends AbstractEmbeddingService {
 	@NonNull
 	@Getter
 	protected final HuggingFaceEndpoint endpoint;
-
+	
 	@Override
 	public List<EmbeddedText> embed(Collection<String> text) {
 		List<EmbeddedText> result = new ArrayList<>();
@@ -62,9 +60,11 @@ public class HuggingFaceEmbeddingService extends AbstractEmbeddingService {
 			l.addAll(LlmUtil.splitByChars(s, getMaxTextTokens()));
 		}
 
+		// TODO replace with defaultReq instead
 		HuggingFaceRequest req = new HuggingFaceRequest();
 		req.getInputs().addAll(l);
 		req.getOptions().setWaitForModel(true); // TODO remove? Improve?
+		req.getOptions().setUseCache(true); 
 
 		List<List<Double>> resp = endpoint.getClient().featureExtraction(getModel(), req);
 		for (int i = 0; i < req.getInputs().size(); ++i) {

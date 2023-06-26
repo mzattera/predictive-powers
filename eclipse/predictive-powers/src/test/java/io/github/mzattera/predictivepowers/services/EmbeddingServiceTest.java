@@ -72,7 +72,6 @@ public class EmbeddingServiceTest {
 
 	public void test01(Endpoint ep) {
 		EmbeddingService es = ep.getEmbeddingService();
-		System.out.println("01");
 		Random rnd = new Random();
 
 		List<String> test = new ArrayList<>();
@@ -115,18 +114,19 @@ public class EmbeddingServiceTest {
 	}
 
 	public void test02(Endpoint ep) {
-		System.out.println("02");
 		EmbeddingService es = ep.getEmbeddingService();
 		if (es instanceof HuggingFaceEmbeddingService)
 			return; // TODO it seems the tokenizer always returns 128, regardless input size; this
 					// might affect other aspects, to be investigated
 
 		Tokenizer counter = es.getEndpoint().getModelService().getTokenizer(es.getModel());
-		es.setMaxTextTokens(150);
+		es.setMaxTextTokens(10);
 
 		StringBuilder txt = new StringBuilder();
-		while (counter.count(txt.toString()) < es.getMaxTextTokens())
+		while (counter.count(txt.toString()) <= es.getMaxTextTokens()) {
+//			System.out.println(counter.count(txt.toString()) + " " + es.getMaxTextTokens());
 			txt.append("Banana! ");
+		}
 
 		List<EmbeddedText> resp = es.embed(txt.toString());
 		assertTrue(resp.size() > 1);
@@ -141,7 +141,6 @@ public class EmbeddingServiceTest {
 	 */
 	public void test03(Endpoint ep) throws IOException, SAXException, TikaException {
 		EmbeddingService es = ep.getEmbeddingService();
-		System.out.println("03");
 
 		final String banana = "banana";
 
@@ -177,7 +176,6 @@ public class EmbeddingServiceTest {
 	 */
 	public void test04(Endpoint ep) throws IOException, SAXException, TikaException {
 		EmbeddingService es = ep.getEmbeddingService();
-		System.out.println("04");
 		Map<File, List<EmbeddedText>> base = es.embedFolder(ResourceUtil.getResourceFile("recursion"));
 		assertEquals(3, base.size());
 	}
@@ -193,7 +191,6 @@ public class EmbeddingServiceTest {
 	 */
 	public void test05(Endpoint ep) throws MalformedURLException, IOException, SAXException, TikaException {
 		EmbeddingService es = ep.getEmbeddingService();
-		System.out.println("05");
 		es.embedURL("https://en.wikipedia.org/wiki/Alan_Turing");
 	}
 

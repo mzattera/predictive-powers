@@ -51,14 +51,17 @@ import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsRequest;
 import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsResponse;
+import io.github.mzattera.util.FileUtil;
 import io.github.mzattera.util.ImageUtil;
 import io.reactivex.Single;
 import lombok.Getter;
 import lombok.NonNull;
+import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
@@ -250,30 +253,44 @@ public class OpenAiClient implements ApiClient {
 
 	public String createTranscription(@NonNull java.io.File audio, AudioRequest req) throws IOException {
 		try (InputStream is = new FileInputStream(audio)) {
-			return createTranscription(is, req);
+			return createTranscription(is, FileUtil.getExtension(audio), req);
 		}
 	}
 
 	public String createTranscription(@NonNull String fileName, AudioRequest req) throws IOException {
 		try (InputStream is = new FileInputStream(fileName)) {
-			return createTranscription(is, req);
+			return createTranscription(is, FileUtil.getExtension(fileName), req);
 		}
 	}
 
-	public String createTranscription(@NonNull InputStream audio, AudioRequest req) throws IOException {
-		return createTranscription(audio.readAllBytes(), req);
+	/**
+	 * Creates an audio transcription.
+	 * 
+	 * @param audio  Audio stream.
+	 * @param format Format of the audio stream (e.g. wav).
+	 * @param req
+	 * 
+	 * @return A transcription of given stream.
+	 */
+	public String createTranscription(@NonNull InputStream audio, String format, AudioRequest req) throws IOException {
+		return createTranscription(audio.readAllBytes(), format, req);
 	}
 
-	public String createTranscription(@NonNull byte[] audio, AudioRequest req) {
+	/**
+	 * Creates an audio transcription.
+	 * 
+	 * @param audio  Audio stream.
+	 * @param format Format of the audio stream (e.g. wav).
+	 * @param req
+	 * 
+	 * @return A transcription of given stream.
+	 */
+	public String createTranscription(@NonNull byte[] audio, String format, AudioRequest req) {
 
 		MultipartBody.Builder builder = new MultipartBody.Builder().setType(MediaType.get("multipart/form-data"))
-				.addFormDataPart("file", "file", RequestBody.create(MediaType.parse("audio/*"), audio));
+				.addFormDataPart("model", req.getModel())
+				.addFormDataPart("file", "file." + format, RequestBody.create(MediaType.parse("audio/*"), audio));
 
-		if (req.getModel() != null) {
-			builder.addFormDataPart("model", req.getModel());
-		} else {
-			throw new IllegalArgumentException("Model cannot be null");
-		}
 		if (req.getPrompt() != null) {
 			builder.addFormDataPart("prompt", req.getPrompt());
 		}
@@ -292,30 +309,35 @@ public class OpenAiClient implements ApiClient {
 
 	public String createTranslation(@NonNull java.io.File audio, AudioRequest req) throws IOException {
 		try (InputStream is = new FileInputStream(audio)) {
-			return createTranslation(is, req);
+			return createTranslation(is, FileUtil.getExtension(audio), req);
 		}
 	}
 
 	public String createTranslation(@NonNull String fileName, AudioRequest req) throws IOException {
 		try (InputStream is = new FileInputStream(fileName)) {
-			return createTranslation(is, req);
+			return createTranslation(is, FileUtil.getExtension(fileName), req);
 		}
 	}
 
-	public String createTranslation(@NonNull InputStream audio, AudioRequest req) throws IOException {
-		return createTranslation(audio.readAllBytes(), req);
+	/**
+	 * Creates an audio translation.
+	 * 
+	 * @param audio  Audio stream.
+	 * @param format Format of the audio stream (e.g. wav).
+	 * @param req
+	 * 
+	 * @return A translation of given stream.
+	 */
+	public String createTranslation(@NonNull InputStream audio, String format, AudioRequest req) throws IOException {
+		return createTranslation(audio.readAllBytes(), format, req);
 	}
 
-	public String createTranslation(@NonNull byte[] audio, AudioRequest req) {
+	public String createTranslation(@NonNull byte[] audio, String format, AudioRequest req) {
 
 		MultipartBody.Builder builder = new MultipartBody.Builder().setType(MediaType.get("multipart/form-data"))
-				.addFormDataPart("file", "file", RequestBody.create(MediaType.parse("audio/*"), audio));
+				.addFormDataPart("model", req.getModel())
+				.addFormDataPart("file", "file." + format, RequestBody.create(MediaType.parse("audio/*"), audio));
 
-		if (req.getModel() != null) {
-			builder.addFormDataPart("model", req.getModel());
-		} else {
-			throw new IllegalArgumentException("Model cannot be null");
-		}
 		if (req.getPrompt() != null) {
 			builder.addFormDataPart("prompt", req.getPrompt());
 		}
@@ -325,8 +347,11 @@ public class OpenAiClient implements ApiClient {
 		if (req.getTemperature() != null) {
 			builder.addFormDataPart("temperature", req.getTemperature().toString());
 		}
+		if (req.getLanguage() != null) {
+			builder.addFormDataPart("language", req.getLanguage());
+		}
 
-		return callApi(api.audioTranscriptions(builder.build())).getText();
+		return callApi(api.audioTranslations(builder.build())).getText();
 	}
 
 	public List<File> listFiles() {

@@ -15,6 +15,8 @@
  */
 package io.github.mzattera.predictivepowers.openai.client.audio;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,9 @@ import io.github.mzattera.util.ResourceUtil;
 
 class AudioTest {
 
+	/**
+	 * Transcription from a file.
+	 */
 	@Test
 	void test01() throws IOException {
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
@@ -32,28 +37,34 @@ class AudioTest {
 			AudioRequest req = new AudioRequest();
 
 			req.setModel(model);
-			req.setResponseFormat(ResponseFormat.TEXT);
-			req.setLanguage("en");
+			req.setResponseFormat(null);
+			req.setLanguage("it");
 
-			String resp = endpoint.getClient().createTranscription(ResourceUtil.getResourceStream("Welcome.wav"), req);
+			String resp = endpoint.getClient().createTranscription(ResourceUtil.getResourceFile("it-buongiorno.m4a"), req);
+			assertEquals("Buongiorno", resp);
 
-			System.out.println(resp.toString());
+			req.setModel(model);
+			req.setResponseFormat(ResponseFormat.JSON);
+			req.setLanguage("it");
+
+			resp = endpoint.getClient().createTranscription(ResourceUtil.getResourceFile("it-buongiorno.m4a"), req);
+			assertEquals("Buongiorno", resp);
 		} // Close endpoint
 	}
 
+
+	/**
+	 * File translation.
+	 */
 	@Test
 	void test02() throws IOException {
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 			String model = "whisper-1";
 			AudioRequest req = new AudioRequest();
-
 			req.setModel(model);
-			req.setResponseFormat(ResponseFormat.TEXT);
-			req.setLanguage("en");
 
-			String resp = endpoint.getClient().createTranscription(ResourceUtil.getResourceStream("Welcome.wav"), req);
-
-			System.out.println(resp.toString());
+			String resp = endpoint.getClient().createTranslation(ResourceUtil.getResourceFile("it-to_translate.m4a"), req);
+			assertEquals("Good morning, my name is Massimiliano and I am a software developer.", resp);
 		} // Close endpoint
 	}
 }

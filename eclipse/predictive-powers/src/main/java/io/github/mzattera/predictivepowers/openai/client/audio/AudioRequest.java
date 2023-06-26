@@ -47,7 +47,13 @@ public class AudioRequest {
 	 * srt, verbose_json, or vtt.
 	 */
 	public enum ResponseFormat {
-		JSON("json"), TEXT("text"), SRT("srt"), VERBOSE_JSON("verbose_json"), VTT("vtt");
+		JSON("json");
+
+		// TODO add support for the below formats
+//      VERBOSE_JSON("verbose_json"),		
+//		TEXT("text"), 
+//		SRT("srt"), 
+//		VTT("vtt");
 
 		private final String label;
 
@@ -64,7 +70,7 @@ public class AudioRequest {
 
 	@NonNull
 	String model;
-	
+
 	String prompt;
 	ResponseFormat responseFormat;
 	Double temperature;

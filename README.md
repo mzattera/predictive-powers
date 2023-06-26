@@ -245,14 +245,14 @@ public class DefaultConfigurationExample {
 
 ### Tokens, tokenizers and other model data
 
-Some services, namely those using GPT models, have limits on number of tokens in input and output.
+Some services, namely those using OpenAI GPT models, have limits on number of tokens in input and output.
 
-`ModelService`s are provided to get data about models, such as maximum context size or a suitable tokenizer for a model.
-Normally developers do not need to care about these details as services will handle them transparently. However, in order for services to do so,
+`ModelService`s provide data about models, including maximum context size, and suitable tokenizers for each model.
+Normally, developers do not need to care about these details as services will handle them transparently. However, in order for services to do so,
 proper model data needs to be available to the `ModelService`. This means that, in case you create a new model (e.g. by training an existing OpenAI one), you need to make its data known to the 
-`ModelService` by "registering" the model with `ModelService.put(String,ModelData)`; please refer to the JavaDoc for details.
+corresponding `ModelService` by "registering" the model with `ModelService.put(String,ModelData)`; please refer to the JavaDoc for details.
 
-Class `CharTokenizer` and `SimpleTokenizer` provides naive tokenizers that can be used when an approximate count of token is enough, and no specific tokenizer is available for a model.
+Class `CharTokenizer` and `SimpleTokenizer` provide naive tokenizers that can be used when an approximate count of token is enough, and no specific tokenizer is available for a model.
 
 Below an example showing how to count tokens in a string and how to get context size for a model.
 

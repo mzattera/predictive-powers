@@ -2,6 +2,6 @@
 <!DOCTYPE configuration>
 
 <configuration>
-  <root level="off">
+  <root level="INFO">
   </root>
 </configuration>

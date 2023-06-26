@@ -30,7 +30,9 @@ import okhttp3.OkHttpClient;
 public class ProxyExample {
 
 	public static void main(String[] args) {
-		String key = "<Your API key goes here>";
+		
+		// Reads API key from OS environment
+		String key = System.getenv(OpenAiClient.OS_ENV_VAR_NAME);;
 		String host = "<Your proxy host name goes here>";
 		int port = 80; // your proxy port goes here
 

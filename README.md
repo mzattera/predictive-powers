@@ -26,7 +26,7 @@ The source is a [Maven](https://maven.apache.org/) project inside the `eclipse` 
 The code depends, among others, on [Lomboc](https://projectlombok.org/) which is correctly referenced within the `pom.xml` file for this project.
 However, to have Lomboc to work in the Eclipse editor, you need to install it inside Eclipse (or any other IDE you are using), as explained on Lomboc website.
 
-To avoid passing API keys explicitly in code, the library tries to read it from the operating system environment.
+To avoid passing API keys explicitly in code, the library tries to read them from the operating system environment.
 The exact process for setting up the environment depends on the OS you are using.
 
 ### Logging
@@ -41,8 +41,7 @@ To configure logback in your applications that use `predictive-powers`, simply a
 ### API Clients
 
 API clients are the lowest-level components of this library; they allow you to perform direct API calls to service providers. 
-For example, you can access OpeanAi API directly by instantiating an `OpenAiClient` and calling its methods
-(similarly to what [OpenAI-Java](https://github.com/TheoKanning/openai-java) does).
+For example, you can access OpeanAi API directly by instantiating an `OpenAiClient` and calling its methods.
 
 Class constructors allow you to pass your API key, which will be used in all subsequent calls.
 Alternatively, the code will try to read the key from your system environment; please refer to the below examples or the JavaDoc for more details.
@@ -102,7 +101,8 @@ The below example shows how to configure an `OpenAiClient` to use a proxy.
 ```java
 [...]
 		
-		String key = "<Your API key goes here>";
+		// Reads API key from OS environment
+		String key = System.getenv(OpenAiClient.OS_ENV_VAR_NAME);;
 		String host = "<Your proxy host name goes here>";
 		int port = 80; // your proxy port goes here
 
@@ -128,8 +128,6 @@ The below example shows how to configure an `OpenAiClient` to use a proxy.
 An endpoint uses an API client to provide GenAI capabilities, in form of services.
 
 You can instantiate endpoints directly, or by providing an API client that will be used for all subsequent calls.
-When an endpoint is no longer needed, it should be closed to free-up underlying resources
-(typically, HTTP connections in the underlying API client).
 
 The example below shows how to create an `OpenAiEndpoint`.
 
@@ -199,9 +197,9 @@ public class CompletionExample {
 ```
 
 As different service providers expose different capabilities at different levels of maturity, concrete service implementations
-might provide additional functionalities not available in the service interface; please refer to JavaDoc for details.
+might provide additional functionalities not available in their corresponding service interface; please refer to JavaDoc for details.
 
-Below we provide some [examples](#examples) about using services; for a detailed description of the functionalities provided, please refer to the library JavaDoc.
+Below we provide some [examples](#examples) about using services.
 
 
 #### Service Configuration
@@ -210,7 +208,7 @@ Service providers typically expose a rich set of parameters for each of their AP
 In order to access these parameters, services typically expose a "default request" object.
 This object is used when the service calls the client API. Changing parameters on this object will affect all subsequent calls to the API.
 
-For example, let's assume we want to use `curie` model for OpenAI text completion:
+An example is provided below:
  
  ```java
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
@@ -224,10 +222,10 @@ public class DefaultConfigurationExample {
 
 			OpenAiCompletionService cs = endpoint.getCompletionService();
 
-			// Set "model" parameter in default request, this will affect all further calls
-			cs.getDefaultReq().setModel("text-curie-001");
+			// Set "best_of" parameter in default request, this will affect all further calls
+			cs.getDefaultReq().setBestOf(3);
 
-			// this call now uses text-curie-001 model
+			// this call (and subsequent ones) now uses best_of = 3
 			System.out.println(cs.complete("Alan Turing was").getText());
 			
 		} // closes endpoint

@@ -5,10 +5,8 @@
 Currently the library:
 
   1. Provides low-level access to OpeanAi API similar to [OpenAI-Java](https://github.com/TheoKanning/openai-java).
-  
-    It adds support for function calling which, at the time of writing (June 20th, 2023), is not supported by OpenAI-Java.
-	
-	In addition, it provides proper OpenAi tokenizers form [jtokkit](https://github.com/forestwanglin/openai-java).
+   It adds support for function calling which, at the time of writing (June 20th, 2023), is not supported by OpenAI-Java.
+   In addition, it provides proper OpenAi tokenizers form [jtokkit](https://github.com/forestwanglin/openai-java).
 
   2. Provides (limited) low-level access to Hugging Face Hosted Inference API.
 	  

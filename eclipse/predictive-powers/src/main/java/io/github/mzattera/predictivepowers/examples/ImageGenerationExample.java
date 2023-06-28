@@ -20,7 +20,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
-import io.github.mzattera.predictivepowers.Endpoint;
+import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.ImageGenerationService;
@@ -33,7 +33,7 @@ public class ImageGenerationExample {
 	public static void main(String[] args) throws Exception {
 
 		// DALL-E 2 image generation
-		try (Endpoint endpoint = new OpenAiEndpoint()) {
+		try (AiEndpoint endpoint = new OpenAiEndpoint()) {
 			ImageGenerationService svc = endpoint.getImageGenerationService();
 
 			// Generates image
@@ -44,7 +44,7 @@ public class ImageGenerationExample {
 		}
 
 		// OpenJourney (notice is same code as above)
-		try (Endpoint endpoint = new HuggingFaceEndpoint()) {
+		try (AiEndpoint endpoint = new HuggingFaceEndpoint()) {
 			ImageGenerationService svc = endpoint.getImageGenerationService();
 			BufferedImage img = svc.createImage(PROMPT, 1, 512, 512).get(0);
 			save(img);

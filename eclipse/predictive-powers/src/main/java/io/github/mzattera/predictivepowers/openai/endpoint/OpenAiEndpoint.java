@@ -19,7 +19,7 @@ package io.github.mzattera.predictivepowers.openai.endpoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.mzattera.predictivepowers.Endpoint;
+import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
@@ -42,7 +42,7 @@ import lombok.NonNull;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-public class OpenAiEndpoint implements Endpoint {
+public class OpenAiEndpoint implements AiEndpoint {
 
 	// TODO add client/endpoint for Azure OpenAI Services
 	// TODO always ensure it returns OpenAI specific services

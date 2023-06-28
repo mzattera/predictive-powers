@@ -32,7 +32,7 @@ import org.apache.tika.exception.TikaException;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
-import io.github.mzattera.predictivepowers.Endpoint;
+import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceEmbeddingService;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
@@ -70,7 +70,7 @@ public class EmbeddingServiceTest {
 		}
 	}
 
-	public void test01(Endpoint ep) {
+	public void test01(AiEndpoint ep) {
 		EmbeddingService es = ep.getEmbeddingService();
 		Random rnd = new Random();
 
@@ -113,7 +113,7 @@ public class EmbeddingServiceTest {
 		}
 	}
 
-	public void test02(Endpoint ep) {
+	public void test02(AiEndpoint ep) {
 		EmbeddingService es = ep.getEmbeddingService();
 		if (es instanceof HuggingFaceEmbeddingService)
 			return; // TODO it seems the tokenizer always returns 128, regardless input size; this
@@ -139,7 +139,7 @@ public class EmbeddingServiceTest {
 	 * @throws SAXException
 	 * @throws TikaException
 	 */
-	public void test03(Endpoint ep) throws IOException, SAXException, TikaException {
+	public void test03(AiEndpoint ep) throws IOException, SAXException, TikaException {
 		EmbeddingService es = ep.getEmbeddingService();
 
 		final String banana = "banana";
@@ -174,7 +174,7 @@ public class EmbeddingServiceTest {
 	 * @throws SAXException
 	 * @throws IOException
 	 */
-	public void test04(Endpoint ep) throws IOException, SAXException, TikaException {
+	public void test04(AiEndpoint ep) throws IOException, SAXException, TikaException {
 		EmbeddingService es = ep.getEmbeddingService();
 		Map<File, List<EmbeddedText>> base = es.embedFolder(ResourceUtil.getResourceFile("recursion"));
 		assertEquals(3, base.size());
@@ -189,7 +189,7 @@ public class EmbeddingServiceTest {
 	 * @throws SAXException
 	 * @throws IOException
 	 */
-	public void test05(Endpoint ep) throws MalformedURLException, IOException, SAXException, TikaException {
+	public void test05(AiEndpoint ep) throws MalformedURLException, IOException, SAXException, TikaException {
 		EmbeddingService es = ep.getEmbeddingService();
 		es.embedURL("https://en.wikipedia.org/wiki/Alan_Turing");
 	}
@@ -197,7 +197,7 @@ public class EmbeddingServiceTest {
 	/**
 	 * Getters and setters
 	 */
-	public void test06(Endpoint ep) {
+	public void test06(AiEndpoint ep) {
 		EmbeddingService s = ep.getEmbeddingService();
 
 		String m = s.getModel();

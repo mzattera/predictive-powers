@@ -26,7 +26,7 @@ import java.util.List;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface ImageGenerationService extends Service {
+public interface ImageGenerationService extends AiService {
 
 	/**
 	 * Creates images from a textual prompt.

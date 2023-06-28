@@ -83,7 +83,9 @@ public class Function {
 	 * The parameters the functions accepts.
 	 * 
 	 * This is a class which fields describe the function parameters and that will
-	 * be serialized as a JSON Schema object.
+	 * be serialized as a JSON Schema object. Please notice that at the time being
+	 * OpenAI seems to support only parameters that are either native Java types,
+	 * String, and enumerations.
 	 */
 	@JsonSerialize(using = ParametersSerializer.class, as = Class.class)
 	Class<?> parameters;

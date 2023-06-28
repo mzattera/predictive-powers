@@ -27,6 +27,7 @@ import lombok.NonNull;
 import okhttp3.ConnectionPool;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.OkHttpClient.Builder;
 import okhttp3.Response;
 
 /**
@@ -42,14 +43,16 @@ public interface ApiClient extends Closeable {
 	 * can be further customized and then used in constructor to build an client
 	 * which, in turn, can be used to build an Endpoint.
 	 * 
-	 * @param apiKey             API key for underlying API calls.
+	 * @param apiKey             API key for underlying API calls. If this is not
+	 *                           null an "Authorization" header is added
+	 *                           automatically to each call performed by the client.
 	 * @param readTimeout        Read timeout for connections. 0 means no timeout.
 	 * @param keepAliveDuration  Timeout for connections in client pool
 	 *                           (milliseconds).
 	 * @param maxIdleConnections Maximum number of idle connections to keep in the
 	 *                           pool. .
 	 */
-	public static OkHttpClient getDefaultHttpClient(@NonNull final String apiKey, int readTimeout,
+	public static OkHttpClient getDefaultHttpClient(String apiKey, int readTimeout,
 			int keepAliveDuration, int maxIdleConnections) {
 
 		if (readTimeout < 0)
@@ -59,14 +62,19 @@ public interface ApiClient extends Closeable {
 		if (maxIdleConnections < 0)
 			throw new IllegalArgumentException();
 
-		return new OkHttpClient.Builder()
+		Builder builder = new OkHttpClient.Builder()
 				.connectionPool(new ConnectionPool(maxIdleConnections, keepAliveDuration, TimeUnit.MILLISECONDS))
-				.readTimeout(readTimeout, TimeUnit.MILLISECONDS).addInterceptor(new Interceptor() {
-					@Override
-					public Response intercept(Chain chain) throws IOException {
-						return chain.proceed(
-								chain.request().newBuilder().header("Authorization", "Bearer " + apiKey).build());
-					}
-				}).build();
+				.readTimeout(readTimeout, TimeUnit.MILLISECONDS);
+
+		if (apiKey != null)
+			builder.addInterceptor(new Interceptor() {
+				@Override
+				public Response intercept(Chain chain) throws IOException {
+					return chain
+							.proceed(chain.request().newBuilder().header("Authorization", "Bearer " + apiKey).build());
+				}
+			});
+
+		return builder.build();
 	}
 }

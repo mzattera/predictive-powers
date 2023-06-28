@@ -14,21 +14,39 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers;
+package io.github.mzattera.predictivepowers.services;
 
-import java.io.Closeable;
+import java.net.URL;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
- * This interface represents the most generic possible endpoint.
+ * A single result from an online search.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface Endpoint extends Closeable {
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@RequiredArgsConstructor
+@AllArgsConstructor
+@ToString
+public class SearchResult {
 
-	/**
-	 * 
-	 * @return Underlying API client to perform direct API calls.
-	 */
-	ApiClient getClient();
+	String title;
+	
+	@NonNull
+	URL link;
+	
+	String mime;
+	String fileFormat;
 }

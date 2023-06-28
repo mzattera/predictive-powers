@@ -34,7 +34,7 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface ModelService extends Service {
+public interface ModelService extends AiService {
 
 	/**
 	 * * As for many models parameters are expressed in terms of tokens, it is

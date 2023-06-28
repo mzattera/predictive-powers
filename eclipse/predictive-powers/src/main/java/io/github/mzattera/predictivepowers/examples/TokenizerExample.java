@@ -18,7 +18,7 @@ package io.github.mzattera.predictivepowers.examples;
 
 import java.io.IOException;
 
-import io.github.mzattera.predictivepowers.Endpoint;
+import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 
@@ -27,7 +27,7 @@ public class TokenizerExample {
 	@SuppressWarnings("unused")
 	public static void main(String args[]) throws IOException {
 		
-		try (Endpoint endpoint = new OpenAiEndpoint()) {
+		try (AiEndpoint endpoint = new OpenAiEndpoint()) {
 			
 			// Get a tokenizer for GPT-4
 			Tokenizer counter = endpoint.getModelService().getTokenizer("gpt-4");

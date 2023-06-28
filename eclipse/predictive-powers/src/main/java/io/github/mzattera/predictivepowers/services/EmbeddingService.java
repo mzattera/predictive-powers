@@ -33,7 +33,7 @@ import org.xml.sax.SAXException;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface EmbeddingService extends Service {
+public interface EmbeddingService extends AiService {
 	
 	/**
 	 * Maximum number of tokens for each piece of text being embedded. If text is

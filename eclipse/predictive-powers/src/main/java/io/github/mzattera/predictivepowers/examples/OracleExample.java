@@ -25,7 +25,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tika.exception.TikaException;
 import org.xml.sax.SAXException;
 
-import io.github.mzattera.predictivepowers.Endpoint;
+import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
@@ -41,7 +41,7 @@ public class OracleExample {
 	{
 		
 		// Uncomment the below to use OpenAI services for the oracle
-		Endpoint endpoint = new OpenAiEndpoint();
+		AiEndpoint endpoint = new OpenAiEndpoint();
 		
 		// Uncomment the below to use Hugging Face services for the oracle
 		// Endpoint endpoint = new HuggingFaceEndpoint();

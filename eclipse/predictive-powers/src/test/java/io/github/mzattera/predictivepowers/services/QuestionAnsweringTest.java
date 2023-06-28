@@ -28,7 +28,7 @@ import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 
-import io.github.mzattera.predictivepowers.Endpoint;
+import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.QuestionAnsweringRequest;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceQuestionAnsweringService;
@@ -51,7 +51,7 @@ public class QuestionAnsweringTest {
 //		}
 	}
 
-	private void test(Endpoint e) throws ClassNotFoundException, IOException {
+	private void test(AiEndpoint e) throws ClassNotFoundException, IOException {
 		test01(e);
 		test03(e);
 		test04(e);
@@ -66,7 +66,7 @@ public class QuestionAnsweringTest {
 	 * @throws ClassNotFoundException
 	 * @throws IOException
 	 */
-	public void test01(Endpoint ep) throws ClassNotFoundException, IOException {
+	public void test01(AiEndpoint ep) throws ClassNotFoundException, IOException {
 		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			EmbeddingService es = oai.getEmbeddingService();
 			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
@@ -132,7 +132,7 @@ public class QuestionAnsweringTest {
 	 * @throws IOException
 	 * @throws ClassNotFoundException
 	 */
-	public void test03(Endpoint ep) throws ClassNotFoundException, IOException {
+	public void test03(AiEndpoint ep) throws ClassNotFoundException, IOException {
 		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			EmbeddingService es = oai.getEmbeddingService();
 			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
@@ -176,7 +176,7 @@ public class QuestionAnsweringTest {
 	/**
 	 * String as context.
 	 */
-	public void test04(Endpoint ep) {
+	public void test04(AiEndpoint ep) {
 		QuestionAnsweringService qas = ep.getQuestionAnsweringService();
 
 		String question = "What does Olaf like?";
@@ -190,7 +190,7 @@ public class QuestionAnsweringTest {
 	/**
 	 * Empty context.
 	 */
-	public void test06(Endpoint ep) {
+	public void test06(AiEndpoint ep) {
 		QuestionAnsweringService qas = ep.getQuestionAnsweringService();
 
 		String question = "What does Olaf like?";
@@ -203,7 +203,7 @@ public class QuestionAnsweringTest {
 	/**
 	 * Getters and setters
 	 */
-	public void test05(Endpoint ep) {
+	public void test05(AiEndpoint ep) {
 		QuestionAnsweringService s = ep.getQuestionAnsweringService();
 
 		String m = s.getModel();

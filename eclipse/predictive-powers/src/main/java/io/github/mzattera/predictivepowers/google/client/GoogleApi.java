@@ -14,21 +14,22 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers;
+package io.github.mzattera.predictivepowers.google.client;
 
-import java.io.Closeable;
+import io.reactivex.Single;
+import lombok.NonNull;
+import retrofit2.http.GET;
+import retrofit2.http.Query;
 
 /**
- * This interface represents the most generic possible endpoint.
+ * Retrofit definition for Google API.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface Endpoint extends Closeable {
+public interface GoogleApi {
 
-	/**
-	 * 
-	 * @return Underlying API client to perform direct API calls.
-	 */
-	ApiClient getClient();
+	@GET("v1")
+	Single<Search> list(@NonNull @Query("cx") String engineId, @NonNull @Query("key") String apiKey,
+			@NonNull @Query("q") String query, @Query("num") int n);
 }

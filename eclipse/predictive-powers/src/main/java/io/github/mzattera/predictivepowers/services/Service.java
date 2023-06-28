@@ -16,29 +16,12 @@
 
 package io.github.mzattera.predictivepowers.services;
 
-import io.github.mzattera.predictivepowers.Endpoint;
-import lombok.NonNull;
-
 /**
- * Interface that all services must implement.
+ * Marker interface for services.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
 public interface Service {
 
-	/**
-	 * Endpoint used for this service.
-	 */
-	Endpoint getEndpoint();
-	
-	/**
-	 * Model used for this service.
-	 */
-	String getModel();
-
-	/**
-	 * Model used for this service.
-	 */
-	void setModel(@NonNull String model);
 }

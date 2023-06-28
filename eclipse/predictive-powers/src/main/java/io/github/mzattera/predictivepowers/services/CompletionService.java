@@ -23,7 +23,7 @@ package io.github.mzattera.predictivepowers.services;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface CompletionService extends Service {
+public interface CompletionService extends AiService {
 
 	/**
 	 * Number of top tokens considered within the sample operation to create new

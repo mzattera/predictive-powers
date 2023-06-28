@@ -28,7 +28,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
-import io.github.mzattera.predictivepowers.Endpoint;
+import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
@@ -43,7 +43,7 @@ import lombok.NonNull;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public class QuestionExtractionService implements Service {
+public class QuestionExtractionService implements AiService {
 
 	private final static Logger LOG = LoggerFactory.getLogger(QuestionExtractionService.class);
 
@@ -78,7 +78,7 @@ public class QuestionExtractionService implements Service {
 	}
 
 	@Override
-	public Endpoint getEndpoint() {
+	public AiEndpoint getEndpoint() {
 		return completionService.getEndpoint();
 	}
 

@@ -23,7 +23,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
-import io.github.mzattera.predictivepowers.Endpoint;
+import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
@@ -72,7 +72,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 	}
 
 	@Override
-	public Endpoint getEndpoint() {
+	public AiEndpoint getEndpoint() {
 		return completionService.getEndpoint();
 	}
 

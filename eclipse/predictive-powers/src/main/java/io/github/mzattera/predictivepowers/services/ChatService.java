@@ -28,7 +28,7 @@ import java.util.List;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface ChatService extends Service {
+public interface ChatService extends AiService {
 
 	/**
 	 * Number of top tokens considered within the sample operation to create new

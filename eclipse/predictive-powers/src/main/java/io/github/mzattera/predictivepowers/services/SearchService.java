@@ -14,21 +14,31 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers;
+package io.github.mzattera.predictivepowers.services;
 
-import java.io.Closeable;
+import java.util.List;
+
+import io.github.mzattera.predictivepowers.SearchEndpoint;
+import lombok.NonNull;
 
 /**
- * This interface represents the most generic possible endpoint.
+ * This service provides methods for online search.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface Endpoint extends Closeable {
+public interface SearchService extends Service {
 
 	/**
-	 * 
-	 * @return Underlying API client to perform direct API calls.
+	 * Endpoint used for this service.
 	 */
-	ApiClient getClient();
+	SearchEndpoint getEndpoint();
+
+	/**
+	 * Performs an online search.
+	 * 
+	 * @param query The search to perform.
+	 * @return List of search results.
+	 */
+	List<SearchResult> search(@NonNull String query);
 }

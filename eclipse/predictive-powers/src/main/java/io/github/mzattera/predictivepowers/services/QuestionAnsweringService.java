@@ -29,7 +29,7 @@ import lombok.NonNull;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface QuestionAnsweringService extends Service {
+public interface QuestionAnsweringService extends AiService {
 
 	/**
 	 * Maximum number of tokens to keep in the question context when answering.

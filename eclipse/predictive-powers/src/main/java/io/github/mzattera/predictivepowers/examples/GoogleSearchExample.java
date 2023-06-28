@@ -16,23 +16,26 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
-import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.services.CompletionService;
+import io.github.mzattera.predictivepowers.google.endpoint.GoogleEndpoint;
+import io.github.mzattera.predictivepowers.google.service.GoogleSearchService;
+import io.github.mzattera.predictivepowers.services.SearchResult;
 
-public class CompletionExample {
+/**
+ * Example of how to perform Google search.
+ * 
+ * @author Massimiliano "Maxi" Zattera.
+ *
+ */
+public class GoogleSearchExample {
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
 
-		// Uncomment the below to use OpenAI
-		AiEndpoint endpoint = new OpenAiEndpoint();
-
-		// Uncomment the below to use Hugging Face
-		// Endpoint endpoint = new HuggingFaceEndpoint();
-
-		try (endpoint) {
-			CompletionService cs = endpoint.getCompletionService();
-			System.out.println(cs.complete("Alan Turing was").getText());
+		try (GoogleEndpoint endpoint = new GoogleEndpoint()) {
+			GoogleSearchService service = endpoint.getSearchService();
+			
+			for (SearchResult result: service.search("Massimliano Zattera")) {
+				System.out.println(result.getTitle() + ": " + result.getLink());
+			}
 		}
 	}
 }

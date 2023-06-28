@@ -16,19 +16,18 @@
 
 package io.github.mzattera.predictivepowers;
 
-import java.io.Closeable;
+import io.github.mzattera.predictivepowers.services.SearchService;
 
 /**
- * This interface represents the most generic possible endpoint.
+ * This interface represents an endpoint providing online search capabilities in
+ * form of services.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface Endpoint extends Closeable {
+public interface SearchEndpoint extends Endpoint {
 
-	/**
-	 * 
-	 * @return Underlying API client to perform direct API calls.
-	 */
-	ApiClient getClient();
+	// TODO always ensure it return service interfaces
+
+	SearchService getSearchService();
 }

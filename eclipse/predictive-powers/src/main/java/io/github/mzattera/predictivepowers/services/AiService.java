@@ -14,21 +14,31 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers;
+package io.github.mzattera.predictivepowers.services;
 
-import java.io.Closeable;
+import io.github.mzattera.predictivepowers.AiEndpoint;
+import lombok.NonNull;
 
 /**
- * This interface represents the most generic possible endpoint.
+ * Interface that all AI services must implement.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface Endpoint extends Closeable {
+public interface AiService extends Service {
 
 	/**
-	 * 
-	 * @return Underlying API client to perform direct API calls.
+	 * Endpoint used for this service.
 	 */
-	ApiClient getClient();
+	AiEndpoint getEndpoint();
+	
+	/**
+	 * Model used for this service.
+	 */
+	String getModel();
+
+	/**
+	 * Model used for this service.
+	 */
+	void setModel(@NonNull String model);
 }

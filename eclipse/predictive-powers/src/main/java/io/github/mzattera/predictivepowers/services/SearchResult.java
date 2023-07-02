@@ -25,7 +25,6 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 
 /**
  * A single result from an online search.
@@ -39,7 +38,6 @@ import lombok.ToString;
 @NoArgsConstructor
 @RequiredArgsConstructor
 @AllArgsConstructor
-@ToString
 public class SearchResult {
 
 	String title;
@@ -49,6 +47,11 @@ public class SearchResult {
 
 	String mime;
 	String fileFormat;
+
+	@Override
+	public String toString() {
+		return "[" + link + "]" + (title == null ? "" : " " +title + " ");
+	}
 
 	@Override
 	public boolean equals(Object other) {

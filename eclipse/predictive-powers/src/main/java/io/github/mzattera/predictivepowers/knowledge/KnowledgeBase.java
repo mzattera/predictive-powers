@@ -148,6 +148,20 @@ public class KnowledgeBase implements Serializable {
 	}
 
 	/**
+	 * DELETES THE ENTIRE KNOWLEDGE BASE.
+	 */
+	public void drop() {
+		writeLock.lock();
+		try {
+			for (String domain : domains.keySet())
+				dropDomain(domain);
+			createDomain(DEFAULT_DOMAIN);
+		} finally {
+			writeLock.unlock();
+		}
+	}
+
+	/**
 	 * Deletes a domain and all of its data from the KnowledgeBase (or does nothing
 	 * if it does not exists).
 	 * 

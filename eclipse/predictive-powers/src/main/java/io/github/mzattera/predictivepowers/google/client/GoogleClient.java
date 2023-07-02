@@ -16,6 +16,8 @@
 
 package io.github.mzattera.predictivepowers.google.client;
 
+import java.io.IOException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +30,12 @@ import io.github.mzattera.predictivepowers.ApiClient;
 import io.reactivex.Single;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.extern.java.Log;
+import okhttp3.Interceptor;
+import okhttp3.Interceptor.Chain;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -139,6 +146,7 @@ public class GoogleClient implements ApiClient {
 	public GoogleClient(@NonNull String engineId, @NonNull String apiKey, OkHttpClient http) {
 		this.engineId = engineId;
 		this.apiKey = apiKey;
+
 		client = http;
 
 		Retrofit retrofit = new Retrofit.Builder().baseUrl(API_BASE_URL).client(client)
@@ -165,8 +173,9 @@ public class GoogleClient implements ApiClient {
 	private static String getEngineId() {
 		String engineId = System.getenv(OS_ENV_ENGINE_VAR_NAME);
 		if (engineId == null)
-			throw new IllegalArgumentException("Google cusotm search engine ID is not provided and it cannot be found in "
-					+ OS_ENV_ENGINE_VAR_NAME + " system environment variable");
+			throw new IllegalArgumentException(
+					"Google cusotm search engine ID is not provided and it cannot be found in " + OS_ENV_ENGINE_VAR_NAME
+							+ " system environment variable");
 		return engineId;
 	}
 
@@ -189,7 +198,8 @@ public class GoogleClient implements ApiClient {
 		try {
 			client.dispatcher().executorService().shutdown();
 			client.connectionPool().evictAll();
-			client.cache().close();
+			if (client.cache() != null)
+				client.cache().close();
 		} catch (Exception e) {
 			LOG.warn("Error while closing client", e);
 		}

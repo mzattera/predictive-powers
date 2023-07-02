@@ -41,9 +41,7 @@ public class OpenAiChatService extends AbstractChatService {
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
 	// values from a Map
 
-	// TODO switch back to 3.5 after On June 27th, 2023
-//	public static final String DEFAULT_MODEL = "gpt-3.5-turbo";
-	public static final String DEFAULT_MODEL = "gpt-3.5-turbo-0613";
+	public static final String DEFAULT_MODEL = "gpt-3.5-turbo";
 
 	public OpenAiChatService(OpenAiEndpoint ep) {
 		this(ep, ChatCompletionsRequest.builder().model(DEFAULT_MODEL).build());

@@ -15,6 +15,8 @@
  */
 package io.github.mzattera.predictivepowers.huggingface.services;
 
+import java.util.Map;
+
 import io.github.mzattera.predictivepowers.huggingface.client.Options;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationRequest.Parameters;
@@ -129,7 +131,7 @@ public class HuggingFaceCompletionService implements CompletionService {
 
 	@Override
 	public TextCompletion complete(String prompt) {
-		return complete(prompt, defaultReq);
+		return complete(prompt, null, defaultReq);
 	}
 
 	/**
@@ -137,8 +139,23 @@ public class HuggingFaceCompletionService implements CompletionService {
 	 * {@link TextGenerationRequest} to get parameters for the call.
 	 */
 	public TextCompletion complete(String prompt, TextGenerationRequest req) {
+		return complete(prompt, null, req);
+	}
+
+	@Override
+	public TextCompletion complete(String prompt, Map<String, ? extends Object> parameters) {
+		return complete(prompt, parameters, defaultReq);
+	}
+
+	/**
+	 * Completes text (executes given prompt).
+	 * 
+	 * @param parameters Parameters used for slot filling. See
+	 *                   {@link #fillSlots(String, Map)}.
+	 */
+	public TextCompletion complete(String prompt, Map<String, ? extends Object> parameters, TextGenerationRequest req) {
 		req.getInputs().clear();
-		req.getInputs().add(prompt);
+		req.getInputs().add(CompletionService.fillSlots(prompt, parameters));
 
 		TextGenerationResponse resp = endpoint.getClient().textGeneration(model, req).get(0).get(0);
 		return TextCompletion.builder().text(resp.getGeneratedText()).finishReason(FinishReason.OK).build();
@@ -146,15 +163,11 @@ public class HuggingFaceCompletionService implements CompletionService {
 
 	@Override
 	public TextCompletion insert(String prompt, String suffix) {
-		return insert(prompt, suffix, defaultReq);
+		throw new UnsupportedOperationException();
 	}
 
-	/**
-	 * Inserts text between given prompt and the suffix (executes given prompt);
-	 * uses provided {@link TextGenerationRequest} to get parameters for the call.
-	 */
-	public TextCompletion insert(String prompt, String suffix, TextGenerationRequest req) {
-		// TODO maybe find a workaround with completion? Or move insertion into a different model?
+	@Override
+	public TextCompletion insert(String prompt, String suffix, Map<String, ? extends Object> parameters) {
 		throw new UnsupportedOperationException();
 	}
 }

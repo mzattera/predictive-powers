@@ -58,7 +58,12 @@ public class GoogleSearchService implements SearchService {
 
 	@Override
 	public List<SearchResult> search(@NonNull String query) {
-		Search search = endpoint.getClient().list(query, 10);
+		return search(query, 10);
+	}
+
+	@Override
+	public List<SearchResult> search(@NonNull String query, int n) {
+		Search search = endpoint.getClient().list(query, n);
 		List<SearchResult> result = new ArrayList<>(search.getItems().size());
 		for (Result i : search.getItems()) {
 			try {

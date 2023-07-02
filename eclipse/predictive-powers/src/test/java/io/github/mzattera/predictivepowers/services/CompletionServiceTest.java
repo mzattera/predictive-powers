@@ -23,12 +23,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceCompletionService;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
+import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 
 /**
@@ -173,5 +177,26 @@ public class CompletionServiceTest {
 		s.setEcho(true);
 		resp = s.complete("Name a mammal.");
 		assertTrue((resp.getFinishReason() == FinishReason.OK) || (resp.getFinishReason() == FinishReason.COMPLETED));
+	}
+	
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	///  Slot filling   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	@Test
+	public void test90() {
+		Map<String, Object> params = new HashMap<>();
+		params.put("A", null);
+		params.put("A.B", "a.b");
+		params.put("C", Role.BOT);
+		
+		assertEquals(null, CompletionService.fillSlots(null, new HashMap<>()));
+		assertEquals("banana", CompletionService.fillSlots("banana", null));
+		assertEquals("", CompletionService.fillSlots("{{A}}", params));
+		assertEquals("a.b", CompletionService.fillSlots("{{A.B}}", params));
+		assertEquals("assistant", CompletionService.fillSlots("{{C}}", params));
+		assertEquals(" a.b assistant", CompletionService.fillSlots("{{A}} {{A.B}} {{C}}", params));
+		assertEquals(" a.b assistant {{D}}", CompletionService.fillSlots("{{A}} {{A.B}} {{C}} {{D}}", params));
+		assertEquals(" a.b assistant {{D}} a.b assistant {{D}}", CompletionService.fillSlots("{{A}} {{A.B}} {{C}} {{D}}{{A}} {{A.B}} {{C}} {{D}}", params));
 	}
 }

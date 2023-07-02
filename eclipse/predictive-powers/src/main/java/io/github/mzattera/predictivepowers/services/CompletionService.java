@@ -16,6 +16,9 @@
 
 package io.github.mzattera.predictivepowers.services;
 
+import java.util.Map;
+import java.util.Map.Entry;
+
 /**
  * A completion service provides methods to complete/generate text (prompt
  * execution).
@@ -83,16 +86,57 @@ public interface CompletionService extends AiService {
 	 */
 	void setEcho(boolean echo);
 
-	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
-	// values from a Map
-
 	/**
 	 * Completes text (executes given prompt).
 	 */
 	TextCompletion complete(String prompt);
 
 	/**
+	 * Completes text (executes given prompt).
+	 * 
+	 * @param parameters Parameters used for slot filling. See
+	 *                   {@link #fillSlots(String, Map)}.
+	 */
+	TextCompletion complete(String prompt, Map<String, ? extends Object> parameters);
+
+	/**
 	 * Inserts text between given prompt and the suffix.
 	 */
 	TextCompletion insert(String prompt, String suffix);
+
+	/**
+	 * Inserts text between given prompt and the suffix.
+	 * 
+	 * @param parameters Parameters used for slot filling. See
+	 *                   {@link #fillSlots(String, Map)}. This will be use to fill
+	 *                   slots both in the prompt and the suffix.
+	 */
+	TextCompletion insert(String prompt, String suffix, Map<String, ? extends Object> parameters);
+
+	/**
+	 * Replaces 'slots' in a prompt.
+	 * 
+	 * Slots are place holders inserted in the prompt using a syntax like {{name}}
+	 * where 'name' is a key in the provided Map; these place holders will be
+	 * replaced with corresponding map value (using {@link Object#toString()}).
+	 * 
+	 * Parameters with a null value will result in a deleted slot, slots without
+	 * corresponding parameters in the map will be ignored (and not replaced).
+	 * 
+	 * @param prompt
+	 * @param parameters
+	 * @return
+	 */
+	public static String fillSlots(String prompt, Map<String, ? extends Object> parameters) {
+		if ((prompt == null) || (parameters == null))
+			return prompt;
+		for (Entry<String, ? extends Object> e : parameters.entrySet()) {
+			String regex = "{{" + e.getKey() + "}}";
+			if (e.getValue() == null)
+				prompt = prompt.replace(regex, "");
+			else
+				prompt = prompt.replace(regex, e.getValue().toString());
+		}
+		return prompt;
+	}
 }

@@ -454,7 +454,7 @@ public class OpenAiClient implements ApiClient {
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////
-
+	
 	private <T> T callApi(Single<T> apiCall) {
 		try {
 			return apiCall.blockingGet();
@@ -477,7 +477,8 @@ public class OpenAiClient implements ApiClient {
 		try {
 			client.dispatcher().executorService().shutdown();
 			client.connectionPool().evictAll();
-			client.cache().close();
+			if (client.cache() != null)
+				client.cache().close();
 		} catch (Exception e) {
 			LOG.warn("Error while closing client", e);
 		}

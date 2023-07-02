@@ -15,6 +15,8 @@
  */
 package io.github.mzattera.predictivepowers.openai.services;
 
+import java.util.Map;
+
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsChoice;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
@@ -138,14 +140,9 @@ public class OpenAiCompletionService implements CompletionService {
 		defaultReq.setEcho(echo);
 	}
 
-	/**
-	 * Completes text (executes given prompt).
-	 * 
-	 * It uses parameters specified in {@link #getDefaultReq()}.
-	 */
 	@Override
 	public TextCompletion complete(String prompt) {
-		return insert(prompt, null, defaultReq);
+		return insert(prompt, null, null, defaultReq);
 	}
 
 	/**
@@ -156,7 +153,22 @@ public class OpenAiCompletionService implements CompletionService {
 	 * automatically, based on prompt length.
 	 */
 	public TextCompletion complete(String prompt, CompletionsRequest req) {
-		return insert(prompt, null, req);
+		return insert(prompt, null, null, req);
+	}
+
+	@Override
+	public TextCompletion complete(String prompt, Map<String, ? extends Object> parameters) {
+		return insert(prompt, null, parameters, defaultReq);
+	}
+
+	/**
+	 * Completes text (executes given prompt).
+	 * 
+	 * @param parameters Parameters used for slot filling. See
+	 *                   {@link #fillSlots(String, Map)}.
+	 */
+	public TextCompletion complete(String prompt, Map<String, ? extends Object> parameters, CompletionsRequest req) {
+		return insert(prompt, null, parameters, req);
 	}
 
 	/**
@@ -166,7 +178,7 @@ public class OpenAiCompletionService implements CompletionService {
 	 */
 	@Override
 	public TextCompletion insert(String prompt, String suffix) {
-		return insert(prompt, suffix, defaultReq);
+		return insert(prompt, suffix, null, defaultReq);
 	}
 
 	/**
@@ -177,8 +189,25 @@ public class OpenAiCompletionService implements CompletionService {
 	 * automatically, based on prompt length.
 	 */
 	public TextCompletion insert(String prompt, String suffix, CompletionsRequest req) {
-		req.setPrompt(prompt);
-		req.setSuffix(suffix);
+		return insert(prompt, suffix, null, req);
+	}
+
+	@Override
+	public TextCompletion insert(String prompt, String suffix, Map<String, ? extends Object> parameters) {
+		return insert(prompt, suffix, parameters, defaultReq);
+	}
+
+	/**
+	 * Inserts text between given prompt and the suffix (executes given prompt).
+	 * uses provided {@link CompletionsRequest} to get parameters for the call.
+	 * 
+	 * Notice that if maxToxens is null, this method will try to set it
+	 * automatically, based on prompt length.
+	 */
+	public TextCompletion insert(String prompt, String suffix, Map<String, ? extends Object> parameters,
+			CompletionsRequest req) {
+		req.setPrompt(CompletionService.fillSlots(prompt, parameters));
+		req.setSuffix(CompletionService.fillSlots(suffix, parameters));
 
 		// Adjust token limit if needed
 		ModelService ms = endpoint.getModelService();

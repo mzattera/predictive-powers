@@ -41,4 +41,13 @@ public interface SearchService extends Service {
 	 * @return List of search results.
 	 */
 	List<SearchResult> search(@NonNull String query);
+
+	/**
+	 * Performs an online search.
+	 * 
+	 * @param query The search to perform.
+	 * @param n Number of results to return at most.
+	 * @return List of search results.
+	 */
+	List<SearchResult> search(@NonNull String query, int n);
 }

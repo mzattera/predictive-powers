@@ -43,10 +43,23 @@ import lombok.ToString;
 public class SearchResult {
 
 	String title;
-	
+
 	@NonNull
 	URL link;
-	
+
 	String mime;
 	String fileFormat;
+
+	@Override
+	public boolean equals(Object other) {
+		if (other instanceof SearchResult)
+			return this.link.equals(((SearchResult) other).link);
+		else
+			return false;
+	}
+
+	@Override
+	public int hashCode() {
+		return link.hashCode();
+	}
 }

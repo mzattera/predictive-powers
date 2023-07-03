@@ -19,11 +19,9 @@ package io.github.mzattera.util;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -122,9 +120,9 @@ public final class FileUtil {
 	 * @param fileName
 	 * @param text
 	 * @throws IOException
-	 * @throws FileNotFoundException
+	 * 
 	 */
-	public static void writeFile(String fileName, String text) throws FileNotFoundException, IOException {
+	public static void writeFile(String fileName, String text) throws IOException {
 		writeFile(new File(fileName), text);
 	}
 
@@ -134,9 +132,9 @@ public final class FileUtil {
 	 * @param fileName
 	 * @param text
 	 * @throws IOException
-	 * @throws FileNotFoundException
+	 * 
 	 */
-	public static void writeFile(File file, String text) throws FileNotFoundException, IOException {
+	public static void writeFile(File file, String text) throws IOException {
 		try (BufferedWriter writer = new BufferedWriter(
 				new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
 			writer.write(text);

@@ -89,7 +89,7 @@ public interface ApiClient extends Closeable {
 				while (response.code() == 429) { // Waits and retries in case we reached rate limit
 					response.close();
 
-					int waitTime = 1; // TODO URGENT Make configurable or fine tune it
+					int waitTime = 3; // TODO URGENT Make configurable or fine tune it
 					try {
 						waitTime = Integer.parseInt(response.header("Retry-After"));
 					} catch (Exception e) {

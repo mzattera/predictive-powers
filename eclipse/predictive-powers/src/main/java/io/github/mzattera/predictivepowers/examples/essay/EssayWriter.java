@@ -18,25 +18,25 @@ package io.github.mzattera.predictivepowers.examples.essay;
 
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.tika.exception.TikaException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXException;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -74,36 +74,58 @@ import retrofit2.HttpException;
 
 public class EssayWriter implements Closeable {
 
-	// TODO remve al ldebug log
+	// TODO remove all debug log
 
 	private final static Logger LOG = LoggerFactory.getLogger(EssayWriter.class);
 
-	private static final double CHAT_TEMPERATURE = 20.0;
-
-	/** Minimim lenght of a web page to be considered (chars) */
-	private static final int MINIMUM_PAGE_SIZE = 500;
-
 	/** Length of an essay in tokens */
-	public final static int ESSAY_LENGTH = 2500;
+	public final static int ESSAY_LENGTH = 10000;
 
 	/** Length of an essay session in tokens */
-	public final static int SECTION_LENGTH = ESSAY_LENGTH / 15;
+	public final static int SECTION_LENGTH = ESSAY_LENGTH / 20;
 
-	// TODO maybe create a constant for reach model
+	/**
+	 * If true, "summarizes" pages before embedding them by trying to remove data
+	 * not relevant to the essay
+	 */
+	private static final boolean SUMMARIZE = false;
+
 	/**
 	 * Chat model to use for writing (which might be different from models used in
 	 * other tasks
 	 */
+	// TODO maybe create a constant for reach model
 	public final String WRITER_MODEL = "gpt-3.5-turbo-16k";
+
+	/** Minimim lenght of a web page to be considered (chars) */
+	private static final int MINIMUM_PAGE_SIZE = 500;
+
+	/** Numbers of threads for parallel execution. */
+	private static final int THREAD_POOL_SIZE = 10;
+
+	// TODO remove all debug log
+
+	/**
+	 * Maximum time allowed to download one page (seconds), after this, download
+	 * tasks will be forcibly stopped. Use a negative value to set no timeout.
+	 */
+	private static final int DOWNLOAD_TIMEOUT = 3*60;
+
+	/**
+	 * Waiting time (millis) after HTTP 503 OR 400 error, before resubmitting
+	 * request again.
+	 */
+	private static final int RETRY_WAIT_TIME = 3 * 1000;
 
 	/** Used for JSON (de)serialization in API calls */
 	@Getter
-	private final static ObjectMapper jsonMapper;
+	private final static ObjectMapper JSON_MAPPER;
+
 	static {
-		jsonMapper = new ObjectMapper();
-		jsonMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		jsonMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-		jsonMapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+		JSON_MAPPER = new ObjectMapper();
+		JSON_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		JSON_MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+		JSON_MAPPER.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 	}
 
 	@Getter
@@ -158,7 +180,7 @@ public class EssayWriter implements Closeable {
 				if (content == null) {
 					if (summary != null)
 						buf.append("[Summary: ").append(summary.trim()).append("]\n\n");
-					buf.append("This section must yet be competed.\n\n");
+					buf.append("[This section must yet be competed.]\n\n");
 				} else {
 					buf.append(content.trim()).append("\n\n");
 				}
@@ -175,23 +197,21 @@ public class EssayWriter implements Closeable {
 		@Builder.Default
 		List<Section> chapters = new ArrayList<>();
 
-		public void serialize(String fileName) throws FileNotFoundException, IOException {
+		public void serialize(String fileName) throws IOException {
 			serialize(new File(fileName));
 		}
 
-		public void serialize(File file) throws FileNotFoundException, IOException {
-			String json = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(this);
+		public void serialize(File file) throws IOException {
+			String json = JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(this);
 			FileUtil.writeFile(file, json);
 		}
 
-		public static EssayStructure deserialize(String fileName)
-				throws UnsupportedEncodingException, FileNotFoundException, IOException {
+		public static EssayStructure deserialize(String fileName) throws IOException {
 			return deserialize(new File(fileName));
 		}
 
-		public static EssayStructure deserialize(File json)
-				throws JsonMappingException, JsonProcessingException, IOException {
-			return jsonMapper.readValue(FileUtil.readFile(json), EssayStructure.class);
+		public static EssayStructure deserialize(File json) throws IOException {
+			return JSON_MAPPER.readValue(FileUtil.readFile(json), EssayStructure.class);
 		}
 
 		@Override
@@ -220,7 +240,7 @@ public class EssayWriter implements Closeable {
 		}
 	}
 
-	private final OpenAiEndpoint openAi = new OpenAiEndpoint(new OpenAiClient(null, 3 * 60 * 1000,
+	private final OpenAiEndpoint openAi = new OpenAiEndpoint(new OpenAiClient(null, 3 * 60 * RETRY_WAIT_TIME,
 			OpenAiClient.DEFAULT_KEEP_ALIVE_MILLIS, OpenAiClient.DEFAULT_MAX_IDLE_CONNECTIONS));
 	private final GoogleEndpoint google = new GoogleEndpoint();
 	private KnowledgeBase kb = new KnowledgeBase();
@@ -234,49 +254,51 @@ public class EssayWriter implements Closeable {
 		essay = EssayStructure.builder().title(title).description(description).build();
 	}
 
-	public EssayWriter(File json) throws JsonMappingException, JsonProcessingException, IOException {
+	public EssayWriter(File json) throws IOException {
 		essay = EssayStructure.deserialize(json);
 	}
 
 	public static void main(String[] args) {
 
 		try {
-			if (args.length != 2)
+			if ((args.length != 2) && (args.length != 3)) // TODO better checks
 				throw new IllegalArgumentException("Usage..."); // TODO print usage
 
+			// TODO Urgent make essay length and number of sections configurable.
+			
 			switch (args[0]) {
-			// TODO URGENT make this -s again
-			case "-XXs": // Write structure from description
-				File input = new File(args[1]);
-				System.out.println("Creating essay structure from description in: " + input.getCanonicalPath());
-				try (EssayWriter writer = new EssayWriter("My Essay", FileUtil.readFile(input))) {
-					writer.createStructure();
-					System.out.println(writer.essay.essaySummary());
-					FileUtil.writeFile(FileUtil.newFile(input, "Essay Summary.txt"), writer.essay.essaySummary());
-					writer.essay.serialize(FileUtil.newFile(input, "essay.json"));
-				}
+			case "-s":
+				// Write structure from description passed as argument
+				createStructure(new File(args[1]));
+				break;
+			case "-d":
+				// Downloads content for an essay, and saves corresponding knowledge base
+				createKnowledgeBase(new File(args[1]), 50);
+				break;
+			case "-w":
+				// writes an essay
+				write(new File(args[1]), new File(args[2]));
+				break;
+			case "-a":
+				// Starts from essay description and writes the essay, saving structure and KB
+				// in
+				// the process.
+				File description = new File(args[1]);
+				File structure = createStructure(description);
+				File kb = createKnowledgeBase(structure, Integer.parseInt(args[2]));
+				File essay = write(structure, kb);
+				System.out.println("Essay completed: " + essay.getCanonicalPath());
+				break;
+			case "-j":
+				// Starts from essay structure and writes the essay, saving the KB in
+				// the process.
+				structure = new File(args[1]);
+				kb = createKnowledgeBase(structure, Integer.parseInt(args[2]));
+				essay = write(structure, kb);
+				System.out.println("Essay completed: " + essay.getCanonicalPath());
 				break;
 			default:
-//				throw new IllegalArgumentException("Usage..."); // TODO print usage
-								
-				try (EssayWriter writer = new EssayWriter(new File("D:\\essay.json"))) {
-					
-					// Googling
-//					List<SearchResult> links = writer.google();
-//					for (SearchResult link : links) {
-//						System.out.println(link.toString());
-//					}
-
-					// Downloading
-//					links = links.subList(0, 5);
-//					writer.download(links);
-//					writer.kb.save("D:\\essay_kb.object");
-					
-					writer.kb = KnowledgeBase.load("D:\\essay_kb.object");
-					// Writing
-					writer.write();
-					System.out.println(writer.essay.essayContent());				
-				}
+				throw new IllegalArgumentException("Usage..."); // TODO print usage
 			}
 		} catch (Exception e) {
 			LOG.error("Error!", e);
@@ -286,15 +308,91 @@ public class EssayWriter implements Closeable {
 	}
 
 	/**
+	 * From a description provided in a file, creates essay structure, saved as JSON
+	 * file, then saves a summary of the essay as well.
+	 * 
+	 * @param input
+	 * @return The JSON file with essay structure.
+	 * @throws IOException
+	 */
+	public static File createStructure(File input) throws IOException {
+		System.out.println("Creating essay structure from description in: " + input.getCanonicalPath());
+		try (EssayWriter writer = new EssayWriter("My Essay", FileUtil.readFile(input))) {
+			writer.createStructure();
+			System.out.println(writer.essay.essaySummary());
+			FileUtil.writeFile(FileUtil.newFile(input, "sumary.txt"), writer.essay.essaySummary());
+			File json = FileUtil.newFile(input, "essay.json");
+			writer.essay.serialize(json);
+			return json;
+		}
+	}
+
+	/**
+	 * Downloads content relevant for an essay and stores it in the knowledge base.
+	 * 
+	 * @param structure JSON file with the structure of the essay.
+	 * @param maxLinks  Maximum web pages to download for the research.
+	 * @return A file with the newly created knowledge base.
+	 * @throws IOException
+	 */
+	public static File createKnowledgeBase(File structure, int maxLinks) throws IOException {
+		System.out.println("Creating knowledge base for essay...");
+		try (EssayWriter writer = new EssayWriter(structure)) {
+			// Googling
+			List<SearchResult> links = writer.google(maxLinks);
+			for (SearchResult link : links) {
+				System.out.println(link.toString());
+			}
+
+			// Downloading
+			writer.kb.drop();
+			writer.download(links);
+			File result = FileUtil.newFile(structure, "essay_kb.object");
+			writer.kb.save(result);
+
+			return result;
+		}
+	}
+
+	/**
+	 * Writs an essay, then saves it as a text file.
+	 * 
+	 * @param structure Structure of the essay, it will be populated with content
+	 *                  and stored as new JSON file.
+	 * @param knowledge Populated knowledge base to use fro writing the essay.
+	 * @return A File pointing to the complete essay.
+	 * 
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
+	public static File write(File structure, File knowledge) throws IOException, ClassNotFoundException {
+		System.out.println("Writing essay...");
+		try (EssayWriter writer = new EssayWriter(structure)) {
+			writer.kb = KnowledgeBase.load(knowledge);
+
+			// Writing
+			writer.write();
+			String content = writer.essay.essayContent();
+
+			System.out.println(content);
+			File result = FileUtil.newFile(structure, "essay.txt");
+			FileUtil.writeFile(result, content);
+			writer.essay.serialize(FileUtil.newFile(structure, "essay_complete.json"));
+
+			return result;
+		}
+	}
+
+	/**
 	 * Starting form the essay description, creates its structure of chapters and
 	 * sections, already filled with respective summaries.
 	 * 
 	 * @param description
 	 * @return
-	 * @throws JsonMappingException
 	 * @throws JsonProcessingException
+	 * @throws JsonMappingException
 	 */
-	public void createStructure() throws JsonMappingException, JsonProcessingException {
+	public void createStructure() throws JsonProcessingException {
 
 		String description = essay.description;
 		if ((description == null) || (description.trim().length() == 0))
@@ -331,7 +429,7 @@ public class EssayWriter implements Closeable {
 						+ "\n" + "User Description: {{description}}",
 				params));
 
-		EssayStructure newEssay = jsonMapper.readValue(resp.getText(), EssayStructure.class);
+		EssayStructure newEssay = JSON_MAPPER.readValue(resp.getText(), EssayStructure.class);
 		essay.chapters = newEssay.chapters;
 
 		// TODO Remove intro and conclusion if present and recreate them afterwards
@@ -349,68 +447,61 @@ public class EssayWriter implements Closeable {
 	}
 
 	/**
-	 * Does the main job of writing the essay, starting from its structure of
-	 * chapters and sections already filled with respective summaries.
+	 * Google pages relevant to essay content.
 	 * 
-	 * @param essay
-	 * @return
-	 * @throws Exception
-	 * @throws TikaException
-	 * @throws SAXException
-	 * @throws IOException
+	 * @return List of links relevant to essay content.
 	 */
-	public String fillStructure() throws Exception {
-
-		// Google all pages that might be relevant to build the essay and add their
-		// content to the knowledge base
-		kb.drop();
-		download(google());
-
-		// Write one section at a time
-		write();
-
-		return essay.essayContent();
+	public List<SearchResult> google() {
+		return google(Integer.MAX_VALUE);
 	}
 
 	/**
 	 * Google pages relevant to essay content.
 	 * 
+	 * @param maxLinks Maximum number of links to return.
 	 * @return List of links relevant to essay content.
-	 * @throws ExecutionException
-	 * @throws InterruptedException
 	 */
-	public List<SearchResult> google() throws InterruptedException, ExecutionException {
-
-		Set<SearchResult> links = new HashSet<>();
+	public List<SearchResult> google(int maxLinks) {
 
 		// Google each section in parallel
-		// TODO set timeout?
-		ExecutorService executor = Executors.newFixedThreadPool(10); // TODO fine tune
-		try {
-			List<Future<List<SearchResult>>> futures = new ArrayList<>();
-			for (Section chapter : essay.chapters) {
-				futures.add(executor.submit(() -> google(chapter)));
-				for (Section section : chapter.sections) {
-					futures.add(executor.submit(() -> google(section)));
-				}
+
+		List<Callable<List<Pair<SearchResult, Integer>>>> tasks = new ArrayList<>();
+		for (Section chapter : essay.chapters) {
+			tasks.add(() -> google(chapter));
+			for (Section section : chapter.sections) {
+				tasks.add(() -> google(section));
 			}
-			for (Future<List<SearchResult>> f : futures)
-				links.addAll(f.get());
-		} finally {
-			executor.shutdownNow(); // All threads should have finished by now
+		}
+		List<Pair<SearchResult, Integer>> allLinks = parallelExecution(tasks, -1);
+		System.out.println("Total of " + allLinks.size() + " found.");
+
+		// Collects links, starting from top-rank results and avoiding duplicates
+
+		allLinks.sort(new Comparator<>() {
+
+			@Override
+			public int compare(Pair<SearchResult, Integer> o1, Pair<SearchResult, Integer> o2) {
+				return Integer.compare(o1.getRight(), o2.getRight());
+			}
+		});
+
+		Set<SearchResult> result = new HashSet<>();
+		for (Pair<SearchResult, Integer> l : allLinks) {
+			if (result.size() >= maxLinks)
+				break;
+			result.add(l.getLeft());
 		}
 
-		System.out.println("Total of " + links.size() + " found.");
-
-		return new ArrayList<>(links);
+		return new ArrayList<>(result);
 	}
 
 	/**
 	 * Google pages relevant to content for given section.
 	 * 
-	 * @return List of links relevant to essay content.
+	 * @return List of links relevant to essay content. Each link is returned in a
+	 *         pair dogether with its ran in search results.
 	 */
-	public List<SearchResult> google(Section section) {
+	public List<Pair<SearchResult, Integer>> google(Section section) {
 
 		System.out.println("Searching relevant pages for section [" + section.id + "]: " + section.title);
 
@@ -441,18 +532,18 @@ public class EssayWriter implements Closeable {
 		// different queries
 		List<String> queries;
 		// Loops until the section has been successfully googled
-		while (true) { // TODO URGENT max retries
+		while (true) { // TODO add max retries?
 			try {
-				queries = jsonMapper.readValue(chatSvc.complete(msgs).getText(), new TypeReference<List<String>>() {
+				queries = JSON_MAPPER.readValue(chatSvc.complete(msgs).getText(), new TypeReference<List<String>>() {
 				});
 				break;
 			} catch (JsonProcessingException e) { // Retry if GPT returned bad JSON
 				LOG.warn("Retrying because of malformed JSON while googling section " + section.id, e);
 			} catch (HttpException e) { // Retry if any GPT error occurred
-				LOG.warn("Retrying because of OpenAi " + e.code() + " error while googling section " + section.id, e);
+				LOG.warn("Retrying because of HTTP " + e.code() + " error while googling section " + section.id, e);
 				if ((e.code() == 503) || (e.code() == 400)) { // Service unavailable, let's slow down a bit
 					try {
-						Thread.sleep(1000);
+						Thread.sleep(RETRY_WAIT_TIME);
 					} catch (InterruptedException ex) {
 					}
 				}
@@ -460,18 +551,25 @@ public class EssayWriter implements Closeable {
 		}
 
 		// Now submit each query and collect returned links
-		Set<SearchResult> result = new HashSet<>();
+		List<Pair<SearchResult, Integer>> result = new ArrayList<>();
 		for (String query : queries) {
+
 			LOG.debug("Googleing for [" + section.id + "]: " + query);
+			List<SearchResult> links;
 			try {
-				result.addAll(google.getSearchService().search(query, 5)); // TODO fine tune
+				links = google.getSearchService().search(query, 5);
 			} catch (Exception e) {
 				// Skip single query that fails
 				LOG.warn("Ignoring error while searching for: " + query, e);
+				continue;
+			}
+
+			for (int i = 0; i < links.size(); ++i) {
+				result.add(new ImmutablePair<>(links.get(i), i));
 			}
 		}
 
-		return new ArrayList<>(result);
+		return result;
 	}
 
 	/**
@@ -481,31 +579,19 @@ public class EssayWriter implements Closeable {
 	 * Notice the knowledge base is NOT cleared.
 	 * 
 	 * @param links
-	 * @throws Exception
 	 */
-	public void download(List<SearchResult> links) throws Exception {
+	public void download(List<SearchResult> links) {
 
 		// Retrieve contents for each link in parallel and save it in the knowledge base
-//		ExecutorService executor = Executors.newFixedThreadPool(10); // TODO fine tune
-//		try {
-//			List<Future<List<EmbeddedText>>> futures = new ArrayList<>();
-//			for (SearchResult link : links) {
-//				LOG.debug("Submitting task for link: " + link);
-//				futures.add(executor.submit(() -> download(link)));
-//			}
-//			for (Future<List<EmbeddedText>> f : futures)
-//				kb.insert(f.get());
-//		} finally {
-//			executor.shutdownNow(); // All threads should have finished by now
-//		}
-
-		// TODO URGENT paralllelize this
+		List<Callable<List<EmbeddedText>>> tasks = new ArrayList<>();
 		for (SearchResult link : links) {
-			LOG.debug("Submitting task for link: " + link);
-			List<EmbeddedText> emb = download(link);
-			LOG.debug("Populating KB for link: " + link);
-			kb.insert(emb);
+			tasks.add(() -> download(link));
 		}
+		List<EmbeddedText> result = parallelExecution(tasks, DOWNLOAD_TIMEOUT);
+
+		LOG.debug("+++ All pages downloaded.");
+		kb.insert(result);
+		LOG.debug("+++ KB created.");
 	}
 
 	/**
@@ -538,30 +624,15 @@ public class EssayWriter implements Closeable {
 			return new ArrayList<>();
 		}
 
-		content = summarize(content);
+		if (SUMMARIZE)
+			content = summarize(content);
 
 		LOG.debug("Content summarized " + link);
 
-		// Loop until we get proper embeddings
-		List<EmbeddedText> result = null;
-		while (true) { // TODO URGENT max retries
-			try {
-				result = embSvc.embed(content);
-				break;
-			} catch (HttpException e) { // Retry if any GPT error occurred
-				LOG.warn("Retrying because of OpenAi " + e.code() + " error while creating embeddings", e);
-				if ((e.code() == 503) || (e.code() == 400)) { // Service unavailable, let's slow down a bit
-					try {
-						Thread.sleep(1000);
-					} catch (InterruptedException ex) {
-					}
-				}
-			}
-		}
-
+		List<EmbeddedText> result = safeEmbed(embSvc, content);
 		for (EmbeddedText emb : result) {
 			emb.set("url", link.getLink());
-			LOG.debug(">>> Embedding: + \n\n" + emb.getText() + "\n\n");
+			LOG.debug(">>> Embedding added for {}", link.getTitle());
 		}
 
 		System.out.println("Downloaded " + link);
@@ -573,9 +644,6 @@ public class EssayWriter implements Closeable {
 	 * 
 	 * @param text
 	 * @return
-	 * @throws IOException
-	 * @throws SAXException
-	 * @throws TikaException
 	 */
 	private String summarize(String text) {
 
@@ -733,25 +801,43 @@ public class EssayWriter implements Closeable {
 		return summary;
 	}
 
-	private void write() {
-		// TODO URGENT parallelize
+	/**
+	 * (Re)writes the entire essay, based on its structure and the content in the
+	 * knowledge base.
+	 */
+	public void write() {
+		List<Callable<List<Section>>> tasks = new ArrayList<>();
 		for (Section chapter : essay.chapters) {
+			if (chapter.sections.size() == 0) {
+				// No (sub)sections, let's generate content for the chapter itself
+				tasks.add(() -> write(chapter));
+			} else {
+				chapter.content = ""; // TODO write a short intro instead
+			}
 			for (Section section : chapter.sections) {
-				write(section);
+				tasks.add(() -> write(section));
 			}
 		}
+
+		parallelExecution(tasks, -1);
 	}
 
-	private void write(Section section) {
+	/**
+	 * (Re)writes a section of the essay, based on its structure and the content in
+	 * the knowledge base.
+	 */
+	public List<Section> write(Section section) {
+
+		System.out.println("Writing section " + section.id + ") " + section.title);
 
 		String prompt = "Write given section of the essay using web page contents listed below."
 				+ " The section content should fit the rest of the essay; summary of the essay is also provided below."
 				+ " In writing the section, use only listed content and no other information."
 				+ " Include facts, entities and events that are in the text only if they are relevant for the topic of the section."
 				+ " Output only the section content, leaving the title out."
-				+ " Limit the length of the secton to about " + (SECTION_LENGTH * 3 / 4) + " words." + "\n\n"
-				+ "Essay summary:\n\n {{essay}}\n\n" + "Section title: \"" + section.id + " " + section.title + "\"\n\n"
-				+ "Section summary:  \"" + section.summary + "\"\n\n";
+				+ " Limit the length of the secton to about " + ((int) Math.round(SECTION_LENGTH * 3 / 4 / 10) * 10)
+				+ " words." + "\n\n" + "Essay summary:\n\n {{essay}}\n\n" + "Section title: \"" + section.id + " "
+				+ section.title + "\"\n\n" + "Section summary:  \"" + section.summary + "\"\n\n";
 		EmbeddingService embSvc = openAi.getEmbeddingService();
 
 		OpenAiChatService chatSvc = openAi.getChatService();
@@ -765,7 +851,7 @@ public class EssayWriter implements Closeable {
 		msgs.add(new ChatMessage(Role.USER, "")); // Placeholder
 
 		// TODO guard if query embedding is longer than 0
-		List<Pair<EmbeddedText, Double>> context = kb.search(embSvc.embed(section.summary).get(0), 50, 0);
+		List<Pair<EmbeddedText, Double>> context = kb.search(safeEmbed(embSvc, section.summary).get(0), 50, 0);
 
 		// See how much context can fit the prompt
 		Tokenizer counter = openAi.getModelService().getTokenizer(chatSvc.getModel());
@@ -774,38 +860,132 @@ public class EssayWriter implements Closeable {
 		int i = 0;
 		for (; i < context.size(); ++i) {
 			EmbeddedText emb = context.get(i).getLeft();
-			msgs.remove(msgs.size()-1);
+			msgs.remove(msgs.size() - 1);
 			ctx.append("Content of web page " + emb.get("url")).append("\n").append(emb.getText()).append("\n\n");
 			msgs.add(new ChatMessage(Role.USER, ctx.toString()));
-			if ((SECTION_LENGTH + counter.count(msgs)) > ctxSize)
+			if ((SECTION_LENGTH * 2 + counter.count(msgs)) > ctxSize)
 				break;
 		}
 
 		// OK, now build the actual context
 		// TODO do it better
 		ctx.setLength(0);
-		msgs.remove(msgs.size()-1);
+		msgs.remove(msgs.size() - 1);
 		for (int j = 0; j < i; ++j) {
 			EmbeddedText emb = context.get(j).getLeft();
 			ctx.append("Content of web page " + emb.get("url")).append("\n").append(emb.getText()).append("\n\n");
 		}
 		msgs.add(new ChatMessage(Role.USER, ctx.toString()));
 
-		System.out.println("====[ Summarizing content for section " + section.id + " " + section.title + "\n");
-		System.out.println(ctx.toString() + "\n");
-
 		// Add the generated content to the section
-		while (true) { // Looks until correctly executed
+		while (true) { // Loops until correctly executed
 			try {
 				section.content = chatSvc.complete(msgs).getText();
 				break;
-			} catch (Exception e) {
-				LOG.error("Error while writing section " + section.id, e);
+			} catch (HttpException e) { // Retry if any GPT error occurred
+				LOG.warn("Retrying because of HTTP " + e.code() + " error while writing section", e);
+				if ((e.code() == 503) || (e.code() == 400)) { // Service unavailable, let's slow down a bit
+					try {
+						Thread.sleep(RETRY_WAIT_TIME);
+					} catch (InterruptedException ex) {
+					}
+				}
 			}
 		}
 
-		System.out.println("====[ Content\n");
-		System.out.println(section.content + "\n");
+		System.out.println("Competed section " + section.id + ") " + section.title);
+		return section.sections; // Not used, just needed for parallelExecution()
+	}
+
+	/**
+	 * Executes a list of tasks in parallel. Each task is supposed to return a list
+	 * of results, all results are collected together and returned.
+	 * 
+	 * @param timeout If this is > 0 will force execution of each task to terminate
+	 *                within the given amount of time (seconds)
+	 */
+	private static <T> List<T> parallelExecution(List<Callable<List<T>>> tasks, int timeout) {
+		List<T> result = new ArrayList<>();
+
+		ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+		List<Future<List<T>>> futures = new ArrayList<>();
+		try {
+
+			// Queue all tasks for execution
+			LOG.debug("???? Sumbmitting {} tasks", tasks.size());
+			for (Callable<List<T>> task : tasks) {
+				futures.add(executor.submit(task));
+			}
+			LOG.debug("???? Sumbmitted {} tasks", tasks.size());
+
+//			// If needed, forces shutdown after timeout
+//			if (timeout > 0) {
+//				LOG.debug("???? Setting execution tmeout to {} minutes", timeout);
+//				boolean ok = false;
+//				try {
+//					ok = executor.awaitTermination(timeout, TimeUnit.MINUTES);
+//					executor.shutdownNow(); // It seems it still hangs otherwise
+//				} catch (Exception e) {
+//					LOG.warn("???? Error closing executor", e);
+//				} finally {
+//					if (!ok)
+//						LOG.error("Task execution forcibly terminated after {} minutes", timeout);
+//				}
+//			}
+
+			// Collect results
+			LOG.debug("???? Collectng results");
+			for (Future<List<T>> f : futures) {
+				try {
+					List<T> l = null;
+					if (timeout > 0)
+						l = f.get(timeout, TimeUnit.SECONDS);
+					else
+						l = f.get();
+					if (l != null)
+						result.addAll(l);
+				} catch (TimeoutException e) {
+					LOG.error("Task timed out", e);
+				} catch (Exception e) {
+					LOG.error("Error executing task", e);
+				}
+			}
+			LOG.debug("???? Collected results");
+
+		} finally {
+			try {
+				LOG.debug("???? closing executor");
+				executor.shutdownNow(); // All threads should have finished by now
+			} catch (Exception e) {
+				LOG.warn("???? Error closing executor", e);
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Embeds a piece of text handling errors properly.
+	 */
+	private static List<EmbeddedText> safeEmbed(EmbeddingService embSvc, String content) {
+		List<EmbeddedText> result = new ArrayList<>();
+
+		while (true) { // TODO add max retries?
+			try {
+				result = embSvc.embed(content);
+				break;
+			} catch (HttpException e) { // Retry if any GPT error occurred
+				LOG.warn("Retrying because HTTP " + e.code() + " error while creating embeddings", e);
+				if ((e.code() == 503) || (e.code() == 400)) { // Service unavailable, let's slow down a bit
+					try {
+						Thread.sleep(RETRY_WAIT_TIME);
+					} catch (InterruptedException ex) {
+					}
+				}
+			}
+		}
+
+		return result;
 	}
 
 	@Override

@@ -21,6 +21,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -91,9 +92,29 @@ public final class ExtractionUtil {
 	 * @throws TikaException
 	 */
 	public static String fromUrl(URL url) throws IOException, SAXException, TikaException {
-		try (InputStream in = url.openStream()) {
-			return fromStream(in);
+		return fromUrl(url, -1);
+	}
+
+	/**
+	 * 
+	 * @param url           Web page URL.
+	 * 
+	 * @param timeoutMillis Timeout (millisecond) to download content from given
+	 *                      url. If this is <=0 it will be ignored.
+	 * @return The content of given web page.
+	 * 
+	 * @throws IOException
+	 * @throws SAXException
+	 * @throws TikaException
+	 */
+	public static String fromUrl(URL url, int timeoutMillis) throws IOException, SAXException, TikaException {
+
+		URLConnection connection = url.openConnection();
+		if (timeoutMillis > 0) {
+			connection.setConnectTimeout(timeoutMillis);
+			connection.setReadTimeout(timeoutMillis);
 		}
+		return fromStream(connection.getInputStream());
 	}
 
 	/**
@@ -110,6 +131,6 @@ public final class ExtractionUtil {
 		BodyContentHandler handler = new BodyContentHandler(-1);
 		Metadata metadata = new Metadata();
 		parser.parse(stream, handler, metadata);
-		return handler.toString().trim(); // Seems Tika adds a NL at tend of text that is not there 
+		return handler.toString().trim(); // Seems Tika adds a NL at the end of text that is not there
 	}
 }

@@ -27,11 +27,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -101,15 +99,15 @@ public class EssayWriter implements Closeable {
 	private static final int MINIMUM_PAGE_SIZE = 500;
 
 	/** Numbers of threads for parallel execution. */
-	private static final int THREAD_POOL_SIZE = 10;
+	private static final int THREAD_POOL_SIZE = 5;
 
 	// TODO remove all debug log
 
 	/**
-	 * Maximum time allowed to download one page (seconds), after this, download
-	 * tasks will be forcibly stopped. Use a negative value to set no timeout.
+	 * Maximum time allowed to download one page (milliseconds). Use a negative
+	 * value to set no timeout.
 	 */
-	private static final int DOWNLOAD_TIMEOUT = 3*60;
+	private static final int DOWNLOAD_TIMEOUT = 3 * 60;
 
 	/**
 	 * Waiting time (millis) after HTTP 503 OR 400 error, before resubmitting
@@ -265,7 +263,7 @@ public class EssayWriter implements Closeable {
 				throw new IllegalArgumentException("Usage..."); // TODO print usage
 
 			// TODO Urgent make essay length and number of sections configurable.
-			
+
 			switch (args[0]) {
 			case "-s":
 				// Write structure from description passed as argument
@@ -472,7 +470,7 @@ public class EssayWriter implements Closeable {
 				tasks.add(() -> google(section));
 			}
 		}
-		List<Pair<SearchResult, Integer>> allLinks = parallelExecution(tasks, -1);
+		List<Pair<SearchResult, Integer>> allLinks = parallelExecution(tasks);
 		System.out.println("Total of " + allLinks.size() + " found.");
 
 		// Collects links, starting from top-rank results and avoiding duplicates
@@ -554,7 +552,7 @@ public class EssayWriter implements Closeable {
 		List<Pair<SearchResult, Integer>> result = new ArrayList<>();
 		for (String query : queries) {
 
-			LOG.debug("Googleing for [" + section.id + "]: " + query);
+			System.out.println("Googleing for [" + section.id + "]: " + query);
 			List<SearchResult> links;
 			try {
 				links = google.getSearchService().search(query, 5);
@@ -587,11 +585,10 @@ public class EssayWriter implements Closeable {
 		for (SearchResult link : links) {
 			tasks.add(() -> download(link));
 		}
-		List<EmbeddedText> result = parallelExecution(tasks, DOWNLOAD_TIMEOUT);
+		List<EmbeddedText> result = parallelExecution(tasks);
 
-		LOG.debug("+++ All pages downloaded.");
+		System.out.println("Total downloaded pages: "+ result.size());
 		kb.insert(result);
-		LOG.debug("+++ KB created.");
 	}
 
 	/**
@@ -610,7 +607,7 @@ public class EssayWriter implements Closeable {
 		System.out.println("Downloading page " + link);
 		String content = null;
 		try {
-			content = ExtractionUtil.fromUrl(link.getLink());
+			content = ExtractionUtil.fromUrl(link.getLink(), DOWNLOAD_TIMEOUT);
 		} catch (Exception e) {
 			LOG.error("Error downloading " + link.getLink(), e);
 			return new ArrayList<>();
@@ -646,9 +643,6 @@ public class EssayWriter implements Closeable {
 	 * @return
 	 */
 	private String summarize(String text) {
-
-		// TODO
-//		if (1==1)return text;
 
 		String prompt = "Web page content below:\n" + "\n" + "{{text}}";
 
@@ -795,9 +789,7 @@ public class EssayWriter implements Closeable {
 			}
 		}
 
-//		LOG.debug("===[ TEXT ]==========\n" + text);
 		String summary = result.substring(0, result.length() - 1);
-//		LOG.debug("===[ SUMMARY ]=================\n" + summary + "\n====================\n");
 		return summary;
 	}
 
@@ -819,7 +811,7 @@ public class EssayWriter implements Closeable {
 			}
 		}
 
-		parallelExecution(tasks, -1);
+		parallelExecution(tasks);
 	}
 
 	/**
@@ -850,7 +842,6 @@ public class EssayWriter implements Closeable {
 		msgs.add(new ChatMessage(Role.USER, prompt));
 		msgs.add(new ChatMessage(Role.USER, "")); // Placeholder
 
-		// TODO guard if query embedding is longer than 0
 		List<Pair<EmbeddedText, Double>> context = kb.search(safeEmbed(embSvc, section.summary).get(0), 50, 0);
 
 		// See how much context can fit the prompt
@@ -904,60 +895,34 @@ public class EssayWriter implements Closeable {
 	 * @param timeout If this is > 0 will force execution of each task to terminate
 	 *                within the given amount of time (seconds)
 	 */
-	private static <T> List<T> parallelExecution(List<Callable<List<T>>> tasks, int timeout) {
+	private static <T> List<T> parallelExecution(List<Callable<List<T>>> tasks) {
 		List<T> result = new ArrayList<>();
 
-		ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+		ExecutorService executor = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 		List<Future<List<T>>> futures = new ArrayList<>();
 		try {
 
 			// Queue all tasks for execution
-			LOG.debug("???? Sumbmitting {} tasks", tasks.size());
 			for (Callable<List<T>> task : tasks) {
 				futures.add(executor.submit(task));
 			}
-			LOG.debug("???? Sumbmitted {} tasks", tasks.size());
-
-//			// If needed, forces shutdown after timeout
-//			if (timeout > 0) {
-//				LOG.debug("???? Setting execution tmeout to {} minutes", timeout);
-//				boolean ok = false;
-//				try {
-//					ok = executor.awaitTermination(timeout, TimeUnit.MINUTES);
-//					executor.shutdownNow(); // It seems it still hangs otherwise
-//				} catch (Exception e) {
-//					LOG.warn("???? Error closing executor", e);
-//				} finally {
-//					if (!ok)
-//						LOG.error("Task execution forcibly terminated after {} minutes", timeout);
-//				}
-//			}
 
 			// Collect results
-			LOG.debug("???? Collectng results");
 			for (Future<List<T>> f : futures) {
 				try {
-					List<T> l = null;
-					if (timeout > 0)
-						l = f.get(timeout, TimeUnit.SECONDS);
-					else
-						l = f.get();
+					List<T> l = f.get();
 					if (l != null)
 						result.addAll(l);
-				} catch (TimeoutException e) {
-					LOG.error("Task timed out", e);
 				} catch (Exception e) {
 					LOG.error("Error executing task", e);
 				}
 			}
-			LOG.debug("???? Collected results");
 
 		} finally {
 			try {
-				LOG.debug("???? closing executor");
 				executor.shutdownNow(); // All threads should have finished by now
 			} catch (Exception e) {
-				LOG.warn("???? Error closing executor", e);
+				LOG.warn("Error closing executor", e);
 			}
 		}
 

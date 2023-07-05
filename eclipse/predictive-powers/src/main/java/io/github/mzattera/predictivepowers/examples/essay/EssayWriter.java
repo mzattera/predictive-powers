@@ -44,7 +44,9 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
-import io.github.mzattera.predictivepowers.examples.essay.EssayWriter.EssayStructure.Section;
+import io.github.mzattera.predictivepowers.ApiClient;
+import io.github.mzattera.predictivepowers.examples.essay.EssayWriter.Essay.Section;
+import io.github.mzattera.predictivepowers.google.client.GoogleClient;
 import io.github.mzattera.predictivepowers.google.endpoint.GoogleEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
@@ -68,57 +70,62 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import retrofit2.HttpException;
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
 public class EssayWriter implements Closeable {
 
-	// TODO remove all debug log
-
 	private final static Logger LOG = LoggerFactory.getLogger(EssayWriter.class);
 
+//	private final static String GOOGLE_ENGINE_ID = "113b5d06917b7435f"; // Scientific articles search
+	private final static String GOOGLE_ENGINE_ID = GoogleClient.getEngineId(); // WWW search
+
 	/** Length of an essay in tokens */
-	public final static int ESSAY_LENGTH = 10000;
+	private final static int ESSAY_LENGTH = 10000;
 
 	/** Length of an essay session in tokens */
-	public final static int SECTION_LENGTH = ESSAY_LENGTH / 20;
+	private final static int SECTION_LENGTH = ESSAY_LENGTH / 20;
 
 	/**
 	 * If true, "summarizes" pages before embedding them by trying to remove data
 	 * not relevant to the essay
 	 */
-	private static final boolean SUMMARIZE = false;
+	private final static boolean SUMMARIZE = false;
 
-	/**
-	 * Chat model to use for writing (which might be different from models used in
-	 * other tasks
-	 */
+	/** Model to use for text completion. */
+	private static final String COMPLETION_MODEL = "gpt-3.5-turbo";
+
+	/** Model to use for writing content. */
 	// TODO maybe create a constant for reach model
-	public final String WRITER_MODEL = "gpt-3.5-turbo-16k";
-
-	/** Minimim lenght of a web page to be considered (chars) */
-	private static final int MINIMUM_PAGE_SIZE = 500;
-
-	/** Numbers of threads for parallel execution. */
-	private static final int THREAD_POOL_SIZE = 5;
+	private final static String WRITER_MODEL = "gpt-3.5-turbo-16k";
 
 	// TODO remove all debug log
+
+	/** When googling for a section, how many links to ask for */
+	private static final int LINKS_PER_QUERY = 5;
+
+	/** Minimum length of a web page to be considered (chars) */
+	private final static int MINIMUM_PAGE_SIZE = 500;
+
+	/** Numbers of threads for parallel execution. */
+	private final static int THREAD_POOL_SIZE = 3;
 
 	/**
 	 * Maximum time allowed to download one page (milliseconds). Use a negative
 	 * value to set no timeout.
 	 */
-	private static final int DOWNLOAD_TIMEOUT = 3 * 60;
+	private final static int DOWNLOAD_TIMEOUT_MILLIS = 1 * 60 * 1000;
 
 	/**
 	 * Waiting time (millis) after HTTP 503 OR 400 error, before resubmitting
 	 * request again.
 	 */
-	private static final int RETRY_WAIT_TIME = 3 * 1000;
+	private final static int RETRY_WAIT_TIME = 60 * 1000;
 
 	/** Used for JSON (de)serialization in API calls */
-	@Getter
 	private final static ObjectMapper JSON_MAPPER;
-
 	static {
 		JSON_MAPPER = new ObjectMapper();
 		JSON_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -132,7 +139,9 @@ public class EssayWriter implements Closeable {
 //	@NoArgsConstructor
 	@RequiredArgsConstructor
 	@AllArgsConstructor
-	public static class EssayStructure {
+	// TODO better method names
+	// TODO move out of this class
+	public static class Essay {
 
 		@Getter
 		@Setter
@@ -151,6 +160,13 @@ public class EssayWriter implements Closeable {
 
 			@Builder.Default
 			List<Section> sections = new ArrayList<>();
+
+			/**
+			 * Embedded texts used to build the section, each with their similarity with the
+			 * final section
+			 */
+			@Builder.Default
+			List<Pair<EmbeddedText, Double>> context = new ArrayList<>();
 
 			@Override
 			public String toString() {
@@ -182,6 +198,21 @@ public class EssayWriter implements Closeable {
 				} else {
 					buf.append(content.trim()).append("\n\n");
 				}
+				if ((context != null) && (context.size() > 0)) {
+					Set<SearchResult> links = new HashSet<>();
+					buf.append("References for section ").append(id == null ? "" : id).append("\n");
+					for (Pair<EmbeddedText, Double> p : context) {
+						if (p.getRight() < 0.85)
+							break; // Only show most relevant links
+						EmbeddedText emb = p.getLeft();
+						SearchResult link = (SearchResult) emb.get("url");
+						if (links.contains(link))
+							continue;
+						buf.append(p.getRight()).append(") ").append(link).append("\n");
+						links.add(link);
+					}
+					buf.append("\n");
+				}
 				for (Section s : sections)
 					buf.append(s.sectionContent());
 
@@ -204,12 +235,12 @@ public class EssayWriter implements Closeable {
 			FileUtil.writeFile(file, json);
 		}
 
-		public static EssayStructure deserialize(String fileName) throws IOException {
+		public static Essay deserialize(String fileName) throws IOException {
 			return deserialize(new File(fileName));
 		}
 
-		public static EssayStructure deserialize(File json) throws IOException {
-			return JSON_MAPPER.readValue(FileUtil.readFile(json), EssayStructure.class);
+		public static Essay deserialize(File json) throws IOException {
+			return JSON_MAPPER.readValue(FileUtil.readFile(json), Essay.class);
 		}
 
 		@Override
@@ -238,22 +269,59 @@ public class EssayWriter implements Closeable {
 		}
 	}
 
-	private final OpenAiEndpoint openAi = new OpenAiEndpoint(new OpenAiClient(null, 3 * 60 * RETRY_WAIT_TIME,
-			OpenAiClient.DEFAULT_KEEP_ALIVE_MILLIS, OpenAiClient.DEFAULT_MAX_IDLE_CONNECTIONS));
-	private final GoogleEndpoint google = new GoogleEndpoint();
+	private OpenAiEndpoint openAi;
+	private GoogleEndpoint google;
 	private KnowledgeBase kb = new KnowledgeBase();
-	private final EssayStructure essay;
+	private final Essay essay;
 
-	public EssayWriter(@NonNull String title) {
-		essay = EssayStructure.builder().title(title).build();
-	}
-
-	public EssayWriter(@NonNull String title, String description) {
-		essay = EssayStructure.builder().title(title).description(description).build();
+	public EssayWriter(@NonNull String title, @NonNull String description) {
+		essay = Essay.builder().title(title).description(description).build();
+		initializeEndPoints();
 	}
 
 	public EssayWriter(File json) throws IOException {
-		essay = EssayStructure.deserialize(json);
+		essay = Essay.deserialize(json);
+		initializeEndPoints();
+	}
+
+	private void initializeEndPoints() {
+
+		OkHttpClient client = ApiClient.getDefaultHttpClient(OpenAiClient.getApiKey(), 5 * 60 * 1000,
+				OpenAiClient.DEFAULT_KEEP_ALIVE_MILLIS, OpenAiClient.DEFAULT_MAX_IDLE_CONNECTIONS);
+
+		// Creates an OpenAi client that automatically retries call on HTTP error 400.
+		// This is not done by the defaut client as HTTP 400 is returned in same cases
+		// because of malformed requests
+		okhttp3.OkHttpClient.Builder builder = client.newBuilder();
+		builder.addInterceptor(new Interceptor() { // Handles error 400 (request rate limit reached)
+			@Override
+			public Response intercept(Chain chain) throws IOException {
+				Request request = chain.request();
+				Response response = chain.proceed(request);
+
+				while (response.code() == 400) { // Waits and retries in case we reached rate limit or server is
+													// unavailable
+
+					// TODO URGENT add max retries
+
+					response.close();
+					try {
+						LOG.warn("HTTP " + response.code() + ": Waiting " + (RETRY_WAIT_TIME / 1000) + " seconds: "
+								+ request.url());
+						Thread.sleep(RETRY_WAIT_TIME);
+					} catch (InterruptedException e) {
+					}
+
+					response = chain.proceed(request);
+				}
+
+				// otherwise just pass the original response on
+				return response;
+			}
+		});
+
+		openAi = new OpenAiEndpoint(new OpenAiClient(builder.build()));
+		google = new GoogleEndpoint(new GoogleClient(GOOGLE_ENGINE_ID, GoogleClient.getApiKey()));
 	}
 
 	public static void main(String[] args) {
@@ -271,7 +339,7 @@ public class EssayWriter implements Closeable {
 				break;
 			case "-d":
 				// Downloads content for an essay, and saves corresponding knowledge base
-				createKnowledgeBase(new File(args[1]), 50);
+				createKnowledgeBase(new File(args[1]), Integer.parseInt(args[2]));
 				break;
 			case "-w":
 				// writes an essay
@@ -314,7 +382,7 @@ public class EssayWriter implements Closeable {
 	 * @throws IOException
 	 */
 	public static File createStructure(File input) throws IOException {
-		System.out.println("Creating essay structure from description in: " + input.getCanonicalPath());
+		System.out.println("Creating essay structure from description in: " + input.getCanonicalPath() + "...");
 		try (EssayWriter writer = new EssayWriter("My Essay", FileUtil.readFile(input))) {
 			writer.createStructure();
 			System.out.println(writer.essay.essaySummary());
@@ -334,7 +402,7 @@ public class EssayWriter implements Closeable {
 	 * @throws IOException
 	 */
 	public static File createKnowledgeBase(File structure, int maxLinks) throws IOException {
-		System.out.println("Creating knowledge base for essay...");
+		System.out.println("Creating knowledge base for essay described in: " + structure.getCanonicalPath() + "...");
 		try (EssayWriter writer = new EssayWriter(structure)) {
 			// Googling
 			List<SearchResult> links = writer.google(maxLinks);
@@ -364,7 +432,7 @@ public class EssayWriter implements Closeable {
 	 * @throws ClassNotFoundException
 	 */
 	public static File write(File structure, File knowledge) throws IOException, ClassNotFoundException {
-		System.out.println("Writing essay...");
+		System.out.println("Writing essay described in " + structure.getCanonicalPath() + "using KB " +knowledge.getCanonicalPath() +" ...");
 		try (EssayWriter writer = new EssayWriter(structure)) {
 			writer.kb = KnowledgeBase.load(knowledge);
 
@@ -396,8 +464,10 @@ public class EssayWriter implements Closeable {
 		if ((description == null) || (description.trim().length() == 0))
 			throw new IllegalArgumentException("A description for the essay must be provided.");
 
+		System.out.println("Creating essay structure from description:\n" + description + "\n");
+
 		OpenAiChatService chatSvc = openAi.getChatService();
-		chatSvc.setModel("gpt-3.5-turbo");
+		chatSvc.setModel(COMPLETION_MODEL);
 		chatSvc.setTemperature(40.0);
 
 		chatSvc.setPersonality(
@@ -427,11 +497,8 @@ public class EssayWriter implements Closeable {
 						+ "\n" + "User Description: {{description}}",
 				params));
 
-		EssayStructure newEssay = JSON_MAPPER.readValue(resp.getText(), EssayStructure.class);
-		essay.chapters = newEssay.chapters;
-
-		// TODO Remove intro and conclusion if present and recreate them afterwards
-		// Alternatively, do not google them but use the summary to create them.
+		Essay created = JSON_MAPPER.readValue(resp.getText(), Essay.class);
+		essay.chapters = new ArrayList<>(created.chapters);
 
 		// Put IDs in sections
 		for (int i = 0; i < essay.chapters.size(); ++i) {
@@ -461,6 +528,8 @@ public class EssayWriter implements Closeable {
 	 */
 	public List<SearchResult> google(int maxLinks) {
 
+		System.out.println("Searching content online...");
+
 		// Google each section in parallel
 
 		List<Callable<List<Pair<SearchResult, Integer>>>> tasks = new ArrayList<>();
@@ -487,9 +556,12 @@ public class EssayWriter implements Closeable {
 		for (Pair<SearchResult, Integer> l : allLinks) {
 			if (result.size() >= maxLinks)
 				break;
-			result.add(l.getLeft());
+			if (!result.contains(l.getLeft()))
+				result.add(l.getLeft());
 		}
 
+		if (allLinks.size() != result.size())
+			System.out.println("Keeping " + result.size() + " of " + allLinks.size() + " links.");
 		return new ArrayList<>(result);
 	}
 
@@ -497,16 +569,16 @@ public class EssayWriter implements Closeable {
 	 * Google pages relevant to content for given section.
 	 * 
 	 * @return List of links relevant to essay content. Each link is returned in a
-	 *         pair dogether with its ran in search results.
+	 *         pair together with its ran in search results.
 	 */
 	public List<Pair<SearchResult, Integer>> google(Section section) {
 
-		System.out.println("Searching relevant pages for section [" + section.id + "]: " + section.title);
+		System.out.println("Searching relevant pages for section[" + section.id + ") " + section.title);
 
 		// First create a list of search queries, based on what we want to search
 
 		OpenAiChatService chatSvc = openAi.getChatService();
-		chatSvc.setModel("gpt-3.5-turbo");
+		chatSvc.setModel(COMPLETION_MODEL);
 		chatSvc.setTemperature(50.0);
 
 		final String prompt = "Given the below essay structure and target section, generate a list of search engine queries that can be used to search the topic corresponding to the section on the Internet."
@@ -537,14 +609,6 @@ public class EssayWriter implements Closeable {
 				break;
 			} catch (JsonProcessingException e) { // Retry if GPT returned bad JSON
 				LOG.warn("Retrying because of malformed JSON while googling section " + section.id, e);
-			} catch (HttpException e) { // Retry if any GPT error occurred
-				LOG.warn("Retrying because of HTTP " + e.code() + " error while googling section " + section.id, e);
-				if ((e.code() == 503) || (e.code() == 400)) { // Service unavailable, let's slow down a bit
-					try {
-						Thread.sleep(RETRY_WAIT_TIME);
-					} catch (InterruptedException ex) {
-					}
-				}
 			}
 		}
 
@@ -552,10 +616,10 @@ public class EssayWriter implements Closeable {
 		List<Pair<SearchResult, Integer>> result = new ArrayList<>();
 		for (String query : queries) {
 
-			System.out.println("Googleing for [" + section.id + "]: " + query);
+			System.out.println("Googling pages for: " + query);
 			List<SearchResult> links;
 			try {
-				links = google.getSearchService().search(query, 5);
+				links = google.getSearchService().search(query, LINKS_PER_QUERY);
 			} catch (Exception e) {
 				// Skip single query that fails
 				LOG.warn("Ignoring error while searching for: " + query, e);
@@ -580,15 +644,14 @@ public class EssayWriter implements Closeable {
 	 */
 	public void download(List<SearchResult> links) {
 
+		System.out.println("Downloading " + links.size() + " pages.");
+
 		// Retrieve contents for each link in parallel and save it in the knowledge base
 		List<Callable<List<EmbeddedText>>> tasks = new ArrayList<>();
 		for (SearchResult link : links) {
 			tasks.add(() -> download(link));
 		}
-		List<EmbeddedText> result = parallelExecution(tasks);
-
-		System.out.println("Total downloaded pages: "+ result.size());
-		kb.insert(result);
+		kb.insert(parallelExecution(tasks));
 	}
 
 	/**
@@ -599,16 +662,21 @@ public class EssayWriter implements Closeable {
 	 */
 	private List<EmbeddedText> download(SearchResult link) {
 		EmbeddingService embSvc = openAi.getEmbeddingService();
-		embSvc.setMaxTextTokens((openAi.getModelService().getContextSize(WRITER_MODEL) - ESSAY_LENGTH) / 10); // TODO
-																												// fine
-																												// tune
+		
+		// Make such that 10 embedded texts can fit the prompt, when writing a section
+		// TODO fine tune
+		embSvc.setMaxTextTokens((openAi.getModelService().getContextSize(WRITER_MODEL) - SECTION_LENGTH) / 10); 
+
 		LOG.debug("Size: " + embSvc.getMaxTextTokens());
 
-		System.out.println("Downloading page " + link);
+		System.out.println("Downloading page: " + link);
 		String content = null;
 		try {
-			content = ExtractionUtil.fromUrl(link.getLink(), DOWNLOAD_TIMEOUT);
-		} catch (Exception e) {
+			content = ExtractionUtil.fromUrl(link.getLink(), DOWNLOAD_TIMEOUT_MILLIS);
+			// Sometimes we download articles containing references such as [12] that we do
+			// not want in the final text
+			content = content.replaceAll("\\[[0-9]+\\]", "");
+		} catch (Exception e) { // Skip page if download error occurs
 			LOG.error("Error downloading " + link.getLink(), e);
 			return new ArrayList<>();
 		}
@@ -617,22 +685,22 @@ public class EssayWriter implements Closeable {
 
 		// TODO: tune this better maybe
 		if (content.length() < MINIMUM_PAGE_SIZE) { // Some links do not work or cannot be read or have warning messages
-			LOG.warn("Content too short, skipping " + link.getLink());
+			LOG.info("Content too short, skipping " + link.getLink());
 			return new ArrayList<>();
 		}
 
-		if (SUMMARIZE)
+		if (SUMMARIZE) {
 			content = summarize(content);
+			LOG.debug("Content summarized " + link);
+		}
 
-		LOG.debug("Content summarized " + link);
-
-		List<EmbeddedText> result = safeEmbed(embSvc, content);
+		List<EmbeddedText> result = embSvc.embed(content);
 		for (EmbeddedText emb : result) {
-			emb.set("url", link.getLink());
+			emb.set("url", link); // saving link to the page, useful when writing references
 			LOG.debug(">>> Embedding added for {}", link.getTitle());
 		}
 
-		System.out.println("Downloaded " + link);
+		LOG.debug("Downloaded " + link);
 		return result;
 	}
 
@@ -642,6 +710,7 @@ public class EssayWriter implements Closeable {
 	 * @param text
 	 * @return
 	 */
+	// TODO remove
 	private String summarize(String text) {
 
 		String prompt = "Web page content below:\n" + "\n" + "{{text}}";
@@ -782,9 +851,8 @@ public class EssayWriter implements Closeable {
 			try {
 				result.append(chatSvc.complete(msgs).getText()).append('\n');
 			} catch (Exception e) {
-// TODO:					LOG.error("Error while summarizing", e);
-				// On error we just skip the page
-				LOG.error("Error while summarizing {}", e.getMessage());
+				// On error we just return the page as it is
+				LOG.error("Error while summarizing", e);
 				result.append(part).append('\n');
 			}
 		}
@@ -798,16 +866,19 @@ public class EssayWriter implements Closeable {
 	 * knowledge base.
 	 */
 	public void write() {
+		System.out.println("Writing essay...");
+
+		String summary = essay.essaySummary();
 		List<Callable<List<Section>>> tasks = new ArrayList<>();
 		for (Section chapter : essay.chapters) {
 			if (chapter.sections.size() == 0) {
 				// No (sub)sections, let's generate content for the chapter itself
-				tasks.add(() -> write(chapter));
+				tasks.add(() -> write(chapter, summary));
 			} else {
 				chapter.content = ""; // TODO write a short intro instead
 			}
 			for (Section section : chapter.sections) {
-				tasks.add(() -> write(section));
+				tasks.add(() -> write(section, summary));
 			}
 		}
 
@@ -818,7 +889,7 @@ public class EssayWriter implements Closeable {
 	 * (Re)writes a section of the essay, based on its structure and the content in
 	 * the knowledge base.
 	 */
-	public List<Section> write(Section section) {
+	private List<Section> write(Section section, String summary) {
 
 		System.out.println("Writing section " + section.id + ") " + section.title);
 
@@ -828,10 +899,10 @@ public class EssayWriter implements Closeable {
 				+ " Include facts, entities and events that are in the text only if they are relevant for the topic of the section."
 				+ " Output only the section content, leaving the title out."
 				+ " Limit the length of the secton to about " + ((int) Math.round(SECTION_LENGTH * 3 / 4 / 10) * 10)
-				+ " words." + "\n\n" + "Essay summary:\n\n {{essay}}\n\n" + "Section title: \"" + section.id + " "
+				+ " words." + "\n\n" + "Essay summary:\n\n" + summary + "\n\n" + "Section title: \"" + section.id + " "
 				+ section.title + "\"\n\n" + "Section summary:  \"" + section.summary + "\"\n\n";
-		EmbeddingService embSvc = openAi.getEmbeddingService();
 
+		EmbeddingService embSvc = openAi.getEmbeddingService();
 		OpenAiChatService chatSvc = openAi.getChatService();
 		chatSvc.setModel(WRITER_MODEL);
 		chatSvc.setTemperature(0.0);
@@ -842,7 +913,7 @@ public class EssayWriter implements Closeable {
 		msgs.add(new ChatMessage(Role.USER, prompt));
 		msgs.add(new ChatMessage(Role.USER, "")); // Placeholder
 
-		List<Pair<EmbeddedText, Double>> context = kb.search(safeEmbed(embSvc, section.summary).get(0), 50, 0);
+		List<Pair<EmbeddedText, Double>> context = kb.search(embSvc.embed(section.summary).get(0), 50, 0);
 
 		// See how much context can fit the prompt
 		Tokenizer counter = openAi.getModelService().getTokenizer(chatSvc.getModel());
@@ -854,7 +925,7 @@ public class EssayWriter implements Closeable {
 			msgs.remove(msgs.size() - 1);
 			ctx.append("Content of web page " + emb.get("url")).append("\n").append(emb.getText()).append("\n\n");
 			msgs.add(new ChatMessage(Role.USER, ctx.toString()));
-			if ((SECTION_LENGTH * 2 + counter.count(msgs)) > ctxSize)
+			if ((SECTION_LENGTH * 2 + counter.count(msgs)) > ctxSize) // Keeps space for a section of SECTION_LENGTH * 2 tokens
 				break;
 		}
 
@@ -868,23 +939,24 @@ public class EssayWriter implements Closeable {
 		}
 		msgs.add(new ChatMessage(Role.USER, ctx.toString()));
 
-		// Add the generated content to the section
-		while (true) { // Loops until correctly executed
-			try {
-				section.content = chatSvc.complete(msgs).getText();
-				break;
-			} catch (HttpException e) { // Retry if any GPT error occurred
-				LOG.warn("Retrying because of HTTP " + e.code() + " error while writing section", e);
-				if ((e.code() == 503) || (e.code() == 400)) { // Service unavailable, let's slow down a bit
-					try {
-						Thread.sleep(RETRY_WAIT_TIME);
-					} catch (InterruptedException ex) {
-					}
-				}
-			}
-		}
+		// Add generated content to the section
+		section.content = chatSvc.complete(msgs).getText();
 
-		System.out.println("Competed section " + section.id + ") " + section.title);
+		// Save context (references) from most relevant
+		EmbeddedText secEmb = embSvc.embed(section.content).get(0);
+		section.context = new ArrayList<>();
+		for (int j = 0; j < i; ++j) {
+			EmbeddedText emb = context.get(j).getLeft();
+			section.context.add(new ImmutablePair<>(emb, emb.similarity(secEmb)));
+		}
+		section.context.sort(new Comparator<>() {
+
+			@Override
+			public int compare(Pair<EmbeddedText, Double> o1, Pair<EmbeddedText, Double> o2) {
+				return -Double.compare(o1.getRight(), o2.getRight());
+			}
+		});
+
 		return section.sections; // Not used, just needed for parallelExecution()
 	}
 
@@ -923,30 +995,6 @@ public class EssayWriter implements Closeable {
 				executor.shutdownNow(); // All threads should have finished by now
 			} catch (Exception e) {
 				LOG.warn("Error closing executor", e);
-			}
-		}
-
-		return result;
-	}
-
-	/**
-	 * Embeds a piece of text handling errors properly.
-	 */
-	private static List<EmbeddedText> safeEmbed(EmbeddingService embSvc, String content) {
-		List<EmbeddedText> result = new ArrayList<>();
-
-		while (true) { // TODO add max retries?
-			try {
-				result = embSvc.embed(content);
-				break;
-			} catch (HttpException e) { // Retry if any GPT error occurred
-				LOG.warn("Retrying because HTTP " + e.code() + " error while creating embeddings", e);
-				if ((e.code() == 503) || (e.code() == 400)) { // Service unavailable, let's slow down a bit
-					try {
-						Thread.sleep(RETRY_WAIT_TIME);
-					} catch (InterruptedException ex) {
-					}
-				}
 			}
 		}
 

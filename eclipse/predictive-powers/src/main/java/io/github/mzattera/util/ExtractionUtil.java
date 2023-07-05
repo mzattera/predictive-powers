@@ -70,6 +70,11 @@ public final class ExtractionUtil {
 	}
 
 	/**
+	 * Extract content at given URL.
+	 * 
+	 * Notice this never times out and might not be interruptable. If you want to be
+	 * sure your thread won't hang forever use a timeout (see
+	 * {@link #fromUrl(URL, int)})
 	 * 
 	 * @param url Web page URL.
 	 * @return The content of given web page.

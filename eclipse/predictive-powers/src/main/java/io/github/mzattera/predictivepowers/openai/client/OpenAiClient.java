@@ -160,7 +160,7 @@ public class OpenAiClient implements ApiClient {
 	/**
 	 * @return The API key from OS environment.
 	 */
-	private static String getApiKey() {
+	public static String getApiKey() {
 		String apiKey = System.getenv(OS_ENV_VAR_NAME);
 		if (apiKey == null)
 			throw new IllegalArgumentException("OpenAI API key is not provided and it cannot be found in "

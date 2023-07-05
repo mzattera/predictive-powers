@@ -16,8 +16,6 @@
 
 package io.github.mzattera.predictivepowers.google.client;
 
-import java.io.IOException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,12 +28,7 @@ import io.github.mzattera.predictivepowers.ApiClient;
 import io.reactivex.Single;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.extern.java.Log;
-import okhttp3.Interceptor;
-import okhttp3.Interceptor.Chain;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -159,7 +152,7 @@ public class GoogleClient implements ApiClient {
 	/**
 	 * @return The API key from OS environment.
 	 */
-	private static String getApiKey() {
+	public static String getApiKey() {
 		String apiKey = System.getenv(OS_ENV_VAR_NAME);
 		if (apiKey == null)
 			throw new IllegalArgumentException("Google API key is not provided and it cannot be found in "
@@ -170,7 +163,7 @@ public class GoogleClient implements ApiClient {
 	/**
 	 * @return Google engine ID from OS environment.
 	 */
-	private static String getEngineId() {
+	public static String getEngineId() {
 		String engineId = System.getenv(OS_ENV_ENGINE_VAR_NAME);
 		if (engineId == null)
 			throw new IllegalArgumentException(
@@ -181,7 +174,7 @@ public class GoogleClient implements ApiClient {
 
 	//////// API METHODS MAPPED INTO JAVA CALLS ////////////////////////////////////
 
-	// TODO add a method that uses Query
+	// TODO urgent add a method that uses Query or all parameters
 
 	public Search list(String query, int n) {
 		return callApi(api.list(engineId, apiKey, query, n));

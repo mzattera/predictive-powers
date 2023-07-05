@@ -86,19 +86,24 @@ public interface ApiClient extends Closeable {
 				Request request = chain.request();
 				Response response = chain.proceed(request);
 
-				while (response.code() == 429) { // Waits and retries in case we reached rate limit
+				while ((response.code() == 429)||(response.code() == 503)) { // Waits and retries in case we reached rate limit or server is unavailable
+					
+					// TODO URGENT add max retries
+					
 					response.close();
 
-					int waitTime = 3; // TODO URGENT Make configurable or fine tune it
+					// TODO URGENT Make configurable
+					int waitTime = 3; 
 					try {
 						waitTime = Integer.parseInt(response.header("Retry-After"));
 					} catch (Exception e) {
 					}
-					LOG.warn("HTTP 429: Waiting " + waitTime + " seconds: " + request.url());
+					LOG.warn("HTTP " + response.code() + ": Waiting " + waitTime + " seconds: " + request.url());
 					try {
 						Thread.sleep(waitTime * 1000);
 					} catch (InterruptedException e) {
 					}
+					
 					response = chain.proceed(request);
 				}
 

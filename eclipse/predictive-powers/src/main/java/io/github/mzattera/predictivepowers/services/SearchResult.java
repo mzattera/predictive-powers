@@ -16,6 +16,7 @@
 
 package io.github.mzattera.predictivepowers.services;
 
+import java.io.Serializable;
 import java.net.URL;
 
 import lombok.AllArgsConstructor;
@@ -38,7 +39,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @RequiredArgsConstructor
 @AllArgsConstructor
-public class SearchResult {
+public class SearchResult implements Serializable {
+
+	private static final long serialVersionUID = -7975999709641989742L;
 
 	String title;
 
@@ -50,7 +53,7 @@ public class SearchResult {
 
 	@Override
 	public String toString() {
-		return "[" + link + "]" + (title == null ? "" : " " +title + " ");
+		return (title == null ? "" : title + " ") + "[" + link + "]";
 	}
 
 	@Override

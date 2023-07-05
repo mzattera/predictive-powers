@@ -42,7 +42,9 @@ import lombok.RequiredArgsConstructor;
  */
 @RequiredArgsConstructor
 public class GoogleSearchService implements SearchService {
-
+	
+	// TODO Add more methods
+	
 	public GoogleSearchService(GoogleEndpoint endpoint) {
 		this(endpoint, endpoint.getClient());
 	}
@@ -67,6 +69,7 @@ public class GoogleSearchService implements SearchService {
 		List<SearchResult> result = new ArrayList<>(search.getItems().size());
 		for (Result i : search.getItems()) {
 			try {
+				// TODO urgent add all fields to SearchResult
 				result.add(SearchResult.builder().title(i.getTitle()).link(new URL(i.getLink())).build());
 			} catch (MalformedURLException e) {
 				LOG.error("Malformed URL in search result: " + i.getLink(), e);

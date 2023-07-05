@@ -44,12 +44,10 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
-import io.github.mzattera.predictivepowers.ApiClient;
 import io.github.mzattera.predictivepowers.examples.essay.EssayWriter.Essay.Section;
 import io.github.mzattera.predictivepowers.google.client.GoogleClient;
 import io.github.mzattera.predictivepowers.google.endpoint.GoogleEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
-import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
@@ -70,10 +68,6 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import okhttp3.Interceptor;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 
 public class EssayWriter implements Closeable {
 
@@ -98,7 +92,6 @@ public class EssayWriter implements Closeable {
 	private static final String COMPLETION_MODEL = "gpt-3.5-turbo";
 
 	/** Model to use for writing content. */
-	// TODO maybe create a constant for reach model
 	private final static String WRITER_MODEL = "gpt-3.5-turbo-16k";
 
 	// TODO remove all debug log
@@ -110,19 +103,13 @@ public class EssayWriter implements Closeable {
 	private final static int MINIMUM_PAGE_SIZE = 500;
 
 	/** Numbers of threads for parallel execution. */
-	private final static int THREAD_POOL_SIZE = 3;
+	private final static int THREAD_POOL_SIZE = 5;
 
 	/**
 	 * Maximum time allowed to download one page (milliseconds). Use a negative
 	 * value to set no timeout.
 	 */
 	private final static int DOWNLOAD_TIMEOUT_MILLIS = 1 * 60 * 1000;
-
-	/**
-	 * Waiting time (millis) after HTTP 503 OR 400 error, before resubmitting
-	 * request again.
-	 */
-	private final static int RETRY_WAIT_TIME = 60 * 1000;
 
 	/** Used for JSON (de)serialization in API calls */
 	private final static ObjectMapper JSON_MAPPER;
@@ -284,43 +271,32 @@ public class EssayWriter implements Closeable {
 		initializeEndPoints();
 	}
 
+	// TODO Urgent Remove
 	private void initializeEndPoints() {
 
-		OkHttpClient client = ApiClient.getDefaultHttpClient(OpenAiClient.getApiKey(), 5 * 60 * 1000,
-				OpenAiClient.DEFAULT_KEEP_ALIVE_MILLIS, OpenAiClient.DEFAULT_MAX_IDLE_CONNECTIONS);
+//		OkHttpClient client = ApiClient.getDefaultHttpClient(OpenAiClient.getApiKey(), 5 * 60 * 1000,
+//				OpenAiClient.DEFAULT_KEEP_ALIVE_MILLIS, OpenAiClient.DEFAULT_MAX_IDLE_CONNECTIONS);
+//
+//		// Creates an OpenAi client that automatically retries call on HTTP error 400.
+//		// This is not done by the defaut client as HTTP 400 is returned in same cases
+//		// because of malformed requests
+//		okhttp3.OkHttpClient.Builder builder = client.newBuilder();
+//		builder.addInterceptor(new Interceptor() { // Handles error 400 (request rate limit reached)
+//			@Override
+//			public Response intercept(Chain chain) throws IOException {
+//				Request request = chain.request();
+//				Response response = chain.proceed(request);
+//
+//				if (response.code() == 400)
+//					LOG.error(response.body().string());
+//
+//				return response;
+//			}
+//		});
+//
+//		openAi = new OpenAiEndpoint(new OpenAiClient(builder.build()));
 
-		// Creates an OpenAi client that automatically retries call on HTTP error 400.
-		// This is not done by the defaut client as HTTP 400 is returned in same cases
-		// because of malformed requests
-		okhttp3.OkHttpClient.Builder builder = client.newBuilder();
-		builder.addInterceptor(new Interceptor() { // Handles error 400 (request rate limit reached)
-			@Override
-			public Response intercept(Chain chain) throws IOException {
-				Request request = chain.request();
-				Response response = chain.proceed(request);
-
-				while (response.code() == 400) { // Waits and retries in case we reached rate limit or server is
-													// unavailable
-
-					// TODO URGENT add max retries
-
-					response.close();
-					try {
-						LOG.warn("HTTP " + response.code() + ": Waiting " + (RETRY_WAIT_TIME / 1000) + " seconds: "
-								+ request.url());
-						Thread.sleep(RETRY_WAIT_TIME);
-					} catch (InterruptedException e) {
-					}
-
-					response = chain.proceed(request);
-				}
-
-				// otherwise just pass the original response on
-				return response;
-			}
-		});
-
-		openAi = new OpenAiEndpoint(new OpenAiClient(builder.build()));
+		openAi = new OpenAiEndpoint();
 		google = new GoogleEndpoint(new GoogleClient(GOOGLE_ENGINE_ID, GoogleClient.getApiKey()));
 	}
 
@@ -329,8 +305,6 @@ public class EssayWriter implements Closeable {
 		try {
 			if ((args.length != 2) && (args.length != 3)) // TODO better checks
 				throw new IllegalArgumentException("Usage..."); // TODO print usage
-
-			// TODO Urgent make essay length and number of sections configurable.
 
 			switch (args[0]) {
 			case "-s":
@@ -432,7 +406,8 @@ public class EssayWriter implements Closeable {
 	 * @throws ClassNotFoundException
 	 */
 	public static File write(File structure, File knowledge) throws IOException, ClassNotFoundException {
-		System.out.println("Writing essay described in " + structure.getCanonicalPath() + "using KB " +knowledge.getCanonicalPath() +" ...");
+		System.out.println("Writing essay described in " + structure.getCanonicalPath() + " using KB "
+				+ knowledge.getCanonicalPath() + " ...");
 		try (EssayWriter writer = new EssayWriter(structure)) {
 			writer.kb = KnowledgeBase.load(knowledge);
 
@@ -573,7 +548,7 @@ public class EssayWriter implements Closeable {
 	 */
 	public List<Pair<SearchResult, Integer>> google(Section section) {
 
-		System.out.println("Searching relevant pages for section[" + section.id + ") " + section.title);
+		System.out.println("Searching relevant pages for section " + section.id + ") " + section.title);
 
 		// First create a list of search queries, based on what we want to search
 
@@ -662,10 +637,12 @@ public class EssayWriter implements Closeable {
 	 */
 	private List<EmbeddedText> download(SearchResult link) {
 		EmbeddingService embSvc = openAi.getEmbeddingService();
-		
+
 		// Make such that 10 embedded texts can fit the prompt, when writing a section
 		// TODO fine tune
-		embSvc.setMaxTextTokens((openAi.getModelService().getContextSize(WRITER_MODEL) - SECTION_LENGTH) / 10); 
+		int writerSize = openAi.getModelService().getContextSize(WRITER_MODEL);
+		int embSize = openAi.getModelService().getContextSize(embSvc.getModel());
+		embSvc.setMaxTextTokens(Math.min(embSize, (writerSize - SECTION_LENGTH) / 10));
 
 		LOG.debug("Size: " + embSvc.getMaxTextTokens());
 
@@ -893,14 +870,15 @@ public class EssayWriter implements Closeable {
 
 		System.out.println("Writing section " + section.id + ") " + section.title);
 
-		String prompt = "Write given section of the essay using web page contents listed below."
-				+ " The section content should fit the rest of the essay; summary of the essay is also provided below."
-				+ " In writing the section, use only listed content and no other information."
-				+ " Include facts, entities and events that are in the text only if they are relevant for the topic of the section."
-				+ " Output only the section content, leaving the title out."
-				+ " Limit the length of the secton to about " + ((int) Math.round(SECTION_LENGTH * 3 / 4 / 10) * 10)
-				+ " words." + "\n\n" + "Essay summary:\n\n" + summary + "\n\n" + "Section title: \"" + section.id + " "
-				+ section.title + "\"\n\n" + "Section summary:  \"" + section.summary + "\"\n\n";
+		String prompt = "You are tesked with writing one section of the essay by summarizing the content provided in given context."
+				+ " Strictly use only given context and no other information."
+				+ " Strictly focus on section content as described in the section summary."
+				+ " As long as you use only given context and follow the section topic, write as much text as you can."
+				+ " Be creative."
+				+ " Output only the section content, do not write the section title.\n\n"
+				+ "Section title: \"" + section.title + "\"\n\n"
+				+ "Section summary:  \"" + section.summary + "\"\n\n"
+				+ "Context:\n\n";
 
 		EmbeddingService embSvc = openAi.getEmbeddingService();
 		OpenAiChatService chatSvc = openAi.getChatService();
@@ -909,9 +887,8 @@ public class EssayWriter implements Closeable {
 
 		List<ChatMessage> msgs = new ArrayList<>();
 		msgs.add(new ChatMessage(Role.SYSTEM,
-				"You are an assistant helping a writer to create an essay. When creating text, you follow instructions very closely and use only information provided to you."));
+				"You are an assistant helping a writer to create an essay. When creating text, you follow instructions very closely and use only information in the provided context."));
 		msgs.add(new ChatMessage(Role.USER, prompt));
-		msgs.add(new ChatMessage(Role.USER, "")); // Placeholder
 
 		List<Pair<EmbeddedText, Double>> context = kb.search(embSvc.embed(section.summary).get(0), 50, 0);
 
@@ -922,10 +899,11 @@ public class EssayWriter implements Closeable {
 		int i = 0;
 		for (; i < context.size(); ++i) {
 			EmbeddedText emb = context.get(i).getLeft();
+			ctx.append(emb.getText()).append("\n\n");
 			msgs.remove(msgs.size() - 1);
-			ctx.append("Content of web page " + emb.get("url")).append("\n").append(emb.getText()).append("\n\n");
-			msgs.add(new ChatMessage(Role.USER, ctx.toString()));
-			if ((SECTION_LENGTH * 2 + counter.count(msgs)) > ctxSize) // Keeps space for a section of SECTION_LENGTH * 2 tokens
+			msgs.add(new ChatMessage(Role.USER, prompt+ctx.toString()));
+			if ((SECTION_LENGTH * 2 + counter.count(msgs)) > ctxSize) // Keeps space for a section of SECTION_LENGTH * 2
+																		// tokens
 				break;
 		}
 
@@ -935,9 +913,9 @@ public class EssayWriter implements Closeable {
 		msgs.remove(msgs.size() - 1);
 		for (int j = 0; j < i; ++j) {
 			EmbeddedText emb = context.get(j).getLeft();
-			ctx.append("Content of web page " + emb.get("url")).append("\n").append(emb.getText()).append("\n\n");
+			ctx.append(emb.getText()).append("\n\n");
 		}
-		msgs.add(new ChatMessage(Role.USER, ctx.toString()));
+		msgs.add(new ChatMessage(Role.USER, prompt+ctx.toString()));
 
 		// Add generated content to the section
 		section.content = chatSvc.complete(msgs).getText();

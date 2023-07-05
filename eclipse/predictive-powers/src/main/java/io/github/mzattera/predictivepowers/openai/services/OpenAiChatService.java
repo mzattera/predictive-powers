@@ -18,6 +18,10 @@ package io.github.mzattera.predictivepowers.openai.services;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.github.mzattera.predictivepowers.openai.client.OpenAiException;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsChoice;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
@@ -37,6 +41,8 @@ import lombok.NonNull;
  *
  */
 public class OpenAiChatService extends AbstractChatService {
+
+	private final static Logger LOG = LoggerFactory.getLogger(OpenAiChatService.class);
 
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
 	// values from a Map
@@ -367,22 +373,39 @@ public class OpenAiChatService extends AbstractChatService {
 			List<Function> functions) {
 
 		String model = req.getModel();
-		OpenAiTokenizer counter = (OpenAiTokenizer) modelService.getTokenizer(model);
 
 		req.setMessages(messages);
 		if ((functions != null) && (functions.size() > 0)) { // seems to cause an error if you set it otherwise
 			req.setFunctions(functions);
 		}
 
-		// Adjust token limit if needed
 		boolean autofit = (req.getMaxTokens() == null) && (modelService.getContextSize(model, -1) != -1);
+
 		try {
 			if (autofit) {
+				// Automatically set token limit, if needed
+				OpenAiTokenizer counter = (OpenAiTokenizer) modelService.getTokenizer(model);
 				int tok = counter.count(req); // Notice we must count function definitions too
 				req.setMaxTokens(modelService.getContextSize(model) - tok - 5);
 			}
 
-			ChatCompletionsResponse resp = endpoint.getClient().createChatCompletion(req);
+			ChatCompletionsResponse resp = null;
+			try {
+				resp = endpoint.getClient().createChatCompletion(req);
+			} catch (OpenAiException e) {
+				if (e.isContextLengthExceeded()) { // Automatically recover if request is too long
+					int optimal = e.getMaxContextLength() - e.getPromptLength() - 1;
+					if (optimal > 0) {
+						LOG.warn("Reducing context length for OpneAI chat service from " + req.getMaxTokens() + " to "
+								+ optimal);
+						req.setMaxTokens(optimal);
+						resp = endpoint.getClient().createChatCompletion(req);
+					} else
+						throw e; // Context too small anyway
+				} else
+					throw e; // Not a context issue
+			}
+
 			return resp.getChoices().get(0);
 
 		} finally {

@@ -47,7 +47,7 @@ public class GoogleEndpoint implements SearchEndpoint {
 	}
 
 	public GoogleEndpoint(String engineId, String apiKey) {
-		this(new GoogleClient(engineId, apiKey, -1, -1, -1));
+		this(new GoogleClient(engineId, apiKey));
 	}
 
 	public GoogleEndpoint(@NonNull GoogleClient client) {

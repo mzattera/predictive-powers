@@ -66,9 +66,8 @@ public class HuggingFaceClient implements ApiClient {
 
 	public final static int DEFAULT_TIMEOUT_MILLIS = 6 * 60 * 1000; // Sometimes we must wait for the models to load,
 																	// which takes time
-
+	public final static int DEFAULT_MAX_RETRIES = 10;
 	public final static int DEFAULT_KEEP_ALIVE_MILLIS = 5 * 60 * 1000;
-
 	public final static int DEFAULT_MAX_IDLE_CONNECTIONS = 5;
 
 	// OpenAI API defined with Retrofit
@@ -91,7 +90,8 @@ public class HuggingFaceClient implements ApiClient {
 	 * is read from {@link #OS_ENV_VAR_NAME} system environment variable.
 	 */
 	public HuggingFaceClient() {
-		this(null, DEFAULT_TIMEOUT_MILLIS, DEFAULT_KEEP_ALIVE_MILLIS, DEFAULT_MAX_IDLE_CONNECTIONS);
+		this(null, DEFAULT_TIMEOUT_MILLIS, DEFAULT_MAX_RETRIES, DEFAULT_KEEP_ALIVE_MILLIS,
+				DEFAULT_MAX_IDLE_CONNECTIONS);
 	}
 
 	/**
@@ -101,7 +101,8 @@ public class HuggingFaceClient implements ApiClient {
 	 *               from {@link #OS_ENV_VAR_NAME} system environment variable.
 	 */
 	public HuggingFaceClient(String apiKey) {
-		this(apiKey, DEFAULT_TIMEOUT_MILLIS, DEFAULT_KEEP_ALIVE_MILLIS, DEFAULT_MAX_IDLE_CONNECTIONS);
+		this(apiKey, DEFAULT_TIMEOUT_MILLIS, DEFAULT_MAX_RETRIES, DEFAULT_KEEP_ALIVE_MILLIS,
+				DEFAULT_MAX_IDLE_CONNECTIONS);
 	}
 
 	/**
@@ -117,9 +118,10 @@ public class HuggingFaceClient implements ApiClient {
 	 * @param maxIdleConnections Maximum number of idle connections to keep in the
 	 *                           pool.
 	 */
-	public HuggingFaceClient(String apiKey, int readTimeout, int keepAliveDuration, int maxIdleConnections) {
-		this(ApiClient.getDefaultHttpClient((apiKey == null) ? getApiKey() : apiKey, readTimeout, keepAliveDuration,
-				maxIdleConnections));
+	public HuggingFaceClient(String apiKey, int readTimeout, int maxRetries, int keepAliveDuration,
+			int maxIdleConnections) {
+		this(ApiClient.getDefaultHttpClient((apiKey == null) ? getApiKey() : apiKey, readTimeout, maxRetries,
+				keepAliveDuration, maxIdleConnections));
 	}
 
 	/**

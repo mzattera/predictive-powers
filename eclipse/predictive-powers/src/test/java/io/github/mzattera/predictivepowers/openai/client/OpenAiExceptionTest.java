@@ -18,28 +18,56 @@ package io.github.mzattera.predictivepowers.openai.client;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
-import retrofit2.HttpException;
+import io.github.mzattera.predictivepowers.services.ChatMessage;
+import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
 
 public class OpenAiExceptionTest {
 
+	/** Checks OpenAIException properly created when exceeding context size */
 	@Test
 	public void test01() {
 
 		try (OpenAiClient cli = new OpenAiClient()) {
 
-			CompletionsRequest req = CompletionsRequest.builder().model("text-davinci-003").maxTokens(50_000)
-					.prompt("Alan Turing was").build();
-			HttpException e = assertThrows(HttpException.class, () -> cli.createCompletion(req));
+			CompletionsRequest req = CompletionsRequest.builder().model("text-davinci-003").maxTokens(10_000)
+					.prompt("Ciao!").build();
+			OpenAiException e = assertThrows(OpenAiException.class, () -> cli.createCompletion(req));
 			assertEquals(400, e.code());
+			assertTrue(e.isContextLengthExceeded());
+			assertEquals(3, e.getPromptLength());
+			assertEquals(10000, e.getCompletionLength());
+			assertEquals(10003, e.getRequestLength());
+			assertEquals(4097, e.getMaxContextLength());
 		}
 	}
 
+	/** Checks OpenAIException properly created when exceeding context size */
 	@Test
 	public void test02() {
-		// TODO Test some error creating OpenAiException
+
+		try (OpenAiClient cli = new OpenAiClient()) {
+
+			ChatMessage msg = new ChatMessage(Role.USER, "Ciao!");
+			List<ChatMessage> msgs = new ArrayList<>();
+			msgs.add(msg);
+			ChatCompletionsRequest req = ChatCompletionsRequest.builder().model("gpt-3.5-turbo").maxTokens(10_000)
+					.messages(msgs).build();
+			OpenAiException e = assertThrows(OpenAiException.class, () -> cli.createChatCompletion(req));
+			assertEquals(400, e.code());
+			assertTrue(e.isContextLengthExceeded());
+			assertEquals(10, e.getPromptLength());
+			assertEquals(10000, e.getCompletionLength());
+			assertEquals(10010, e.getRequestLength());
+			assertEquals(4097, e.getMaxContextLength());
+		}
 	}
 }

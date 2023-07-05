@@ -17,6 +17,10 @@ package io.github.mzattera.predictivepowers.openai.services;
 
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import io.github.mzattera.predictivepowers.openai.client.OpenAiException;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsChoice;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
@@ -39,15 +43,24 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class OpenAiCompletionService implements CompletionService {
 
+	private final static Logger LOG = LoggerFactory.getLogger(OpenAiCompletionService.class);
+
 	public static final String DEFAULT_MODEL = "text-davinci-003";
 
 	public OpenAiCompletionService(OpenAiEndpoint ep) {
 		this(ep, CompletionsRequest.builder().model(DEFAULT_MODEL).echo(false).n(1).build());
 	}
 
+	public OpenAiCompletionService(OpenAiEndpoint ep, CompletionsRequest defaultReq) {
+		this(ep, ep.getModelService(), defaultReq);
+	}
+
 	@NonNull
 	@Getter
 	protected final OpenAiEndpoint endpoint;
+
+	@NonNull
+	private final ModelService modelService;
 
 	/**
 	 * This request, with its parameters, is used as default setting for each call.
@@ -206,23 +219,40 @@ public class OpenAiCompletionService implements CompletionService {
 	 */
 	public TextCompletion insert(String prompt, String suffix, Map<String, ? extends Object> parameters,
 			CompletionsRequest req) {
+
+		String model = req.getModel();
 		req.setPrompt(CompletionService.fillSlots(prompt, parameters));
 		req.setSuffix(CompletionService.fillSlots(suffix, parameters));
 
-		// Adjust token limit if needed
-		ModelService ms = endpoint.getModelService();
-		String model = req.getModel();
-		boolean autofit = (req.getMaxTokens() == null) && (ms.getContextSize(model, -1) != -1);
+		boolean autofit = (req.getMaxTokens() == null) && (modelService.getContextSize(model, -1) != -1);
 		try {
+
 			if (autofit) {
-				Tokenizer counter = ms.getTokenizer(model);
+				// Automatically set token limit, if needed
+				Tokenizer counter = modelService.getTokenizer(model);
 				int tok = counter.count(prompt);
 				if (suffix != null)
 					tok += counter.count(suffix);
-				req.setMaxTokens(ms.getContextSize(model) - tok);
+				req.setMaxTokens(modelService.getContextSize(model) - tok);
 			}
 
-			CompletionsResponse resp = endpoint.getClient().createCompletion(req);
+			CompletionsResponse resp = null;
+			try {
+				resp = endpoint.getClient().createCompletion(req);
+			} catch (OpenAiException e) {
+				if (e.isContextLengthExceeded()) { // Automatically recover if request is too long
+					int optimal = e.getMaxContextLength() - e.getPromptLength() - 1;
+					if (optimal > 0) {
+						LOG.warn("Reducing context length for OpneAI chat service from " + req.getMaxTokens() + " to "
+								+ optimal);
+						req.setMaxTokens(optimal);
+						resp = endpoint.getClient().createCompletion(req);
+					} else
+						throw e; // Context too small anyway
+				} else
+					throw e; // Not a context issue
+			}
+
 			CompletionsChoice choice = resp.getChoices().get(0);
 			return new TextCompletion(choice.getText(), FinishReason.fromGptApi(choice.getFinishReason()));
 

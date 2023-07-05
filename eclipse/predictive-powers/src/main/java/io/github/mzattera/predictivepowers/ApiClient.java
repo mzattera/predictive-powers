@@ -21,6 +21,7 @@ package io.github.mzattera.predictivepowers;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -43,22 +44,34 @@ public interface ApiClient extends Closeable {
 
 	final static Logger LOG = LoggerFactory.getLogger(ApiClient.class);
 
+	final Random RND = new Random();
+
+	final int BASE_DELAY_MILLIS = 1 * 1000;
+
 	/**
-	 * Returns an OkHttpClient to use for API calls, using default parameters. This
-	 * can be further customized and then used in constructor to build an client
-	 * which, in turn, can be used to build an Endpoint.
+	 * Returns an OkHttpClient to use for API calls. The client can be further
+	 * customized and then used to build an API client which, in turn, can be used
+	 * to build an Endpoint.
+	 * 
+	 * This client automatically retries calls if the API is unavailable or rate
+	 * limits (e.g. requests per minute) are reached (HTTP errors 429, 500, and 503). see maxRetries parameter if
+	 * you want to disable this feature.
 	 * 
 	 * @param apiKey             API key for underlying API calls. If this is not
 	 *                           null an "Authorization" header is added
 	 *                           automatically to each call performed by the client.
 	 * @param readTimeout        Read timeout for connections. 0 means no timeout.
+	 * @param maxRetries         In case we receive an HTTP error signaling
+	 *                           temporary server unavailability, the client will
+	 *                           retry the call, at maximum this amount of times.
+	 *                           Use values <= 0 to disable this feature.
 	 * @param keepAliveDuration  Timeout for connections in client pool
 	 *                           (milliseconds).
 	 * @param maxIdleConnections Maximum number of idle connections to keep in the
 	 *                           pool.
 	 */
-	public static OkHttpClient getDefaultHttpClient(String apiKey, int readTimeout, int keepAliveDuration,
-			int maxIdleConnections) {
+	public static OkHttpClient getDefaultHttpClient(String apiKey, int readTimeout, int maxRetries,
+			int keepAliveDuration, int maxIdleConnections) {
 
 		if (readTimeout < 0)
 			throw new IllegalArgumentException();
@@ -80,34 +93,47 @@ public interface ApiClient extends Closeable {
 				}
 			});
 
-		builder.addInterceptor(new Interceptor() { // Handles error 429 (request rate limit reached)
+		builder.addInterceptor(new Interceptor() { // Handles sevice unavailable HTTP errors
 			@Override
 			public Response intercept(Chain chain) throws IOException {
+
 				Request request = chain.request();
 				Response response = chain.proceed(request);
 
-				while ((response.code() == 429)||(response.code() == 503)) { // Waits and retries in case we reached rate limit or server is unavailable
-					
-					// TODO URGENT add max retries
-					
-					response.close();
+				int retries = 0;
+				int delayMillis = BASE_DELAY_MILLIS;
+				while ((retries < maxRetries) && ((response.code() == 429) || (response.code() == 500) || (response.code() == 503))) {
 
-					// TODO URGENT Make configurable
-					int waitTime = 3; 
+					// Waits and retries in case server is temporarily unavailable
+
+					// Try to get a meaningful error message
+					String message = "";
 					try {
-						waitTime = Integer.parseInt(response.header("Retry-After"));
+						message = "\n" + response.body().string();
 					} catch (Exception e) {
 					}
-					LOG.warn("HTTP " + response.code() + ": Waiting " + waitTime + " seconds: " + request.url());
+					response.close();
+
+					// Wait (progressively increasing wait time)
 					try {
-						Thread.sleep(waitTime * 1000);
+						// Use value provided by the server, if available.
+						delayMillis = Integer.parseInt(response.header("Retry-After")) * 1000;
+					} catch (Exception e) {
+						// Else use manual backoff
+						delayMillis = (int) (delayMillis * 2.0 * (1.0 + RND.nextDouble()));
+					}
+					LOG.warn("HTTP " + response.code() + ": Waiting " + delayMillis + "ms: " + request.url() + message);
+					try {
+						Thread.sleep(delayMillis);
 					} catch (InterruptedException e) {
 					}
-					
+
+					// Retry
 					response = chain.proceed(request);
+					++retries;
 				}
 
-				// otherwise just pass the original response on
+				// return last response
 				return response;
 			}
 		});

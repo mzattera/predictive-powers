@@ -38,6 +38,6 @@ public class OpenAiError {
 		String message;
 		String type;
 		String param;
-		int code;
+		String code;
 	}
 }

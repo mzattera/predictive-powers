@@ -38,8 +38,9 @@ public class ProxyExample {
 
 		Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(host, port));
 		OkHttpClient http = ApiClient.getDefaultHttpClient(
-					key, 
+					key,
 					OpenAiClient.DEFAULT_TIMEOUT_MILLIS,
+					OpenAiClient.DEFAULT_MAX_RETRIES,
 					OpenAiClient.DEFAULT_KEEP_ALIVE_MILLIS,
 					OpenAiClient.DEFAULT_MAX_IDLE_CONNECTIONS
 				)

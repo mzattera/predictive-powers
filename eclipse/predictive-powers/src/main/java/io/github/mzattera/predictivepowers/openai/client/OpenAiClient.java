@@ -85,9 +85,8 @@ public class OpenAiClient implements ApiClient {
 	public static final String OS_ENV_VAR_NAME = "OPENAI_API_KEY";
 
 	public final static int DEFAULT_TIMEOUT_MILLIS = 60 * 1000;
-
+	public final static int DEFAULT_MAX_RETRIES = 10;
 	public final static int DEFAULT_KEEP_ALIVE_MILLIS = 5 * 60 * 1000;
-
 	public final static int DEFAULT_MAX_IDLE_CONNECTIONS = 5;
 
 	private final static String API_BASE_URL = "https://api.openai.com/v1/";
@@ -100,6 +99,7 @@ public class OpenAiClient implements ApiClient {
 	/** Used for JSON (de)serialization in API calls */
 	@Getter
 	private final static ObjectMapper jsonMapper;
+
 	static {
 		jsonMapper = new ObjectMapper();
 		jsonMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -112,7 +112,8 @@ public class OpenAiClient implements ApiClient {
 	 * read from {@link #OS_ENV_VAR_NAME} system environment variable.
 	 */
 	public OpenAiClient() {
-		this(null, DEFAULT_TIMEOUT_MILLIS, DEFAULT_KEEP_ALIVE_MILLIS, DEFAULT_MAX_IDLE_CONNECTIONS);
+		this(null, DEFAULT_TIMEOUT_MILLIS, DEFAULT_MAX_RETRIES, DEFAULT_KEEP_ALIVE_MILLIS,
+				DEFAULT_MAX_IDLE_CONNECTIONS);
 	}
 
 	/**
@@ -122,7 +123,8 @@ public class OpenAiClient implements ApiClient {
 	 *               {@link #OS_ENV_VAR_NAME} system environment variable.
 	 */
 	public OpenAiClient(String apiKey) {
-		this(apiKey, DEFAULT_TIMEOUT_MILLIS, DEFAULT_KEEP_ALIVE_MILLIS, DEFAULT_MAX_IDLE_CONNECTIONS);
+		this(apiKey, DEFAULT_TIMEOUT_MILLIS, DEFAULT_MAX_RETRIES, DEFAULT_KEEP_ALIVE_MILLIS,
+				DEFAULT_MAX_IDLE_CONNECTIONS);
 	}
 
 	/**
@@ -133,19 +135,24 @@ public class OpenAiClient implements ApiClient {
 	 *                           it from {@link #OS_ENV_VAR_NAME} system environment
 	 *                           variable.
 	 * @param readTimeout        Read timeout for connections. 0 means no timeout.
+	 * @param maxRetries         In case we receive an HTTP error signaling
+	 *                           temporary server unavailability, the client will
+	 *                           retry the call, at maximum this amount of times.
+	 *                           Use values <= 0 to disable this feature.
 	 * @param keepAliveDuration  Timeout for connections in client pool
 	 *                           (milliseconds).
 	 * @param maxIdleConnections Maximum number of idle connections to keep in the
 	 *                           pool.
 	 */
-	public OpenAiClient(String apiKey, int readTimeout, int keepAliveDuration, int maxIdleConnections) {
-		this(ApiClient.getDefaultHttpClient((apiKey == null) ? getApiKey() : apiKey, readTimeout, keepAliveDuration,
-				maxIdleConnections));
+	public OpenAiClient(String apiKey, int readTimeout, int maxRetries, int keepAliveDuration, int maxIdleConnections) {
+		this(ApiClient.getDefaultHttpClient((apiKey == null) ? getApiKey() : apiKey, readTimeout, maxRetries,
+				keepAliveDuration, maxIdleConnections));
 	}
 
 	/**
 	 * Constructor. This client uses provided OkHttpClient for API calls, to allow
-	 * full customization {@link #getDefaultHttpClient(String, int, int, int)}
+	 * full customization (see
+	 * {@link ApiClient#getDefaultHttpClient(String, int, int, int, int)}).
 	 */
 	public OpenAiClient(OkHttpClient http) {
 		client = http;
@@ -454,18 +461,17 @@ public class OpenAiClient implements ApiClient {
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////
-	
+
 	private <T> T callApi(Single<T> apiCall) {
 		try {
 			return apiCall.blockingGet();
 		} catch (HttpException e) {
-			// TODO: In case error is for token length, have a special exception/parsing
-			// that allows counting tokens?
+
 			OpenAiException oaie;
 			try {
-				oaie = new OpenAiException(jsonMapper.readValue(e.response().errorBody().string(), OpenAiError.class),
-						e);
+				oaie = new OpenAiException(e);
 			} catch (Exception ex) {
+				ex.printStackTrace();
 				throw e;
 			}
 			throw oaie;

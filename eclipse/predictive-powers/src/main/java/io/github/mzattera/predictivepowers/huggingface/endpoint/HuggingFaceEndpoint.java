@@ -54,7 +54,7 @@ public class HuggingFaceEndpoint implements AiEndpoint {
 	}
 
 	public HuggingFaceEndpoint(String apiKey) {
-		this(new HuggingFaceClient(apiKey, -1, -1, -1));
+		this(new HuggingFaceClient(apiKey));
 	}
 
 	public HuggingFaceEndpoint(@NonNull HuggingFaceClient client) {

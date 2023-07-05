@@ -48,7 +48,7 @@ public class OpenAiClientTest {
 
 		OkHttpClient http = ApiClient
 				.getDefaultHttpClient(System.getenv(OpenAiClient.OS_ENV_VAR_NAME), OpenAiClient.DEFAULT_TIMEOUT_MILLIS,
-						OpenAiClient.DEFAULT_KEEP_ALIVE_MILLIS, OpenAiClient.DEFAULT_MAX_IDLE_CONNECTIONS)
+						OpenAiClient.DEFAULT_KEEP_ALIVE_MILLIS, OpenAiClient.DEFAULT_MAX_RETRIES, OpenAiClient.DEFAULT_MAX_IDLE_CONNECTIONS)
 				.newBuilder().addInterceptor(new Interceptor() {
 
 					@Override

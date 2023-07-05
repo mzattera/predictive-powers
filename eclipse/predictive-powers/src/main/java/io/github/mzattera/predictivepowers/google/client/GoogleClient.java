@@ -58,9 +58,8 @@ public class GoogleClient implements ApiClient {
 	public static final String OS_ENV_ENGINE_VAR_NAME = "GOOGLE_ENGINE_ID";
 
 	public final static int DEFAULT_TIMEOUT_MILLIS = 60 * 1000;
-
+	public final static int DEFAULT_MAX_RETRIES = 10;
 	public final static int DEFAULT_KEEP_ALIVE_MILLIS = 5 * 60 * 1000;
-
 	public final static int DEFAULT_MAX_IDLE_CONNECTIONS = 5;
 
 	private final static String API_BASE_URL = "https://customsearch.googleapis.com/customsearch/";
@@ -91,7 +90,8 @@ public class GoogleClient implements ApiClient {
 	 * API keys are read system environment.
 	 */
 	public GoogleClient() {
-		this(null, null, DEFAULT_TIMEOUT_MILLIS, DEFAULT_KEEP_ALIVE_MILLIS, DEFAULT_MAX_IDLE_CONNECTIONS);
+		this(null, null, DEFAULT_TIMEOUT_MILLIS, DEFAULT_MAX_RETRIES, DEFAULT_KEEP_ALIVE_MILLIS,
+				DEFAULT_MAX_IDLE_CONNECTIONS);
 	}
 
 	/**
@@ -104,7 +104,8 @@ public class GoogleClient implements ApiClient {
 	 *                 {@link #OS_ENV_VAR_NAME} system environment variable.
 	 */
 	public GoogleClient(String engineId, String apiKey) {
-		this(engineId, apiKey, DEFAULT_TIMEOUT_MILLIS, DEFAULT_KEEP_ALIVE_MILLIS, DEFAULT_MAX_IDLE_CONNECTIONS);
+		this(engineId, apiKey, DEFAULT_TIMEOUT_MILLIS, DEFAULT_KEEP_ALIVE_MILLIS, DEFAULT_MAX_RETRIES,
+				DEFAULT_MAX_IDLE_CONNECTIONS);
 	}
 
 	/**
@@ -118,15 +119,20 @@ public class GoogleClient implements ApiClient {
 	 *                           read it from {@link #OS_ENV_VAR_NAME} system
 	 *                           environment variable.
 	 * @param readTimeout        Read timeout for connections. 0 means no timeout.
+	 *                           * @param maxRetries In case we receive an HTTP
+	 *                           error signaling temporary server unavailability,
+	 *                           the client will retry the call, at maximum this
+	 *                           amount of times. Use values <= 0 to disable this
+	 *                           feature.
 	 * @param keepAliveDuration  Timeout for connections in client pool
 	 *                           (milliseconds).
 	 * @param maxIdleConnections Maximum number of idle connections to keep in the
 	 *                           pool.
 	 */
-	public GoogleClient(String engineId, String apiKey, int readTimeout, int keepAliveDuration,
+	public GoogleClient(String engineId, String apiKey, int readTimeout, int maxRetries, int keepAliveDuration,
 			int maxIdleConnections) {
 		this((engineId == null) ? getEngineId() : engineId, (apiKey == null) ? getApiKey() : apiKey,
-				ApiClient.getDefaultHttpClient(null, readTimeout, keepAliveDuration, maxIdleConnections));
+				ApiClient.getDefaultHttpClient(null, readTimeout, maxRetries, keepAliveDuration, maxIdleConnections));
 	}
 
 	/**

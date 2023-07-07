@@ -47,7 +47,7 @@ public class OpenAiChatService extends AbstractChatService {
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
 	// values from a Map
 
-	public static final String DEFAULT_MODEL = "gpt-3.5-turbo";
+	public static final String DEFAULT_MODEL = "gpt-4";
 
 	public OpenAiChatService(OpenAiEndpoint ep) {
 		this(ep, ChatCompletionsRequest.builder().model(DEFAULT_MODEL).build());

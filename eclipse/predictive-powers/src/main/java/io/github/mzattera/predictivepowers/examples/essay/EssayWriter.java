@@ -77,10 +77,10 @@ public class EssayWriter implements Closeable {
 	private final static String GOOGLE_ENGINE_ID = GoogleClient.getEngineId(); // WWW search
 
 	/** Length of an essay in tokens */
-	private final static int ESSAY_LENGTH = 10000;
+//	private final static int ESSAY_LENGTH = 10000;
 
-	/** Length of an essay session in tokens */
-	private final static int SECTION_LENGTH = ESSAY_LENGTH / 20;
+	/** Approximate length of an essay session in tokens */
+	private final static int SECTION_LENGTH = 1000; // 1000tk ~ 1 page of text)
 
 	/**
 	 * If true, "summarizes" pages before embedding them by trying to remove data
@@ -89,7 +89,7 @@ public class EssayWriter implements Closeable {
 	private final static boolean SUMMARIZE = false;
 
 	/** Model to use for text completion. */
-	private static final String COMPLETION_MODEL = "gpt-3.5-turbo";
+	private static final String COMPLETION_MODEL = "gpt-4";
 
 	/** Model to use for writing content. */
 	private final static String WRITER_MODEL = "gpt-3.5-turbo-16k";
@@ -189,13 +189,13 @@ public class EssayWriter implements Closeable {
 					Set<SearchResult> links = new HashSet<>();
 					buf.append("References for section ").append(id == null ? "" : id).append("\n");
 					for (Pair<EmbeddedText, Double> p : context) {
-						if (p.getRight() < 0.85)
-							break; // Only show most relevant links
+//						if (p.getRight() < 0.85)
+//							break; // Only show most relevant links
 						EmbeddedText emb = p.getLeft();
 						SearchResult link = (SearchResult) emb.get("url");
 						if (links.contains(link))
 							continue;
-						buf.append(p.getRight()).append(") ").append(link).append("\n");
+						buf.append(p.getRight() > 0.85 ? "* " : "  ").append(link).append("\n");
 						links.add(link);
 					}
 					buf.append("\n");
@@ -649,10 +649,7 @@ public class EssayWriter implements Closeable {
 		System.out.println("Downloading page: " + link);
 		String content = null;
 		try {
-			content = ExtractionUtil.fromUrl(link.getLink(), DOWNLOAD_TIMEOUT_MILLIS);
-			// Sometimes we download articles containing references such as [12] that we do
-			// not want in the final text
-			content = content.replaceAll("\\[[0-9]+\\]", "");
+			content = cleanup(ExtractionUtil.fromUrl(link.getLink(), DOWNLOAD_TIMEOUT_MILLIS));
 		} catch (Exception e) { // Skip page if download error occurs
 			LOG.error("Error downloading " + link.getLink(), e);
 			return new ArrayList<>();
@@ -870,15 +867,9 @@ public class EssayWriter implements Closeable {
 
 		System.out.println("Writing section " + section.id + ") " + section.title);
 
-		String prompt = "You are tesked with writing one section of the essay by summarizing the content provided in given context."
-				+ " Strictly use only given context and no other information."
-				+ " Strictly focus on section content as described in the section summary."
-				+ " As long as you use only given context and follow the section topic, write as much text as you can."
-				+ " Be creative."
-				+ " Output only the section content, do not write the section title.\n\n"
-				+ "Section title: \"" + section.title + "\"\n\n"
-				+ "Section summary:  \"" + section.summary + "\"\n\n"
-				+ "Context:\n\n";
+		String prompt = "<context>{{context}}</context>\n\n" + "<summary>{{summary}}</summary>";
+		Map<String, String> params = new HashMap<>();
+		params.put("summary", section.summary);
 
 		EmbeddingService embSvc = openAi.getEmbeddingService();
 		OpenAiChatService chatSvc = openAi.getChatService();
@@ -887,45 +878,48 @@ public class EssayWriter implements Closeable {
 
 		List<ChatMessage> msgs = new ArrayList<>();
 		msgs.add(new ChatMessage(Role.SYSTEM,
-				"You are an assistant helping a writer to create an essay. When creating text, you follow instructions very closely and use only information in the provided context."));
-		msgs.add(new ChatMessage(Role.USER, prompt));
+				"You will be provided with a context and the summary of a section of an essay, both demimited by XML tags."
+						+ " Your task is to use the content of the context to write the entire section of the essay."
+						+ " Use a professional style."
+						+ " Avoid repetitions but be creative and produce a text of at leat 500 words, with all relevant information from the context.\n\n"));
+		msgs.add(new ChatMessage(Role.USER, "")); // Placeholder
 
-		List<Pair<EmbeddedText, Double>> context = kb.search(embSvc.embed(section.summary).get(0), 50, 0);
+		List<Pair<EmbeddedText, Double>> knowledge = kb.search(embSvc.embed(section.summary).get(0), 50, 0);
 
 		// See how much context can fit the prompt
 		Tokenizer counter = openAi.getModelService().getTokenizer(chatSvc.getModel());
 		int ctxSize = openAi.getModelService().getContextSize(chatSvc.getModel());
-		StringBuilder ctx = new StringBuilder();
+		StringBuilder buf = new StringBuilder();
+		String context = "";
 		int i = 0;
-		for (; i < context.size(); ++i) {
-			EmbeddedText emb = context.get(i).getLeft();
-			ctx.append(emb.getText()).append("\n\n");
+		for (; i < knowledge.size(); ++i) {
+
+			EmbeddedText emb = knowledge.get(i).getLeft();
+			buf.append(emb.getText()).append("\n\n");
+			String c = cleanup(buf.toString()); // TODO URGENT embedded text should have been cleaned up already
+			params.put("context", c);
+
 			msgs.remove(msgs.size() - 1);
-			msgs.add(new ChatMessage(Role.USER, prompt+ctx.toString()));
-			if ((SECTION_LENGTH * 2 + counter.count(msgs)) > ctxSize) // Keeps space for a section of SECTION_LENGTH * 2
-																		// tokens
+			msgs.add(new ChatMessage(Role.USER, CompletionService.fillSlots(prompt, params)));
+			if (((int) (SECTION_LENGTH * 1.5) + counter.count(msgs)) > ctxSize)
 				break;
+			context = c; // Saves last context that would fit
 		}
 
 		// OK, now build the actual context
-		// TODO do it better
-		ctx.setLength(0);
 		msgs.remove(msgs.size() - 1);
-		for (int j = 0; j < i; ++j) {
-			EmbeddedText emb = context.get(j).getLeft();
-			ctx.append(emb.getText()).append("\n\n");
-		}
-		msgs.add(new ChatMessage(Role.USER, prompt+ctx.toString()));
+		params.put("context", context);
+		msgs.add(new ChatMessage(Role.USER, CompletionService.fillSlots(prompt, params)));
 
 		// Add generated content to the section
 		section.content = chatSvc.complete(msgs).getText();
 
 		// Save context (references) from most relevant
-		EmbeddedText secEmb = embSvc.embed(section.content).get(0);
+		EmbeddedText summaryEmbedding = embSvc.embed(section.content).get(0);
 		section.context = new ArrayList<>();
 		for (int j = 0; j < i; ++j) {
-			EmbeddedText emb = context.get(j).getLeft();
-			section.context.add(new ImmutablePair<>(emb, emb.similarity(secEmb)));
+			EmbeddedText emb = knowledge.get(j).getLeft();
+			section.context.add(new ImmutablePair<>(emb, emb.similarity(summaryEmbedding)));
 		}
 		section.context.sort(new Comparator<>() {
 
@@ -977,6 +971,13 @@ public class EssayWriter implements Closeable {
 		}
 
 		return result;
+	}
+
+	private static String cleanup(String txt) {
+		txt = txt.replaceAll("\\[[0-9\\,\\-\\s]+\\]", ""); // Remove references to articles
+		txt = txt.replaceAll("\\n{3,}", "\n\n"); // Remove long sequences of newlines
+
+		return txt;
 	}
 
 	@Override

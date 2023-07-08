@@ -43,6 +43,10 @@ To configure logback in your applications that use `predictive-powers`, simply a
 API clients are the lowest-level components of this library; they allow you to perform direct API calls to service providers. 
 For example, you can access OpeanAi API directly by instantiating an `OpenAiClient` and calling its methods.
 
+API clients in the library automatically intercept HTTP errors 429, 500 & 503, which normally indicate temporarily unavailability of APIs
+an retry calls after a random and exponentially increasing wait time ([exponential backoff strategy](https://platform.openai.com/docs/guides/rate-limits/error-mitigation)).
+This feature can be easily disabled, if desired.
+
 Class constructors allow you to pass your API key, which will be used in all subsequent calls.
 Alternatively, the code will try to read the key from your system environment; please refer to the below examples or the JavaDoc for more details.
 

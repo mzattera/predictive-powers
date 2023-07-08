@@ -45,7 +45,7 @@ public class OpenAiChatService extends AbstractChatService {
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiChatService.class);
 
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
-	// values from a Map
+	// values from a Map this si done partially
 
 	public static final String DEFAULT_MODEL = "gpt-4";
 

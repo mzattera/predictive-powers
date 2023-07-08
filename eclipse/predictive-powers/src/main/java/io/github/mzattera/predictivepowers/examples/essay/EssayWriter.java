@@ -89,7 +89,7 @@ public class EssayWriter implements Closeable {
 	private final static boolean SUMMARIZE = false;
 
 	/** Model to use for text completion. */
-	private static final String COMPLETION_MODEL = "gpt-4";
+	private static final String COMPLETION_MODEL = "gpt-3.5-turbo";
 
 	/** Model to use for writing content. */
 	private final static String WRITER_MODEL = "gpt-3.5-turbo-16k";
@@ -878,10 +878,10 @@ public class EssayWriter implements Closeable {
 
 		List<ChatMessage> msgs = new ArrayList<>();
 		msgs.add(new ChatMessage(Role.SYSTEM,
-				"You will be provided with a context and the summary of a section of an essay, both demimited by XML tags."
+				"You will be provided with a context and the summary of a section of an essay, both delimited by XML tags."
 						+ " Your task is to use the content of the context to write the entire section of the essay."
 						+ " Use a professional style."
-						+ " Avoid repetitions but be creative and produce a text of at leat 500 words, with all relevant information from the context.\n\n"));
+						+ " Avoid repetitions but be creative and produce a text at least one page long, with all relevant information from the context.\n\n"));
 		msgs.add(new ChatMessage(Role.USER, "")); // Placeholder
 
 		List<Pair<EmbeddedText, Double>> knowledge = kb.search(embSvc.embed(section.summary).get(0), 50, 0);

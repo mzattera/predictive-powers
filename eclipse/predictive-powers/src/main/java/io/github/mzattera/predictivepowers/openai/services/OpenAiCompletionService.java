@@ -243,10 +243,11 @@ public class OpenAiCompletionService implements CompletionService {
 				if (e.isContextLengthExceeded()) { // Automatically recover if request is too long
 					int optimal = e.getMaxContextLength() - e.getPromptLength() - 1;
 					if (optimal > 0) {
-						LOG.warn("Reducing context length for OpneAI chat service from " + req.getMaxTokens() + " to "
+						LOG.warn("Reducing context length for OpenAI completion service from " + req.getMaxTokens() + " to "
 								+ optimal);
 						req.setMaxTokens(optimal);
 						resp = endpoint.getClient().createCompletion(req);
+						// TODO re-set old value?
 					} else
 						throw e; // Context too small anyway
 				} else

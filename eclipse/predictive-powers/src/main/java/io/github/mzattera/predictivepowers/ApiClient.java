@@ -119,8 +119,8 @@ public interface ApiClient extends Closeable {
 						// Use value provided by the server, if available.
 						delayMillis = Integer.parseInt(response.header("Retry-After")) * 1000;
 					} catch (Exception e) {
-						// Else use manual backoff
-						delayMillis = (int) (delayMillis * 2.0 * (1.0 + RND.nextDouble()));
+						// Else use manual backoff, max 1 minute
+						delayMillis = Math.min(61_000, (int) (delayMillis * 2.0 * (1.0 + RND.nextDouble())));
 					}
 					LOG.warn("HTTP " + response.code() + ": Waiting " + delayMillis + "ms: " + request.url() + message);
 					try {

@@ -134,7 +134,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM, //
 				"{\"answer\": \"I do not know.\", \"explanation\": \"1. This information is not provided in the context.\"}",
 				"example_assistant", null));
-		instructions.add(new ChatMessage(ChatMessage.Role.USER, "Context:\n" + //
+		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM, "Context:\n" + //
 				"Biglydoos are small rodent similar to mice.\n" + //
 				"Biglydoos eat cranberries.\n" + //
 				"Question: Do biglydoos eat fruits?", "example_user", null));

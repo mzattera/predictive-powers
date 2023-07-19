@@ -156,7 +156,9 @@ The example below shows how to create an `OpenAiEndpoint`.
 
 Once the endpoint is created, it can be used to access "services" which are high-level GenAI capabilities. Currently following services are provided:
 
-  * `CompletionService` text completion (including insertions): basically, it executes given text prompt.
+  * `ModelService` provide methods to access model metadata (e.g. list models, get model context size, etc.).
+	 
+  * `CompletionService`; text completion (including insertions): basically, it executes given text prompt.
 	 
   * `ChatService` handles conversations with an agent, taking care of agent personality and conversation history.
   
@@ -171,9 +173,11 @@ Once the endpoint is created, it can be used to access "services" which are high
      Provided only over OpenAI endpoint for now.
 	 
   * `ImageGenerationService` to create images.
-  
+ 
      Provided over both OpenAI (DALL-E 2) and Hugging Face (OpenJourney) endpoints.
   
+  * `SearchService` Can search the Internet for data.
+     	   
 The below example shows how to get the `CompletionService` to complete a sentence.
 Notice how the service abstraction allows you to use two different service providers, only by changing a single line of code.
 

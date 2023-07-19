@@ -80,7 +80,7 @@ public class EssayWriter implements Closeable {
 //	private final static int ESSAY_LENGTH = 10000;
 
 	/** Approximate length of an essay session in tokens */
-	private final static int SECTION_LENGTH = 1000; // 1000tk ~ 1 page of text)
+	private final static int SECTION_LENGTH_TOKENS = 1000; // 1000tk ~ 1 page of text)
 
 	/**
 	 * If true, "summarizes" pages before embedding them by trying to remove data
@@ -149,11 +149,24 @@ public class EssayWriter implements Closeable {
 			List<Section> sections = new ArrayList<>();
 
 			/**
-			 * Embedded texts used to build the section, each with their similarity with the
-			 * final section
+			 * Embedded texts used to build the section.
 			 */
 			@Builder.Default
-			List<Pair<EmbeddedText, Double>> context = new ArrayList<>();
+			List<EmbeddedText> context = new ArrayList<>();
+
+			/**
+			 * Relevance (0.0-1.0) of each embedded text used to build the section.
+			 */
+			@Builder.Default
+			List<Double> contextWeight = new ArrayList<>();
+
+			public String niceTitle() {
+				StringBuilder buf = new StringBuilder();
+				if (id != null)
+					buf.append(id).append(" ");
+				buf.append(title == null ? "Untitled" : title.trim());
+				return buf.toString();
+			}
 
 			@Override
 			public String toString() {
@@ -162,9 +175,7 @@ public class EssayWriter implements Closeable {
 
 			public String sectonSummary() {
 				StringBuilder buf = new StringBuilder();
-				if (id != null)
-					buf.append(id).append(") ");
-				buf.append(title == null ? "Untitled" : title.trim()).append("\n");
+				buf.append(niceTitle()).append("\n");
 				if (summary != null)
 					buf.append("[Summary: ").append(summary.trim()).append("]\n\n");
 				for (Section s : sections)
@@ -175,9 +186,7 @@ public class EssayWriter implements Closeable {
 
 			public String sectionContent() {
 				StringBuilder buf = new StringBuilder();
-				if (id != null)
-					buf.append(id).append(") ");
-				buf.append(title == null ? "Untitled" : title.trim()).append("\n");
+				buf.append(niceTitle()).append("\n");
 				if (content == null) {
 					if (summary != null)
 						buf.append("[Summary: ").append(summary.trim()).append("]\n\n");
@@ -188,14 +197,13 @@ public class EssayWriter implements Closeable {
 				if ((context != null) && (context.size() > 0)) {
 					Set<SearchResult> links = new HashSet<>();
 					buf.append("References for section ").append(id == null ? "" : id).append("\n");
-					for (Pair<EmbeddedText, Double> p : context) {
-//						if (p.getRight() < 0.85)
-//							break; // Only show most relevant links
-						EmbeddedText emb = p.getLeft();
+					for (int i = 0; i < context.size(); ++i) {
+						EmbeddedText emb = context.get(i);
+						double weight = contextWeight.get(i);
 						SearchResult link = (SearchResult) emb.get("url");
 						if (links.contains(link))
 							continue;
-						buf.append(p.getRight() > 0.85 ? "* " : "  ").append(link).append("\n");
+						buf.append(weight > 0.85 ? "* " : "  ").append(link).append("\n");
 						links.add(link);
 					}
 					buf.append("\n");
@@ -213,21 +221,25 @@ public class EssayWriter implements Closeable {
 		@Builder.Default
 		List<Section> chapters = new ArrayList<>();
 
-		public void serialize(String fileName) throws IOException {
-			serialize(new File(fileName));
+		public void toFile(String fileName) throws IOException {
+			toFile(new File(fileName));
 		}
 
-		public void serialize(File file) throws IOException {
+		public void toFile(File file) throws IOException {
 			String json = JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(this);
 			FileUtil.writeFile(file, json);
 		}
 
-		public static Essay deserialize(String fileName) throws IOException {
-			return deserialize(new File(fileName));
+		public static Essay fromFile(String fileName) throws IOException {
+			return fromFile(new File(fileName));
 		}
 
-		public static Essay deserialize(File json) throws IOException {
-			return JSON_MAPPER.readValue(FileUtil.readFile(json), Essay.class);
+		public static Essay fromFile(File json) throws IOException {
+			return fromJson(FileUtil.readFile(json));
+		}
+
+		public static Essay fromJson(String json) throws IOException {
+			return JSON_MAPPER.readValue(json, Essay.class);
 		}
 
 		@Override
@@ -256,10 +268,10 @@ public class EssayWriter implements Closeable {
 		}
 	}
 
-	private OpenAiEndpoint openAi;
-	private GoogleEndpoint google;
-	private KnowledgeBase kb = new KnowledgeBase();
-	private final Essay essay;
+	protected OpenAiEndpoint openAi;
+	protected GoogleEndpoint google;
+	protected KnowledgeBase kb = new KnowledgeBase();
+	protected Essay essay;
 
 	public EssayWriter(@NonNull String title, @NonNull String description) {
 		essay = Essay.builder().title(title).description(description).build();
@@ -267,7 +279,7 @@ public class EssayWriter implements Closeable {
 	}
 
 	public EssayWriter(File json) throws IOException {
-		essay = Essay.deserialize(json);
+		essay = Essay.fromFile(json);
 		initializeEndPoints();
 	}
 
@@ -303,26 +315,31 @@ public class EssayWriter implements Closeable {
 	public static void main(String[] args) {
 
 		try {
-			if ((args.length != 2) && (args.length != 3)) // TODO better checks
-				throw new IllegalArgumentException("Usage..."); // TODO print usage
 
 			switch (args[0]) {
 			case "-s":
 				// Write structure from description passed as argument
+				if (args.length != 2)
+					throw new IllegalArgumentException();
 				createStructure(new File(args[1]));
 				break;
 			case "-d":
 				// Downloads content for an essay, and saves corresponding knowledge base
+				if (args.length != 3)
+					throw new IllegalArgumentException();
 				createKnowledgeBase(new File(args[1]), Integer.parseInt(args[2]));
 				break;
 			case "-w":
 				// writes an essay
+				if (args.length != 3)
+					throw new IllegalArgumentException();
 				write(new File(args[1]), new File(args[2]));
 				break;
 			case "-a":
 				// Starts from essay description and writes the essay, saving structure and KB
-				// in
-				// the process.
+				// in the process.
+				if (args.length != 3)
+					throw new IllegalArgumentException();
 				File description = new File(args[1]);
 				File structure = createStructure(description);
 				File kb = createKnowledgeBase(structure, Integer.parseInt(args[2]));
@@ -330,8 +347,10 @@ public class EssayWriter implements Closeable {
 				System.out.println("Essay completed: " + essay.getCanonicalPath());
 				break;
 			case "-j":
-				// Starts from essay structure and writes the essay, saving the KB in
-				// the process.
+				// Starts from essay structure and writes the essay, saving the KB in the
+				// process.
+				if (args.length != 3)
+					throw new IllegalArgumentException();
 				structure = new File(args[1]);
 				kb = createKnowledgeBase(structure, Integer.parseInt(args[2]));
 				essay = write(structure, kb);
@@ -362,7 +381,7 @@ public class EssayWriter implements Closeable {
 			System.out.println(writer.essay.essaySummary());
 			FileUtil.writeFile(FileUtil.newFile(input, "sumary.txt"), writer.essay.essaySummary());
 			File json = FileUtil.newFile(input, "essay.json");
-			writer.essay.serialize(json);
+			writer.essay.toFile(json);
 			return json;
 		}
 	}
@@ -418,7 +437,7 @@ public class EssayWriter implements Closeable {
 			System.out.println(content);
 			File result = FileUtil.newFile(structure, "essay.txt");
 			FileUtil.writeFile(result, content);
-			writer.essay.serialize(FileUtil.newFile(structure, "essay_complete.json"));
+			writer.essay.toFile(FileUtil.newFile(structure, "essay_complete.json"));
 
 			return result;
 		}
@@ -509,9 +528,12 @@ public class EssayWriter implements Closeable {
 
 		List<Callable<List<Pair<SearchResult, Integer>>>> tasks = new ArrayList<>();
 		for (Section chapter : essay.chapters) {
-			tasks.add(() -> google(chapter));
-			for (Section section : chapter.sections) {
-				tasks.add(() -> google(section));
+			if (chapter.sections.size() == 0) // Google chapter
+				tasks.add(() -> google(chapter, chapter));
+			else { // Google sections
+				for (Section section : chapter.sections) {
+					tasks.add(() -> google(chapter, section));
+				}
 			}
 		}
 		List<Pair<SearchResult, Integer>> allLinks = parallelExecution(tasks);
@@ -541,12 +563,12 @@ public class EssayWriter implements Closeable {
 	}
 
 	/**
-	 * Google pages relevant to content for given section.
+	 * Google pages relevant to content for given section in a chapter.
 	 * 
 	 * @return List of links relevant to essay content. Each link is returned in a
 	 *         pair together with its ran in search results.
 	 */
-	public List<Pair<SearchResult, Integer>> google(Section section) {
+	public List<Pair<SearchResult, Integer>> google(Section chapter, Section section) {
 
 		System.out.println("Searching relevant pages for section " + section.id + ") " + section.title);
 
@@ -556,17 +578,20 @@ public class EssayWriter implements Closeable {
 		chatSvc.setModel(COMPLETION_MODEL);
 		chatSvc.setTemperature(50.0);
 
-		final String prompt = "Given the below essay structure and target section, generate a list of search engine queries that can be used to search the topic corresponding to the section on the Internet."
+		// TODO maybe it works well without the whole essay content, as it takes up a
+		// lot otherwise
+		final String prompt = "Given the below chapter summary, section title and section summary, provided in XML tags, generate a list of search engine queries that can be used to search the topic corresponding to the section on the Internet."
 				+ " Each query is a short sentence or a short list of key terms relevant for the section topic."
-				+ " Include terms to provide a context for the topic, as contained by the essay structure, so that the query is clearly related to the essay content and contextualized accordingly."
-				+ " Be creative and provide at least 10 queries."
-				+ " Strictly provide results as a JSON array of strings.\n\n" + "Essay structure:\n\n {{essay}}\n\n"
-				+ "Target section: {{id}}) {{title}} - {{summary}}";
+				+ " Include terms to provide a context for the topic, as described by the chapter summary, so that the query is clearly related to the chapter content."
+				+ " Be creative and provide exactly 5 queries."
+				+ " Strictly provide results as a JSON array of strings.\n\n"
+				+ "<chapter_summary>{{chapter_summary}}</chapter_summary>\n\n"
+				+ "<section_title>{{section_title}}</section_title>\n\n"
+				+ "<section_summary>{{section_summary}}</section_summary>";
 		Map<String, String> params = new HashMap<>();
-		params.put("essay", essay.essaySummary());
-		params.put("id", section.id);
-		params.put("title", section.title);
-		params.put("summary", section.summary);
+		params.put("chapter_summary", chapter.summary);
+		params.put("section_title", section.title);
+		params.put("section_summary", section.summary);
 
 		List<ChatMessage> msgs = new ArrayList<>();
 		msgs.add(new ChatMessage(Role.SYSTEM,
@@ -642,7 +667,7 @@ public class EssayWriter implements Closeable {
 		// TODO fine tune
 		int writerSize = openAi.getModelService().getContextSize(WRITER_MODEL);
 		int embSize = openAi.getModelService().getContextSize(embSvc.getModel());
-		embSvc.setMaxTextTokens(Math.min(embSize, (writerSize - SECTION_LENGTH) / 10));
+		embSvc.setMaxTextTokens(Math.min(embSize, (writerSize - SECTION_LENGTH_TOKENS) / 15));
 
 		LOG.debug("Size: " + embSvc.getMaxTextTokens());
 
@@ -880,8 +905,10 @@ public class EssayWriter implements Closeable {
 		msgs.add(new ChatMessage(Role.SYSTEM,
 				"You will be provided with a context and the summary of a section of an essay, both delimited by XML tags."
 						+ " Your task is to use the content of the context to write the entire section of the essay."
-						+ " Use a professional style."
-						+ " Avoid repetitions but be creative and produce a text at least one page long, with all relevant information from the context.\n\n"));
+						+ " Use a professional style." + " Avoid content repetitions but be detailed."
+						+ " Output only the section content, not its title, do not create subsections."
+						+ " Do not make up missing information or put placeholders for data you do not have."
+						+ " Only if enought information is available in the content, produce a text at least " + SECTION_LENGTH_TOKENS + " long.\n\n"));
 		msgs.add(new ChatMessage(Role.USER, "")); // Placeholder
 
 		List<Pair<EmbeddedText, Double>> knowledge = kb.search(embSvc.embed(section.summary).get(0), 50, 0);
@@ -901,7 +928,7 @@ public class EssayWriter implements Closeable {
 
 			msgs.remove(msgs.size() - 1);
 			msgs.add(new ChatMessage(Role.USER, CompletionService.fillSlots(prompt, params)));
-			if (((int) (SECTION_LENGTH * 1.5) + counter.count(msgs)) > ctxSize)
+			if (((int) (SECTION_LENGTH_TOKENS * 1.5) + counter.count(msgs)) > ctxSize)
 				break;
 			context = c; // Saves last context that would fit
 		}
@@ -916,18 +943,22 @@ public class EssayWriter implements Closeable {
 
 		// Save context (references) from most relevant
 		EmbeddedText summaryEmbedding = embSvc.embed(section.content).get(0);
-		section.context = new ArrayList<>();
+		List<Pair<EmbeddedText, Double>> ctx = new ArrayList<>();
 		for (int j = 0; j < i; ++j) {
 			EmbeddedText emb = knowledge.get(j).getLeft();
-			section.context.add(new ImmutablePair<>(emb, emb.similarity(summaryEmbedding)));
+			ctx.add(new ImmutablePair<>(emb, emb.similarity(summaryEmbedding)));
 		}
-		section.context.sort(new Comparator<>() {
+		ctx.sort(new Comparator<>() {
 
 			@Override
 			public int compare(Pair<EmbeddedText, Double> o1, Pair<EmbeddedText, Double> o2) {
 				return -Double.compare(o1.getRight(), o2.getRight());
 			}
 		});
+		for (Pair<EmbeddedText, Double> p : ctx) {
+			section.context.add(p.getLeft());
+			section.contextWeight.add(p.getRight());
+		}
 
 		return section.sections; // Not used, just needed for parallelExecution()
 	}

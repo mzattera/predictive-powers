@@ -21,6 +21,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -106,6 +108,21 @@ public final class FileUtil {
 		Path path = f.toPath();
 		StringBuilder content = new StringBuilder();
 		try (BufferedReader br = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+			String line;
+			while ((line = br.readLine()) != null) {
+				content.append(line).append(System.lineSeparator());
+			}
+		}
+		return content.toString();
+	}
+
+	/**
+	 * Reads content of a stream, assuming it contains a UTF-8 string.
+	 */
+	public static String readStream(InputStream stream) throws IOException {
+		StringBuilder content = new StringBuilder();
+		try (InputStreamReader in = new InputStreamReader(stream, StandardCharsets.UTF_8);
+				BufferedReader br = new BufferedReader(in)) {
 			String line;
 			while ((line = br.readLine()) != null) {
 				content.append(line).append(System.lineSeparator());

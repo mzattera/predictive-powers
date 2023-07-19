@@ -32,9 +32,12 @@ import org.apache.tika.exception.TikaException;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceEmbeddingService;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.util.ExtractionUtil;
@@ -48,6 +51,28 @@ import io.github.mzattera.util.ResourceUtil;
  */
 public class EmbeddingServiceTest {
 
+
+	/**
+	 * Tests embedding serialization.
+	 * @throws JsonProcessingException 
+	 */
+	@Test
+	public void testEmbeddedText() throws JsonProcessingException {
+		List<Double> d = new ArrayList<>();
+		d.add(1.0);
+		d.add(2.0);
+		d.add(3.0);
+		EmbeddedText e = EmbeddedText.builder().text("This is the text for the embedding.").embedding(d)
+				.model("banana_model").build();
+		e.set("string", "a string");
+		e.set("number", 42);
+		
+		String json = OpenAiClient.getJsonMapper().writerWithDefaultPrettyPrinter().writeValueAsString(e);
+		e = OpenAiClient.getJsonMapper().readValue(json, EmbeddedText.class);
+		String json2 = OpenAiClient.getJsonMapper().writerWithDefaultPrettyPrinter().writeValueAsString(e);
+		assertEquals(json,json2);
+	}
+	
 	// TODO break it in smaller tests...
 
 	@Test

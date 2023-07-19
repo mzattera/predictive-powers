@@ -386,7 +386,7 @@ public class OpenAiChatService extends AbstractChatService {
 				// Automatically set token limit, if needed
 				OpenAiTokenizer counter = (OpenAiTokenizer) modelService.getTokenizer(model);
 				int tok = counter.count(req); // Notice we must count function definitions too
-				req.setMaxTokens(modelService.getContextSize(model) - tok - 5);
+				req.setMaxTokens(modelService.getContextSize(model) - tok -5);
 			}
 
 			ChatCompletionsResponse resp = null;
@@ -396,10 +396,11 @@ public class OpenAiChatService extends AbstractChatService {
 				if (e.isContextLengthExceeded()) { // Automatically recover if request is too long
 					int optimal = e.getMaxContextLength() - e.getPromptLength() - 1;
 					if (optimal > 0) {
-						LOG.warn("Reducing context length for OpneAI chat service from " + req.getMaxTokens() + " to "
+						LOG.warn("Reducing context length for OpenAI chat service from " + req.getMaxTokens() + " to "
 								+ optimal);
 						req.setMaxTokens(optimal);
 						resp = endpoint.getClient().createChatCompletion(req);
+						// TODO re-set old value?
 					} else
 						throw e; // Context too small anyway
 				} else

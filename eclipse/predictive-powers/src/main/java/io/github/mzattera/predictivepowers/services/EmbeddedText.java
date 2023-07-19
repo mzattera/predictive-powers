@@ -104,7 +104,7 @@ public class EmbeddedText implements Serializable {
 	 * @return cosine similarity in range [-1, 1] between this embedding and other.
 	 */
 	public double similarity(EmbeddedText other) {
-		return similarity (this, other);
+		return similarity(this, other);
 	}
 
 	/**
@@ -115,7 +115,7 @@ public class EmbeddedText implements Serializable {
 	 * @return cosine similarity in range [-1, 1] between two embeddings.
 	 */
 	public static double similarity(@NonNull EmbeddedText a, @NonNull EmbeddedText b) {
-		
+
 		if (!a.model.equals(b.model))
 			throw new IllegalArgumentException(
 					"Embedding from two different models [" + a.model + ", " + b.model + "]");
@@ -133,7 +133,7 @@ public class EmbeddedText implements Serializable {
 		double similarity = ab / Math.sqrt(a2 * b2);
 		if (!Double.isFinite(similarity))
 			return -1.0d; // Sometimes vectors are too small
-		
+
 		// Fix rounding errors, eventually
 		return Math.max(Math.min(similarity, 1.0d), -1.0d);
 	}

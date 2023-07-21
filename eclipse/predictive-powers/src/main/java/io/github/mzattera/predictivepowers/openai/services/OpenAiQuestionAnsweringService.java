@@ -117,6 +117,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 		Tokenizer counter = getEndpoint().getModelService().getTokenizer(getModel());
 
 		// Provides instructions and examples
+		// TODO URGENT Better delimiters for context and questions
 		List<ChatMessage> instructions = new ArrayList<>();
 		if (completionService.getPersonality() == null)
 			instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM,
@@ -125,7 +126,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 				"Answer the below questions truthfully, strictly using only the information in the context. " + //
 						"When providing an answer, provide your reasoning as well, step by step. " + //
 						"If the answer cannot be found in the context, reply with \"I do not know.\". " + //
-						"Strictly return the answer and explanation in JSON format, as shown below.",
+						"Strictly return the answer and explanation in JSON format.",
 				"example_user", null));
 		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM, "Context:\n" + //
 				"Biglydoos are small rodent similar to mice.\n" + //

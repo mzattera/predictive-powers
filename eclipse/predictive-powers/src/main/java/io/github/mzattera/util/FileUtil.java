@@ -50,7 +50,7 @@ public final class FileUtil {
 	 * @param string
 	 * @return A File that is in same folder as input but has given filename.
 	 */
-	public static File newFile(String folder, String fileName) {
+	public static File newFile(@NonNull String folder, @NonNull String fileName) {
 		return newFile(new File(folder), fileName);
 	}
 
@@ -63,7 +63,7 @@ public final class FileUtil {
 	 * @param string
 	 * @return A File that is in same folder as input but has given filename.
 	 */
-	public static File newFile(File folder, String fileName) {
+	public static File newFile(@NonNull File folder, @NonNull String fileName) {
 		File path = folder.isDirectory() ? folder
 				: (folder.getParentFile() == null ? new File(".") : folder.getParentFile());
 		return new File(path, fileName);
@@ -72,7 +72,7 @@ public final class FileUtil {
 	/**
 	 * @return Extension for given file (excluding '.').
 	 */
-	public static String getExtension(File f) {
+	public static String getExtension(@NonNull File f) {
 		return getExtension(f.getName());
 	}
 
@@ -87,13 +87,30 @@ public final class FileUtil {
 	}
 
 	/**
+	 * @return Name of given file without its extension.
+	 */
+	public static String removeExtension(@NonNull File f) {
+		return removeExtension(f.getName());
+	}
+
+	/**
+	 * @return Name of given file without its extension.
+	 */
+	public static String removeExtension(@NonNull String fileName) {
+		int pos = fileName.lastIndexOf('.');
+		if (pos == -1)
+			return fileName;
+		return fileName.substring(0, pos);
+	}
+
+	/**
 	 * Reads content of a file, assumed to be a UTF-8 string.
 	 * 
 	 * @param fileName
 	 * @return
 	 * @throws IOException
 	 */
-	public static String readFile(String fileName) throws IOException {
+	public static String readFile(@NonNull String fileName) throws IOException {
 		return readFile(new File(fileName));
 	}
 
@@ -104,7 +121,7 @@ public final class FileUtil {
 	 * @return
 	 * @throws IOException
 	 */
-	public static String readFile(File f) throws IOException {
+	public static String readFile(@NonNull File f) throws IOException {
 		Path path = f.toPath();
 		StringBuilder content = new StringBuilder();
 		try (BufferedReader br = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
@@ -119,7 +136,7 @@ public final class FileUtil {
 	/**
 	 * Reads content of a stream, assuming it contains a UTF-8 string.
 	 */
-	public static String readStream(InputStream stream) throws IOException {
+	public static String readStream(@NonNull InputStream stream) throws IOException {
 		StringBuilder content = new StringBuilder();
 		try (InputStreamReader in = new InputStreamReader(stream, StandardCharsets.UTF_8);
 				BufferedReader br = new BufferedReader(in)) {
@@ -139,7 +156,7 @@ public final class FileUtil {
 	 * @throws IOException
 	 * 
 	 */
-	public static void writeFile(String fileName, String text) throws IOException {
+	public static void writeFile(@NonNull String fileName, @NonNull String text) throws IOException {
 		writeFile(new File(fileName), text);
 	}
 
@@ -151,7 +168,7 @@ public final class FileUtil {
 	 * @throws IOException
 	 * 
 	 */
-	public static void writeFile(File file, String text) throws IOException {
+	public static void writeFile(@NonNull File file, @NonNull String text) throws IOException {
 		try (BufferedWriter writer = new BufferedWriter(
 				new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
 			writer.write(text);

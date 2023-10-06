@@ -17,6 +17,7 @@
 package io.github.mzattera.predictivepowers.examples;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
+import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 
@@ -28,7 +29,7 @@ public class CompletionExample {
 		AiEndpoint endpoint = new OpenAiEndpoint();
 
 		// Uncomment the below to use Hugging Face
-		// Endpoint endpoint = new HuggingFaceEndpoint();
+		// AiEndpoint endpoint = new HuggingFaceEndpoint();
 
 		try (endpoint) {
 			CompletionService cs = endpoint.getCompletionService();

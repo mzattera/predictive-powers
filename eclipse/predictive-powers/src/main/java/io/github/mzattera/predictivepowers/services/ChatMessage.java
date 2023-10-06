@@ -73,7 +73,7 @@ public class ChatMessage {
 		SYSTEM("system"),
 
 		/**
-		 * Marks text returned by a function (?). OpenAI API.
+		 * Marks text returned by a function. OpenAI API.
 		 */
 		FUNCTION("function");
 

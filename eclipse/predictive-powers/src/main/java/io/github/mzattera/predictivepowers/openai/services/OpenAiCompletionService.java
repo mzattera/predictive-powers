@@ -233,7 +233,11 @@ public class OpenAiCompletionService implements CompletionService {
 				int tok = counter.count(prompt);
 				if (suffix != null)
 					tok += counter.count(suffix);
-				req.setMaxTokens(modelService.getContextSize(model) - tok);
+				int size = modelService.getContextSize(model) - tok;
+				if (size <= 0)
+					throw new IllegalArgumentException(
+							"Your proompt exceeds context size: " + modelService.getContextSize(model));
+				req.setMaxTokens(size);
 			}
 
 			CompletionsResponse resp = null;

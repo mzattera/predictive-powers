@@ -44,7 +44,6 @@ public class QnAPair {
 	@NonNull
 	private String question;
 
-	@NonNull
 	private String answer;
 
 	/**

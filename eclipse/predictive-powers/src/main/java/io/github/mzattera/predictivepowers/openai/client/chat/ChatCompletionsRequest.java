@@ -153,7 +153,7 @@ public class ChatCompletionsRequest {
 	List<Function> functions;
 
 	/**
-	 * Notice: Setting this with no {@link #functions} causes an  HTTP 400 error.
+	 * Notice: Setting this without providing {@link #functions} causes an  HTTP 400 error.
 	 */
 	FunctionCallSetting functionCall;
 

@@ -386,7 +386,11 @@ public class OpenAiChatService extends AbstractChatService {
 				// Automatically set token limit, if needed
 				OpenAiTokenizer counter = (OpenAiTokenizer) modelService.getTokenizer(model);
 				int tok = counter.count(req); // Notice we must count function definitions too
-				req.setMaxTokens(modelService.getContextSize(model) - tok -5);
+				int size = modelService.getContextSize(model) - tok - 5;
+				if (size <= 0)
+					throw new IllegalArgumentException(
+							"Your proompt exceeds context size: " + modelService.getContextSize(model));
+				req.setMaxTokens(size);
 			}
 
 			ChatCompletionsResponse resp = null;

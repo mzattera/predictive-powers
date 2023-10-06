@@ -88,5 +88,6 @@ public class Function {
 	 * String, and enumerations.
 	 */
 	@JsonSerialize(using = ParametersSerializer.class, as = Class.class)
+	@NonNull // OpenAi errors otherwise
 	Class<?> parameters;
 }

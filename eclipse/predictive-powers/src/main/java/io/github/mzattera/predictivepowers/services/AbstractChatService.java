@@ -77,16 +77,16 @@ public abstract class AbstractChatService implements ChatService {
 		history.clear();
 	}
 
-	@Override 
+	@Override
 	public TextCompletion chat(String msg) {
-		return chat( new ChatMessage(Role.USER, msg));
+		return chat(new ChatMessage(Role.USER, msg));
 	}
 
-	@Override 
-	public TextCompletion complete(String prompt){
-		return complete( new ChatMessage(Role.USER, prompt));
+	@Override
+	public TextCompletion complete(String prompt) {
+		return complete(new ChatMessage(Role.USER, prompt));
 	}
-	
+
 	/**
 	 * Trims given list of messages (typically a conversation history), so it fits
 	 * the limits set in this instance (that is, maximum conversation steps and

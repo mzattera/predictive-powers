@@ -142,7 +142,7 @@ The example below shows how to create an `OpenAiEndpoint`.
 		// Get API key from OS environment variable OpenAiClient.OS_ENV_VAR_NAME
 		endpoint = new OpenAiEndpoint();
 
-		// Pass API key explicitly
+		// Pass API key explicitly (NOT the best practice)
 		endpoint = new OpenAiEndpoint("sk-H0a...Yo1");
 
 		// Build endpoint from an existing API client
@@ -425,7 +425,7 @@ Below is a conversation example.
 ![Example of a conversation using function calling](./img/FunctionCall.PNG)
  
  
- ### <a name="oracle"></a>All-knowing Oracle
+ ### <a name="oracle"></a>All-knowing Oracle (Retrieval-Augmented Generation)
  
  An oracle is a service that can answer questions about a domain.
  

@@ -132,6 +132,9 @@ public final class ExtractionUtil {
 	 * @throws TikaException
 	 */
 	public static String fromStream(InputStream stream) throws IOException, SAXException, TikaException {
+		if (stream.available() == 0) // Empty streams cause Tika to fail
+			return "";
+
 		AutoDetectParser parser = new AutoDetectParser();
 		BodyContentHandler handler = new BodyContentHandler(-1);
 		Metadata metadata = new Metadata();

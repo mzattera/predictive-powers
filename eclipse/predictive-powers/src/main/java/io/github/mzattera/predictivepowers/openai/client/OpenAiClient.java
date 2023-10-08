@@ -84,7 +84,7 @@ public class OpenAiClient implements ApiClient {
 	 */
 	public static final String OS_ENV_VAR_NAME = "OPENAI_API_KEY";
 
-	public final static int DEFAULT_TIMEOUT_MILLIS = 60 * 1000;
+	public final static int DEFAULT_TIMEOUT_MILLIS = 3 * 60 * 1000;
 	public final static int DEFAULT_MAX_RETRIES = 10;
 	public final static int DEFAULT_KEEP_ALIVE_MILLIS = 5 * 60 * 1000;
 	public final static int DEFAULT_MAX_IDLE_CONNECTIONS = 5;

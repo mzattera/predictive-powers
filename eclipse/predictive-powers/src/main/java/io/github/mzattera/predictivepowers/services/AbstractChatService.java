@@ -102,9 +102,10 @@ public abstract class AbstractChatService implements ChatService {
 		List<ChatMessage> result = new ArrayList<>(messages.size());
 		Tokenizer counter = modelService.getTokenizer(getModel());
 
-		if (getPersonality() != null) {
-			ChatMessage m = new ChatMessage(ChatMessage.Role.SYSTEM, getPersonality());
-			result.add(m);
+		boolean personalityAdded = false;
+		if (addPersonality && (getPersonality() != null)) {
+			result.add(new ChatMessage(ChatMessage.Role.SYSTEM, getPersonality()));
+			personalityAdded = true;
 		}
 
 		int steps = 0; // Only history counts against steps.
@@ -114,7 +115,7 @@ public abstract class AbstractChatService implements ChatService {
 				break;
 
 			ChatMessage msg = messages.get(i);
-			if (getPersonality() != null) {
+			if (personalityAdded) {
 				// Insert after ChatMessage.Role.SYSTEM at the beginning of conversation
 				result.add(1, msg);
 			} else {

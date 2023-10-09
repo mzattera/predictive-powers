@@ -37,9 +37,9 @@ public class FunctionCallExample {
 	private final static String functionDescription = "Get the current weather in a given location.";
 
 	// The function parameters
-	public static class GetCurrentWeatherParameters {
+	private static class GetCurrentWeatherParameters {
 
-		public enum TemperatureUnits {
+		private enum TemperatureUnits {
 			CELSIUS, FARENHEIT
 		};
 

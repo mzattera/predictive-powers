@@ -116,24 +116,20 @@ public final class LlmUtil {
 		List<String> result = new ArrayList<>();
 
 		StringBuilder tmp = new StringBuilder();
-		int tok = 0;
 		for (String s : text) {
-			int t = counter.count(s);
-			if ((t + tok) > maxTokens) { // we are exceeding max length, output what we have so far
+			int tok = counter.count(tmp.toString()+s);
+			if (tok > maxTokens) { // if we add s, we are exceeding max length, output what we have so far
 				if (tmp.length() > 0) { // output any merged text
 					result.add(tmp.toString());
 					tmp = new StringBuilder();
-					tok = 0;
 				}
-				if (t > maxTokens) { // s is so big that it must stay alone
+				if ( counter.count(s)> maxTokens) { // s is so big that it must stay alone (note tmp was already added)
 					result.add(s);
 				} else { // otherwise keep it for next batch
 					tmp.append(s);
-					tok = t;
 				}
 			} else {
 				tmp.append(s);
-				tok += t;
 			}
 		}
 

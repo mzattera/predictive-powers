@@ -31,7 +31,7 @@ import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.TextCompletion;
-import io.github.mzattera.util.LlmUtil;
+import io.github.mzattera.util.ChunkUtil;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -159,7 +159,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 		}
 
 		if (i == 0) { // The first context was too big already, take a share
-			ctx.append(LlmUtil.splitByTokens(context.get(0), Math.max(1, getMaxContextTokens() - instTok), counter)
+			ctx.append(ChunkUtil.splitByTokens(context.get(0), Math.max(1, getMaxContextTokens() - instTok), counter)
 					.get(0));
 		}
 

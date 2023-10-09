@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +48,7 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 	private String model;
 
 	@Getter
-	private int maxTextTokens = 150;
+	private int maxTextTokens = 150; // Assumina a page is 500 words in 4 paragraphs
 
 	@Override
 	public void setMaxTextTokens(int maxTextTokens) {
@@ -60,9 +61,21 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 
 	@Override
 	public List<EmbeddedText> embed(String text) {
-		List<String> l = new ArrayList<>();
-		l.add(text);
-		return embed(l);
+		return embed(text, maxTextTokens, 1, 1);
+	}
+
+	@Override
+	public List<EmbeddedText> embed(Collection<String> text) {
+		return embed(text, maxTextTokens, 1, 1);
+	}
+
+	@Override
+	public List<EmbeddedText> embed(Collection<String> text, int chunkSize, int windowSize, int stride) {
+		List<EmbeddedText> result = new ArrayList<>();
+		for (String s : text)
+			result.addAll(embed(s, chunkSize, windowSize, stride));
+		return result;
+
 	}
 
 	@Override
@@ -93,8 +106,8 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 		return embedURL(new URL(url));
 	}
 
+	@Override
 	public List<EmbeddedText> embedURL(URL url) throws IOException, SAXException, TikaException {
 		return embed(ExtractionUtil.fromUrl(url));
 	}
-
 }

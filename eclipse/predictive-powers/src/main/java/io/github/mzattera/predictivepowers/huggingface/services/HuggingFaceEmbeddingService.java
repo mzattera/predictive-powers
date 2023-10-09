@@ -16,14 +16,13 @@
 package io.github.mzattera.predictivepowers.huggingface.services;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceRequest;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractEmbeddingService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
-import io.github.mzattera.util.LlmUtil;
+import io.github.mzattera.util.ChunkUtil;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -37,10 +36,10 @@ public class HuggingFaceEmbeddingService extends AbstractEmbeddingService {
 
 //	public static final String DEFAULT_MODEL = "sentence-transformers/all-MiniLM-L6-v2"; // This is sentence similarity
 //	public static final String DEFAULT_MODEL = "facebook/bart-large"; // This is word embedding
-	
+
 	// This was the first one I found that works fine
-	public static final String DEFAULT_MODEL = "guidecare/all-mpnet-base-v2-feature-extraction"; 
-	
+	public static final String DEFAULT_MODEL = "guidecare/all-mpnet-base-v2-feature-extraction";
+
 	public HuggingFaceEmbeddingService(HuggingFaceEndpoint ep) {
 		this.endpoint = ep;
 		setModel(DEFAULT_MODEL);
@@ -49,22 +48,18 @@ public class HuggingFaceEmbeddingService extends AbstractEmbeddingService {
 	@NonNull
 	@Getter
 	protected final HuggingFaceEndpoint endpoint;
-	
+
 	@Override
-	public List<EmbeddedText> embed(Collection<String> text) {
-		List<EmbeddedText> result = new ArrayList<>();
-		
-		// Put all pieces of text to be embedded in a list
-		List<String> l = new ArrayList<>();
-		for (String s : text) {
-			l.addAll(LlmUtil.splitByChars(s, getMaxTextTokens()));
-		}
+	public List<EmbeddedText> embed(String text, int chunkSize, int windowSize, int stride) {
+
+		List<String> chunks = ChunkUtil.splitByChars(text, Math.min(chunkSize, getMaxTextTokens()), windowSize, stride);
+		List<EmbeddedText> result = new ArrayList<>(chunks.size());
 
 		// TODO replace with defaultReq instead
 		HuggingFaceRequest req = new HuggingFaceRequest();
-		req.getInputs().addAll(l);
+		req.getInputs().addAll(chunks);
 		req.getOptions().setWaitForModel(true); // TODO remove? Improve?
-		req.getOptions().setUseCache(true); 
+		req.getOptions().setUseCache(true);
 
 		List<List<Double>> resp = endpoint.getClient().featureExtraction(getModel(), req);
 		for (int i = 0; i < req.getInputs().size(); ++i) {

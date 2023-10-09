@@ -28,7 +28,7 @@ import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
-import io.github.mzattera.util.LlmUtil;
+import io.github.mzattera.util.ChunkUtil;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -119,7 +119,7 @@ public class HuggingFaceQuestionAnsweringService extends AbstractQuestionAnsweri
 		}
 
 		if (i == 0) { // The first context was too big already, take a share
-			ctx.append(LlmUtil.splitByTokens(context.get(0), getMaxContextTokens(), counter).get(0));
+			ctx.append(ChunkUtil.splitByTokens(context.get(0), getMaxContextTokens(), counter).get(0));
 		}
 
 		req.getInputs().setQuestion(question);

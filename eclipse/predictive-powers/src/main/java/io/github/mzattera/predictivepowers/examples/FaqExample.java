@@ -22,7 +22,7 @@ import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 import io.github.mzattera.util.ExtractionUtil;
-import io.github.mzattera.util.LlmUtil;
+import io.github.mzattera.util.ChunkUtil;
 
 public class FaqExample {
 
@@ -34,7 +34,7 @@ public class FaqExample {
 
 			// Download Credit Suisse financial statement 2022 PDF and extract its text
 			// We keep only one piece of 750 characters.
-			String statment = LlmUtil.splitByChars(
+			String statment = ChunkUtil.splitByChars(
 					ExtractionUtil.fromUrl("https://www.credit-suisse.com/media/assets/corporate/docs/about-us/investor-relations/financial-disclosures/financial-reports/csg-ar-2022-en.pdf"),
 					1000)
 					.get(3);

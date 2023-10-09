@@ -34,7 +34,7 @@ import org.xml.sax.SAXException;
  *
  */
 public interface EmbeddingService extends AiService {
-	
+
 	/**
 	 * Maximum number of tokens for each piece of text being embedded. If text is
 	 * longer, it is split in multiple parts before embedding.
@@ -50,19 +50,40 @@ public interface EmbeddingService extends AiService {
 	/**
 	 * Create embeddings for given text.
 	 * 
-	 * As there is a default maximum length for text, it might be split into several
-	 * parts before embeddings are returned.
+	 * As there is a maximum length for text being embedded, the input might be
+	 * split into several parts before embedding.
 	 */
 	List<EmbeddedText> embed(String text);
 
 	/**
-	 * Create embeddings for given text.
+	 * Create embeddings for given text. Before embedding, the text is chunked
+	 * following the algorithm described in
+	 * {@link io.github.mzattera.util.ChunkUtil}.
 	 * 
-	 * As there is a default maximum length for text, each element might be split
-	 * into several parts before embeddings are returned.
+	 * As there is a maximum length for texts being embedded, each resulting chunk
+	 * might be split into several parts before embedding.
+	 */
+	List<EmbeddedText> embed(String text, int chunkSize, int windowSize, int stride);
+
+	/**
+	 * Create embeddings for given set of texts.
+	 * 
+	 * As there is a maximum length for texts being embedded, each text in the input
+	 * set might be split into several parts before embeddings are returned.
 	 */
 	List<EmbeddedText> embed(Collection<String> text);
 
+	/**
+	 * Create embeddings for given set of texts. Before embedding, each text in the
+	 * input set is chunked following the algorithm described in
+	 * {@link io.github.mzattera.util.ChunkUtil}.
+	 * 
+	 * As there is a maximum length for texts being embedded, each chunk might be
+	 * split into several parts before embeddings are returned.
+	 */
+	List<EmbeddedText> embed(Collection<String> text, int chunkSize, int windowSize, int stride);
+
+	// TODO add the same methods below but with sliding window for chunking? 
 	/**
 	 * Embed content of given file.
 	 */

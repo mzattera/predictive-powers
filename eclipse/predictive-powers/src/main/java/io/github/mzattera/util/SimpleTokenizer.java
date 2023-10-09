@@ -38,7 +38,7 @@ public class SimpleTokenizer extends AbstractTokenizer {
 	 */
 	@Getter
 	private final double ratio;
-
+	
 	@Override
 	public int count(@NonNull String text) {
 		return (int) (text.length() / ratio + 0.5);

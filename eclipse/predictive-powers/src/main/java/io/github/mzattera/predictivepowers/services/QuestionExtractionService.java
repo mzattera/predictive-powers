@@ -32,7 +32,7 @@ import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
-import io.github.mzattera.util.LlmUtil;
+import io.github.mzattera.util.ChunkUtil;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -347,7 +347,7 @@ public class QuestionExtractionService implements AiService {
 
 		// TODO better token calculation maybe
 		// adding a message is additional tokens
-		for (String t : LlmUtil.splitByTokens(text, Math.max(1, maxContextTokens - tok - 10), counter)) {
+		for (String t : ChunkUtil.splitByTokens(text, Math.max(1, maxContextTokens - tok - 10), counter)) {
 			result.addAll(getQuestionsShort(instructions, t));
 		}
 

@@ -51,10 +51,10 @@ import io.github.mzattera.util.ResourceUtil;
  */
 public class EmbeddingServiceTest {
 
-
 	/**
 	 * Tests embedding serialization.
-	 * @throws JsonProcessingException 
+	 * 
+	 * @throws JsonProcessingException
 	 */
 	@Test
 	public void testEmbeddedText() throws JsonProcessingException {
@@ -66,13 +66,13 @@ public class EmbeddingServiceTest {
 				.model("banana_model").build();
 		e.set("string", "a string");
 		e.set("number", 42);
-		
+
 		String json = OpenAiClient.getJsonMapper().writerWithDefaultPrettyPrinter().writeValueAsString(e);
 		e = OpenAiClient.getJsonMapper().readValue(json, EmbeddedText.class);
 		String json2 = OpenAiClient.getJsonMapper().writerWithDefaultPrettyPrinter().writeValueAsString(e);
-		assertEquals(json,json2);
+		assertEquals(json, json2);
 	}
-	
+
 	// TODO break it in smaller tests...
 
 	@Test
@@ -100,10 +100,10 @@ public class EmbeddingServiceTest {
 		Random rnd = new Random();
 
 		List<String> test = new ArrayList<>();
-		test.add("La somma delle parti ep.getEmbeddingService()' maggiore del tutto");
+		test.add("La somma delle parti e' maggiore del tutto");
 		test.add("Una tigre corre nella foresta.");
 		test.add("Non esistono numeri primi minori di 1");
-		test.add("Giove ep.getEmbeddingService()' il quinto pianeta del sistema solare");
+		test.add("Giove e' il quinto pianeta del sistema solare");
 
 		List<EmbeddedText> testEmb = new ArrayList<>();
 		for (String s : test) {
@@ -145,11 +145,10 @@ public class EmbeddingServiceTest {
 					// might affect other aspects, to be investigated
 
 		Tokenizer counter = es.getEndpoint().getModelService().getTokenizer(es.getModel());
-		es.setMaxTextTokens(10);
+		es.setDefaultTextTokens(10);
 
 		StringBuilder txt = new StringBuilder();
-		while (counter.count(txt.toString()) <= es.getMaxTextTokens()) {
-//			System.out.println(counter.count(txt.toString()) + " " + es.getMaxTextTokens());
+		while (counter.count(txt.toString()) <= es.getDefaultTextTokens()) {
 			txt.append("Banana! ");
 		}
 

@@ -36,22 +36,23 @@ import org.xml.sax.SAXException;
 public interface EmbeddingService extends AiService {
 
 	/**
-	 * Maximum number of tokens for each piece of text being embedded. If text is
-	 * longer, it is split in multiple parts before embedding.
+	 * Get default number of tokens for each piece of text being embedded. This is
+	 * used if no chunk size was specified when embedding content.
 	 */
-	int getMaxTextTokens();
+	int getDefaultTextTokens();
 
 	/**
-	 * Maximum number of tokens for each piece of text being embedded. If text is
-	 * longer, it is split in multiple parts before embedding.
+	 * Set default number of tokens for each piece of text being embedded. This is
+	 * used if no chunk size was specified when embedding content.
 	 */
-	void setMaxTextTokens(int maxTokens);
+	void setDefaultTextTokens(int maxTokens);
 
 	/**
-	 * Create embeddings for given text.
+	 * Create embeddings for given text. Text is split in chunks of
+	 * {@link #getDefaultTextTokens()} before it is embedded.
 	 * 
-	 * As there is a maximum length for text being embedded, the input might be
-	 * split into several parts before embedding.
+	 * As embedding model might have a maximum length for text being embedded, the
+	 * input might be split into several parts before embedding.
 	 */
 	List<EmbeddedText> embed(String text);
 
@@ -60,16 +61,18 @@ public interface EmbeddingService extends AiService {
 	 * following the algorithm described in
 	 * {@link io.github.mzattera.util.ChunkUtil}.
 	 * 
-	 * As there is a maximum length for texts being embedded, each resulting chunk
-	 * might be split into several parts before embedding.
+	 * As embedding model might have a maximum length for text being embedded, each
+	 * resulting chunk might be further split into several parts before embedding.
 	 */
 	List<EmbeddedText> embed(String text, int chunkSize, int windowSize, int stride);
 
 	/**
-	 * Create embeddings for given set of texts.
+	 * Create embeddings for given set of texts. Each text is split in chunks of
+	 * {@link #getDefaultTextTokens()} before it is embedded.
 	 * 
-	 * As there is a maximum length for texts being embedded, each text in the input
-	 * set might be split into several parts before embeddings are returned.
+	 * As embedding model might have a maximum length for text being embedded, each
+	 * chunk might be further split into several parts before embeddings are
+	 * returned.
 	 */
 	List<EmbeddedText> embed(Collection<String> text);
 
@@ -78,29 +81,32 @@ public interface EmbeddingService extends AiService {
 	 * input set is chunked following the algorithm described in
 	 * {@link io.github.mzattera.util.ChunkUtil}.
 	 * 
-	 * As there is a maximum length for texts being embedded, each chunk might be
-	 * split into several parts before embeddings are returned.
+	 * As embedding model might have a maximum length for text being embedded, each
+	 * chunk might be further split into several parts before embeddings are
+	 * returned.
 	 */
 	List<EmbeddedText> embed(Collection<String> text, int chunkSize, int windowSize, int stride);
 
-	// TODO add the same methods below but with sliding window for chunking? 
+	// TODO add the same methods below but with sliding window for chunking?
+
 	/**
-	 * Embed content of given file.
+	 * Same as calling {@link #embed(String)} using content of given file as input.
 	 */
 	List<EmbeddedText> embedFile(File file) throws IOException, SAXException, TikaException;
 
 	/**
-	 * Embeds all files in given folder, including contents of its sub-folders.
+	 * Same as calling {@link #embed(String)} using content of each file in given
+	 * folder, including contents of its sub-folders.
 	 */
 	Map<File, List<EmbeddedText>> embedFolder(File folder) throws IOException, SAXException, TikaException;
 
 	/**
-	 * Embeds text of given web page.
+	 * Same as calling {@link #embed(String)} using content at given URL.
 	 */
 	List<EmbeddedText> embedURL(String url) throws MalformedURLException, IOException, SAXException, TikaException;
 
 	/**
-	 * Embeds text of given web page.
+	 * Same as calling {@link #embed(String)} using content at given URL.
 	 */
 	List<EmbeddedText> embedURL(URL url) throws IOException, SAXException, TikaException;
 }

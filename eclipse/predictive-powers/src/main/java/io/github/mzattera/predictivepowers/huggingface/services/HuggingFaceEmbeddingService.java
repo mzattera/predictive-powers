@@ -53,13 +53,8 @@ public class HuggingFaceEmbeddingService extends AbstractEmbeddingService {
 	public List<EmbeddedText> embed(String text, int chunkSize, int windowSize, int stride) {
 
 		// Chunk accordingly to user's instructions
+		// Notice there is no limit in size of the input in this case
 		List<String> chunks = ChunkUtil.splitByChars(text, chunkSize, windowSize, stride);
-
-		// Make sure no chunk is bigger than model's supported size
-		List<String> tmp = new ArrayList<>(chunks.size() * 2);
-		for (String c : chunks)
-			tmp.addAll(ChunkUtil.splitByChars(c, getMaxTextTokens()));
-		chunks = tmp;
 
 		List<EmbeddedText> result = new ArrayList<>(chunks.size());
 

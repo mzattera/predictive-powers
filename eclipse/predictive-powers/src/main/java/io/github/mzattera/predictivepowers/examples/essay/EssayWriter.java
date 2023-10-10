@@ -651,7 +651,7 @@ public class EssayWriter implements Closeable {
 		// TODO fine tune
 		int writerSize = openAi.getModelService().getContextSize(WRITER_MODEL);
 		int embSize = openAi.getModelService().getContextSize(embSvc.getModel());
-		embSvc.setMaxTextTokens(Math.min(embSize, (writerSize - SECTION_LENGTH_TOKENS) / 15));
+		embSvc.setDefaultTextTokens(Math.min(embSize, (writerSize - SECTION_LENGTH_TOKENS) / 15));
 
 		System.out.println("Downloading page: " + link);
 		String content = null;

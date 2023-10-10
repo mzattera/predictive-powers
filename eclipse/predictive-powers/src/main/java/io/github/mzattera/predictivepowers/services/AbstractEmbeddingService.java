@@ -48,25 +48,25 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 	private String model;
 
 	@Getter
-	private int maxTextTokens = 150; // Assumina a page is 500 words in 4 paragraphs
+	private int defaultTextTokens = 150; // Assuming a page is 500 words in 4 paragraphs
 
 	@Override
-	public void setMaxTextTokens(int maxTextTokens) {
+	public void setDefaultTextTokens(int maxTextTokens) {
 		if (maxTextTokens < 1)
 			throw new IllegalArgumentException(
 					"Embedded text needs to be of at least 1 token in size: " + maxTextTokens);
 
-		this.maxTextTokens = maxTextTokens;
+		this.defaultTextTokens = maxTextTokens;
 	}
 
 	@Override
 	public List<EmbeddedText> embed(String text) {
-		return embed(text, maxTextTokens, 1, 1);
+		return embed(text, defaultTextTokens, 1, 1);
 	}
 
 	@Override
 	public List<EmbeddedText> embed(Collection<String> text) {
-		return embed(text, maxTextTokens, 1, 1);
+		return embed(text, defaultTextTokens, 1, 1);
 	}
 
 	@Override

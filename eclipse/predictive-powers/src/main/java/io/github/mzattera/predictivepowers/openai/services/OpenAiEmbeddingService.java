@@ -105,21 +105,27 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 
 		ModelService ms = endpoint.getModelService();
 		String model = req.getModel();
-		int size = Math.min(ms.getContextSize(model), 8192); // TODO is this a limitation?
-		size = Math.min(size, chunkSize);
+		int modelSize = Math.min(ms.getContextSize(model), 8192); // TODO is this a limitation?
 		Tokenizer tokenizer = ms.getTokenizer(model);
-		req.getInput().clear();
 
+		// Chunk accordingly to user's instructions
 		List<String> chunks = ChunkUtil.splitByTokens(text, chunkSize, windowSize, stride, tokenizer);
 
+		// Make sure no chunk is bigger than model's supported size
+		List<String> tmp = new ArrayList<>(chunks.size() * 2);
+		for (String c : chunks)
+			tmp.addAll(ChunkUtil.splitByTokens(c, modelSize, tokenizer));
+		chunks = tmp;
+
 		// Embed as many pieces you can in a single call
+		req.getInput().clear();
 		List<EmbeddedText> result = new ArrayList<>();
 		StringBuilder sb = new StringBuilder();
 		while (chunks.size() > 0) {
 			String s = chunks.remove(0);
 
 			sb.append(s);
-			if (tokenizer.count(sb.toString()) > size) {
+			if (tokenizer.count(sb.toString()) > modelSize) {
 				// too many tokens, embed what you have
 				result.addAll(embed(req));
 				req.getInput().clear();

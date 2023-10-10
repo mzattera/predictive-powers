@@ -52,7 +52,15 @@ public class HuggingFaceEmbeddingService extends AbstractEmbeddingService {
 	@Override
 	public List<EmbeddedText> embed(String text, int chunkSize, int windowSize, int stride) {
 
-		List<String> chunks = ChunkUtil.splitByChars(text, Math.min(chunkSize, getMaxTextTokens()), windowSize, stride);
+		// Chunk accordingly to user's instructions
+		List<String> chunks = ChunkUtil.splitByChars(text, chunkSize, windowSize, stride);
+
+		// Make sure no chunk is bigger than model's supported size
+		List<String> tmp = new ArrayList<>(chunks.size() * 2);
+		for (String c : chunks)
+			tmp.addAll(ChunkUtil.splitByChars(c, getMaxTextTokens()));
+		chunks = tmp;
+
 		List<EmbeddedText> result = new ArrayList<>(chunks.size());
 
 		// TODO replace with defaultReq instead
@@ -63,7 +71,9 @@ public class HuggingFaceEmbeddingService extends AbstractEmbeddingService {
 
 		List<List<Double>> resp = endpoint.getClient().featureExtraction(getModel(), req);
 		for (int i = 0; i < req.getInputs().size(); ++i) {
-			EmbeddedText e = EmbeddedText.builder().embedding(resp.get(i)).model(getModel())
+			EmbeddedText e = EmbeddedText.builder() //
+					.embedding(resp.get(i)) //
+					.model(getModel()) //
 					.text(req.getInputs().get(i)).build();
 			result.add(e);
 		}

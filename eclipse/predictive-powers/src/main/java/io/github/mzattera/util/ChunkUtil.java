@@ -124,8 +124,8 @@ public final class ChunkUtil {
 			// No need to stride...
 			result.addAll(chunks);
 		} else {
-			StringBuilder window = new StringBuilder();
 			for (int i = 0; i < chunks.size(); i += stride) {
+				StringBuilder window = new StringBuilder();
 				for (int j = 0; (j < windowSize) && ((i + j) < chunks.size()); j++) {
 					window.append(chunks.get(i + j));
 				}
@@ -135,8 +135,11 @@ public final class ChunkUtil {
 
 		// trim
 		List<String> trimmed = new ArrayList<>(result.size());
-		for (String s : result)
-			trimmed.add(s.trim());
+		for (String s : result) {
+			String t = s.trim();
+			if (t.length() > 0)
+				trimmed.add(t);
+		}
 		return trimmed;
 	}
 

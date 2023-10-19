@@ -49,8 +49,6 @@ public class EmbeddingsRequest {
 	 * 
 	 * To get embeddings for multiple inputs in a single request, pass multiple
 	 * strings.
-	 * 
-	 * Each input must not exceed 8192 tokens in length.
 	 */
 	@NonNull
 	@Builder.Default

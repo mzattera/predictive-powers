@@ -75,6 +75,8 @@ public class EmbeddingServiceTest {
 
 	// TODO break it in smaller tests...
 
+	// TODO URGENT ? add tests using embedding windows, check length and size of the returned pieces too
+
 	@Test
 	public void test00() throws IOException, SAXException, TikaException {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {

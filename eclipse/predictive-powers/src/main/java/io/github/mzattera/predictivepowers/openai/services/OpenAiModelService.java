@@ -167,33 +167,38 @@ public class OpenAiModelService extends AbstractModelService {
 	/**
 	 * Maps each model into its context size.
 	 */
-	private final static Map<String, Integer> CONTEXT_SIZES = new HashMap<>();
+	final static Map<String, Integer> CONTEXT_SIZES = new HashMap<>();
 	static {
 		CONTEXT_SIZES.put("ada", 2049);
 		CONTEXT_SIZES.put("babbage", 2049);
-		CONTEXT_SIZES.put("code-cushman-001", 2048);
-		CONTEXT_SIZES.put("code-cushman-002", 2048);
-		CONTEXT_SIZES.put("code-davinci-001", 8001);
-		CONTEXT_SIZES.put("code-davinci-002", 8001);
+		CONTEXT_SIZES.put("babbage-002", 16384);
 		CONTEXT_SIZES.put("code-search-ada-code-001", 2046);
 		CONTEXT_SIZES.put("code-search-ada-text-001", 2046);
 		CONTEXT_SIZES.put("code-search-babbage-code-001", 2046);
 		CONTEXT_SIZES.put("code-search-babbage-text-001", 2046);
 		CONTEXT_SIZES.put("curie", 2049);
 		CONTEXT_SIZES.put("davinci", 2049);
+		CONTEXT_SIZES.put("davinci-002", 16384);
 		CONTEXT_SIZES.put("gpt-3.5-turbo", 4096);
 		CONTEXT_SIZES.put("gpt-3.5-turbo-16k", 16384);
-		CONTEXT_SIZES.put("gpt-3.5-turbo-0301", 4096);
+		CONTEXT_SIZES.put("gpt-3.5-turbo-instruct", 4096);
+		CONTEXT_SIZES.put("gpt-3.5-turbo-instruct-0914", 4096);
 		CONTEXT_SIZES.put("gpt-3.5-turbo-0613", 4096);
 		CONTEXT_SIZES.put("gpt-3.5-turbo-16k-0613", 16384);
+		CONTEXT_SIZES.put("gpt-3.5-turbo-0301", 4096);
 		CONTEXT_SIZES.put("gpt-4", 8192);
+		CONTEXT_SIZES.put("gpt-4-0613", 8192);
 		CONTEXT_SIZES.put("gpt-4-32k", 32768);
+		CONTEXT_SIZES.put("gpt-4-32k-0613", 32768);
+		CONTEXT_SIZES.put("gpt-4-0314", 8192);
+		CONTEXT_SIZES.put("gpt-4-32k-0314", 32768);
 		CONTEXT_SIZES.put("text-ada-001", 2049);
 		CONTEXT_SIZES.put("text-babbage-001", 2049);
 		CONTEXT_SIZES.put("text-curie-001", 2049);
+		CONTEXT_SIZES.put("text-davinci-001", 2049); 
 		CONTEXT_SIZES.put("text-davinci-002", 4093); // Documentation says 4097 but it is incorrect
 		CONTEXT_SIZES.put("text-davinci-003", 4093);
-		CONTEXT_SIZES.put("text-embedding-ada-002", 8191);
+		CONTEXT_SIZES.put("text-embedding-ada-002", 8192);
 		CONTEXT_SIZES.put("text-search-ada-doc-001", 2046);
 		CONTEXT_SIZES.put("text-search-ada-query-001", 2046);
 		CONTEXT_SIZES.put("text-search-babbage-doc-001", 2046);
@@ -211,11 +216,33 @@ public class OpenAiModelService extends AbstractModelService {
 	/**
 	 * Single instance of the data Map, shared by all instances of this model
 	 * service class.
+	 * 
+	 * To add or remove models, act here.
 	 */
 	private final static Map<String, ModelData> data = new ConcurrentHashMap<>();
 	static {
 		for (String model : CONTEXT_SIZES.keySet()) {
-			Tokenizer tok = new OpenAiTokenizer(model);
+
+			// This is a work around since the tokenizer library we use might not have
+			// latest gpt-3 or -4 models rolled out every 3 months.
+			String modelType = model;
+			if (modelType.startsWith("gpt-3.5-turbo-16k")) {
+				modelType = "gpt-3.5-turbo-16k";
+			} else {
+				if (modelType.startsWith("gpt-3.5-turbo")) {
+					modelType = "gpt-3.5-turbo";
+				} else {
+					if (modelType.startsWith("gpt-4-32k")) {
+						modelType = "gpt-4-32k";
+					} else {
+						if (modelType.startsWith("gpt-4")) {
+							modelType = "gpt-4";
+						}
+					}
+				}
+			}
+
+			Tokenizer tok = new OpenAiTokenizer(modelType);
 			data.put(model, ModelData.builder().contextSize(CONTEXT_SIZES.get(model)).tokenizer(tok).build());
 		}
 	}

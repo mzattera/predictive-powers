@@ -15,13 +15,13 @@
 		<maven.compiler.target>11</maven.compiler.target>
 
 		<!-- Library versions -->
-		<jackson.version>2.15.2</jackson.version>
+		<jackson.version>2.15.3</jackson.version>
 		<jackson.jsonschema.version>1.0.39</jackson.jsonschema.version>
 		<lombok.version>1.18.26</lombok.version>
 		<retrofit.version>2.9.0</retrofit.version>
-		<tika.version>2.7.0</tika.version>
-		<djl.tokenizers.version>0.22.1</djl.tokenizers.version>
-		<jtokkit.version>1.4.4</jtokkit.version>
+		<tika.version>2.9.0</tika.version>
+		<djl.tokenizers.version>0.24.0</djl.tokenizers.version>
+		<jtokkit.version>1.8.0</jtokkit.version>
 	</properties>
 	<dependencies>
 

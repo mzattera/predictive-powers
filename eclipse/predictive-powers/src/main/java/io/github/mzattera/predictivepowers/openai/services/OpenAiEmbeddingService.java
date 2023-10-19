@@ -82,14 +82,11 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 	}
 
 	@Override
-	public void setDefaultTextTokens(int maxTokens) {
-		if ((maxTokens <= 0) || (maxTokens > 8192))
-			// TODO is this a limitation of the model?
-			// I think the API description mention this, but it might be assuming user is
-			// using text-embedding-ada-002
-			throw new IllegalArgumentException("maxTokens must be 0 < maxTokens <= 8192: " + maxTokens);
+	public void setDefaultTextTokens(int defaultTextTokens) {
+		if (defaultTextTokens <= 0)
+			throw new IllegalArgumentException("defaultTextTokens must be > 0: " + defaultTextTokens);
 
-		super.setDefaultTextTokens(maxTokens);
+		super.setDefaultTextTokens(defaultTextTokens);
 	}
 
 	public List<EmbeddedText> embed(String text, EmbeddingsRequest req) {
@@ -107,7 +104,7 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 
 		ModelService ms = endpoint.getModelService();
 		String model = req.getModel();
-		int modelSize = Math.min(ms.getContextSize(model), 8192); // TODO is this a limitation?
+		int modelSize = ms.getContextSize(model);
 		Tokenizer tokenizer = ms.getTokenizer(model);
 
 		// Chunk accordingly to user's instructions

@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 
-class ModelsTest {
+class OpenAiModelServiceTest {
 
 	private final static Set<String> OLD_MODELS = new HashSet<>();
 	static {

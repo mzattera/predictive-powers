@@ -1,11 +1,14 @@
 # predictive-powers
 
+Next release of `predictive-powers` will be developed as part of [Backdrop Build](https://backdropbuild.com/).
+A demo use-case and a set of new features for the library is being defined.
+
 `predictive-powers` is a library to make generative AI (GenAI) easily accessible to Java developers.
 
 Currently the library:
 
-  1. Provides low-level access to OpeanAi API similar to [OpenAI-Java](https://github.com/TheoKanning/openai-java),
-   including support for function calling and exact token calculations using proper OpenAi tokenizers
+  1. Provides low-level access to OpenAI API similar to [OpenAI-Java](https://github.com/TheoKanning/openai-java),
+   including support for function calling and exact token calculations using proper OpenAI tokenizers
    from [jtokkit](https://github.com/forestwanglin/openai-java).
 
   2. Provides (limited) low-level access to Hugging Face Hosted Inference API.
@@ -14,7 +17,7 @@ Currently the library:
   
   4. Provides a serializable in-memory vector database. Again, plans are to allow users to plug in any existing vector database in the future.
 
-  5. Offers methods to easily read textual content from web pages and files in different formats (MS Office, PDF, HTML, etc.).
+  5. Offers methods to easily read and embed textual content from web pages and files in different formats (MS Office, PDF, HTML, etc.).
   
 ## Installation
 
@@ -41,7 +44,7 @@ To configure logback in your applications that use `predictive-powers`, simply a
 ### API Clients
 
 API clients are the lowest-level components of this library; they allow you to perform direct API calls to service providers. 
-For example, you can access OpeanAi API directly by instantiating an `OpenAiClient` and calling its methods.
+For example, you can access OpenAI API directly by instantiating an `OpenAiClient` and calling its methods.
 
 API clients in the library automatically intercept HTTP errors 429, 500 & 503, which normally indicate temporarily unavailability of APIs
 an retry calls after a random and exponentially increasing wait time ([exponential backoff strategy](https://platform.openai.com/docs/guides/rate-limits/error-mitigation)).

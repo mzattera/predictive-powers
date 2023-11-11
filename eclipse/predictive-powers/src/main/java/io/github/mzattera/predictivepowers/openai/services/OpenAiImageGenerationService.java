@@ -41,31 +41,49 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class OpenAiImageGenerationService implements ImageGenerationService {
 
-	public static final String DEFAULT_MODEL = "DALL-E 2";
+	public static final String DEFAULT_MODEL = "dall-e-3";
+
+	public OpenAiImageGenerationService(OpenAiEndpoint ep) {
+		this(ep, ImagesRequest.builder().model(DEFAULT_MODEL).build());
+	}
 
 	@NonNull
 	@Getter
 	protected final OpenAiEndpoint endpoint;
 
+	/**
+	 * This request, with its parameters, is used as default setting for each call.
+	 * 
+	 * You can change any parameter to change these defaults (e.g. the model used)
+	 * and the change will apply to all subsequent calls.
+	 */
+	@Getter
+	@NonNull
+	private final ImagesRequest defaultReq;
+
 	@Override
 	public String getModel() {
-		return DEFAULT_MODEL;
+		return defaultReq.getModel();
 	}
 
 	@Override
 	public void setModel(@NonNull String model) {
-		if (!model.equals(DEFAULT_MODEL))
-			throw new UnsupportedOperationException("At this time only " + DEFAULT_MODEL + " model is available");
+		defaultReq.setModel(model);
 	}
 
 	@Override
 	public List<BufferedImage> createImage(String prompt, int n, int width, int height) throws IOException {
+		return createImage(prompt, n, width, height, defaultReq);
+	}
 
-		ImagesRequest req = new ImagesRequest();
+	/** Create images using parameters in the provided request. */
+	public List<BufferedImage> createImage(String prompt, int n, int width, int height, ImagesRequest req)
+			throws IOException {
+
 		req.setPrompt(prompt);
+		req.setN(n);
 		req.setSize(getMinSize(width, height));
 		req.setResponseFormat(ResponseFormat.URL);
-		req.setN(n);
 
 		List<Image> images = endpoint.getClient().createImage(req);
 		List<BufferedImage> result = new ArrayList<>(images.size());
@@ -78,8 +96,11 @@ public class OpenAiImageGenerationService implements ImageGenerationService {
 	@Override
 	public List<BufferedImage> createImageVariation(BufferedImage prompt, int n, int width, int height)
 			throws IOException {
+		return createImageVariation(prompt, n, width, height);
+	}
 
-		ImagesRequest req = new ImagesRequest();
+	public List<BufferedImage> createImageVariation(BufferedImage prompt, int n, int width, int height,
+			ImagesRequest req) throws IOException {
 		req.setSize(getMinSize(width, height));
 		req.setResponseFormat(ResponseFormat.URL);
 		req.setN(n);
@@ -99,6 +120,12 @@ public class OpenAiImageGenerationService implements ImageGenerationService {
 		if (Math.max(width, height) <= 512) {
 			return ImageSize._512x512;
 		}
-		return ImageSize._1024x1024;
+		if ((Math.max(width, height) <= 1024) || (width == height)) {
+			return ImageSize._1024x1024;
+		}
+		if (width > height)
+			return ImageSize._1792x1024;
+		else
+			return ImageSize._1024x1792;
 	}
 }

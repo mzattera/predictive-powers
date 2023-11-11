@@ -155,7 +155,23 @@ public class OpenAiClient implements ApiClient {
 	 * {@link ApiClient#getDefaultHttpClient(String, int, int, int, int)}).
 	 */
 	public OpenAiClient(OkHttpClient http) {
+
 		client = http;
+
+		// Debug code below, outputs the request
+//		client = http.newBuilder().addInterceptor(new Interceptor() {
+//
+//			@Override
+//			public Response intercept(Chain chain) throws IOException {
+//				Request req = chain.request();
+//				String jsonReq = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(req.toString());
+//				System.out.println(jsonReq);
+//				System.out.println();
+//				System.out.println(req.toString());
+//				System.out.println();
+//				return chain.proceed(req);
+//			}
+//		}).build();
 
 		Retrofit retrofit = new Retrofit.Builder().baseUrl(API_BASE_URL).client(client)
 				.addConverterFactory(JacksonConverterFactory.create(jsonMapper))

@@ -21,7 +21,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -34,22 +35,23 @@ import lombok.ToString;
 @Getter
 @Setter
 @Builder
-@NoArgsConstructor
-// @RequiredArgsConstructor
+// @NoArgsConstructor
+@RequiredArgsConstructor
 @AllArgsConstructor
 @ToString
 public class ImagesRequest {
 
 	/**
-	 * The size of the generated images. Must be one of "256x256", "512x512", or
-	 * "1024x1024". Defaults to "1024x1024".
+	 * The quality of the image that will be generated. Defaults to STANDARD. HD
+	 * creates images with finer details and greater consistency across the image.
+	 * Only supported for dall-e-3.
 	 */
-	public enum ImageSize {
-		_256x256("256x256"), _512x512("512x512"), _1024x1024("1024x1024");
+	public enum ImageQuality {
+		STANDARD("standard"), HD("hd");
 
-		private final String label;
+		private final @NonNull String label;
 
-		private ImageSize(String label) {
+		private ImageQuality(@NonNull String label) {
 			this.label = label;
 		}
 
@@ -61,15 +63,58 @@ public class ImagesRequest {
 	}
 
 	/**
-	 * The format in which the generated images are returned. Must be one of "url"
-	 * or "b64_json".
+	 * The format in which the generated images are returned.
 	 */
 	public enum ResponseFormat {
 		URL("url"), BASE_64("b64_json");
 
-		private final String label;
+		private final @NonNull String label;
 
-		private ResponseFormat(String label) {
+		private ResponseFormat(@NonNull String label) {
+			this.label = label;
+		}
+
+		@Override
+		@JsonValue
+		public String toString() {
+			return label;
+		}
+	}
+
+	/**
+	 * The size of the generated images. Must be one of _256x256, _512x512, or
+	 * _1024x1024 for dall-e-2. Must be one of _1024x1024, _1792x1024, or _1024x1792
+	 * for dall-e-3 models. Defaults to 1024x1024.
+	 */
+	public enum ImageSize {
+		_256x256("256x256"), _512x512("512x512"), _1024x1024("1024x1024"), _1792x1024("1792x1024"),
+		_1024x1792("1024x1792");
+
+		private final @NonNull String label;
+
+		private ImageSize(@NonNull String label) {
+			this.label = label;
+		}
+
+		@Override
+		@JsonValue
+		public String toString() {
+			return label;
+		}
+	}
+
+	/**
+	 * The style of the generated images. VIVID causes the model to lean towards
+	 * generating hyper-real and dramatic images. NATURAL causes the model to
+	 * produce more natural, less hyper-real looking images. Only supported for
+	 * dall-e-3.
+	 */
+	public enum ImageStyle {
+		VIVID("vivid"), NATURAL("natural");
+
+		private final @NonNull String label;
+
+		private ImageStyle(@NonNull String label) {
 			this.label = label;
 		}
 
@@ -82,8 +127,12 @@ public class ImagesRequest {
 
 	// Can be null for edits and variations
 	String prompt;
+
+	String model;
 	Integer n;
-	ImageSize size;
+	ImageQuality quality;
 	ResponseFormat responseFormat;
+	ImageSize size;
+	ImageStyle style;
 	String user;
 }

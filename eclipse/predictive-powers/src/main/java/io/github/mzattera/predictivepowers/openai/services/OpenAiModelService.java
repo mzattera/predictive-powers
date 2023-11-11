@@ -191,7 +191,8 @@ public class OpenAiModelService extends AbstractModelService {
 		CONTEXT_SIZES.put("gpt-4-32k", 32768);
 		CONTEXT_SIZES.put("gpt-4-32k-0613", 32768);
 		CONTEXT_SIZES.put("gpt-4-0314", 8192);
-		CONTEXT_SIZES.put("gpt-4-32k-0314", 32768);
+		CONTEXT_SIZES.put("gpt-4-32k-0314", 32768);		
+		CONTEXT_SIZES.put("gpt-4-1106-preview", 128000); // TODO this returns max 4096 tokens
 		CONTEXT_SIZES.put("text-ada-001", 2049);
 		CONTEXT_SIZES.put("text-babbage-001", 2049);
 		CONTEXT_SIZES.put("text-curie-001", 2049);
@@ -225,6 +226,7 @@ public class OpenAiModelService extends AbstractModelService {
 
 			// This is a work around since the tokenizer library we use might not have
 			// latest gpt-3 or -4 models rolled out every 3 months.
+			// TODO possibly remove it when we will move to a newer version of the tokenizer.
 			String modelType = model;
 			if (modelType.startsWith("gpt-3.5-turbo-16k")) {
 				modelType = "gpt-3.5-turbo-16k";

@@ -50,7 +50,10 @@ class OpenAiModelServiceTest {
 		OLD_MODELS.add("davinci-search-document");
 		OLD_MODELS.add("davinci-search-query");
 		OLD_MODELS.add("davinci-similarity");
+		;
 		OLD_MODELS.add("whisper-1"); // OK, this is a trick
+		OLD_MODELS.add("canary-whisper"); // OK, this is a trick
+		OLD_MODELS.add("canary-tts"); // OK, this is a trick
 	}
 
 	@Test
@@ -63,6 +66,8 @@ class OpenAiModelServiceTest {
 			assertTrue(models.size() > 0);
 
 			for (Model m : models) {
+				if (m.getId().startsWith("dall-e"))
+					continue; // DALL-E models do not need size
 				if (m.getId().contains("-edit"))
 					continue; // Edits model do not need size
 				if (m.getId().contains("ft-personal"))
@@ -70,7 +75,8 @@ class OpenAiModelServiceTest {
 				if (deprecated.remove(m.getId()))
 					continue; // Skip old models
 
-				assertTrue(oai.getModelService().getTokenizer(m.getId()) != null);
+				if (!m.getId().startsWith("tts-")) // Text to speech models do not have encoders
+					assertTrue(oai.getModelService().getTokenizer(m.getId()) != null);
 				assertTrue(oai.getModelService().getContextSize(m.getId()) > 0);
 
 				assertTrue(actual.remove(m.getId()));

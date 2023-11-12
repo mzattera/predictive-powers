@@ -183,7 +183,8 @@ public class OpenAiModelService extends AbstractModelService {
 		CONTEXT_SIZES.put("gpt-3.5-turbo-16k", 16384);
 		CONTEXT_SIZES.put("gpt-3.5-turbo-instruct", 4096);
 		CONTEXT_SIZES.put("gpt-3.5-turbo-instruct-0914", 4096);
-		CONTEXT_SIZES.put("gpt-3.5-turbo-0613", 4096);
+		CONTEXT_SIZES.put("gpt-3.5-turbo-1106", 16385);		
+		CONTEXT_SIZES.put("gpt-3.5-turbo-0613", 4096);		
 		CONTEXT_SIZES.put("gpt-3.5-turbo-16k-0613", 16384);
 		CONTEXT_SIZES.put("gpt-3.5-turbo-0301", 4096);
 		CONTEXT_SIZES.put("gpt-4", 8192);
@@ -193,6 +194,7 @@ public class OpenAiModelService extends AbstractModelService {
 		CONTEXT_SIZES.put("gpt-4-0314", 8192);
 		CONTEXT_SIZES.put("gpt-4-32k-0314", 32768);		
 		CONTEXT_SIZES.put("gpt-4-1106-preview", 128000); // TODO this returns max 4096 tokens
+		CONTEXT_SIZES.put("gpt-4-vision-preview", 128000); // TODO this returns max 4096 tokens
 		CONTEXT_SIZES.put("text-ada-001", 2049);
 		CONTEXT_SIZES.put("text-babbage-001", 2049);
 		CONTEXT_SIZES.put("text-curie-001", 2049);
@@ -212,6 +214,10 @@ public class OpenAiModelService extends AbstractModelService {
 		CONTEXT_SIZES.put("text-similarity-babbage-001", 2046);
 		CONTEXT_SIZES.put("text-similarity-curie-001", 2046);
 		CONTEXT_SIZES.put("text-similarity-davinci-001", 2046);
+		CONTEXT_SIZES.put("tts-1", 4096);
+		CONTEXT_SIZES.put("tts-1-1106", 2046);
+		CONTEXT_SIZES.put("tts-1-hd", 2046);
+		CONTEXT_SIZES.put("tts-1-hd-1106", 2046);
 	}
 
 	/**

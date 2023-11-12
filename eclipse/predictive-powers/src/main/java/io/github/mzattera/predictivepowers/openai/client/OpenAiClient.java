@@ -274,6 +274,9 @@ public class OpenAiClient implements ApiClient {
 		return callApi(api.embeddings(req));
 	}
 
+	
+	// TODO Add streaming for TTS
+	
 	/**
 	 * Generates audio from the input text.
 	 * 

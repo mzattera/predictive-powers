@@ -1,6 +1,6 @@
 # predictive-powers
 
-Next release of `predictive-powers` will be developed as part of [Backdrop Build](https://backdropbuild.com/v2).
+Next release of `predictive-powers` will be developed as part of [Backdrop Build](https://backdropbuild.com).
 A demo use-case and a set of new features for the library is being defined.
 
 `predictive-powers` is a library to make generative AI (GenAI) easily accessible to Java developers.

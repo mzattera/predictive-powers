@@ -34,6 +34,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import io.github.mzattera.predictivepowers.ApiClient;
 import io.github.mzattera.predictivepowers.openai.client.audio.AudioRequest;
+import io.github.mzattera.predictivepowers.openai.client.audio.AudioSpeechRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
@@ -60,6 +61,7 @@ import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
+import okhttp3.ResponseBody;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
@@ -272,6 +274,29 @@ public class OpenAiClient implements ApiClient {
 		return callApi(api.embeddings(req));
 	}
 
+	/**
+	 * Generates audio from the input text.
+	 * 
+	 * The output file content is stored in memory, this might cause OutOfMemory
+	 * errors if the file is too big.
+	 */
+	public byte[] createSpeech(AudioSpeechRequest req) throws IOException {
+		return callApi(api.audioSpeech(req)).bytes();
+	}
+
+	/**
+	 * Generates audio from the input text and downloads it into a file.
+	 * 
+	 * @param downloadedFile A File where the contents of generated audio will be
+	 *                       stored.
+	 * @throws IOException
+	 * @throws FileNotFoundException
+	 */
+	public void createSpeech(AudioSpeechRequest req, java.io.File downloadedFile)
+			throws FileNotFoundException, IOException {
+		download(callApi(api.audioSpeech(req)), downloadedFile);
+	}
+
 	public String createTranscription(@NonNull java.io.File audio, AudioRequest req) throws IOException {
 		try (InputStream is = new FileInputStream(audio)) {
 			return createTranscription(is, FileUtil.getExtension(audio), req);
@@ -436,16 +461,7 @@ public class OpenAiClient implements ApiClient {
 	 */
 	public void retrieveFileContent(String fileId, java.io.File downloadedFile)
 			throws FileNotFoundException, IOException {
-
-		try (InputStream is = callApi(api.filesContent(fileId)).byteStream();
-				FileOutputStream os = new FileOutputStream(downloadedFile)) {
-
-			byte[] buffer = new byte[4096];
-			int lengthRead;
-			while ((lengthRead = is.read(buffer)) > 0) {
-				os.write(buffer, 0, lengthRead);
-			}
-		}
+		download(callApi(api.filesContent(fileId)), downloadedFile);
 	}
 
 	public FineTune createFineTune(FineTunesRequest req) {
@@ -491,6 +507,20 @@ public class OpenAiClient implements ApiClient {
 				throw e;
 			}
 			throw oaie;
+		}
+	}
+
+	/**
+	 * Downloads a file, returned by an HTTP response.
+	 */
+	private void download(ResponseBody body, java.io.File downloadedFile) throws IOException {
+		try (InputStream is = body.byteStream(); FileOutputStream os = new FileOutputStream(downloadedFile)) {
+
+			byte[] buffer = new byte[4096];
+			int lengthRead;
+			while ((lengthRead = is.read(buffer)) > 0) {
+				os.write(buffer, 0, lengthRead);
+			}
 		}
 	}
 

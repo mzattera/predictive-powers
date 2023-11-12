@@ -32,21 +32,21 @@ public class ImageGenerationExample {
 
 	public static void main(String[] args) throws Exception {
 
-		// DALL-E 2 image generation
+		// DALL-E image generation
 		try (AiEndpoint endpoint = new OpenAiEndpoint()) {
 			ImageGenerationService svc = endpoint.getImageGenerationService();
 
 			// Generates image
-			BufferedImage img = svc.createImage(PROMPT, 1, 512, 512).get(0);
+			BufferedImage img = svc.createImage(PROMPT, 1, 1024, 1024).get(0);
 
 			// Saves it in a temporary file
 			save(img);
 		}
 
-		// OpenJourney (notice is same code as above)
+		// Openjourney (notice is same code as above)
 		try (AiEndpoint endpoint = new HuggingFaceEndpoint()) {
 			ImageGenerationService svc = endpoint.getImageGenerationService();
-			BufferedImage img = svc.createImage(PROMPT, 1, 512, 512).get(0);
+			BufferedImage img = svc.createImage(PROMPT, 1, 1024, 1024).get(0);
 			save(img);
 		}
 

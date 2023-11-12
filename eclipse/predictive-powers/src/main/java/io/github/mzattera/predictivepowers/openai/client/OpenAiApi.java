@@ -17,6 +17,7 @@
 package io.github.mzattera.predictivepowers.openai.client;
 
 import io.github.mzattera.predictivepowers.openai.client.audio.AudioResponse;
+import io.github.mzattera.predictivepowers.openai.client.audio.AudioSpeechRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
@@ -80,6 +81,9 @@ public interface OpenAiApi {
 
 	@POST("embeddings")
 	Single<EmbeddingsResponse> embeddings(@Body EmbeddingsRequest req);
+
+	@POST("audio/speech")
+	Single<ResponseBody> audioSpeech(@Body AudioSpeechRequest req);
 
 	@POST("audio/transcriptions")
 	Single<AudioResponse> audioTranscriptions(@Body RequestBody req);

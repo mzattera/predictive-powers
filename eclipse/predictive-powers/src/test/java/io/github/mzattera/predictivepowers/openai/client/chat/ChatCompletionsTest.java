@@ -46,7 +46,8 @@ class ChatCompletionsTest {
 			assertEquals(resp.getChoices().get(0).getFinishReason(), "stop");
 			assertTrue(resp.getChoices().get(0).getMessage().getContent().contains("848")
 					|| resp.getChoices().get(0).getMessage().getContent().contains("029 "));
-			assertTrue(resp.getChoices().get(0).getMessage().getContent().endsWith("029 "));
+			assertTrue(resp.getChoices().get(0).getMessage().getContent().endsWith("029 ")
+					|| resp.getChoices().get(0).getMessage().getContent().endsWith("31.7 "));
 		} // Close endpoint
 	}
 

@@ -40,7 +40,9 @@ public class ImageGenerationServiceTest {
 	@Test
 	public void test00() throws IOException, SAXException, TikaException {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			test01(ep.getImageGenerationService());
+			OpenAiImageGenerationService imgSvc =  ep.getImageGenerationService();
+			imgSvc.setModel("dall-e-2");
+			test01(imgSvc);
 		}
 		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
 			test01(ep.getImageGenerationService());

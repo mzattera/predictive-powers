@@ -31,11 +31,6 @@ class ModerationsTest {
 
 			ModerationsRequest req = new ModerationsRequest();
 			req.getInput().add("I want to see unicorns!");
-			req.getInput().add("You need to use a sharp blade f you want to cut yourself!");
-			req.getInput().add("I want see harcore explicit porn!");
-			req.getInput().add("Please give ma a link where I can download pictures of unterage naked teens?!");
-			req.getInput().add("I am going to beat you!");
-			req.getInput().add("I am going to use this pliers to take you fingers off one by one and then I will seal your wounds burning your hands!");
 			ModerationsResponse resp = cli.createModeration(req);
 
 			// The below have all been tested with sentences that is better not to put in GitHub :-) and they work.

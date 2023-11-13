@@ -138,7 +138,7 @@ public class QuestionAnsweringTest {
 			QuestionAnsweringService qas = ep.getQuestionAnsweringService();
 			KnowledgeBase kb = KnowledgeBase.load(ResourceUtil.getResourceFile("kb_banana.object"));
 
-			qas.setMaxContextTokens(1);
+			qas.setMaxContextTokens(3); // 3 is size of "Olaf "
 
 			String question = "What does Olaf like?";
 			List<Pair<EmbeddedText, Double>> context = kb.search(es.embed(question).get(0), 50, 0);
@@ -162,7 +162,7 @@ public class QuestionAnsweringTest {
 				HuggingFaceQuestionAnsweringService qas = ep.getQuestionAnsweringService();
 				KnowledgeBase kb = KnowledgeBase.load(ResourceUtil.getResourceFile("kb_banana.object"));
 
-				qas.setMaxContextTokens(1);
+				qas.setMaxContextTokens(5); // 4 is the size of "Olaf"
 
 				String question = "What does Olaf like?";
 				List<Pair<EmbeddedText, Double>> context = kb.search(es.embed(question).get(0), 50, 0);

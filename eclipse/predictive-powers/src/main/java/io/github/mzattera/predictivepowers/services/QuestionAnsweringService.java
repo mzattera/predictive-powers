@@ -32,12 +32,12 @@ import lombok.NonNull;
 public interface QuestionAnsweringService extends AiService {
 
 	/**
-	 * Maximum number of tokens to keep in the question context when answering.
+	 * Maximum number of tokens to keep in the context when answering.
 	 */
 	int getMaxContextTokens();
 
 	/**
-	 * Maximum number of tokens to keep in the question context when answering.
+	 * Maximum number of tokens to keep in the context when answering.
 	 */
 	void setMaxContextTokens(int n);
 

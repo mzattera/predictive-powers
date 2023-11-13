@@ -217,7 +217,8 @@ public class HuggingFaceClient implements ApiClient {
 		try {
 			client.dispatcher().executorService().shutdown();
 			client.connectionPool().evictAll();
-			client.cache().close();
+			if (client.cache() != null)
+				client.cache().close();
 		} catch (Exception e) {
 			LOG.warn("Error while closing client", e);
 		}

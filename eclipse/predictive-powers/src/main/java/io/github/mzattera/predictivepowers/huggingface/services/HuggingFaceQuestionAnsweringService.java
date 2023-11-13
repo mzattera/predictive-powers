@@ -109,11 +109,11 @@ public class HuggingFaceQuestionAnsweringService extends AbstractQuestionAnsweri
 
 		// Builds biggest context possible
 		Tokenizer counter = getEndpoint().getModelService().getTokenizer(getModel());
-		int instTok = 0;
+		int tok = 0;
 		StringBuilder ctx = new StringBuilder();
 		int i = 0;
 		for (; i < context.size(); ++i) {
-			if ((instTok + counter.count("\n" + context.get(i))) > getMaxContextTokens())
+			if ((tok + counter.count("\n" + context.get(i))) > getMaxContextTokens())
 				break;
 			ctx.append(context.get(i)).append('\n');
 		}

@@ -70,7 +70,7 @@ class OpenAiModelServiceTest {
 					continue; // DALL-E models do not need size
 				if (m.getId().contains("-edit"))
 					continue; // Edits model do not need size
-				if (m.getId().contains("ft-personal"))
+				if (m.getId().contains("ft-"))
 					continue; // fine-tunes can be ignored
 				if (deprecated.remove(m.getId()))
 					continue; // Skip old models

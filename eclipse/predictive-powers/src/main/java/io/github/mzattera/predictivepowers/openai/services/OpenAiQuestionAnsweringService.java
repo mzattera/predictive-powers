@@ -102,7 +102,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 	public QnAPair answer(String question) {
 		TextCompletion resp = completionService.complete(question);
 		return QnAPair.builder().question(question).answer(resp.getText())
-				.explanation("Answer provided by OpenAI competions API.").build();
+				.explanation("Answer provided by OpenAI competions API (model knowledge).").build();
 	}
 
 	@Override
@@ -148,19 +148,21 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 				"example_assistant", null));
 
 		// Builds biggest context possible
-		int instTok = counter.count(new ChatMessage(ChatMessage.Role.USER, qMsg)) + counter.count(instructions);
+		// TODO here the context size is correctly counted by looking only at the
+		// context; however, this might cause problem as the actual prompt is longer,
+		// should we add a method to let the developer know the size of the prompt?
+		int tok = 0;
 		StringBuilder ctx = new StringBuilder("Context:\n");
 		int i = 0;
 		for (; i < context.size(); ++i) {
 			ChatMessage m = new ChatMessage(ChatMessage.Role.USER, ctx.toString() + "\n" + context.get(i));
-			if ((instTok + counter.count(m)) > getMaxContextTokens())
+			if ((tok + counter.count(m)) > getMaxContextTokens())
 				break;
 			ctx.append('\n').append(context.get(i));
 		}
 
 		if (i == 0) { // The first context was too big already, take a share
-			ctx.append(ChunkUtil.splitByTokens(context.get(0), Math.max(1, getMaxContextTokens() - instTok), counter)
-					.get(0));
+			ctx.append(ChunkUtil.splitByTokens(context.get(0), getMaxContextTokens(), counter).get(0));
 		}
 
 		ctx.append(qMsg);

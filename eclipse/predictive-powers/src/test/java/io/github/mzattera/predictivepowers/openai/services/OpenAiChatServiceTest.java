@@ -248,14 +248,14 @@ public class OpenAiChatServiceTest {
 			}
 
 			cs.setMaxHistoryLength(1);
-			cs.setMaxNewTokens(999_999);
+			cs.setModel("gpt-bananas");
 
 			String question = "How high is Mt.Everest?";
 
 			try {
 				cs.chat(question);
 			} catch (Exception e) {
-				// Should fail because context is too big
+				// Should fail because context wrong model name
 			}
 
 			// If chat fails, history is not changed

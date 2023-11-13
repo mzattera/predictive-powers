@@ -96,7 +96,7 @@ public class OpenAiImageGenerationService implements ImageGenerationService {
 	@Override
 	public List<BufferedImage> createImageVariation(BufferedImage prompt, int n, int width, int height)
 			throws IOException {
-		return createImageVariation(prompt, n, width, height);
+		return createImageVariation(prompt, n, width, height, defaultReq);
 	}
 
 	public List<BufferedImage> createImageVariation(BufferedImage prompt, int n, int width, int height,

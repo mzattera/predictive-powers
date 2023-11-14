@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.QnAPair;
-import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 
 public class OpenAiQuestionExtractionTest {
 
@@ -40,7 +39,7 @@ public class OpenAiQuestionExtractionTest {
 			// text might result in a timeout
 			String context = "Donatien Alphonse Franquois, Marquis de Sade, was a French nobleman, revolutionary politician, philosopher and writer famous for his literary depictions of a libertine sexuality as well as numerous accusations of sex crimes.";
 
-			QuestionExtractionService q = endpoint.getQuestionExtractionService();
+			OpenAiQuestionExtractionService q = endpoint.getQuestionExtractionService();
 			q.getCompletionService().getDefaultReq().setTemperature(0.0);
 
 			// Get some FAQs and print them
@@ -82,16 +81,13 @@ public class OpenAiQuestionExtractionTest {
 		// OpenAI end-point
 		// Make sure you specify your API key n OPENAI_KEY system environment variable.
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			QuestionExtractionService s = ep.getQuestionExtractionService();
+			OpenAiQuestionExtractionService s = ep.getQuestionExtractionService();
 
 			String m = s.getModel();
 			assertNotNull(m);
 			s.setModel("pippo");
 			assertEquals("pippo", s.getModel());
 			s.setModel(m);
-
-			s.setMaxContextTokens(1);
-			assertEquals(1, s.getMaxContextTokens());
 		}
 	}
 }

@@ -64,9 +64,9 @@ public class FunctionCallExample {
 
 			// Get chat service and set bot personality
 			OpenAiChatService bot = endpoint.getChatService();
-//			bot.setModel("gpt-3.5-turbo-0613"); // OK
-			bot.setModel("gpt-3.5-turbo-1106"); // Error 400
-			bot.setModel("gpt-4-1106-preview"); // Error 400
+			bot.setModel("gpt-3.5-turbo-0613"); // OK
+//			bot.setModel("gpt-3.5-turbo-1106"); // Error 400
+//			bot.setModel("gpt-4-1106-preview"); // Error 400
 //			bot.setModel("gpt-4-0613"); // Error 400
 			bot.setPersonality("You are an helpful assistant.");
 

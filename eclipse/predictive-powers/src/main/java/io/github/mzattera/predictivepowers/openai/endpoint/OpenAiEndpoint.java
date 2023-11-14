@@ -30,6 +30,7 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingServic
 import io.github.mzattera.predictivepowers.openai.services.OpenAiImageGenerationService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionAnsweringService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionExtractionService;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 import lombok.Getter;
 import lombok.NonNull;
@@ -110,12 +111,12 @@ public class OpenAiEndpoint implements AiEndpoint {
 	}
 
 	@Override
-	public QuestionExtractionService getQuestionExtractionService() {
-		return new QuestionExtractionService(this);
+	public OpenAiQuestionExtractionService getQuestionExtractionService() {
+		return new OpenAiQuestionExtractionService(this);
 	}
 
-	public QuestionExtractionService getQuestionExtractionService(@NonNull OpenAiChatService cs) {
-		return new QuestionExtractionService(cs);
+	public OpenAiQuestionExtractionService getQuestionExtractionService(@NonNull OpenAiChatService cs) {
+		return new OpenAiQuestionExtractionService(cs);
 	}
 
 	@Override

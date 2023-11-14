@@ -386,7 +386,7 @@ public class OpenAiChatServiceTest {
 	@Test
 	public void test53() throws JsonProcessingException {
 
-		ChatMessage.FunctionCall fc = ChatMessage.FunctionCall.builder().name("testCall").build();
+		OpenAiChatMessage.FunctionCall fc = OpenAiChatMessage.FunctionCall.builder().name("testCall").build();
 		Map<String, Object> ar = new HashMap<>();
 		ar.put("name", "pippo");
 		ar.put("value", 6);

@@ -16,7 +16,7 @@
 
 package io.github.mzattera.predictivepowers.openai.services;
 
-import io.github.mzattera.predictivepowers.services.ChatMessage.FunctionCall;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.FunctionCall;
 import io.github.mzattera.predictivepowers.services.TextCompletion;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

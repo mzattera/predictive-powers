@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest.FunctionCallSetting.FunctionCallSerializer;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -143,6 +144,11 @@ public class ChatCompletionsRequest {
 	@NonNull
 	String model;
 
+	/**
+	 * Notice this can contain (and mostly will) {@link OpenAiChatMessage}, it has
+	 * been declared like this to ensure we can build a service across different
+	 * endpoints that will use ChatMessage interchangeably.
+	 */
 	@NonNull
 	@Builder.Default
 	List<ChatMessage> messages = new ArrayList<>();
@@ -153,7 +159,8 @@ public class ChatCompletionsRequest {
 	List<Function> functions;
 
 	/**
-	 * Notice: Setting this without providing {@link #functions} causes an  HTTP 400 error.
+	 * Notice: Setting this without providing {@link #functions} causes an HTTP 400
+	 * error. See {@link FunctionCallSetting}.
 	 */
 	FunctionCallSetting functionCall;
 
@@ -161,7 +168,8 @@ public class ChatCompletionsRequest {
 	Double topP;
 	Integer n;
 
-	// TODO: Add support for streaming input at least in direct API calls, if so make sure services do not stream
+	// TODO: Add support for streaming input at least in direct API calls, if so
+	// make sure services do not stream
 	final boolean stream = false;
 
 	List<String> stop;

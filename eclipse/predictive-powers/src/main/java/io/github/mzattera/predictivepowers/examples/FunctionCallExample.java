@@ -25,9 +25,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiTextCompletion;
-import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
 
 public class FunctionCallExample {
@@ -54,12 +54,8 @@ public class FunctionCallExample {
 	// List of functions available to the bot (for now it is only 1).
 	private final static List<Function> functions = new ArrayList<>();
 	static {
-		functions.add(
-				Function.builder()
-					.name(functionName)
-					.description(functionDescription)
-					.parameters(GetCurrentWeatherParameters.class)
-				.build());
+		functions.add(Function.builder().name(functionName).description(functionDescription)
+				.parameters(GetCurrentWeatherParameters.class).build());
 	}
 
 	public static void main(String[] args) {
@@ -68,6 +64,10 @@ public class FunctionCallExample {
 
 			// Get chat service and set bot personality
 			OpenAiChatService bot = endpoint.getChatService();
+//			bot.setModel("gpt-3.5-turbo-0613"); // OK
+			bot.setModel("gpt-3.5-turbo-1106"); // Error 400
+			bot.setModel("gpt-4-1106-preview"); // Error 400
+//			bot.setModel("gpt-4-0613"); // Error 400
 			bot.setPersonality("You are an helpful assistant.");
 
 			// Conversation loop
@@ -77,7 +77,7 @@ public class FunctionCallExample {
 					String s = console.nextLine();
 
 					OpenAiTextCompletion reply = bot.chat(s, functions);
-					
+
 					if (reply.isFunctionCall()) {
 						// The bot generated a function call, show it
 						System.out.println("CALL     > " + reply.getFunctionCall());
@@ -85,11 +85,7 @@ public class FunctionCallExample {
 						// Your function call would go here..
 						// We create a fake reply instead,
 						// always returning 33° Celsius
-						ChatMessage functionResult = ChatMessage.builder()
-									.role(Role.FUNCTION)
-									.name(functionName)
-									.content("33°C") 
-								.build();
+						OpenAiChatMessage functionResult = new OpenAiChatMessage(Role.FUNCTION, "33°C", functionName);
 
 						// Pass function result to the bot
 						reply = bot.chat(functionResult);

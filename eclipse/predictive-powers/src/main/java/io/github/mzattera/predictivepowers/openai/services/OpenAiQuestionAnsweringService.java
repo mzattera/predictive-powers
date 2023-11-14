@@ -27,6 +27,7 @@ import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
+import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
@@ -120,32 +121,31 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 		// TODO URGENT Better delimiters for context and questions
 		List<ChatMessage> instructions = new ArrayList<>();
 		if (completionService.getPersonality() == null)
-			instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM,
-					"You are an AI assistant answering questions truthfully."));
-		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM,
+			instructions.add(new ChatMessage(Role.SYSTEM, "You are an AI assistant answering questions truthfully."));
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"Answer the below questions truthfully, strictly using only the information in the context. " + //
 						"When providing an answer, provide your reasoning as well, step by step. " + //
 						"If the answer cannot be found in the context, reply with \"I do not know.\". " + //
 						"Strictly return the answer and explanation in JSON format.",
-				"example_user", null));
-		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM, "Context:\n" + //
+				"example_user"));
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM, "Context:\n" + //
 				"Biglydoos are small rodent similar to mice.\n" + //
 				"Biglydoos eat cranberries.\n" + //
-				"Question: What color are biglydoos?", "example_user", null));
-		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM, //
+				"Question: What color are biglydoos?", "example_user"));
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM, //
 				"{\"answer\": \"I do not know.\", \"explanation\": \"1. This information is not provided in the context.\"}",
-				"example_assistant", null));
-		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM, "Context:\n" + //
+				"example_assistant"));
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM, "Context:\n" + //
 				"Biglydoos are small rodent similar to mice.\n" + //
 				"Biglydoos eat cranberries.\n" + //
-				"Question: Do biglydoos eat fruits?", "example_user", null));
-		instructions.add(new ChatMessage(ChatMessage.Role.SYSTEM, //
+				"Question: Do biglydoos eat fruits?", "example_user"));
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM, //
 				"{\"answer\": \"Yes, biglydoos eat fruits.\", " + //
 						"\"explanation\": " + //
 						"\"1. The context states: \"Biglydoos eat cranberries.\"\\n" + //
 						"2. Cranberries are a kind of fruit.\\n" + //
 						"3. Therefore, biglydoos eat fruits.\"}",
-				"example_assistant", null));
+				"example_assistant"));
 
 		// Builds biggest context possible
 		// TODO here the context size is correctly counted by looking only at the
@@ -155,7 +155,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 		StringBuilder ctx = new StringBuilder("Context:\n");
 		int i = 0;
 		for (; i < context.size(); ++i) {
-			ChatMessage m = new ChatMessage(ChatMessage.Role.USER, ctx.toString() + "\n" + context.get(i));
+			ChatMessage m = new ChatMessage(Role.USER, ctx.toString() + "\n" + context.get(i));
 			if ((tok + counter.count(m)) > getMaxContextTokens())
 				break;
 			ctx.append('\n').append(context.get(i));
@@ -166,7 +166,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 		}
 
 		ctx.append(qMsg);
-		instructions.add(new ChatMessage(ChatMessage.Role.USER, ctx.toString()));
+		instructions.add(new ChatMessage(Role.USER, ctx.toString()));
 
 		TextCompletion answerJson = completionService.complete(instructions);
 		QnAPair result = null;

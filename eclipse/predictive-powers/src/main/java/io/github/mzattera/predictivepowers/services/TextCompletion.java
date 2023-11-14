@@ -46,6 +46,7 @@ public class TextCompletion {
 
 	/** Reason why the language model finished responding. */
 	public enum FinishReason {
+		
 		/**
 		 * API returned complete model output (decided to properly stop before max
 		 * length was reached)

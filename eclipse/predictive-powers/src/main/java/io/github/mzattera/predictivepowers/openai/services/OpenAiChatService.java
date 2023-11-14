@@ -35,7 +35,7 @@ import lombok.Getter;
 import lombok.NonNull;
 
 /**
- * Hugging Face based chat service.
+ * OpenAI based chat service.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -45,7 +45,7 @@ public class OpenAiChatService extends AbstractChatService {
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiChatService.class);
 
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
-	// values from a Map this si done partially
+	// values from a Map this is done partially
 
 	public static final String DEFAULT_MODEL = "gpt-4";
 
@@ -389,7 +389,7 @@ public class OpenAiChatService extends AbstractChatService {
 				int size = modelService.getContextSize(model) - tok - 5;
 				if (size <= 0)
 					throw new IllegalArgumentException(
-							"Your proompt exceeds context size: " + modelService.getContextSize(model));
+							"Your prompt exceeds context size: " + modelService.getContextSize(model));
 				req.setMaxTokens(size);
 			}
 

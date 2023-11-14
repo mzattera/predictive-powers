@@ -33,9 +33,9 @@ import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsReq
 import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.FunctionCall;
 import io.github.mzattera.predictivepowers.services.AbstractModelService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.services.ChatMessage.FunctionCall;
 import io.github.mzattera.predictivepowers.services.ModelService;
 import lombok.Builder;
 import lombok.Getter;
@@ -139,9 +139,9 @@ public class OpenAiModelService extends AbstractModelService {
 			}
 
 			xyz.felh.openai.completion.chat.ChatMessage result = new xyz.felh.openai.completion.chat.ChatMessage(role,
-					m.getContent(), m.getName());
+					m.getContent(), (m instanceof OpenAiChatMessage ? ((OpenAiChatMessage) m).getName() : null));
 
-			FunctionCall call = m.getFunctionCall();
+			FunctionCall call = (m instanceof OpenAiChatMessage ? ((OpenAiChatMessage) m).getFunctionCall() : null);
 			if (call != null) {
 				String arguments = null;
 				try {
@@ -183,8 +183,8 @@ public class OpenAiModelService extends AbstractModelService {
 		CONTEXT_SIZES.put("gpt-3.5-turbo-16k", 16384);
 		CONTEXT_SIZES.put("gpt-3.5-turbo-instruct", 4096);
 		CONTEXT_SIZES.put("gpt-3.5-turbo-instruct-0914", 4096);
-		CONTEXT_SIZES.put("gpt-3.5-turbo-1106", 16385);		
-		CONTEXT_SIZES.put("gpt-3.5-turbo-0613", 4096);		
+		CONTEXT_SIZES.put("gpt-3.5-turbo-1106", 16385);
+		CONTEXT_SIZES.put("gpt-3.5-turbo-0613", 4096);
 		CONTEXT_SIZES.put("gpt-3.5-turbo-16k-0613", 16384);
 		CONTEXT_SIZES.put("gpt-3.5-turbo-0301", 4096);
 		CONTEXT_SIZES.put("gpt-4", 8192);
@@ -192,13 +192,13 @@ public class OpenAiModelService extends AbstractModelService {
 		CONTEXT_SIZES.put("gpt-4-32k", 32768);
 		CONTEXT_SIZES.put("gpt-4-32k-0613", 32768);
 		CONTEXT_SIZES.put("gpt-4-0314", 8192);
-		CONTEXT_SIZES.put("gpt-4-32k-0314", 32768);		
+		CONTEXT_SIZES.put("gpt-4-32k-0314", 32768);
 		CONTEXT_SIZES.put("gpt-4-1106-preview", 128000); // TODO this returns max 4096 tokens
 		CONTEXT_SIZES.put("gpt-4-vision-preview", 128000); // TODO this returns max 4096 tokens
 		CONTEXT_SIZES.put("text-ada-001", 2049);
 		CONTEXT_SIZES.put("text-babbage-001", 2049);
 		CONTEXT_SIZES.put("text-curie-001", 2049);
-		CONTEXT_SIZES.put("text-davinci-001", 2049); 
+		CONTEXT_SIZES.put("text-davinci-001", 2049);
 		CONTEXT_SIZES.put("text-davinci-002", 4093); // Documentation says 4097 but it is incorrect
 		CONTEXT_SIZES.put("text-davinci-003", 4093);
 		CONTEXT_SIZES.put("text-embedding-ada-002", 8192);
@@ -232,7 +232,8 @@ public class OpenAiModelService extends AbstractModelService {
 
 			// This is a work around since the tokenizer library we use might not have
 			// latest gpt-3 or -4 models rolled out every 3 months.
-			// TODO possibly remove it when we will move to a newer version of the tokenizer.
+			// TODO possibly remove it when we will move to a newer version of the
+			// tokenizer.
 			String modelType = model;
 			if (modelType.startsWith("gpt-3.5-turbo-16k")) {
 				modelType = "gpt-3.5-turbo-16k";

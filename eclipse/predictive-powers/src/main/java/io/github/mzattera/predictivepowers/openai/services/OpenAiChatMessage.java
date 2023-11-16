@@ -16,8 +16,11 @@
 package io.github.mzattera.predictivepowers.openai.services;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -49,14 +52,15 @@ import lombok.ToString;
  */
 @Getter
 @Setter
-@NoArgsConstructor
+//@NoArgsConstructor
 //@RequiredArgsConstructor
 //@AllArgsConstructor
 @ToString
 public class OpenAiChatMessage extends ChatMessage {
 
 	/**
-	 * Function call that a completion model might return.
+	 * Function call that a completion model might return. This is used by the "old"
+	 * function calling feature (now deprecated in OpenAI API).
 	 * 
 	 * @author Massimiliano "Maxi" Zattera
 	 *
@@ -128,6 +132,57 @@ public class OpenAiChatMessage extends ChatMessage {
 	}
 
 	/**
+	 * Tool call that a completion model might return. This is used by the new
+	 * parallel function calling capability.
+	 * 
+	 * @author Massimiliano "Maxi" Zattera
+	 *
+	 */
+	@Getter
+	@Setter
+	@Builder
+	@NoArgsConstructor
+	@RequiredArgsConstructor
+//	@AllArgsConstructor
+	@ToString
+	public static class ToolCall {
+
+		public enum Type {
+			FUNCTION("function");
+
+			private final @NonNull String label;
+
+			private Type(@NonNull String label) {
+				this.label = label;
+			}
+
+			@Override
+			@JsonValue
+			public String toString() {
+				return label;
+			}
+		}
+
+		/**
+		 * The ID of the tool call.
+		 */
+		@NonNull
+		String Id;
+
+		/**
+		 * The type of the tool. Currently, only function is supported.
+		 */
+		@NonNull
+		Type type;
+
+		/**
+		 * Name of the function to call.
+		 */
+		@NonNull
+		FunctionCall function;
+	}
+
+	/**
 	 * The name of the author of this message.
 	 * 
 	 * For OpenAI API, name is required if role is FUNCTION, and it should be the
@@ -137,8 +192,19 @@ public class OpenAiChatMessage extends ChatMessage {
 	String name;
 
 	/**
-	 * This will contain generated function call, if any. For the time being, this
-	 * is supported only by OpenAI API.
+	 * This will contain generated tool calls.
+	 */
+	List<ToolCall> toolCalls = new ArrayList<>();
+
+	/**
+	 * Required when returning tool call results to the API.
+	 */
+	String toolCallId;
+	
+	/**
+	 * This will contain generated function call.
+	 * 
+	 * This is now deprecated and replaced by {@link #toolCalls} in newer models.
 	 */
 	FunctionCall functionCall;
 

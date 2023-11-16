@@ -141,9 +141,6 @@ public class ChatCompletionsRequest {
 		}
 	}
 
-	@NonNull
-	String model;
-
 	/**
 	 * Notice this can contain (and mostly will) {@link OpenAiChatMessage}, it has
 	 * been declared like this to ensure we can build a service across different
@@ -153,6 +150,23 @@ public class ChatCompletionsRequest {
 	@Builder.Default
 	List<ChatMessage> messages = new ArrayList<>();
 
+	@NonNull
+	String model;
+
+	Double frequencyPenalty;
+	Map<String, Integer> logitBias;
+
+	/**
+	 * Higher-level functions in the library will try to calculate this
+	 * automatically if it is null when submitting a request.
+	 */
+	Integer maxTokens;
+
+	Integer n;
+	Double presencePenalty;
+
+	ResponseFormat responseFormat;
+	
 	/**
 	 * Notice: HTTP 400 error is generated if this is an empty list.
 	 */
@@ -166,22 +180,11 @@ public class ChatCompletionsRequest {
 
 	Double temperature;
 	Double topP;
-	Integer n;
-
 	// TODO: Add support for streaming input at least in direct API calls, if so
 	// make sure services do not stream
 	final boolean stream = false;
 
 	List<String> stop;
 
-	/**
-	 * Higher-level functions in the library will try to calculate this
-	 * automatically if it is null when submitting a request.
-	 */
-	Integer maxTokens;
-
-	Double presencePenalty;
-	Double frequencyPenalty;
-	Map<String, Integer> logitBias;
 	String user;
 }

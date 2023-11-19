@@ -26,7 +26,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
-import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest.FunctionCallSetting.FunctionCallSerializer;
+import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest.ResponseFormat.ResponseFormatSerializer;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import lombok.AllArgsConstructor;
@@ -54,90 +54,41 @@ import lombok.ToString;
 public class ChatCompletionsRequest {
 
 	/**
-	 * Possible response options for a model when function calling is available.
+	 * Format of the returned answer. Currently supports JSON and plain text.
 	 */
-	private enum FunctionCallMode {
-		/** The model does not call a function. */
-		NONE,
+	@JsonSerialize(using = ResponseFormatSerializer.class)
+	public enum ResponseFormat {
+		TEXT("text"), JSON("json_object");
 
-		/** The model can pick between an end-user or calling a function */
-		AUTO,
+		private final String label;
 
-		/** The model will call a function */
-		FUNCTION
-	}
-
-	/**
-	 * Instruct model whether to produce function calls or not.
-	 */
-	@Getter
-	@Setter
-	@Builder
-	@ToString
-	@JsonSerialize(using = FunctionCallSerializer.class)
-	public static class FunctionCallSetting {
+		ResponseFormat(String label) {
+			this.label = label;
+		}
 
 		/**
 		 * Provides custom serialization.
 		 */
-		static final class FunctionCallSerializer extends StdSerializer<FunctionCallSetting> {
+		static final class ResponseFormatSerializer extends StdSerializer<ResponseFormat> {
 
 			private static final long serialVersionUID = -4506958348962250647L;
 
-			public FunctionCallSerializer() {
+			public ResponseFormatSerializer() {
 				this(null);
 			}
 
-			public FunctionCallSerializer(Class<FunctionCallSetting> t) {
+			public ResponseFormatSerializer(Class<ResponseFormat> t) {
 				super(t);
 			}
 
 			@Override
-			public void serialize(FunctionCallSetting value, JsonGenerator jgen, SerializerProvider provider)
+			public void serialize(ResponseFormat value, JsonGenerator jgen, SerializerProvider provider)
 					throws IOException, JsonProcessingException {
 
-				switch (value.getMode()) {
-				case NONE:
-					jgen.writeString("none");
-					break;
-				case AUTO:
-					jgen.writeString("auto");
-					break;
-				case FUNCTION:
-					jgen.writeStartObject();
-					jgen.writeStringField("name", value.getName());
-					jgen.writeEndObject();
-					break;
-				default:
-					throw new IllegalArgumentException();
-				}
+				jgen.writeStartObject();
+				jgen.writeStringField("type", value.label);
+				jgen.writeEndObject();
 			}
-		}
-
-		/** USe this to indicate function_call = none */
-		public final static FunctionCallSetting NONE = new FunctionCallSetting(FunctionCallMode.NONE, null);
-
-		/** USe this to indicate function_call = auto */
-		public final static FunctionCallSetting AUTO = new FunctionCallSetting(FunctionCallMode.AUTO, null);
-
-		/** How should the model handle function call options. */
-		@NonNull
-		final FunctionCallMode mode;
-
-		final String name;
-
-		/**
-		 * Use this to indicate function_call = {"name": "my_function"}
-		 * 
-		 * @param name
-		 */
-		public FunctionCallSetting(String my_function) {
-			this(FunctionCallMode.FUNCTION, my_function);
-		}
-
-		private FunctionCallSetting(FunctionCallMode mode, String name) {
-			this.mode = mode;
-			this.name = name;
 		}
 	}
 
@@ -164,27 +115,30 @@ public class ChatCompletionsRequest {
 
 	Integer n;
 	Double presencePenalty;
-
 	ResponseFormat responseFormat;
-	
-	/**
-	 * Notice: HTTP 400 error is generated if this is an empty list.
-	 */
-	List<Function> functions;
+	Integer seed;
+	List<String> stop;
 
-	/**
-	 * Notice: Setting this without providing {@link #functions} causes an HTTP 400
-	 * error. See {@link FunctionCallSetting}.
-	 */
-	FunctionCallSetting functionCall;
-
-	Double temperature;
-	Double topP;
 	// TODO: Add support for streaming input at least in direct API calls, if so
 	// make sure services do not stream
 	final boolean stream = false;
 
-	List<String> stop;
+	Double temperature;
+	Double topP;
+
+	List<Tool> tools;
+	ToolChoice toolChoice;
 
 	String user;
+
+	/**
+	 * Notice: Setting this without providing {@link #functions} causes an HTTP 400
+	 * error. See {@link FunctionChoice}.
+	 */
+	FunctionChoice functionCall;
+
+	/**
+	 * Notice: HTTP 400 error is generated if this is an empty list.
+	 */
+	List<Function> functions;
 }

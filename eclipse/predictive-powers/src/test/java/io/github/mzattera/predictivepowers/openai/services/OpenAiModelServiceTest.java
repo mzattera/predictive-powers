@@ -60,7 +60,7 @@ class OpenAiModelServiceTest {
 	void test01() {
 		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			Set<String> deprecated = new HashSet<>(OLD_MODELS);
-			Set<String> actual = new HashSet<>(OpenAiModelService.CONTEXT_SIZES.keySet());
+			Set<String> actual = new HashSet<>(OpenAiModelService.MODEL_CONFIG.keySet());
 
 			List<Model> models = oai.getClient().listModels();
 			assertTrue(models.size() > 0);

@@ -16,7 +16,9 @@
 
 package io.github.mzattera.predictivepowers.openai.services;
 
-import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.FunctionCall;
+import java.util.List;
+
+import io.github.mzattera.predictivepowers.openai.client.chat.ToolCall;
 import io.github.mzattera.predictivepowers.services.TextCompletion;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -26,9 +28,11 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 /**
- * This extends {@link TextCompletion} allowing to return function calls.
+ * This extends {@link TextCompletion} allowing to return function/tool
+ * calls.ote that the library Works only with ool calls, transparently
+ * translating function calls in tool calls.
  * 
- * @author mzatt
+ * @author Massimiliano "Maxi" Zattera
  */
 @Getter
 @Setter
@@ -39,18 +43,26 @@ import lombok.experimental.SuperBuilder;
 @ToString
 public class OpenAiTextCompletion extends TextCompletion {
 
-	private FunctionCall functionCall;
+	/**
+	 * The original message as returned from the API.
+	 */
+	private OpenAiChatMessage message;
+	
+	/**
+	 * List of tool calls, if the call generated function (tools) calls.
+	 */
+	private List<ToolCall> toolCalls;
 
-	public boolean isFunctionCall() {
-		return (functionCall != null);
+	public boolean hasToolCalls() {
+		return ((toolCalls != null) && (toolCalls.size() > 0));
 	}
 
-	public OpenAiTextCompletion(String text, String finishReason, FunctionCall functionCall) {
-		this(text, FinishReason.fromGptApi(finishReason), functionCall);
+	public OpenAiTextCompletion(String text, String finishReason, List<ToolCall> toolCalls) {
+		this(text, FinishReason.fromGptApi(finishReason), toolCalls);
 	}
 
-	public OpenAiTextCompletion(String text, FinishReason finishReason, FunctionCall functionCall) {
+	public OpenAiTextCompletion(String text, FinishReason finishReason, List<ToolCall> toolCalls) {
 		super(text, finishReason);
-		this.functionCall = functionCall;
+		this.toolCalls = toolCalls;
 	}
 }

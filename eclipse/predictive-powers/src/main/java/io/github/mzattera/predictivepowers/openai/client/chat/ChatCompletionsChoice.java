@@ -31,7 +31,7 @@ import lombok.ToString;
 @ToString
 public class ChatCompletionsChoice {
 
+	String finishReason;
 	int index;
 	OpenAiChatMessage message;
-	String finishReason;
 }

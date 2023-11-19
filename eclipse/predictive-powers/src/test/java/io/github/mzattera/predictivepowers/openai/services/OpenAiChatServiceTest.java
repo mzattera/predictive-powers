@@ -341,13 +341,13 @@ public class OpenAiChatServiceTest {
 	@Test
 	public void test51() throws JsonProcessingException {
 
-		String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(FunctionCallSetting.NONE);
+		String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(FunctionChoice.NONE);
 		assertEquals("\"none\"", json);
 
-		json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(FunctionCallSetting.AUTO);
+		json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(FunctionChoice.AUTO);
 		assertEquals("\"auto\"", json);
 
-		json = mapper.writeValueAsString(new FunctionCallSetting("banane"));
+		json = mapper.writeValueAsString(new FunctionChoice("banane"));
 		assertEquals("{\"name\":\"banane\"}", json);
 	}
 
@@ -445,28 +445,28 @@ public class OpenAiChatServiceTest {
 
 			// Casual chat should not trigger any function call
 			cs.clearConversation();
-			cs.getDefaultReq().setFunctionCall(FunctionCallSetting.AUTO);
+			cs.getDefaultReq().setFunctionCall(FunctionChoice.AUTO);
 			reply = cs.chat("Where is Dallas TX?", functions);
 			assertFalse(reply.isFunctionCall());
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
 
 			// This request should trigger a function call
 			cs.clearConversation();
-			cs.getDefaultReq().setFunctionCall(FunctionCallSetting.AUTO);
+			cs.getDefaultReq().setFunctionCall(FunctionChoice.AUTO);
 			reply = cs.chat("How is the weather like in Dallas, TX?", functions);
 			assertTrue(reply.isFunctionCall());
 			assertEquals(FinishReason.FUNCTION_CALL, reply.getFinishReason());
 
 			// This should inhibit function call
 			cs.clearConversation();
-			cs.getDefaultReq().setFunctionCall(FunctionCallSetting.NONE);
+			cs.getDefaultReq().setFunctionCall(FunctionChoice.NONE);
 			reply = cs.chat("How is the weather like in Dallas, TX?", functions);
 			assertFalse(reply.isFunctionCall());
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
 
 			// This should force call
 			cs.clearConversation();
-			cs.getDefaultReq().setFunctionCall(new FunctionCallSetting(functions.get(0).getName()));
+			cs.getDefaultReq().setFunctionCall(new FunctionChoice(functions.get(0).getName()));
 			reply = cs.chat("Where is Dallas, TX?");
 			assertTrue(reply.isFunctionCall());
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());

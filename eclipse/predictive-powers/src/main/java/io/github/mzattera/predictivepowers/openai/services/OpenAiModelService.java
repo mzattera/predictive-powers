@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
@@ -31,12 +32,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.Function;
+import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.FunctionCall;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelData.SupportedCallType;
 import io.github.mzattera.predictivepowers.services.AbstractModelService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ModelService;
+import io.github.mzattera.predictivepowers.services.ModelService.ModelData;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -58,6 +61,40 @@ import xyz.felh.openai.jtokkit.utils.TikTokenUtils;
 public class OpenAiModelService extends AbstractModelService {
 
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiModelService.class);
+
+	public static class OpenAiModelData extends ModelData {
+
+		public enum SupportedCallType {
+			NONE, FUNCTIONS, TOOLS
+		}
+
+		/** The type of tools (none, only functions, or tools) a model can call */
+		@Getter
+		private final SupportedCallType supportedCallType;
+
+		public OpenAiModelData(int contextSize) {
+			this(contextSize, SupportedCallType.NONE, null);
+		}
+
+		public OpenAiModelData(int contextSize, SupportedCallType supportedCallType) {
+			this(contextSize, supportedCallType, null);
+		}
+
+		public OpenAiModelData(int contextSize, int maxNewTokens) {
+			this(contextSize, SupportedCallType.NONE, maxNewTokens);
+		}
+
+		public OpenAiModelData(int contextSize, SupportedCallType supportedCallType, Integer maxNewTokens) {
+			super(null, contextSize, maxNewTokens);
+			this.supportedCallType = supportedCallType;
+		}
+
+		@Override
+		public String toString() {
+			return "OpenAiModelData [tokenizer=" + getTokenizer() + ", contextSize=" + getContextSize()
+					+ ", supportedCallType=" + supportedCallType + "]";
+		}
+	}
 
 	/**
 	 * Tokenizer for OpenAI models.
@@ -132,6 +169,7 @@ public class OpenAiModelService extends AbstractModelService {
 				role = ChatMessageRole.SYSTEM;
 				break;
 			case FUNCTION:
+			case TOOL: // TODO URGENT add support for tool calls
 				role = ChatMessageRole.FUNCTION;
 				break;
 			default:
@@ -140,6 +178,8 @@ public class OpenAiModelService extends AbstractModelService {
 
 			xyz.felh.openai.completion.chat.ChatMessage result = new xyz.felh.openai.completion.chat.ChatMessage(role,
 					m.getContent(), (m instanceof OpenAiChatMessage ? ((OpenAiChatMessage) m).getName() : null));
+
+			// TODO URGENT add support for tool calls.
 
 			FunctionCall call = (m instanceof OpenAiChatMessage ? ((OpenAiChatMessage) m).getFunctionCall() : null);
 			if (call != null) {
@@ -165,59 +205,60 @@ public class OpenAiModelService extends AbstractModelService {
 	}
 
 	/**
-	 * Maps each model into its context size.
+	 * Maps each model into its parameters. Paramters can be an int, which is then
+	 * interpreted as the context size or a Pair<int,SupportedCalls>.
 	 */
-	final static Map<String, Integer> CONTEXT_SIZES = new HashMap<>();
+	final static Map<String, OpenAiModelData> MODEL_CONFIG = new HashMap<>();
 	static {
-		CONTEXT_SIZES.put("ada", 2049);
-		CONTEXT_SIZES.put("babbage", 2049);
-		CONTEXT_SIZES.put("babbage-002", 16384);
-		CONTEXT_SIZES.put("code-search-ada-code-001", 2046);
-		CONTEXT_SIZES.put("code-search-ada-text-001", 2046);
-		CONTEXT_SIZES.put("code-search-babbage-code-001", 2046);
-		CONTEXT_SIZES.put("code-search-babbage-text-001", 2046);
-		CONTEXT_SIZES.put("curie", 2049);
-		CONTEXT_SIZES.put("davinci", 2049);
-		CONTEXT_SIZES.put("davinci-002", 16384);
-		CONTEXT_SIZES.put("gpt-3.5-turbo", 4096);
-		CONTEXT_SIZES.put("gpt-3.5-turbo-16k", 16384);
-		CONTEXT_SIZES.put("gpt-3.5-turbo-instruct", 4096);
-		CONTEXT_SIZES.put("gpt-3.5-turbo-instruct-0914", 4096);
-		CONTEXT_SIZES.put("gpt-3.5-turbo-1106", 16385);
-		CONTEXT_SIZES.put("gpt-3.5-turbo-0613", 4096);
-		CONTEXT_SIZES.put("gpt-3.5-turbo-16k-0613", 16384);
-		CONTEXT_SIZES.put("gpt-3.5-turbo-0301", 4096);
-		CONTEXT_SIZES.put("gpt-4", 8192);
-		CONTEXT_SIZES.put("gpt-4-0613", 8192);
-		CONTEXT_SIZES.put("gpt-4-32k", 32768);
-		CONTEXT_SIZES.put("gpt-4-32k-0613", 32768);
-		CONTEXT_SIZES.put("gpt-4-0314", 8192);
-		CONTEXT_SIZES.put("gpt-4-32k-0314", 32768);
-		CONTEXT_SIZES.put("gpt-4-1106-preview", 128000); // TODO this returns max 4096 tokens
-		CONTEXT_SIZES.put("gpt-4-vision-preview", 128000); // TODO this returns max 4096 tokens
-		CONTEXT_SIZES.put("text-ada-001", 2049);
-		CONTEXT_SIZES.put("text-babbage-001", 2049);
-		CONTEXT_SIZES.put("text-curie-001", 2049);
-		CONTEXT_SIZES.put("text-davinci-001", 2049);
-		CONTEXT_SIZES.put("text-davinci-002", 4093); // Documentation says 4097 but it is incorrect
-		CONTEXT_SIZES.put("text-davinci-003", 4093);
-		CONTEXT_SIZES.put("text-embedding-ada-002", 8192);
-		CONTEXT_SIZES.put("text-search-ada-doc-001", 2046);
-		CONTEXT_SIZES.put("text-search-ada-query-001", 2046);
-		CONTEXT_SIZES.put("text-search-babbage-doc-001", 2046);
-		CONTEXT_SIZES.put("text-search-babbage-query-001", 2046);
-		CONTEXT_SIZES.put("text-search-curie-doc-001", 2046);
-		CONTEXT_SIZES.put("text-search-curie-query-001", 2046);
-		CONTEXT_SIZES.put("text-search-davinci-doc-001", 2046);
-		CONTEXT_SIZES.put("text-search-davinci-query-001", 2046);
-		CONTEXT_SIZES.put("text-similarity-ada-001", 2046);
-		CONTEXT_SIZES.put("text-similarity-babbage-001", 2046);
-		CONTEXT_SIZES.put("text-similarity-curie-001", 2046);
-		CONTEXT_SIZES.put("text-similarity-davinci-001", 2046);
-		CONTEXT_SIZES.put("tts-1", 4096);
-		CONTEXT_SIZES.put("tts-1-1106", 2046);
-		CONTEXT_SIZES.put("tts-1-hd", 2046);
-		CONTEXT_SIZES.put("tts-1-hd-1106", 2046);
+		MODEL_CONFIG.put("ada", new OpenAiModelData(2049));
+		MODEL_CONFIG.put("babbage", new OpenAiModelData(2049));
+		MODEL_CONFIG.put("babbage-002", new OpenAiModelData(16384));
+		MODEL_CONFIG.put("code-search-ada-code-001", new OpenAiModelData(2046));
+		MODEL_CONFIG.put("code-search-ada-text-001", new OpenAiModelData(2046));
+		MODEL_CONFIG.put("code-search-babbage-code-001", new OpenAiModelData(2046));
+		MODEL_CONFIG.put("code-search-babbage-text-001", new OpenAiModelData(2046));
+		MODEL_CONFIG.put("curie", new OpenAiModelData(2049));
+		MODEL_CONFIG.put("davinci", new OpenAiModelData(2049));
+		MODEL_CONFIG.put("davinci-002", new OpenAiModelData(16384));
+		MODEL_CONFIG.put("gpt-3.5-turbo", new OpenAiModelData(4096, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-16k", new OpenAiModelData(16384));
+		MODEL_CONFIG.put("gpt-3.5-turbo-instruct", new OpenAiModelData(4096));
+		MODEL_CONFIG.put("gpt-3.5-turbo-instruct-0914", new OpenAiModelData(4096));
+		MODEL_CONFIG.put("gpt-3.5-turbo-1106", new OpenAiModelData(16385, SupportedCallType.TOOLS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-0613", new OpenAiModelData(4096, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-16k-0613", new OpenAiModelData(16384));
+		MODEL_CONFIG.put("gpt-3.5-turbo-0301", new OpenAiModelData(4096));
+		MODEL_CONFIG.put("gpt-4", new OpenAiModelData(8192, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-0613", new OpenAiModelData(8192, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-32k", new OpenAiModelData(32768));
+		MODEL_CONFIG.put("gpt-4-32k-0613", new OpenAiModelData(32768));
+		MODEL_CONFIG.put("gpt-4-0314", new OpenAiModelData(8192));
+		MODEL_CONFIG.put("gpt-4-32k-0314", new OpenAiModelData(32768));
+		MODEL_CONFIG.put("gpt-4-1106-preview", new OpenAiModelData(128000, SupportedCallType.TOOLS, 4096));
+		MODEL_CONFIG.put("gpt-4-vision-preview", new OpenAiModelData(128000, 4096));
+		MODEL_CONFIG.put("text-ada-001", new OpenAiModelData(2049));
+		MODEL_CONFIG.put("text-babbage-001", new OpenAiModelData(2049));
+		MODEL_CONFIG.put("text-curie-001", new OpenAiModelData(2049));
+		MODEL_CONFIG.put("text-davinci-001", new OpenAiModelData(2049));
+		MODEL_CONFIG.put("text-davinci-002", new OpenAiModelData(4093)); // Documentation says 4097 but it is incorrect
+		MODEL_CONFIG.put("text-davinci-003", new OpenAiModelData(4093));
+		MODEL_CONFIG.put("text-embedding-ada-002", new OpenAiModelData(8192));
+		MODEL_CONFIG.put("text-search-ada-doc-001", new OpenAiModelData(2046));
+		MODEL_CONFIG.put("text-search-ada-query-001", new OpenAiModelData(2046));
+		MODEL_CONFIG.put("text-search-babbage-doc-001", new OpenAiModelData(2046));
+		MODEL_CONFIG.put("text-search-babbage-query-001", new OpenAiModelData(2046));
+		MODEL_CONFIG.put("text-search-curie-doc-001", new OpenAiModelData(2046));
+		MODEL_CONFIG.put("text-search-curie-query-001", new OpenAiModelData(2046));
+		MODEL_CONFIG.put("text-search-davinci-doc-001", new OpenAiModelData(2046));
+		MODEL_CONFIG.put("text-search-davinci-query-001", new OpenAiModelData(2046));
+		MODEL_CONFIG.put("text-similarity-ada-001", new OpenAiModelData(2046));
+		MODEL_CONFIG.put("text-similarity-babbage-001", new OpenAiModelData(2046));
+		MODEL_CONFIG.put("text-similarity-curie-001", new OpenAiModelData(2046));
+		MODEL_CONFIG.put("text-similarity-davinci-001", new OpenAiModelData(2046));
+		MODEL_CONFIG.put("tts-1", new OpenAiModelData(4096));
+		MODEL_CONFIG.put("tts-1-1106", new OpenAiModelData(2046));
+		MODEL_CONFIG.put("tts-1-hd", new OpenAiModelData(2046));
+		MODEL_CONFIG.put("tts-1-hd-1106", new OpenAiModelData(2046));
 	}
 
 	/**
@@ -228,12 +269,13 @@ public class OpenAiModelService extends AbstractModelService {
 	 */
 	private final static Map<String, ModelData> data = new ConcurrentHashMap<>();
 	static {
-		for (String model : CONTEXT_SIZES.keySet()) {
+		for (Entry<String, OpenAiModelData> e : MODEL_CONFIG.entrySet()) {
 
 			// This is a work around since the tokenizer library we use might not have
 			// latest gpt-3 or -4 models rolled out every 3 months.
 			// TODO possibly remove it when we will move to a newer version of the
 			// tokenizer.
+			String model = e.getKey();
 			String modelType = model;
 			if (modelType.startsWith("gpt-3.5-turbo-16k")) {
 				modelType = "gpt-3.5-turbo-16k";
@@ -251,8 +293,10 @@ public class OpenAiModelService extends AbstractModelService {
 				}
 			}
 
-			Tokenizer tok = new OpenAiTokenizer(modelType);
-			data.put(model, ModelData.builder().contextSize(CONTEXT_SIZES.get(model)).tokenizer(tok).build());
+			OpenAiModelData cfg = e.getValue();
+			cfg.setTokenizer(new OpenAiTokenizer(modelType));
+
+			data.put(model, cfg);
 		}
 	}
 
@@ -292,11 +336,43 @@ public class OpenAiModelService extends AbstractModelService {
 	}
 
 	@Override
+	public int getMaxNewTokens(@NonNull String model) {
+		// By default, max number of returned tokens matches context size
+		return getMaxNewTokens(model, getContextSize(model));
+	}
+
+	@Override
 	public List<String> listModels() {
 		List<Model> l = endpoint.getClient().listModels();
 		List<String> result = new ArrayList<>(l.size());
 		for (Model m : l)
 			result.add(m.getId());
 		return result;
+	}
+
+	/**
+	 * 
+	 * @param model
+	 * @return The type of calls (function or tool) that the model supports, if any.
+	 */
+	public SupportedCallType getSupportedCall(@NonNull String model) {
+		ModelData data = get(model);
+		if ((data == null) || !(data instanceof OpenAiModelData))
+			return SupportedCallType.NONE;
+		else
+			return ((OpenAiModelData) data).getSupportedCallType();
+	}
+
+	/**
+	 * 
+	 * @param model
+	 * @return The type of calls (function or tool) that the model supports, if any.
+	 */
+	public SupportedCallType getSupportedCall(@NonNull String model, SupportedCallType def) {
+		ModelData data = get(model);
+		if ((data == null) || !(data instanceof OpenAiModelData))
+			return def;
+		else
+			return ((OpenAiModelData) data).getSupportedCallType();
 	}
 }

@@ -20,12 +20,12 @@ import java.util.Collection;
 import java.util.List;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 /**
  * Instances of this interface provide services to list available models end
@@ -82,7 +82,7 @@ public interface ModelService extends AiService {
 	 */
 	@Getter
 	@Setter
-	@Builder
+	@SuperBuilder
 //	@NoArgsConstructor
 	@RequiredArgsConstructor
 	@AllArgsConstructor
@@ -97,7 +97,14 @@ public interface ModelService extends AiService {
 		/**
 		 * Context size for a model (namely for GPT models) or -1 if undefined.
 		 */
+		// TODO Consider whether to move this to OpenAiModelData
 		private Integer contextSize;
+		
+		/**
+		 * Some models, even if with a huge context size, return only a limited amount
+		 * of tokens, this must be considered or it will cause errors.
+		 */
+		private final Integer maxNewTokens;
 	}
 
 	/**
@@ -163,4 +170,20 @@ public interface ModelService extends AiService {
 	 *         was defined for given model.
 	 */
 	int getContextSize(@NonNull String model, int def);
+	
+	/**
+	 * 
+	 * @param model
+	 * @return Maximum number of new tokens a model can generate; some models have
+	 *         this limitation in addition to max context size.
+	 */
+	int getMaxNewTokens(@NonNull String model);
+	
+	/**
+	 * 
+	 * @param model
+	 * @return Maximum number of new tokens a model can generate; some models have
+	 *         this limitation in addition to max context size.
+	 */
+	int getMaxNewTokens(@NonNull String model, int def);	
 }

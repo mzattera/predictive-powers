@@ -15,33 +15,15 @@
  */
 package io.github.mzattera.predictivepowers.openai.services;
 
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonValue;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-
+import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
+import io.github.mzattera.predictivepowers.openai.client.chat.ToolCall;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 /**
  * This extends {@link ChatMessage} with fields to support OpenAI chat
@@ -52,165 +34,39 @@ import lombok.ToString;
  */
 @Getter
 @Setter
-//@NoArgsConstructor
+@SuperBuilder
+@NoArgsConstructor
 //@RequiredArgsConstructor
-//@AllArgsConstructor
-@ToString
 public class OpenAiChatMessage extends ChatMessage {
-
-	/**
-	 * Function call that a completion model might return. This is used by the "old"
-	 * function calling feature (now deprecated in OpenAI API).
-	 * 
-	 * @author Massimiliano "Maxi" Zattera
-	 *
-	 */
-	@Getter
-	@Setter
-	@Builder
-	@NoArgsConstructor
-	@RequiredArgsConstructor
-	@AllArgsConstructor
-	@ToString
-	public static class FunctionCall {
-
-		/**
-		 * Custom serializer as Arguments are returned as String, we'd like to have them
-		 * as a Map....
-		 */
-		private static final class ArgumentsSerializer extends StdSerializer<Map<String, Object>> {
-
-			private static final long serialVersionUID = 2127829900119652867L;
-
-			@SuppressWarnings("unused")
-			public ArgumentsSerializer() {
-				this(null);
-			}
-
-			public ArgumentsSerializer(Class<Map<String, Object>> t) {
-				super(t);
-			}
-
-			@Override
-			public void serialize(Map<String, Object> value, JsonGenerator jgen, SerializerProvider provider)
-					throws IOException, JsonProcessingException {
-
-				ObjectMapper mapper = (ObjectMapper) jgen.getCodec();
-				jgen.writeString(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(value));
-			}
-		}
-
-		/**
-		 * Custom de-serializer as arguments are returned as String, we'd like to have
-		 * them as a Map....
-		 */
-		private static final class ArgumentsDeserializer extends JsonDeserializer<Map<String, Object>> {
-
-			@Override
-			public Map<String, Object> deserialize(JsonParser jsonParser, DeserializationContext deserializationContext)
-					throws IOException, JsonProcessingException {
-
-				String json = jsonParser.getText();
-				ObjectMapper mapper = (ObjectMapper) jsonParser.getCodec();
-				return mapper.readValue(json, new TypeReference<Map<String, Object>>() {
-				});
-			}
-		}
-
-		/**
-		 * Name of the function to call.
-		 */
-		@NonNull
-		String name;
-
-		/**
-		 * Parameters to use in the call, as name/value pairs.
-		 */
-		@JsonSerialize(using = ArgumentsSerializer.class)
-		@JsonDeserialize(using = ArgumentsDeserializer.class)
-		Map<String, Object> arguments;
-	}
-
-	/**
-	 * Tool call that a completion model might return. This is used by the new
-	 * parallel function calling capability.
-	 * 
-	 * @author Massimiliano "Maxi" Zattera
-	 *
-	 */
-	@Getter
-	@Setter
-	@Builder
-	@NoArgsConstructor
-	@RequiredArgsConstructor
-//	@AllArgsConstructor
-	@ToString
-	public static class ToolCall {
-
-		public enum Type {
-			FUNCTION("function");
-
-			private final @NonNull String label;
-
-			private Type(@NonNull String label) {
-				this.label = label;
-			}
-
-			@Override
-			@JsonValue
-			public String toString() {
-				return label;
-			}
-		}
-
-		/**
-		 * The ID of the tool call.
-		 */
-		@NonNull
-		String Id;
-
-		/**
-		 * The type of the tool. Currently, only function is supported.
-		 */
-		@NonNull
-		Type type;
-
-		/**
-		 * Name of the function to call.
-		 */
-		@NonNull
-		FunctionCall function;
-	}
 
 	/**
 	 * The name of the author of this message.
 	 * 
-	 * For OpenAI API, name is required if role is FUNCTION, and it should be the
-	 * name of the function whose response is in the content. May contain a-z, A-Z,
-	 * 0-9, and underscores, with a maximum length of 64 characters.
+	 * For OpenAI API, name is required if role is FUNCTION or TOOL, and it should
+	 * be the name of the function whose response is in the content. May contain
+	 * a-z, A-Z, 0-9, and underscores, with a maximum length of 64 characters.
 	 */
 	String name;
 
 	/**
-	 * This will contain generated tool calls.
+	 * This will contain tool calls generated by the model.
 	 */
-	List<ToolCall> toolCalls = new ArrayList<>();
+	List<ToolCall> toolCalls;
 
 	/**
 	 * Required when returning tool call results to the API.
+	 * 
+	 * Notice in this case role should be "tool" and name the name of the function
+	 * being called.
 	 */
 	String toolCallId;
-	
+
 	/**
 	 * This will contain generated function call.
 	 * 
 	 * This is now deprecated and replaced by {@link #toolCalls} in newer models.
 	 */
 	FunctionCall functionCall;
-
-	public boolean isFunctionCall() {
-		return (functionCall != null);
-	}
 
 	public OpenAiChatMessage(Role role, String content) {
 		this(role, content, null, null);
@@ -220,10 +76,15 @@ public class OpenAiChatMessage extends ChatMessage {
 		this(role, content, name, null);
 	}
 
-	@Builder(builderMethodName = "myBuilder")
 	public OpenAiChatMessage(Role role, String content, String name, FunctionCall functionCall) {
 		super(role, content);
 		this.name = name;
 		this.functionCall = functionCall;
+	}
+
+	@Override
+	public String toString() {
+		return "OpenAiChatMessage [role=" + getRole() + ", content=" + getContent() + ", name=" + name + ", toolCalls="
+				+ toolCalls + ", toolCallId=" + toolCallId + ", functionCall=" + functionCall + "]";
 	}
 }

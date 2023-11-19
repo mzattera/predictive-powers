@@ -26,16 +26,26 @@ import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsCho
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.client.chat.Function;
+import io.github.mzattera.predictivepowers.openai.client.chat.Tool;
+import io.github.mzattera.predictivepowers.openai.client.chat.ToolCall;
+import io.github.mzattera.predictivepowers.openai.client.chat.ToolCallResult;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiTokenizer;
 import io.github.mzattera.predictivepowers.services.AbstractChatService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
+import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
  * OpenAI based chat service.
+ * 
+ * The service supports bout function and tool calls transparently (it will
+ * handle either, based on the model is used). The service has a list of default
+ * tools that will be used in each interaction with the service and that can be
+ * overridden for each single service call.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -57,7 +67,7 @@ public class OpenAiChatService extends AbstractChatService {
 		super(ep.getModelService());
 		this.endpoint = ep;
 		this.defaultReq = defaultReq;
-		setMaxConversationTokens(Math.max(ep.getModelService().getContextSize(defaultReq.getModel()), 2046) * 3 / 4);
+		setMaxConversationTokens(Math.max(modelService.getContextSize(defaultReq.getModel()), 2046) * 3 / 4);
 	}
 
 	@NonNull
@@ -83,6 +93,15 @@ public class OpenAiChatService extends AbstractChatService {
 	@Getter
 	@NonNull
 	private final ChatCompletionsRequest defaultReq;
+
+	/**
+	 * This is the list of default tools that the service will use at any call.
+	 * Leave this null or empty to prevent function calls.
+	 */
+	@Getter
+	@Setter
+	@NonNull
+	private List<Tool> defaulTools = new ArrayList<>();
 
 	@Override
 	public Integer getTopK() {
@@ -151,11 +170,11 @@ public class OpenAiChatService extends AbstractChatService {
 	 * 
 	 * The exchange is added to the conversation history.
 	 * 
-	 * @param functions List of functions that can be called (possibly empty or
-	 *                  null, to prevent function calls).
+	 * @param tools List of tools that can be called (this can be empty to prevent
+	 *              tool calls, or null to use the list of default tools).
 	 */
-	public OpenAiTextCompletion chat(String msg, List<Function> functions) {
-		return chat(msg, defaultReq, functions);
+	public OpenAiTextCompletion chat(String msg, List<Tool> tools) {
+		return chat(msg, defaultReq, tools);
 	}
 
 	/**
@@ -163,11 +182,11 @@ public class OpenAiChatService extends AbstractChatService {
 	 * 
 	 * The exchange is added to the conversation history.
 	 * 
-	 * @param functions List of functions that can be called (possibly empty or
-	 *                  null, to prevent function calls).
+	 * @param tools List of tools that can be called (this can be empty to prevent
+	 *              tool calls, or null to use the list of default tools).
 	 */
-	public OpenAiTextCompletion chat(String msg, ChatCompletionsRequest req, List<Function> functions) {
-		return chat(new ChatMessage(Role.USER, msg), req, functions);
+	public OpenAiTextCompletion chat(String msg, ChatCompletionsRequest req, List<Tool> tools) {
+		return chat(new ChatMessage(Role.USER, msg), req, tools);
 	}
 
 	@Override
@@ -189,11 +208,11 @@ public class OpenAiChatService extends AbstractChatService {
 	 * 
 	 * The exchange is added to the conversation history.
 	 * 
-	 * @param functions List of functions that can be called (possibly empty or
-	 *                  null, to prevent function calls).
+	 * @param tools List of tools that can be called (this can be empty to prevent
+	 *              tool calls, or null to use the list of default tools).
 	 */
-	public OpenAiTextCompletion chat(ChatMessage msg, List<Function> functions) {
-		return chat(msg, defaultReq, functions);
+	public OpenAiTextCompletion chat(ChatMessage msg, List<Tool> tools) {
+		return chat(msg, defaultReq, tools);
 	}
 
 	/**
@@ -201,26 +220,132 @@ public class OpenAiChatService extends AbstractChatService {
 	 * 
 	 * The exchange is added to the conversation history.
 	 * 
-	 * @param functions List of functions that can be called (possibly empty or
-	 *                  null, to prevent function calls).
+	 * @param tools List of tools that can be called (this can be empty to prevent
+	 *              tool calls, or null to use the list of default tools).
 	 */
-	public OpenAiTextCompletion chat(ChatMessage msg, ChatCompletionsRequest req, List<Function> functions) {
+	public OpenAiTextCompletion chat(ChatMessage msg, ChatCompletionsRequest req, List<Tool> tools) {
 
 		List<ChatMessage> conversation = trimChat(history, true);
 		conversation.add(msg);
 
-		ChatCompletionsChoice choice = chatCompletion(conversation, req, functions);
-		OpenAiTextCompletion result = new OpenAiTextCompletion(choice.getMessage().getContent(),
-				choice.getFinishReason(), choice.getMessage().getFunctionCall());
+		OpenAiTextCompletion result = chatCompletion(conversation, req, tools);
 
 		history.add(msg);
-		history.add(choice.getMessage());
+		history.add(result.getMessage());
 
 		// Make sure history is of desired length
 		while (history.size() > getMaxHistoryLength())
 			history.remove(0);
 
 		return result;
+	}
+
+	/**
+	 * Continues current chat, by returning results from tool calls to the OpenAI
+	 * API. This is invoked after the model generated tool call(s), proper tools
+	 * were invoked and now their results are ready to be returned to the model.
+	 * Note that the service treats (old) function call API and (new) tool call API
+	 * the same, translating function calls into tool calls transparently.
+	 * 
+	 * @param results the list of results from various call.
+	 */
+	public OpenAiTextCompletion chat(List<ToolCallResult> results) {
+		return chat(results, defaultReq, null);
+	}
+
+	/**
+	 * Continues current chat, by returning results from tool calls to the OpenAI
+	 * API. This is invoked after the model generated tool call(s), proper tools
+	 * were invoked and now their results are ready to be returned to the model.
+	 * Note that the service treats (old) function call API and (new) tool call API
+	 * the same, translating function calls into tool calls transparently.
+	 * 
+	 * @param results the list of results from various call.
+	 */
+	public OpenAiTextCompletion chat(List<ToolCallResult> results, ChatCompletionsRequest req) {
+		return chat(results, req, null);
+	}
+
+	/**
+	 * Continues current chat, by returning results from tool calls to the OpenAI
+	 * API. This is invoked after the model generated tool call(s), proper tools
+	 * were invoked and now their results are ready to be returned to the model.
+	 * Note that the service treats (old) function call API and (new) tool call API
+	 * the same, translating function calls into tool calls transparently.
+	 * 
+	 * @param results the list of results from various call.
+	 * @param tools   List of tools that can be called (this can be empty to prevent
+	 *                tool calls, or null to use the list of default tools).
+	 */
+	public OpenAiTextCompletion chat(List<ToolCallResult> results, List<Tool> tools) {
+		return chat(results, defaultReq, null);
+	}
+
+	/**
+	 * Continues current chat, by returning results from tool calls to the OpenAI
+	 * API. This is invoked after the model generated tool call(s), proper tools
+	 * were invoked and now their results are ready to be returned to the model.
+	 * Note that the service treats (old) function call API and (new) tool call API
+	 * the same, translating function calls into tool calls transparently.
+	 * 
+	 * @param results the list of results from various call.
+	 * @param tools   List of tools that can be called (this can be empty to prevent
+	 *                tool calls, or null to use the list of default tools).
+	 */
+	public OpenAiTextCompletion chat(List<ToolCallResult> results, ChatCompletionsRequest req, List<Tool> tools) {
+
+		List<ChatMessage> conversation = trimChat(history, true);
+
+		OpenAiTextCompletion completion;
+
+		// Transparently handles function and tool calls
+		switch (((OpenAiModelService) modelService).getSupportedCall(req.getModel())) {
+		case FUNCTIONS:
+			if (results.size() != 1)
+				throw new IllegalArgumentException("Current model supports only single funtion calls.");
+
+			ToolCallResult callResult = results.get(0);
+			OpenAiChatMessage msg = OpenAiChatMessage.builder() //
+					.role(Role.FUNCTION) //
+					.content(callResult.getResult()) //
+					.name(callResult.getName()).build();
+			conversation.add(msg);
+			completion = chatCompletion(conversation, req, tools);
+
+			history.add(msg);
+			history.add(completion.getMessage());
+
+			break;
+		case TOOLS:
+
+			List<OpenAiChatMessage> msgs = new ArrayList<>();
+			for (ToolCallResult result : results) {
+				msgs.add(OpenAiChatMessage.builder() //
+						.role(Role.TOOL) //
+						.toolCallId(result.getToolCallId()) //
+						.content(result.getResult()) //
+						.name(result.getName()).build() //
+				);
+			}
+			conversation.addAll(msgs);
+			completion = chatCompletion(conversation, req, tools);
+
+			history.addAll(msgs);
+			history.add(completion.getMessage());
+
+			break;
+		default:
+			throw new IllegalArgumentException("Current model does not support funtion calling.");
+		}
+
+		// Make sure history is of desired length
+		while (history.size() > getMaxHistoryLength())
+			history.remove(0);
+
+		return OpenAiTextCompletion.builder() //
+				.text(completion.getMessage().getContent()) //
+				.finishReason(completion.getFinishReason()) //
+				.toolCalls(completion.getToolCalls()).build();
 	}
 
 	@Override
@@ -244,11 +369,11 @@ public class OpenAiChatService extends AbstractChatService {
 	 * Notice this does not consider or affects chat history but agent personality
 	 * is used, if provided.
 	 * 
-	 * @param functions List of functions that can be called (possibly empty or
-	 *                  null, to prevent function calls).
+	 * @param tools List of tools that can be called (this can be empty to prevent
+	 *              tool calls, or null to use the list of default tools).
 	 */
-	public OpenAiTextCompletion complete(String prompt, List<Function> functions) {
-		return complete(prompt, defaultReq, functions);
+	public OpenAiTextCompletion complete(String prompt, List<Tool> tools) {
+		return complete(prompt, defaultReq, tools);
 	}
 
 	/**
@@ -257,11 +382,11 @@ public class OpenAiChatService extends AbstractChatService {
 	 * Notice this does not consider or affects chat history but agent personality
 	 * is used, if provided.
 	 * 
-	 * @param functions List of functions that can be called (possibly empty or
-	 *                  null, to prevent function calls).
+	 * @param tools List of tools that can be called (this can be empty to prevent
+	 *              tool calls, or null to use the list of default tools).
 	 */
-	public OpenAiTextCompletion complete(String prompt, ChatCompletionsRequest req, List<Function> functions) {
-		return complete(new ChatMessage(ChatMessage.Role.USER, prompt), req, functions);
+	public OpenAiTextCompletion complete(String prompt, ChatCompletionsRequest req, List<Tool> tools) {
+		return complete(new ChatMessage(ChatMessage.Role.USER, prompt), req, tools);
 	}
 
 	@Override
@@ -285,11 +410,11 @@ public class OpenAiChatService extends AbstractChatService {
 	 * Notice this does not consider or affects chat history but agent personality
 	 * is used, if provided.
 	 * 
-	 * @param functions List of functions that can be called (possibly empty or
-	 *                  null, to prevent function calls).
+	 * @param tools List of tools that can be called (this can be empty to prevent
+	 *              tool calls, or null to use the list of default tools).
 	 */
-	public OpenAiTextCompletion complete(ChatMessage prompt, List<Function> functions) {
-		return complete(prompt, defaultReq, functions);
+	public OpenAiTextCompletion complete(ChatMessage prompt, List<Tool> tools) {
+		return complete(prompt, defaultReq, tools);
 	}
 
 	/**
@@ -298,18 +423,16 @@ public class OpenAiChatService extends AbstractChatService {
 	 * Notice this does not consider or affects chat history but agent personality
 	 * is used, if provided.
 	 * 
-	 * 
-	 * 
-	 * @param functions List of functions that can be called (possibly empty or
-	 *                  null, to prevent function calls).
+	 * @param tools List of tools that can be called (this can be empty to prevent
+	 *              tool calls, or null to use the list of default tools).
 	 */
-	public OpenAiTextCompletion complete(ChatMessage prompt, ChatCompletionsRequest req, List<Function> functions) {
+	public OpenAiTextCompletion complete(ChatMessage prompt, ChatCompletionsRequest req, List<Tool> tools) {
 		List<ChatMessage> msgs = new ArrayList<>();
 		if (getPersonality() != null)
 			msgs.add(new ChatMessage(ChatMessage.Role.SYSTEM, getPersonality()));
 		msgs.add(prompt);
 
-		return complete(msgs, req, functions);
+		return complete(msgs, req, tools);
 	}
 
 	@Override
@@ -335,11 +458,11 @@ public class OpenAiChatService extends AbstractChatService {
 	 * personality is NOT considered, but can be injected as first message in the
 	 * list.
 	 * 
-	 * @param functions List of functions that can be called (possibly empty or
-	 *                  null, to prevent function calls).
+	 * @param tools List of tools that can be called (this can be empty to prevent
+	 *              tool calls, or null to use the list of default tools).
 	 */
-	public OpenAiTextCompletion complete(List<ChatMessage> messages, List<Function> functions) {
-		return complete(messages, defaultReq, functions);
+	public OpenAiTextCompletion complete(List<ChatMessage> messages, List<Tool> tools) {
+		return complete(messages, defaultReq, tools);
 	}
 
 	/**
@@ -349,14 +472,11 @@ public class OpenAiChatService extends AbstractChatService {
 	 * personality is NOT considered, but can be injected as first message in the
 	 * list.
 	 * 
-	 * @param functions List of functions that can be called (possibly empty or
-	 *                  null, to prevent function calls).
+	 * @param tools List of tools that can be called (this can be empty to prevent
+	 *              tool calls, or null to use the list of default tools).
 	 */
-	public OpenAiTextCompletion complete(List<ChatMessage> messages, ChatCompletionsRequest req,
-			List<Function> functions) {
-		ChatCompletionsChoice choice = chatCompletion(messages, req, functions);
-		return new OpenAiTextCompletion(choice.getMessage().getContent(), choice.getFinishReason(),
-				choice.getMessage().getFunctionCall());
+	public OpenAiTextCompletion complete(List<ChatMessage> messages, ChatCompletionsRequest req, List<Tool> tools) {
+		return chatCompletion(messages, req, tools);
 	}
 
 	/**
@@ -366,31 +486,52 @@ public class OpenAiChatService extends AbstractChatService {
 	 * personality is NOT considered, but can be injected as first message in the
 	 * list.
 	 * 
-	 * @param functions List of functions that can be called (possibly empty or
-	 *                  null, to prevent function calls).
+	 * @param tools List of tools that can be called (this can be empty to prevent
+	 *              tool calls, or null to use the list of default tools).
 	 */
-	protected ChatCompletionsChoice chatCompletion(List<ChatMessage> messages, ChatCompletionsRequest req,
-			List<Function> functions) {
+	protected OpenAiTextCompletion chatCompletion(List<ChatMessage> messages, ChatCompletionsRequest req,
+			List<Tool> tools) {
 
 		String model = req.getModel();
+		OpenAiModelService modelSvc = (OpenAiModelService) modelService;
 
 		req.setMessages(messages);
-		if ((functions != null) && (functions.size() > 0)) { // seems to cause an error if you set it otherwise
-			req.setFunctions(functions);
+
+		// Sets he tools/functions to use.
+		// It uses proper structure transparently, transparently based on the model
+		if (tools == null)
+			tools = defaulTools;
+		if ((tools != null) && (tools.size() > 0)) { // seems to cause an error if you set it otherwise
+			switch (modelSvc.getSupportedCall(model)) {
+			case FUNCTIONS:
+				List<Function> f = new ArrayList<>(tools.size());
+				for (Tool t : tools) {
+					if (t.getType() != Tool.Type.FUNCTION) // paranoid, but will support future tools
+						throw new IllegalArgumentException("Current model does only support old funtion calling API.");
+					f.add(t.getFunction());
+				}
+				req.setFunctions(f);
+				break;
+			case TOOLS:
+				req.setTools(tools);
+				break;
+			default:
+				throw new IllegalArgumentException("Current model does not support funtion calling.");
+			}
 		}
 
-		boolean autofit = (req.getMaxTokens() == null) && (modelService.getContextSize(model, -1) != -1);
+		boolean autofit = (req.getMaxTokens() == null) && (modelSvc.getContextSize(model, -1) != -1);
 
 		try {
 			if (autofit) {
 				// Automatically set token limit, if needed
-				OpenAiTokenizer counter = (OpenAiTokenizer) modelService.getTokenizer(model);
+				OpenAiTokenizer counter = modelSvc.getTokenizer(model);
 				int tok = counter.count(req); // Notice we must count function definitions too
-				int size = modelService.getContextSize(model) - tok - 5;
+				int size = modelSvc.getContextSize(model) - tok - 5;
 				if (size <= 0)
 					throw new IllegalArgumentException(
-							"Your prompt exceeds context size: " + modelService.getContextSize(model));
-				req.setMaxTokens(size);
+							"Your prompt exceeds context size: " + modelSvc.getContextSize(model));
+				req.setMaxTokens(Math.min(size, modelSvc.getMaxNewTokens(model)));
 			}
 
 			ChatCompletionsResponse resp = null;
@@ -411,7 +552,24 @@ public class OpenAiChatService extends AbstractChatService {
 					throw e; // Not a context issue
 			}
 
-			return resp.getChoices().get(0);
+			ChatCompletionsChoice choice = resp.getChoices().get(0);
+			if (choice.getMessage().getFunctionCall() != null) {
+
+				// If the model returned a function call, transparently translate it into a tool
+				// call
+				List<ToolCall> fc = new ArrayList<>();
+				fc.add(new ToolCall(choice.getMessage().getFunctionCall()));
+				return OpenAiTextCompletion.builder() //
+						.finishReason(FinishReason.fromGptApi(choice.getFinishReason())) //
+						.text(choice.getMessage().getContent()) //
+						.message(choice.getMessage()) //
+						.toolCalls(fc).build();
+			}
+			return OpenAiTextCompletion.builder() //
+					.finishReason(FinishReason.fromGptApi(choice.getFinishReason())) //
+					.text(choice.getMessage().getContent()) //
+					.message(choice.getMessage()) //
+					.toolCalls(choice.getMessage().getToolCalls()).build();
 
 		} finally {
 

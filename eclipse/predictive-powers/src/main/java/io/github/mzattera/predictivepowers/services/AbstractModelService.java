@@ -87,4 +87,32 @@ public abstract class AbstractModelService implements ModelService {
 			return def;
 		return data.getContextSize();
 	}
+
+	/**
+	 * 
+	 * @param model
+	 * @return Maximum number of new tokens a model can generate; some models have
+	 *         this limitation in addition to max context size.
+	 */
+	@Override
+	public int getMaxNewTokens(@NonNull String model) {
+		ModelData data = get(model);
+		if ((data == null) || (data.getMaxNewTokens() == null))
+			throw new IllegalArgumentException(
+					"No maximum response length defined for model " + model + ". Consider registering model data");
+		return data.getMaxNewTokens();
+	}
+
+	/**
+	 * 
+	 * @param model
+	 * @return Maximum number of new tokens a model can generate; some models have
+	 *         this limitation in addition to max context size.
+	 */
+	public int getMaxNewTokens(@NonNull String model, int def) {
+		ModelData data = get(model);
+		if ((data == null) || (data.getMaxNewTokens() == null))
+			return def;
+		return data.getMaxNewTokens();
+	}
 }

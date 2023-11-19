@@ -237,7 +237,7 @@ public class OpenAiCompletionService implements CompletionService {
 				if (size <= 0)
 					throw new IllegalArgumentException(
 							"Your proompt exceeds context size: " + modelService.getContextSize(model));
-				req.setMaxTokens(size);
+				req.setMaxTokens(Math.min(size, modelService.getMaxNewTokens(model)));
 			}
 
 			CompletionsResponse resp = null;

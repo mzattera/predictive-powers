@@ -33,9 +33,10 @@ import lombok.ToString;
 public class ChatCompletionsResponse {
 	
 	String id;
-	String object;
+	List<ChatCompletionsChoice> choices;
 	long created;
 	String model;
-	List<ChatCompletionsChoice> choices;
+	String systemFingerprint;
+	String object;
 	Usage usage;
 }

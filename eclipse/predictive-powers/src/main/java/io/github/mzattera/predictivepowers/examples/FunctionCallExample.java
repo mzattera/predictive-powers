@@ -100,7 +100,7 @@ public class FunctionCallExample {
 
 							// Your call to the tool would go here.
 							// In this example, we create a random reply instead.
-							// Notice these could be served in parallel.
+							// Notice these calls could be served in parallel.
 							results.add(new ToolCallResult(call, (RND.nextInt(10) + 20) + "°C"));
 						}
 

@@ -57,7 +57,7 @@ public class HuggingFaceChatServiceTest {
 			assertEquals(1, cs.getHistory().size());
 			String question = "How high is Mt.Everest?";
 			TextCompletion resp = cs.complete(question);
-			assertEquals(TextCompletion.FinishReason.OK, resp.getFinishReason());
+			assertEquals(TextCompletion.FinishReason.COMPLETED, resp.getFinishReason());
 			assertEquals(1, cs.getHistory().size());
 			assertEquals(cs.getHistory().get(0).getContent(), "test");
 			assertEquals(0, cs.getDefaultReq().getInputs().getPastUserInputs().size());
@@ -99,7 +99,7 @@ public class HuggingFaceChatServiceTest {
 
 			String question = "How high is Mt.Everest?";
 			TextCompletion resp = cs.chat(question);
-			assertEquals(resp.getFinishReason(), FinishReason.OK);
+			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 4);
 			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.USER);
 			assertEquals(cs.getHistory().get(0).getContent(), "user_" + 9);
@@ -128,7 +128,7 @@ public class HuggingFaceChatServiceTest {
 			cs.setMaxNewTokens(100);
 
 			resp = cs.chat(question);
-			assertEquals(resp.getFinishReason(), FinishReason.OK);
+			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 4);
 			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.USER);
 			assertEquals(cs.getHistory().get(0).getContent(), "user_" + 9);
@@ -160,7 +160,7 @@ public class HuggingFaceChatServiceTest {
 			cs.setMaxConversationTokens(1);
 
 			resp = cs.chat(question);
-			assertEquals(resp.getFinishReason(), FinishReason.OK);
+			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 4);
 			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.USER);
 			assertEquals(cs.getHistory().get(0).getContent(), "user_" + 9);
@@ -186,7 +186,7 @@ public class HuggingFaceChatServiceTest {
 			List<ChatMessage> l = new ArrayList<>();
 			l.add(new ChatMessage(Role.USER, question));
 			resp = cs.complete(l);
-			assertEquals(resp.getFinishReason(), FinishReason.OK);
+			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 4);
 			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.USER);
 			assertEquals(cs.getHistory().get(0).getContent(), "user_" + 9);
@@ -213,8 +213,8 @@ public class HuggingFaceChatServiceTest {
 			assertEquals(Integer.MAX_VALUE, cs.getMaxConversationTokens());
 			String question = "How high is Mt.Everest?";
 
-			// Double chat message per role 
-			
+			// Double chat message per role
+
 			// Fake history
 			for (int i = 0; i < 10; ++i) {
 				cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "U1_" + i));
@@ -227,7 +227,7 @@ public class HuggingFaceChatServiceTest {
 			cs.setMaxConversationSteps(4);
 
 			TextCompletion resp = cs.chat(question);
-			assertEquals(resp.getFinishReason(), FinishReason.OK);
+			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 4);
 			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.BOT);
 			assertEquals(cs.getHistory().get(0).getContent(), "B1_" + 9);
@@ -243,8 +243,8 @@ public class HuggingFaceChatServiceTest {
 			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().get(0), "B1_9\nB2_9");
 			assertEquals(cs.getDefaultReq().getInputs().getText(), question);
 
-			// Double chat message per role, very short conversation steps 
-			
+			// Double chat message per role, very short conversation steps
+
 			// Fake history
 			for (int i = 0; i < 10; ++i) {
 				cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "U1_" + i));
@@ -257,7 +257,7 @@ public class HuggingFaceChatServiceTest {
 			cs.setMaxConversationSteps(2); // Should consider only last 2 bot message, which are ingored
 
 			resp = cs.chat(question);
-			assertEquals(resp.getFinishReason(), FinishReason.OK);
+			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 4);
 			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.BOT);
 			assertEquals(cs.getHistory().get(0).getContent(), "B1_" + 9);
@@ -272,7 +272,7 @@ public class HuggingFaceChatServiceTest {
 			assertEquals(cs.getDefaultReq().getInputs().getText(), question);
 
 			// Double chat message per role, starting with SYSTEM AND BOT
-			
+
 			// Fake history
 			cs.getHistory().add(new ChatMessage(ChatMessage.Role.SYSTEM, "Should be ignored"));
 			cs.getHistory().add(new ChatMessage(ChatMessage.Role.BOT, "Should be ignored"));
@@ -287,7 +287,7 @@ public class HuggingFaceChatServiceTest {
 			cs.setMaxConversationSteps(6);
 
 			resp = cs.chat(question);
-			assertEquals(resp.getFinishReason(), FinishReason.OK);
+			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().size(), 1);
 			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().get(0), "U1_0\nU2_0");
 			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().size(), 1);

@@ -47,7 +47,7 @@ public class OpenAiTextCompletion extends TextCompletion {
 	 * The original message as returned from the API.
 	 */
 	private OpenAiChatMessage message;
-	
+
 	/**
 	 * List of tool calls, if the call generated function (tools) calls.
 	 */

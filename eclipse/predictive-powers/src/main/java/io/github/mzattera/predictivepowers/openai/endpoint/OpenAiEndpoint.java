@@ -31,7 +31,6 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiImageGeneration
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionExtractionService;
-import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 import lombok.Getter;
 import lombok.NonNull;
 

@@ -57,14 +57,10 @@ import io.github.mzattera.util.ImageUtil;
 import io.reactivex.Single;
 import lombok.Getter;
 import lombok.NonNull;
-import okhttp3.Interceptor;
-import okhttp3.Interceptor.Chain;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
 import okhttp3.RequestBody;
-import okhttp3.Response;
 import okhttp3.ResponseBody;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
@@ -162,20 +158,20 @@ public class OpenAiClient implements ApiClient {
 	 */
 	public OpenAiClient(OkHttpClient http) {
 
-//		client = http;
+		client = http;
 
 		// Debug code below, outputs the request
-		client = http.newBuilder().addInterceptor(new Interceptor() {
-
-			@Override
-			public Response intercept(Chain chain) throws IOException {
-				Request req = chain.request();
-				String jsonReq = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(req.toString());
-				System.out.println(jsonReq);
-				System.out.println();
-				return chain.proceed(req);
-			}
-		}).build();
+//		client = http.newBuilder().addInterceptor(new Interceptor() {
+//
+//			@Override
+//			public Response intercept(Chain chain) throws IOException {
+//				Request req = chain.request();
+//				String jsonReq = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(req.toString());
+//				System.out.println(jsonReq);
+//				System.out.println();
+//				return chain.proceed(req);
+//			}
+//		}).build();
 
 		Retrofit retrofit = new Retrofit.Builder().baseUrl(API_BASE_URL).client(client)
 				.addConverterFactory(JacksonConverterFactory.create(jsonMapper))
@@ -276,9 +272,8 @@ public class OpenAiClient implements ApiClient {
 		return callApi(api.embeddings(req));
 	}
 
-	
 	// TODO Add streaming for TTS
-	
+
 	/**
 	 * Generates audio from the input text.
 	 * 

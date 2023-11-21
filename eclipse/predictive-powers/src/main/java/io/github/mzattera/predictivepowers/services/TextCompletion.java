@@ -46,27 +46,14 @@ public class TextCompletion {
 
 	/** Reason why the language model finished responding. */
 	public enum FinishReason {
-		
+
 		/**
-		 * API returned complete model output (decided to properly stop before max
-		 * length was reached)
+		 * API returned complete model output.
 		 */
 		COMPLETED,
 
 		/** Incomplete model output due to token length limit */
-		LENGTH_LIMIT_REACHED,
-
-		/**
-		 * API returned without errors, but cannot distinguish between COMPLETED and
-		 * LENGTH_LIMIT_REACHED
-		 */
-		OK,
-
-		/**
-		 * API response still in progress or incomplete (for asynchronous calls, not
-		 * supported at the moment)
-		 */
-		INCOMPLETE,
+		TRUNCATED,
 
 		/** Omitted content due to content filters */
 		INAPPROPRIATE,
@@ -79,6 +66,7 @@ public class TextCompletion {
 		 */
 		FUNCTION_CALL,
 
+		/** All finish reasons that do not fit in any other value */
 		UNKNOWN;
 
 		public static FinishReason fromGptApi(String reason) {
@@ -86,13 +74,11 @@ public class TextCompletion {
 			case "stop":
 				return FinishReason.COMPLETED;
 			case "length":
-				return FinishReason.LENGTH_LIMIT_REACHED;
+				return FinishReason.TRUNCATED;
 			case "content_filter":
 				return FinishReason.INAPPROPRIATE;
-			case "null":
-				return FinishReason.INCOMPLETE;
 			case "function_call":
-			case "tool_call":
+			case "tool_calls":
 				return FinishReason.FUNCTION_CALL;
 			default:
 				return FinishReason.UNKNOWN;

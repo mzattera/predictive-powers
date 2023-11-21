@@ -158,7 +158,7 @@ public class HuggingFaceCompletionService implements CompletionService {
 		req.getInputs().add(CompletionService.fillSlots(prompt, parameters));
 
 		TextGenerationResponse resp = endpoint.getClient().textGeneration(model, req).get(0).get(0);
-		return TextCompletion.builder().text(resp.getGeneratedText()).finishReason(FinishReason.OK).build();
+		return TextCompletion.builder().text(resp.getGeneratedText()).finishReason(FinishReason.COMPLETED).build();
 	}
 
 	@Override

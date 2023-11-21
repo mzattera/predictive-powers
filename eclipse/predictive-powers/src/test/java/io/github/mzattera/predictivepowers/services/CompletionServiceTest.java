@@ -65,14 +65,14 @@ public class CompletionServiceTest {
 	 */
 	private void test01(CompletionService s) {
 		TextCompletion resp = s.complete("Name a mammal.");
-		assertTrue((resp.getFinishReason() == FinishReason.OK) || (resp.getFinishReason() == FinishReason.COMPLETED));
+		assertTrue(resp.getFinishReason() == FinishReason.COMPLETED);
 
 		s.setMaxNewTokens(1);
 		resp = s.complete("Name a mammal.");
 		if (s instanceof OpenAiCompletionService) {
-			assertTrue(resp.getFinishReason() == FinishReason.LENGTH_LIMIT_REACHED);
+			assertTrue(resp.getFinishReason() == FinishReason.TRUNCATED);
 		} else {
-			assertTrue(resp.getFinishReason() == FinishReason.OK);
+			assertTrue(resp.getFinishReason() == FinishReason.COMPLETED);
 		}
 	}
 
@@ -139,8 +139,7 @@ public class CompletionServiceTest {
 			assertThrows(UnsupportedOperationException.class, () -> s.insert("Mount Everest is ", " meters high."));
 		} else {
 			TextCompletion resp = s.insert("Mount Everest is ", " meters high.");
-			assertTrue(
-					(resp.getFinishReason() == FinishReason.OK) || (resp.getFinishReason() == FinishReason.COMPLETED));
+			assertTrue(resp.getFinishReason() == FinishReason.COMPLETED);
 			assertTrue(resp.getText().contains("8"));
 		}
 	}
@@ -151,7 +150,7 @@ public class CompletionServiceTest {
 	private void test04(CompletionService s) {
 
 		// Check response contains all parameters?
-		
+
 		if (!(s instanceof OpenAiCompletionService)) {
 			s.setTopK(5);
 		}
@@ -160,15 +159,15 @@ public class CompletionServiceTest {
 		s.setMaxNewTokens(40);
 		s.setEcho(true);
 		TextCompletion resp = s.complete("Name a mammal.");
-		assertTrue((resp.getFinishReason() == FinishReason.OK) || (resp.getFinishReason() == FinishReason.COMPLETED));
-		
+		assertTrue(resp.getFinishReason() == FinishReason.COMPLETED);
+
 		s.setTopK(null);
 		s.setTopP(0.2);
 		s.setTemperature(null);
 		s.setMaxNewTokens(40);
 		s.setEcho(false);
 		resp = s.complete("Name a mammal.");
-		assertTrue((resp.getFinishReason() == FinishReason.OK) || (resp.getFinishReason() == FinishReason.COMPLETED));
+		assertTrue(resp.getFinishReason() == FinishReason.COMPLETED);
 
 		s.setTopK(null);
 		s.setTopP(null);
@@ -176,20 +175,21 @@ public class CompletionServiceTest {
 		s.setMaxNewTokens(40);
 		s.setEcho(true);
 		resp = s.complete("Name a mammal.");
-		assertTrue((resp.getFinishReason() == FinishReason.OK) || (resp.getFinishReason() == FinishReason.COMPLETED));
+		assertTrue(resp.getFinishReason() == FinishReason.COMPLETED);
 	}
-	
+
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	///  Slot filling   //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// Slot filling
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	
+
 	@Test
 	public void test90() {
 		Map<String, Object> params = new HashMap<>();
 		params.put("A", null);
 		params.put("A.B", "a.b");
 		params.put("C", Role.BOT);
-		
+
 		assertEquals(null, CompletionService.fillSlots(null, new HashMap<>()));
 		assertEquals("banana", CompletionService.fillSlots("banana", null));
 		assertEquals("", CompletionService.fillSlots("{{A}}", params));
@@ -197,6 +197,7 @@ public class CompletionServiceTest {
 		assertEquals("assistant", CompletionService.fillSlots("{{C}}", params));
 		assertEquals(" a.b assistant", CompletionService.fillSlots("{{A}} {{A.B}} {{C}}", params));
 		assertEquals(" a.b assistant {{D}}", CompletionService.fillSlots("{{A}} {{A.B}} {{C}} {{D}}", params));
-		assertEquals(" a.b assistant {{D}} a.b assistant {{D}}", CompletionService.fillSlots("{{A}} {{A.B}} {{C}} {{D}}{{A}} {{A.B}} {{C}} {{D}}", params));
+		assertEquals(" a.b assistant {{D}} a.b assistant {{D}}",
+				CompletionService.fillSlots("{{A}} {{A.B}} {{C}} {{D}}{{A}} {{A.B}} {{C}} {{D}}", params));
 	}
 }

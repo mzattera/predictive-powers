@@ -200,7 +200,7 @@ public class HuggingFaceChatService extends AbstractChatService {
 		// We assume last message in the list is current user utterance to be answered
 
 		if (messages.size() == 0)
-			return TextCompletion.builder().text("").finishReason(FinishReason.OK).build();
+			return TextCompletion.builder().text("").finishReason(FinishReason.COMPLETED).build();
 
 		// We split first, it is more complicated but in this way we ensure we support
 		// cases with multiple user messages in sequence, including at the end of
@@ -312,6 +312,6 @@ public class HuggingFaceChatService extends AbstractChatService {
 
 		ConversationalResponse resp = endpoint.getClient().conversational(getModel(), req);
 
-		return TextCompletion.builder().text(resp.getGeneratedText()).finishReason(FinishReason.OK).build();
+		return TextCompletion.builder().text(resp.getGeneratedText()).finishReason(FinishReason.COMPLETED).build();
 	}
 }

@@ -16,16 +16,21 @@
 package io.github.mzattera.predictivepowers.openai.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
+import io.github.mzattera.predictivepowers.openai.client.chat.Function;
+import io.github.mzattera.predictivepowers.openai.client.chat.Tool;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.ToolCallTest.GetCurrentWeatherParameters;
 
 class OpenAiModelServiceTest {
 
@@ -56,9 +61,26 @@ class OpenAiModelServiceTest {
 		OLD_MODELS.add("canary-tts"); // OK, this is a trick
 	}
 
+	private final static Function FUNCTION = Function.builder() //
+			.name("get_current_weather") //
+			.description("Get the current weather in a given location.") //
+			.parameters(GetCurrentWeatherParameters.class).build() //
+	;
+	private final static List<Function> FUNCTIONS = new ArrayList<>();
+	static {
+		FUNCTIONS.add(FUNCTION);
+	}
+	private final static List<Tool> TOOLS = new ArrayList<>();
+	static {
+		TOOLS.add(new Tool(FUNCTION));
+	}
+
 	@Test
 	void test01() {
 		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
+			OpenAiModelService modelSvc = oai.getModelService();
+			OpenAiChatService chatSvc = oai.getChatService();
+
 			Set<String> deprecated = new HashSet<>(OLD_MODELS);
 			Set<String> actual = new HashSet<>(OpenAiModelService.MODEL_CONFIG.keySet());
 
@@ -66,20 +88,65 @@ class OpenAiModelServiceTest {
 			assertTrue(models.size() > 0);
 
 			for (Model m : models) {
-				if (m.getId().startsWith("dall-e"))
+				String model = m.getId();
+
+				if (model.startsWith("dall-e"))
 					continue; // DALL-E models do not need size
-				if (m.getId().contains("-edit"))
+				if (model.contains("-edit"))
 					continue; // Edits model do not need size
-				if (m.getId().contains("ft-"))
+				if (model.contains("ft-"))
 					continue; // fine-tunes can be ignored
-				if (deprecated.remove(m.getId()))
+				if (deprecated.remove(model))
 					continue; // Skip old models
 
-				if (!m.getId().startsWith("tts-")) // Text to speech models do not have encoders
-					assertTrue(oai.getModelService().getTokenizer(m.getId()) != null);
-				assertTrue(oai.getModelService().getContextSize(m.getId()) > 0);
+				// Check that tokenizer and context size are provided
+				if (!model.startsWith("tts-")) // Text to speech models do not have encoders
+					assertTrue(modelSvc.getTokenizer(model) != null);
+				assertTrue(modelSvc.getContextSize(model) > 0);
 
-				assertTrue(actual.remove(m.getId()));
+				// Test function calling for GPT models to ensure supported call model is set
+				// correctly
+				if (model.startsWith("gpt-")) {
+					System.out.println("Testing function call for " + model);
+					chatSvc.setModel(model);
+					chatSvc.clearConversation();
+
+					// Bypass setDefaultTools() to make sure we test the correct tool type
+					switch (modelSvc.getSupportedCall(model)) {
+					case TOOLS:
+						chatSvc.getDefaultReq().setFunctions(null);
+						chatSvc.getDefaultReq().setTools(TOOLS);
+						OpenAiTextCompletion result = chatSvc.chat("What is the temperature il London?");
+						assertTrue(result.hasToolCalls());
+						break;
+					case FUNCTIONS:
+						chatSvc.getDefaultReq().setFunctions(FUNCTIONS);
+						chatSvc.getDefaultReq().setTools(null);
+						result = chatSvc.chat("What is the temperature il London?");
+						assertTrue(result.hasToolCalls());
+						break;
+					case NONE:
+						chatSvc.getDefaultReq().setFunctions(FUNCTIONS);
+						chatSvc.getDefaultReq().setTools(null);
+						try {
+							result = chatSvc.chat("What is the temperature il London?");
+							assertFalse(result.hasToolCalls());
+						} catch (Exception e) {
+							// the model should error indeed
+						}
+						chatSvc.getDefaultReq().setFunctions(null);
+						chatSvc.getDefaultReq().setTools(TOOLS);
+						try {
+							result = chatSvc.chat("What is the temperature il London?");
+							assertFalse(result.hasToolCalls());
+						} catch (Exception e) {
+							// the model should error indeed
+						}
+						break;
+					}
+				}
+
+				assertTrue(actual.remove(model));
 			}
 
 			// Check OLD_MODELS does not contain things we do not need any longer.
@@ -91,7 +158,7 @@ class OpenAiModelServiceTest {
 			// Check CONTEXT_SIZES does not contain things we do not need any longer.
 			int skip = 0;
 			for (String m : actual) {
-				if (m.startsWith("gpt-4-32k")) {
+				if (m.startsWith("gpt-4-32k")) { // For some reason, we do not have access to these models
 					++skip;
 					continue;
 				}

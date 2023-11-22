@@ -111,7 +111,7 @@ class OpenAiModelServiceTest {
 					chatSvc.setModel(model);
 					chatSvc.clearConversation();
 
-					// Bypass setDefaultTools() to make sure we test the correct tool type
+					// Bypass setDefaultTools() to make sure we test the correct function call type
 					switch (modelSvc.getSupportedCall(model)) {
 					case TOOLS:
 						chatSvc.getDefaultReq().setFunctions(null);
@@ -143,6 +143,8 @@ class OpenAiModelServiceTest {
 							// the model should error indeed
 						}
 						break;
+					default:
+						throw new IllegalArgumentException(); // paranoid
 					}
 				}
 

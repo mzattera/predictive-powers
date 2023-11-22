@@ -223,7 +223,7 @@ public class OpenAiModelService extends AbstractModelService {
 		MODEL_CONFIG.put("gpt-3.5-turbo-16k", new OpenAiModelData(16384, SupportedCallType.FUNCTIONS));
 		MODEL_CONFIG.put("gpt-3.5-turbo-instruct", new OpenAiModelData(4096));
 		MODEL_CONFIG.put("gpt-3.5-turbo-instruct-0914", new OpenAiModelData(4096));
-		MODEL_CONFIG.put("gpt-3.5-turbo-1106", new OpenAiModelData(16385));
+		MODEL_CONFIG.put("gpt-3.5-turbo-1106", new OpenAiModelData(16385, SupportedCallType.TOOLS, 4096));
 		MODEL_CONFIG.put("gpt-3.5-turbo-0613", new OpenAiModelData(4096, SupportedCallType.FUNCTIONS));
 		MODEL_CONFIG.put("gpt-3.5-turbo-16k-0613", new OpenAiModelData(16384, SupportedCallType.FUNCTIONS));
 		MODEL_CONFIG.put("gpt-3.5-turbo-0301", new OpenAiModelData(4096));

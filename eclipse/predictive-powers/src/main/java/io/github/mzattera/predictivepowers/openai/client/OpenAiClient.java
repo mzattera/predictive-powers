@@ -503,7 +503,6 @@ public class OpenAiClient implements ApiClient {
 			try {
 				oaie = new OpenAiException(e);
 			} catch (Exception ex) {
-				ex.printStackTrace();
 				throw e;
 			}
 			throw oaie;

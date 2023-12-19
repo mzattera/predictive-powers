@@ -27,9 +27,10 @@ public class TokenizerExample {
 	@SuppressWarnings("unused")
 	public static void main(String args[]) throws IOException {
 		
+		// Notice same code will work using HuggingFaceEndpoint
 		try (AiEndpoint endpoint = new OpenAiEndpoint()) {
 			
-			// Get a tokenizer for GPT-4
+			// Get a tokenizer for a model, GPT-4 in this example
 			Tokenizer counter = endpoint.getModelService().getTokenizer("gpt-4");
 			
 			// Counts tokens in a string

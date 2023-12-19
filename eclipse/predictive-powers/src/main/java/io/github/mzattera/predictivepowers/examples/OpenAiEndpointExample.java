@@ -28,7 +28,7 @@ public class OpenAiEndpointExample {
 
 		AiEndpoint endpoint;
 
-		// Get API key from OS environment variable OpenAiClient.OS_ENV_VAR_NAME
+		// Get API key from OS environment variable HuggingFaceClient.OS_ENV_VAR_NAME
 		endpoint = new HuggingFaceEndpoint();
 
 		// Pass API key explicitly (NOT the best practice)

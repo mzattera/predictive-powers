@@ -34,16 +34,16 @@ import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 public final class ChunkUtil {
 
 	/**
-	 * Same as <code>splitByTokens()</code> but uses number of chars instead of
-	 * number of tokens when chunking.
+	 * Chunks given text using char count.
+	 * This is same as calling <code>splitByTokens(text, chunkSize, 1, 1, CharTokenizer.getInstance())</code>.
 	 */
 	public static List<String> splitByChars(String text, int maxChars) {
 		return splitByTokens(text, maxChars, CharTokenizer.getInstance());
 	}
 
 	/**
-	 * Same as <code>splitByTokens()</code> but uses number of chars instead of
-	 * number of tokens when chunking.
+	 * Chunks given text using char count.
+	 * This is same as calling <code>splitByTokens(ext, maxChars, windowSize, stride, CharTokenizer.getInstance())</code>.
 	 */
 	public static List<String> splitByChars(String text, int maxChars, int windowSize, int stride) {
 		return splitByTokens(text, maxChars, windowSize, stride, CharTokenizer.getInstance());
@@ -76,8 +76,7 @@ public final class ChunkUtil {
 	 * Notice that, in order to optimize results, this splits the text at common
 	 * text separators (newlines, columns, etc.) therefore it might not be able to
 	 * split the text if the file is, for example, a long sequence of letters with
-	 * no spaces within. This method is meant to be used with actual (meaningful)
-	 * text.
+	 * no spaces within.
 	 * 
 	 * @param text       A text to be split into chunks.
 	 * @param chunkSize  Maximum number of tokens in each chunk of the split text.

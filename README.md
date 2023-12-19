@@ -1,8 +1,5 @@
 # predictive-powers
 
-Next release of `predictive-powers` will be developed as part of [Backdrop Build](https://backdropbuild.com).
-A demo use-case and a set of new features for the library is being defined.
-
 `predictive-powers` is a library to make generative AI (GenAI) easily accessible to Java developers.
 
 Currently the library:
@@ -17,7 +14,7 @@ Currently the library:
   
   4. Provides a serializable in-memory vector database. Again, plans are to allow users to plug in any existing vector database in the future.
 
-  5. Offers methods to easily read and embed textual content from web pages and files in different formats (MS Office, PDF, HTML, etc.).
+  5. Offers methods to easily read, chunk, and embed textual content from web pages and files in different formats (MS Office, PDF, HTML, etc.).
   
 ## Installation
 
@@ -107,32 +104,41 @@ The below example shows how to configure an `OpenAiClient` to use a proxy.
 
 ```java
 [...]
-		
-		// Reads API key from OS environment
-		String key = System.getenv(OpenAiClient.OS_ENV_VAR_NAME);;
-		String host = "<Your proxy host name goes here>";
-		int port = 80; // your proxy port goes here
+	// Reads API key from OS environment
+	String key = System.getenv(OpenAiClient.OS_ENV_VAR_NAME);;
+	String host = "<Your proxy host name goes here>";
+	int port = 80; // your proxy port goes here
 
-		Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(host, port));
-		OkHttpClient http = ApiClient.getDefaultHttpClient(
-					key, 
-					OpenAiClient.DEFAULT_TIMEOUT_MILLIS,
-					OpenAiClient.DEFAULT_KEEP_ALIVE_MILLIS,
-					OpenAiClient.DEFAULT_MAX_IDLE_CONNECTIONS
-				)
-				.newBuilder()
-				.proxy(proxy)
-				.build();
-		OpenAiClient cli = new OpenAiClient(http);
-		
-		//... use client here ...
-		
-		cli.close();
+	Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(host, port));
+	OkHttpClient http = ApiClient.getDefaultHttpClient(
+				key,
+				OpenAiClient.DEFAULT_TIMEOUT_MILLIS,
+				OpenAiClient.DEFAULT_MAX_RETRIES,
+				OpenAiClient.DEFAULT_KEEP_ALIVE_MILLIS,
+				OpenAiClient.DEFAULT_MAX_IDLE_CONNECTIONS
+			)
+			.newBuilder()
+			.proxy(proxy)
+			.build();
+	OpenAiClient cli = new OpenAiClient(http);
+
+	//... use client here ...
+
+	cli.close();
+[...]
 ```
 
 ### Endpoints
 
-An endpoint uses an API client to provide GenAI capabilities, in form of services.
+An endpoint uses an API client to provide some capabilities in form of services.
+
+Currently, there are two types of endpoints:
+
+  * `AiEndpoint`: provides generative AI capabilities, like text and image generation.
+    An example is `OpenAiEndpoint` that provides access to OpenAI services on top of the OpenAI API.
+    
+  * `SearchEndpoint`: provides Internet search capabilities.
+    Currenlty, the only example of `SearchEndpoint` is `GoogleSearchService` which allows performing web searches using Google.
 
 You can instantiate endpoints directly, or by providing an API client that will be used for all subsequent calls.
 
@@ -142,22 +148,28 @@ The example below shows how to create an `OpenAiEndpoint`.
 
 [...]
 
-		// Get API key from OS environment variable OpenAiClient.OS_ENV_VAR_NAME
-		endpoint = new OpenAiEndpoint();
+	// Get API key from OS environment variable HuggingFaceClient.OS_ENV_VAR_NAME
+	endpoint = new HuggingFaceEndpoint();
 
-		// Pass API key explicitly (NOT the best practice)
-		endpoint = new OpenAiEndpoint("sk-H0a...Yo1");
+	// Pass API key explicitly (NOT the best practice)
+	endpoint = new OpenAiEndpoint("sk-H0a...Yo1");
 
-		// Build endpoint from an existing API client
-		OpenAiClient cli = new OpenAiClient();
-		endpoint = new OpenAiEndpoint(cli);
+	// Build endpoint from an existing API client
+	OpenAiClient cli = new OpenAiClient();
+	endpoint = new OpenAiEndpoint(cli);		
+[...]
 ```
 
 
 ### <a name="services"></a>Services
 
 
-Once the endpoint is created, it can be used to access "services" which are high-level GenAI capabilities. Currently following services are provided:
+Once the endpoint is created, it can be used to access "services" which are high-level capabilities.
+Services abstract capabilities, allowing you to use different providers (endpoints) to perform a task.
+For [example](#imgGen), one could use an `OpenAiEndpoint` to obtain an `ImageGenerationService` instance to generate images using DALL-E;
+alternatiely, getting the `ImageGenerationService` instance through an `HuggingFaceEndpoint` will provide the same service using OpenJourney hosted on HF.
+
+Currently, following services are provided by `AiEndpoint`:
 
   * `ModelService` provide methods to access model metadata (e.g. list models, get model context size, etc.).
 	 
@@ -165,7 +177,7 @@ Once the endpoint is created, it can be used to access "services" which are high
 	 
   * `ChatService` handles conversations with an agent, taking care of agent personality and conversation history.
   
-     OpenAI implementation supports function calls as well.
+     OpenAI implementation supports function/tools calls as well.
      	 
   * `EmbeddingService` embeds text and calculates semantic (cosine) similarity between texts; it takes care of automatically splitting long texts when needed.
 	 
@@ -178,14 +190,17 @@ Once the endpoint is created, it can be used to access "services" which are high
   * `ImageGenerationService` to create images.
  
      Provided over both OpenAI (DALL-E) and Hugging Face (Openjourney) endpoints.
+     
+Unsurprisingly (?), `SearchEndpoint` provides only one service:
   
   * `SearchService` Can search the Internet for data.
      	   
 The below example shows how to get the `CompletionService` to complete a sentence.
-Notice how the service abstraction allows you to use two different service providers, only by changing a single line of code.
+Notice how service abstraction allows you to switch between two different service providers, only by changing a single line of code.
 
 ```java
-import io.github.mzattera.predictivepowers.Endpoint;
+import io.github.mzattera.predictivepowers.AiEndpoint;
+import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 
@@ -194,18 +209,17 @@ public class CompletionExample {
 	public static void main(String[] args) throws Exception {
 
 		// Uncomment the below to use OpenAI
-		Endpoint endpoint = new OpenAiEndpoint();
+		AiEndpoint endpoint = new OpenAiEndpoint();
 
 		// Uncomment the below to use Hugging Face
-		// Endpoint endpoint = new HuggingFaceEndpoint();
+		// AiEndpoint endpoint = new HuggingFaceEndpoint();
 
 		try (endpoint) {
 			CompletionService cs = endpoint.getCompletionService();
 			System.out.println(cs.complete("Alan Turing was").getText());
 		}
 	}
-}
-```
+}```
 
 As different service providers expose different capabilities at different levels of maturity, concrete service implementations
 might provide additional functionalities not available in their corresponding service interface; please refer to JavaDoc for details.
@@ -268,22 +282,26 @@ corresponding `ModelService` by "registering" the model with `ModelService.put(S
 Below an example showing how to count tokens in a string and how to get context size for a model.
 
 ```java
-		try (Endpoint endpoint = new OpenAiEndpoint()) {
-			
-			// Get a tokenizer for GPT-4
-			Tokenizer counter = endpoint.getModelService().getTokenizer("gpt-4");
-			
-			// Counts tokens in a string
-			int tokens = counter.count("Hello World");
-			
-			// Get model context size
-			int contextSize = endpoint.getModelService().getContextSize("gpt-4");
+	// Notice same code will work using HuggingFaceEndpoint
+	try (AiEndpoint endpoint = new OpenAiEndpoint()) {
+		
+		// Get a tokenizer for a model, GPT-4 in this example
+		Tokenizer counter = endpoint.getModelService().getTokenizer("gpt-4");
+		
+		// Counts tokens in a string
+		int tokens = counter.count("Hello World");
+		
+		// Get model context size
+		int contextSize = endpoint.getModelService().getContextSize("gpt-4");
 
-			// ....
-			
-		} // Close endpoint
+		// ....
+		
+	} // Close endpoint
 ```
 
+### Chunks
+
+In case you need to split text in chunks, `ChunkUtil` class provides several methods, including those supporting sliding windows and overlaps.
 
 ## <a name="examples"></a>Examples
  
@@ -627,7 +645,7 @@ Question: What is Credit Suisse's aim through its strategic, cultural and operat
 ```
  
   
-### Image generation
+### <a name="imgGen"></a>Image generation
 
 The below code generates two images using an `ImageGenerationService`.
 

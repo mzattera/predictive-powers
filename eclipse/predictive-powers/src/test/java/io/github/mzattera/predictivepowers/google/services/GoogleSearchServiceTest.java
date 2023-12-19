@@ -14,28 +14,31 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.examples;
+package io.github.mzattera.predictivepowers.google.services;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.google.endpoint.GoogleEndpoint;
-import io.github.mzattera.predictivepowers.google.services.GoogleSearchService;
 import io.github.mzattera.predictivepowers.services.SearchResult;
 
-/**
- * Example of how to perform Google search.
- * 
- * @author Massimiliano "Maxi" Zattera.
- *
- */
-public class GoogleSearchExample {
+public class GoogleSearchServiceTest {
 
-	public static void main(String[] args) {
+	@Test
+	public void test01() throws MalformedURLException {
 
 		try (GoogleEndpoint endpoint = new GoogleEndpoint()) {
 			GoogleSearchService service = endpoint.getSearchService();
 			
-			for (SearchResult result: service.search("Massimliano Zattera")) {
-				System.out.println(result.getTitle() + ": " + result.getLink());
-			}
+			List<SearchResult> results =service.search("Massimiliano Zattera predictive-powers github");
+			assertTrue(results.size() > 0);
+			assertEquals(new URL("https://github.com/mzattera"), results.get(0).getLink());
 		}
 	}
 }

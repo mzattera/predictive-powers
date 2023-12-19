@@ -57,8 +57,6 @@ class OpenAiModelServiceTest {
 		OLD_MODELS.add("davinci-similarity");
 		;
 		OLD_MODELS.add("whisper-1"); // OK, this is a trick
-		OLD_MODELS.add("canary-whisper"); // OK, this is a trick
-		OLD_MODELS.add("canary-tts"); // OK, this is a trick
 	}
 
 	private final static Function FUNCTION = Function.builder() //

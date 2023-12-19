@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.google.service;
+package io.github.mzattera.predictivepowers.google.services;
 
 import java.net.MalformedURLException;
 import java.net.URL;

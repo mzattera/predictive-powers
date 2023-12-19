@@ -122,22 +122,22 @@ public class ToolCallTest {
 		Tool t = TOOLS.get(0);
 
 		String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(t);
-		assertEquals("{\n" + "  \"type\" : \"function\",\n" + "  \"function\" : {\n"
-				+ "    \"name\" : \"get_current_weather\",\n"
-				+ "    \"description\" : \"Get the current weather in a given location.\",\n"
-				+ "    \"parameters\" : {\n" + "      \"$schema\" : \"http://json-schema.org/draft-04/schema#\",\n"
-				+ "      \"title\" : \"Get Current Weather Parameters\",\n" + "      \"type\" : \"object\",\n"
-				+ "      \"additionalProperties\" : false,\n" + "      \"properties\" : {\n"
-				+ "        \"location\" : {\n" + "          \"type\" : \"string\",\n"
-				+ "          \"description\" : \"The city and state, e.g. San Francisco, CA\"\n" + "        },\n"
-				+ "        \"unit\" : {\n" + "          \"type\" : \"string\",\n"
-				+ "          \"enum\" : [ \"CELSIUS\", \"FARENHEIT\" ],\n"
-				+ "          \"description\" : \"Temperature unit (Celsius or Farenheit). This is optional.\"\n"
-				+ "        },\n" + "        \"fooParameter\" : {\n" + "          \"type\" : \"integer\"\n"
-				+ "        },\n" + "        \"code\" : {\n" + "          \"type\" : \"integer\",\n"
-				+ "          \"description\" : \"Unique API code, this is an integer which must be passed and it is always equal to 6.\"\n"
-				+ "        }\n" + "      },\n" + "      \"required\" : [ \"location\", \"code\" ]\n" + "    }\n"
-				+ "  }\n" + "}", json);
+		assertEquals("{\r\n" + "  \"type\" : \"function\",\r\n" + "  \"function\" : {\r\n"
+				+ "    \"name\" : \"get_current_weather\",\r\n"
+				+ "    \"description\" : \"Get the current weather in a given location.\",\r\n"
+				+ "    \"parameters\" : {\r\n" + "      \"$schema\" : \"http://json-schema.org/draft-04/schema#\",\r\n"
+				+ "      \"title\" : \"Get Current Weather Parameters\",\r\n" + "      \"type\" : \"object\",\r\n"
+				+ "      \"additionalProperties\" : false,\r\n" + "      \"properties\" : {\r\n"
+				+ "        \"location\" : {\r\n" + "          \"type\" : \"string\",\r\n"
+				+ "          \"description\" : \"The city and state, e.g. San Francisco, CA\"\r\n" + "        },\r\n"
+				+ "        \"unit\" : {\r\n" + "          \"type\" : \"string\",\r\n"
+				+ "          \"enum\" : [ \"CELSIUS\", \"FARENHEIT\" ],\r\n"
+				+ "          \"description\" : \"Temperature unit (Celsius or Farenheit). This is optional.\"\r\n"
+				+ "        },\r\n" + "        \"fooParameter\" : {\r\n" + "          \"type\" : \"integer\"\r\n"
+				+ "        },\r\n" + "        \"code\" : {\r\n" + "          \"type\" : \"integer\",\r\n"
+				+ "          \"description\" : \"Unique API code, this is an integer which must be passed and it is always equal to 6.\"\r\n"
+				+ "        }\r\n" + "      },\r\n" + "      \"required\" : [ \"location\", \"code\" ]\r\n" + "    }\r\n"
+				+ "  }\r\n" + "}", json);
 	}
 
 	/**
@@ -159,9 +159,9 @@ public class ToolCallTest {
 				.type(ToolCall.Type.FUNCTION).build();
 
 		String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(tc);
-		assertEquals("{\n" + "  \"type\" : \"function\",\n" + "  \"function\" : {\n" + "    \"name\" : \"testCall\",\n"
-				+ "    \"arguments\" : \"{\\n  \\\"name\\\" : \\\"pippo\\\",\\n  \\\"value\\\" : 6\\n}\"\n" + "  },\n"
-				+ "  \"id\" : \"test_id\"\n" + "}", json);
+		assertEquals(
+				"{\r\n  \"type\" : \"function\",\r\n  \"function\" : {\r\n    \"name\" : \"testCall\",\r\n    \"arguments\" : \"{\\r\\n  \\\"name\\\" : \\\"pippo\\\",\\r\\n  \\\"value\\\" : 6\\r\\n}\"\r\n  },\r\n  \"id\" : \"test_id\"\r\n}"
+, json);
 	}
 
 	/**

@@ -510,7 +510,10 @@ public class FunctionCallExample {
 							// In this example, we create a random reply instead.
 							// Notice these calls could be served in parallel.
 							results.add(
-								new ToolCallResult(call, (RND.nextInt(10) + 20) + "°C")
+								new ToolCallResult(
+									call,
+									(RND.nextInt(10) + 20) + "°C"
+								)
 							);
 						}
 
@@ -528,7 +531,7 @@ public class FunctionCallExample {
 }
 ```
 
-Below is an example of a conversation0000000000000000000000000000000000000000000.
+Below is an example of a conversation.
  
 ![Example of a conversation using function calling](./img/FunctionCall.PNG)
  

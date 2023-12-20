@@ -621,7 +621,9 @@ public class OracleExample {
 					// Use the context when answering
 					answer = answerSvc.answerWithEmbeddings(question, context);
 
-					System.out.println("My Answer: " + answer.getAnswer() + "\n");
+					System.out.println(
+						"My Answer: " + answer.getAnswer() + "\n"
+					);
 				}
 			}
 		}

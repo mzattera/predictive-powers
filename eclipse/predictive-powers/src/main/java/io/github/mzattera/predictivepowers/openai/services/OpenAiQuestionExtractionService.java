@@ -339,7 +339,7 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 
 		// This splits a longer text in chinks such that 1/3 of the model size is free
 		// for the generated answer (or that the answer is 1/2 of the input text).
-		for (String t : ChunkUtil.splitByTokens(text, Math.max(1, (ctxSize - tok) * 2 / 3), counter)) {
+		for (String t : ChunkUtil.split(text, Math.max(1, (ctxSize - tok) * 2 / 3), counter)) {
 			result.addAll(getQuestionsShort(instructions, t));
 		}
 

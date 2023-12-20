@@ -108,12 +108,12 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 		Tokenizer tokenizer = ms.getTokenizer(model);
 
 		// Chunk accordingly to user's instructions
-		List<String> chunks = ChunkUtil.splitByTokens(text, chunkSize, windowSize, stride, tokenizer);
+		List<String> chunks = ChunkUtil.split(text, chunkSize, windowSize, stride, tokenizer);
 
 		// Make sure no chunk is bigger than model's supported size
 		List<String> tmp = new ArrayList<>(chunks.size() * 2);
 		for (String c : chunks)
-			tmp.addAll(ChunkUtil.splitByTokens(c, modelSize, tokenizer));
+			tmp.addAll(ChunkUtil.split(c, modelSize, tokenizer));
 		chunks = tmp;
 
 		// Embed as many pieces you can in a single call

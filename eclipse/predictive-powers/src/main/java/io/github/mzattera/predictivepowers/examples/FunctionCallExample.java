@@ -37,8 +37,8 @@ public class FunctionCallExample {
 	static Random RND = new Random();
 
 	// Name and description of function to call to get temperature for one town
-	private final static String functionName = "getCurrentWeather";
-	private final static String functionDescription = "Get the current weather in a given location.";
+	private final static String FUNCTION_NAME = "getCurrentWeather";
+	private final static String FUNCTION_DESCRIPTION = "Get the current weather in a given location.";
 
 	// The function parameters
 	private static class GetCurrentWeatherParameters {
@@ -60,8 +60,8 @@ public class FunctionCallExample {
 	static {
 		TOOLS.add(new Tool( //
 				Function.builder() //
-						.name(functionName) //
-						.description(functionDescription) //
+						.name(FUNCTION_NAME) //
+						.description(FUNCTION_DESCRIPTION) //
 						.parameters(GetCurrentWeatherParameters.class).build() //
 		));
 	}
@@ -75,8 +75,8 @@ public class FunctionCallExample {
 			bot.setPersonality("You are an helpful assistant.");
 
 			// Tells the model which tools are available,
-			// Notice that the service works with both function and tool calls in the same
-			// way.
+			// Notice that the service works with both function
+			// and tool calls in the same way.
 //			bot.setModel("gpt-3.5-turbo-0613"); // This model uses function calls
 			bot.setModel("gpt-4-1106-preview"); // This model uses tool calls
 			bot.setDefaulTools(TOOLS);

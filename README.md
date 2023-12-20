@@ -4,17 +4,22 @@
 
 Currently the library:
 
-  1. Provides low-level access to OpenAI API similar to [OpenAI-Java](https://github.com/TheoKanning/openai-java),
-   including support for function calling and exact token calculations using proper OpenAI tokenizers
-   from [jtokkit](https://github.com/forestwanglin/openai-java).
+  1. Provides low-level access to OpenAI API.
+     In addition, it adds an abstraction layer on top of function calling functionality,
+	 allowing you to treat all models the same with respect to this feature, regardless whether a model supports simple or parallel function calls.
 
   2. Provides (limited) low-level access to Hugging Face Hosted Inference API.
-	  
-  3. Adds an abstraction layer for GenAI capabilities, this allows to plug-in different providers seamlessly (see "[Services](#services)" below).
-  
-  4. Provides a serializable in-memory vector database. Again, plans are to allow users to plug in any existing vector database in the future.
 
-  5. Offers methods to easily read, chunk, and embed textual content from web pages and files in different formats (MS Office, PDF, HTML, etc.).
+  3. Provides access to web search through Google.
+	  
+  4. Adds an abstraction layer for GenAI capabilities, this allows to plug-in different providers seamlessly (see "[Services](#services)" below)
+     and reduces amount of code needed to access these capabilities.
+  
+  5. Provides a serializable in-memory vector database. Again, plans are to allow users to plug in any existing vector database in the future.
+
+  6. Offers methods to easily read, chunk, and embed textual content from web pages and files in different formats (MS Office, PDF, HTML, etc.),
+     including exact token calculations using proper from [jtokkit](https://github.com/forestwanglin/openai-java)
+	 and (Deep Java Library)[https://djl.ai/].
   
 ## Installation
 
@@ -33,7 +38,8 @@ The exact process for setting up the environment depends on the OS you are using
 
 `predictive-powers` uses [logback](https://logback.qos.ch/index.html) for logging. 
 
-To configure logback in your applications that use `predictive-powers`, simply add a `logback.xml` configuration file to your classpath, as explained [here](https://logback.qos.ch/manual/configuration.html).
+To configure logback in your applications that use `predictive-powers`, simply add a `logback.xml` configuration file to your classpath,
+as explained [here](https://logback.qos.ch/manual/configuration.html).
 
 	
 ## Usage
@@ -138,7 +144,7 @@ Currently, there are two types of endpoints:
     An example is `OpenAiEndpoint` that provides access to OpenAI services on top of the OpenAI API.
     
   * `SearchEndpoint`: provides Internet search capabilities.
-    Currenlty, the only example of `SearchEndpoint` is `GoogleSearchService` which allows performing web searches using Google.
+    Currently, the only example of `SearchEndpoint` is `GoogleSearchService` which allows performing web searches using Google.
 
 You can instantiate endpoints directly, or by providing an API client that will be used for all subsequent calls.
 
@@ -163,11 +169,11 @@ The example below shows how to create an `OpenAiEndpoint`.
 
 ### <a name="services"></a>Services
 
-
 Once the endpoint is created, it can be used to access "services" which are high-level capabilities.
 Services abstract capabilities, allowing you to use different providers (endpoints) to perform a task.
 For [example](#imgGen), one could use an `OpenAiEndpoint` to obtain an `ImageGenerationService` instance to generate images using DALL-E;
-alternatiely, getting the `ImageGenerationService` instance through an `HuggingFaceEndpoint` will provide the same service using OpenJourney hosted on HF.
+alternatively, getting the `ImageGenerationService` instance through an `HuggingFaceEndpoint` will provide the same service,
+through same interface, using OpenJourney hosted on Hugging Face.
 
 Currently, following services are provided by `AiEndpoint`:
 
@@ -189,7 +195,7 @@ Currently, following services are provided by `AiEndpoint`:
 	 
   * `ImageGenerationService` to create images.
  
-     Provided over both OpenAI (DALL-E) and Hugging Face (Openjourney) endpoints.
+     Provided over both OpenAI (DALL-E) and Hugging Face (Openjourney000) endpoints.
      
 Unsurprisingly (?), `SearchEndpoint` provides only one service:
   
@@ -299,9 +305,11 @@ Below an example showing how to count tokens in a string and how to get context 
 	} // Close endpoint
 ```
 
-### Chunks
+### Chunking
 
 In case you need to split text in chunks, `ChunkUtil` class provides several methods, including those supporting sliding windows and overlaps.
+
+
 
 ## <a name="examples"></a>Examples
  
@@ -316,6 +324,7 @@ The below code handles conversation with a very depressed entity similar to the 
  
  ```java
 import java.util.Scanner;
+
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 
@@ -352,31 +361,66 @@ Below is an example of the code output; notice how conversation context is retai
 
 ### More Chat with GPT, Including Function Calling
  
-This example shows how to use function calling in conversations.
- 
+This example shows how to use function calling in conversations with GPT models.
+[Function calling](https://platform.openai.com/docs/guides/function-calling) is a feature of GPT models that allow the models
+to call a function from a list of functions provided by the developers (together with each function description, including its parameters).
+
+Currently, [OpenAI chat completion API](https://platform.openai.com/docs/api-reference/chat) supports two different type of function calls:
+
+  * "Single" function calling allows you to provide the model a list of functions to be called, the model calls one function at a time, that it, a response is either text or a single function call.
+    This mode is supported on the following models (at the time of writing):
+	  * gpt-4
+	  * gpt-4-0613
+	  * gpt-3.5-turbo
+	  * gpt-3.5-turbo-0613
+	  
+  * "Parallel" function calls allows developer to provide a list of tools, of which functions are just a specific case.
+     Models supporting parallel function calls can return multiple tool invocations in a single response,
+	 improving efficiency. Currently, only functions are  supported as tools in the chat completion API,
+	 but [assistants](https://platform.openai.com/docs/api-reference/assistants/createAssistant) already support
+	 other tools such as `code_interpreter` and `retrieval` (see OpenAI documentation).
+     Parallel function calling mode is supported on the following models (at the time of writing):
+	  * gpt-4-1106-preview
+	  * gpt-3.5-turbo-1106
+
+These two modes of operation are not compatible and trying to use an unsupported mode causes errors; this adds complexity to the code that uses function calling and
+makes more difficult to switch between GPT models dynamically. Luckily, `predictive-powers` library provides an abstraction layer on top of function calls,
+allowing you to treat all the models in the same way, regardless whether they support single or parallel function calls.
+
+The below code demonstrates how function calling works. It provides the models with a function `getCurrentWeather()` that can be called to get the weather at a 
+specific location. When the user asks, for example, for the temperature in El Paso, the model generates a function call; the below code creates a fake answer
+(that in a real application could indeed be generated by calling a weather service).
+
+
  ```java
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.Scanner;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+
 import io.github.mzattera.predictivepowers.openai.client.chat.Function;
+import io.github.mzattera.predictivepowers.openai.client.chat.Tool;
+import io.github.mzattera.predictivepowers.openai.client.chat.ToolCall;
+import io.github.mzattera.predictivepowers.openai.client.chat.ToolCallResult;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiTextCompletion;
-import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
 
 public class FunctionCallExample {
 
+	static Random RND = new Random();
+
 	// Name and description of function to call to get temperature for one town
-	private final static String functionName = "getCurrentWeather";
-	private final static String functionDescription = "Get the current weather in a given location.";
+	private final static String FUNCTION_NAME = "getCurrentWeather";
+	private final static String FUNCTION_DESCRIPTION = "Get the current weather in a given location.";
 
 	// The function parameters
-	public static class GetCurrentWeatherParameters {
+	private static class GetCurrentWeatherParameters {
 
-		public enum TemperatureUnits {
+		private enum TemperatureUnits {
 			CELSIUS, FARENHEIT
 		};
 
@@ -389,23 +433,30 @@ public class FunctionCallExample {
 	}
 
 	// List of functions available to the bot (for now it is only 1).
-	private final static List<Function> functions = new ArrayList<>();
+	private final static List<Tool> TOOLS = new ArrayList<>();
 	static {
-		functions.add(
-				Function.builder()
-					.name(functionName)
-					.description(functionDescription)
-					.parameters(GetCurrentWeatherParameters.class)
-				.build());
+		TOOLS.add(new Tool( //
+				Function.builder() //
+						.name(FUNCTION_NAME) //
+						.description(FUNCTION_DESCRIPTION) //
+						.parameters(GetCurrentWeatherParameters.class).build() //
+		));
 	}
 
 	public static void main(String[] args) {
 
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
-			// Get chat service and set bot personality
+			// Get chat service, set bot personality and tools used
 			OpenAiChatService bot = endpoint.getChatService();
 			bot.setPersonality("You are an helpful assistant.");
+
+			// Tells the model which tools are available,
+			// Notice that the service works with both function
+			// and tool calls in the same way.
+//			bot.setModel("gpt-3.5-turbo-0613"); // This model uses function calls
+			bot.setModel("gpt-4-1106-preview"); // This model uses tool calls
+			bot.setDefaulTools(TOOLS);
 
 			// Conversation loop
 			try (Scanner console = new Scanner(System.in)) {
@@ -413,23 +464,26 @@ public class FunctionCallExample {
 					System.out.print("User     > ");
 					String s = console.nextLine();
 
-					OpenAiTextCompletion reply = bot.chat(s, functions);
-					
-					if (reply.isFunctionCall()) {
-						// The bot generated a function call, show it
-						System.out.println("CALL     > " + reply.getFunctionCall());
+					OpenAiTextCompletion reply = bot.chat(s);
 
-						// Your function call would go here..
-						// We create a fake reply instead,
-						// always returning 33° Celsius
-						ChatMessage functionResult = ChatMessage.builder()
-									.role(Role.FUNCTION)
-									.name(functionName)
-									.content("33°C") 
-								.build();
+					// Check if bot generated a function call
+					while (reply.hasToolCalls()) {
 
-						// Pass function result to the bot
-						reply = bot.chat(functionResult);
+						List<ToolCallResult> results = new ArrayList<>();
+
+						for (ToolCall call : reply.getToolCalls()) {
+							// The bot generated tool calls, print them
+							System.out.println("CALL " + " > " + call);
+
+							// Your call to the tool would go here.
+							// In this example, we create a random reply instead.
+							// Notice these calls could be served in parallel.
+							results.add(new ToolCallResult(call, (RND.nextInt(10) + 20) + "°C"));
+						}
+
+						// Pass results back to the bot
+						// Notice this can generate other tool calls, hence the loop
+						reply = bot.chat(results);
 					}
 
 					System.out.println("Assistant> " + reply.getText());
@@ -438,8 +492,7 @@ public class FunctionCallExample {
 
 		} // closes endpoint
 	}
-}
-```
+}```
 
 Below is a conversation example.
  
@@ -462,10 +515,12 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Scanner;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.tika.exception.TikaException;
 import org.xml.sax.SAXException;
-import io.github.mzattera.predictivepowers.Endpoint;
+
+import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
@@ -474,13 +529,14 @@ import io.github.mzattera.predictivepowers.services.EmbeddingService;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
 
+@SuppressWarnings("unused")
 public class OracleExample {
 
 	public static void main(String[] args) throws Exception 
 	{
 		
 		// Uncomment the below to use OpenAI services for the oracle
-		Endpoint endpoint = new OpenAiEndpoint();
+		AiEndpoint endpoint = new OpenAiEndpoint();
 		
 		// Uncomment the below to use Hugging Face services for the oracle
 		// Endpoint endpoint = new HuggingFaceEndpoint();
@@ -546,15 +602,16 @@ public class OracleExample {
  
 ### FAQ Creation
 
-The below code downloads a PDF file containing Credit Suisse financial statement for 2022 and creates some FAQ, based on its content.
+The below code demonstrates the `QuestionExtractionService` capabilities by downloading a PDF file containing Credit Suisse financial statement for 2022 and creating some FAQ, based on its content.
 
 ```java
 import java.util.List;
+
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionExtractionService;
 import io.github.mzattera.predictivepowers.services.QnAPair;
-import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
+import io.github.mzattera.util.ChunkUtil;
 import io.github.mzattera.util.ExtractionUtil;
-import io.github.mzattera.util.LlmUtil;
 
 public class FaqExample {
 
@@ -566,13 +623,12 @@ public class FaqExample {
 
 			// Download Credit Suisse financial statement 2022 PDF and extract its text
 			// We keep only one piece of 750 characters.
-			String statment = LlmUtil.splitByChars(
-					ExtractionUtil.fromUrl("https://www.credit-suisse.com/media/assets/corporate/docs/about-us/investor-relations/financial-disclosures/financial-reports/csg-ar-2022-en.pdf"),
-					1000)
-					.get(3);
+			String statment = ChunkUtil.split(ExtractionUtil.fromUrl(
+					"https://www.credit-suisse.com/media/assets/corporate/docs/about-us/investor-relations/financial-disclosures/financial-reports/csg-ar-2022-en.pdf"),
+					1000).get(3);
 
 			// Our query generation service
-			QuestionExtractionService q = endpoint.getQuestionExtractionService();
+			OpenAiQuestionExtractionService q = endpoint.getQuestionExtractionService();
 
 			// Get some FAQs and print them
 			List<QnAPair> QnA = q.getQuestions(statment);
@@ -647,11 +703,9 @@ Question: What is Credit Suisse's aim through its strategic, cultural and operat
   
 ### <a name="imgGen"></a>Image generation
 
-The below code generates two images using an `ImageGenerationService`.
+The below code generates two images using an `ImageGenerationService`;  notice how same code invokes DALL-E or Openjourney respectively.
 
 ```java
-package io.github.mzattera.predictivepowers.examples;
-
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -664,7 +718,10 @@ import io.github.mzattera.util.ImageUtil;
 
 public class ImageGenerationExample {
 
-	private final static String PROMPT = "full body male cyborg shaggy long gray hair short beard green eyes| shimmering gold metal| lighning| full-length portrait| detailed face| symmetric| steampunk| cyberpunk| cyborg| intricate detailed| to scale| hyperrealistic| cinematic lighting| digital art| concept art| mdjrny-v4 style";
+	private final static String PROMPT = "full body male cyborg shaggy long gray hair short beard green eyes|"
+			+ " shimmering gold metal| lighning| full-length portrait| detailed face|"
+			+ " symmetric| steampunk| cyberpunk| cyborg| intricate detailed| to scale|"
+			+ " hyperrealistic| cinematic lighting| digital art| concept art| mdjrny-v4 style";
 
 	public static void main(String[] args) throws Exception {
 

@@ -21,6 +21,7 @@ import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpo
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 
+@SuppressWarnings("unused")
 public class CompletionExample {
 
 	public static void main(String[] args) throws Exception {

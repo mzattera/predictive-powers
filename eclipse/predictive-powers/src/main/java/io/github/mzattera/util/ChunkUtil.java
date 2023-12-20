@@ -35,25 +35,25 @@ public final class ChunkUtil {
 
 	/**
 	 * Chunks given text using char count.
-	 * This is same as calling <code>splitByTokens(text, chunkSize, 1, 1, CharTokenizer.getInstance())</code>.
+	 * This is same as calling <code>split(text, chunkSize, 1, 1, CharTokenizer.getInstance())</code>.
 	 */
-	public static List<String> splitByChars(String text, int maxChars) {
-		return splitByTokens(text, maxChars, CharTokenizer.getInstance());
+	public static List<String> split(String text, int maxChars) {
+		return split(text, maxChars, CharTokenizer.getInstance());
 	}
 
 	/**
 	 * Chunks given text using char count.
-	 * This is same as calling <code>splitByTokens(ext, maxChars, windowSize, stride, CharTokenizer.getInstance())</code>.
+	 * This is same as calling <code>split(text, maxChars, windowSize, stride, CharTokenizer.getInstance())</code>.
 	 */
-	public static List<String> splitByChars(String text, int maxChars, int windowSize, int stride) {
-		return splitByTokens(text, maxChars, windowSize, stride, CharTokenizer.getInstance());
+	public static List<String> split(String text, int maxChars, int windowSize, int stride) {
+		return split(text, maxChars, windowSize, stride, CharTokenizer.getInstance());
 	}
 
 	/**
-	 * Same as calling <code>splitByTokens(text, chunkSize, 1, 1, tokenizer)</code>.
+	 * Same as calling <code>split(text, chunkSize, 1, 1, tokenizer)</code>.
 	 */
-	public static List<String> splitByTokens(String text, int chunkSize, Tokenizer tokenizer) {
-		return splitByTokens(text, chunkSize, 1, 1, tokenizer);
+	public static List<String> split(String text, int chunkSize, Tokenizer tokenizer) {
+		return split(text, chunkSize, 1, 1, tokenizer);
 	}
 
 	/**
@@ -88,7 +88,7 @@ public final class ChunkUtil {
 	 *         in the list being returned is therefore of size chunkSize *
 	 *         windowSize (at most).
 	 */
-	public static List<String> splitByTokens(String text, int chunkSize, int windowSize, int stride,
+	public static List<String> split(String text, int chunkSize, int windowSize, int stride,
 			Tokenizer tokenizer) {
 
 		if (chunkSize < 1)

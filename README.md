@@ -2,13 +2,12 @@
 
 `predictive-powers` is a library to make generative AI (GenAI) easily accessible to Java developers.
 
-<div style="background-color:khaki;">
 <table>
-<tr><td>
+<tr bgcolor="#ffd700"><td>
 `predictive-powers` is feature in a chapter of my book
 [Ultimate ChatGPT Handbook for Enterprises](https://www.amazon.com/Ultimate-ChatGPT-Handbook-Enterprises-Solution-Cycles-ebook/dp/B0CNT9YV57)
 which i co-authored with Dr. Harald Gunia and Karolina Galinska.
-</td>td></tr>	
+</td></tr>	
 </table>
 Currently the library:
 

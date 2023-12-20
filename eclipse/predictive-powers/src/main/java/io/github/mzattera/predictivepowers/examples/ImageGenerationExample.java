@@ -28,10 +28,12 @@ import io.github.mzattera.util.ImageUtil;
 
 public class ImageGenerationExample {
 
-	private final static String PROMPT = "full body male cyborg shaggy long gray hair short beard green eyes|"
+	private final static String PROMPT = 
+			"full body male cyborg shaggy long gray hair short beard green eyes|"
 			+ " shimmering gold metal| lighning| full-length portrait| detailed face|"
 			+ " symmetric| steampunk| cyberpunk| cyborg| intricate detailed| to scale|"
-			+ " hyperrealistic| cinematic lighting| digital art| concept art| mdjrny-v4 style";
+			+ " hyperrealistic| cinematic lighting| digital art| concept art|"
+			+ " mdjrny-v4 style";
 
 	public static void main(String[] args) throws Exception {
 

@@ -57,7 +57,7 @@ an retry calls after a random and exponentially increasing wait time ([exponenti
 This feature can be easily disabled, if desired.
 
 Class constructors typically allow you to pass your API key, which will be used in all subsequent calls.
-Alternatively, no-arguments constructors will try to read the key from your system environment;
+Alternatively, default constructors will try to read the key from your system environment;
 please refer to the below examples, the [endpoint](#endpoints) section, or the JavaDoc for more details.
 
 After the client is instantiated, you can call the provider API directly; 
@@ -155,7 +155,7 @@ Currently, there are two types of endpoints:
 `OpenAiEndpoint` and `HuggingFaceEndpoint` are the currently available endpoints that provide GenAi capabilities.
 
 To create those, you need to provide an API key for corresponding API.
-Alternatively, you can use the no-arguments constructor to read these from system environment variables.
+Alternatively, you can use the default constructor to read the keys from operating system environment variables.
 
 The example below shows how to create instances of these endpoints.
 
@@ -192,7 +192,7 @@ every Programmable Search Engine has a unique search engine ID, that you need in
 in order to use this JSON API you will need an API key that you can create from the API overview page linked above.
 
 When creating an instance of `GoogleEndPoint`, you must provide both the engine ID and the API key.
-Alternatively, you can use the no-argument constructor which will try to read these parameters from
+Alternatively, you can use the default constructor which will try to read these parameters from
 "`GOOGLE_API_KEY`" and "`GOOGLE_ENGINE_ID`" system environment variables.
 
 
@@ -207,29 +207,29 @@ through same interface, using OpenJourney hosted on Hugging Face.
 
 Currently, following services are provided by `AiEndpoint`:
 
-  * `ModelService` provide methods to access model metadata (e.g. list models, get model context size, etc.).
+  * `ModelService`: provides methods to access model metadata (e.g. list models, get model context size, etc.).
 	 
-  * `CompletionService`; text completion (including insertions): basically, it executes given text prompt.
+  * `CompletionService`: text completion (including insertions): basically, it executes given text prompt.
 	 
-  * `ChatService` handles conversations with an agent, taking care of agent personality and conversation history.
+  * `ChatService`: handles conversations with an agent, taking care of agent personality and conversation history.
   
-     OpenAI implementation supports function/tools calls as well.
+     OpenAI implementation supports function calls as well.
      	 
-  * `EmbeddingService` embeds text and calculates semantic (cosine) similarity between texts; it takes care of automatically splitting long texts when needed.
+  * `EmbeddingService`: embeds text and calculates semantic (cosine) similarity between texts; it takes care of automatically splitting long texts when needed.
 	 
-  * `QuestionAnsweringService` answers questions, using a user-provided context. The context can be a list of embeddings from a [knowledge base](#kb).
+  * `QuestionAnsweringService`: answers questions, using an user-provided context. The context can be a list of embeddings from a [knowledge base](#kb).
      	 
-  * `QuestionExtractionService` extracts different kinds of questions from a text (e.g. true/false question, multiple choices quizzes, etc.). It automatically handles long texts.
+  * `QuestionExtractionService`: extracts different kinds of questions from a text (e.g. true/false question, multiple choices quizzes, etc.). It automatically handles long texts.
   
      Provided only over OpenAI endpoint for now.
 	 
-  * `ImageGenerationService` to create images.
+  * `ImageGenerationService`: to create images.
  
-     Provided over both OpenAI (DALL-E) and Hugging Face (Openjourney000) endpoints.
+     Provided over both OpenAI (DALL-E) and Hugging Face (Openjourney) endpoints.
      
 Unsurprisingly (?), `SearchEndpoint` provides only one service:
   
-  * `SearchService` Can search the Internet for data.
+  * `SearchService`: searches the Internet for data.
      	   
 The below example shows how to get the `CompletionService` to complete a sentence.
 Notice how service abstraction allows you to switch between two different service providers, only by changing a single line of code.
@@ -393,19 +393,19 @@ Below is an example of the code output; notice how conversation context is retai
 ### More Chat with GPT, Including Function Calling
  
 This example shows how to use function calling in conversations with GPT models.
-[Function calling](https://platform.openai.com/docs/guides/function-calling) is a feature of GPT models that allow the models
-to call a function from a list of functions provided by the developers (together with each function description, including its parameters).
+[Function calling](https://platform.openai.com/docs/guides/function-calling) is a feature of GPT models that allows models
+to call a function from a list of functions provided by the developer.
 
 Currently, [OpenAI chat completion API](https://platform.openai.com/docs/api-reference/chat) supports two different type of function calls:
 
-  * "Single" function calling allows you to provide the model a list of functions to be called, the model calls one function at a time, that it, a response is either text or a single function call.
+  * "Single" function calling allows you to provide the model with a list of functions to be called, the model calls one function at a time, that is, a response is either simple text or a single function call.
     This mode is supported on the following models (at the time of writing):
 	  * gpt-4
 	  * gpt-4-0613
 	  * gpt-3.5-turbo
 	  * gpt-3.5-turbo-0613
 	  
-  * "Parallel" function calls allows developer to provide a list of tools, of which functions are just a specific case.
+  * "Parallel" function calls allows developers to provide a list of tools, of which functions are just a specific case.
      Models supporting parallel function calls can return multiple tool invocations in a single response,
 	 improving efficiency. Currently, only functions are  supported as tools in the chat completion API,
 	 but [assistants](https://platform.openai.com/docs/api-reference/assistants/createAssistant) already support
@@ -757,10 +757,12 @@ import io.github.mzattera.util.ImageUtil;
 
 public class ImageGenerationExample {
 
-	private final static String PROMPT = "full body male cyborg shaggy long gray hair short beard green eyes|"
+	private final static String PROMPT = 
+			"full body male cyborg shaggy long gray hair short beard green eyes|"
 			+ " shimmering gold metal| lighning| full-length portrait| detailed face|"
 			+ " symmetric| steampunk| cyberpunk| cyborg| intricate detailed| to scale|"
-			+ " hyperrealistic| cinematic lighting| digital art| concept art| mdjrny-v4 style";
+			+ " hyperrealistic| cinematic lighting| digital art| concept art|"
+			+ " mdjrny-v4 style";
 
 	public static void main(String[] args) throws Exception {
 

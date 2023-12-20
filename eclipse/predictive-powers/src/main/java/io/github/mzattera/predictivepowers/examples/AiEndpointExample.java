@@ -21,20 +21,27 @@ import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpo
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 
-public class OpenAiEndpointExample {
+public class AiEndpointExample {
 
 	@SuppressWarnings({ "resource", "unused" })
 	public static void main(String[] args) {
 
 		AiEndpoint endpoint;
 
-		// Get API key from OS environment variable HuggingFaceClient.OS_ENV_VAR_NAME
+		// Creates a HuggingFaceEndpoint
+		// Get API key from OS environment variable "HUGGING_FACE_API_KEY"
 		endpoint = new HuggingFaceEndpoint();
+
+		// Creates a OpenAiEndpoint
+		
+		// Get API key from OS environment variable "OPENAI_API_KEY"
+		endpoint = new OpenAiEndpoint();
 
 		// Pass API key explicitly (NOT the best practice)
 		endpoint = new OpenAiEndpoint("sk-H0a...Yo1");
 
 		// Build endpoint from an existing API client
+		// The client is created reading API key from OS environment
 		OpenAiClient cli = new OpenAiClient();
 		endpoint = new OpenAiEndpoint(cli);		
 	}

@@ -16,23 +16,25 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
-import io.github.mzattera.predictivepowers.google.endpoint.GoogleEndpoint;
-import io.github.mzattera.predictivepowers.google.services.GoogleSearchService;
-import io.github.mzattera.predictivepowers.services.SearchResult;
+import java.io.IOException;
 
-/**
- * Example of how to perform Google search.
- * 
- * @author Massimiliano "Maxi" Zattera.
- *
- */
+import io.github.mzattera.predictivepowers.SearchEndpoint;
+import io.github.mzattera.predictivepowers.google.endpoint.GoogleEndpoint;
+import io.github.mzattera.predictivepowers.services.SearchResult;
+import io.github.mzattera.predictivepowers.services.SearchService;
+
 public class GoogleSearchExample {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 
-		try (GoogleEndpoint endpoint = new GoogleEndpoint()) {
-			GoogleSearchService service = endpoint.getSearchService();
+		// Creates a search endpoint by reading engine ID and
+		// API key from system environment variables
+		try (SearchEndpoint endpoint = new GoogleEndpoint()) {
 			
+			// Creates search service
+			SearchService service = endpoint.getSearchService();
+			
+			// Performs search and shows results.
 			for (SearchResult result: service.search("Massimliano Zattera")) {
 				System.out.println(result.getTitle() + ": " + result.getLink());
 			}

@@ -767,7 +767,7 @@ public class EssayWriter implements Closeable {
 
 			EmbeddedText emb = knowledge.get(i).getLeft();
 			buf.append(emb.getText()).append("\n\n");
-			String c = cleanup(buf.toString()); // TODO URGENT embedded text should have been cleaned up already
+			String c = cleanup(buf.toString());
 			params.put("context", c);
 
 			msgs.remove(msgs.size() - 1);

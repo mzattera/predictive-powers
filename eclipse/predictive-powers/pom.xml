@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.github.mzattera</groupId>
 	<artifactId>predictive-powers</artifactId>
-	<version>0.3.0</version>
+	<version>0.4.0</version>
 	<name>PredictivePowers</name>
 	<description>A Java library to (easily?) access OpenAI API</description>
 	<properties>

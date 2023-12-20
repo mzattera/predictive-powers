@@ -84,10 +84,10 @@ public class OracleExample {
 					// If not, answer the question
 					// Create context by finding similar text in the web page
 					List<Pair<EmbeddedText, Double>> context = 
-							knowledgeBase.search(
-								embeddingService.embed(question).get(0),
-								15, 0
-							);
+						knowledgeBase.search(
+							embeddingService.embed(question).get(0),
+							15, 0
+						);
 
 					// Use the context when answering
 					answer = answerSvc.answerWithEmbeddings(question, context);

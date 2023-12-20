@@ -93,7 +93,7 @@ public interface ApiClient extends Closeable {
 				}
 			});
 
-		builder.addInterceptor(new Interceptor() { // Handles sevice unavailable HTTP errors
+		builder.addInterceptor(new Interceptor() { // Handles service unavailable HTTP errors
 			@Override
 			public Response intercept(Chain chain) throws IOException {
 

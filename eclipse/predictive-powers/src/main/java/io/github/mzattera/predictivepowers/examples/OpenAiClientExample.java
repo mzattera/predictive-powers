@@ -24,7 +24,7 @@ public class OpenAiClientExample {
 
 	public static void main(String[] args) {
 
-		// Get API key from OS environment variable OpenAiClient.OS_ENV_VAR_NAME
+		// Get API key from OS environment variable "OPENAI_API_KEY"
 		try (OpenAiClient client = new OpenAiClient()) {
 			
 			// Complete a sentence

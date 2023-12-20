@@ -1,8 +1,7 @@
 # predictive-powers
 
-`predictive-powers` is a library to make generative AI (GenAI) easily accessible to Java developers.
-
-**`predictive-powers` is featured in a chapter of my book
+** `predictive-powers` is a library to make generative AI (GenAI) easily accessible to Java developers.
+it is featured in a chapter of my book
 "[Ultimate ChatGPT Handbook for Enterprises](https://www.amazon.com/Ultimate-ChatGPT-Handbook-Enterprises-Solution-Cycles-ebook/dp/B0CNT9YV57)"
 which i co-authored with Dr. Harald Gunia and Karolina Galinska.**
 
@@ -23,20 +22,20 @@ Currently the library:
 
   6. Offers methods to easily read, chunk, and embed textual content from web pages and files in different formats (MS Office, PDF, HTML, etc.),
      including exact token calculations using proper from [jtokkit](https://github.com/forestwanglin/openai-java)
-	 and (Deep Java Library)[https://djl.ai/].
+	 and [Deep Java Library](https://djl.ai/).
   
 ## Installation
 
 `predictive-powers` requires Java 11 or higher.
 
-For the time being, this library comes as a `.jar` file containing all the required dependencies.
+For the time being, this library comes as a (huge) `.jar` file containing all the required dependencies.
 The source is a [Maven](https://maven.apache.org/) project inside the `eclipse` folder.
 
 The code depends, among others, on [Lomboc](https://projectlombok.org/) which is correctly referenced within the `pom.xml` file for this project.
 However, to have Lomboc to work in the Eclipse editor, you need to install it inside Eclipse (or any other IDE you are using), as explained on Lomboc website.
 
 To avoid passing API keys explicitly in code, the library tries to read them from the operating system environment.
-The exact process for setting up the environment depends on the OS you are using.
+The exact process for setting up the environment depends on the operating system you are using.
 
 ### Logging
 
@@ -57,8 +56,9 @@ API clients in the library automatically intercept HTTP errors 429, 500 & 503, w
 an retry calls after a random and exponentially increasing wait time ([exponential backoff strategy](https://platform.openai.com/docs/guides/rate-limits/error-mitigation)).
 This feature can be easily disabled, if desired.
 
-Class constructors allow you to pass your API key, which will be used in all subsequent calls.
-Alternatively, the code will try to read the key from your system environment; please refer to the below examples or the JavaDoc for more details.
+Class constructors typically allow you to pass your API key, which will be used in all subsequent calls.
+Alternatively, no-arguments constructors will try to read the key from your system environment;
+please refer to the below examples, the [endpoint](#endpoints) section, or the JavaDoc for more details.
 
 After the client is instantiated, you can call the provider API directly; 
 this part of code is not heavily documented but it is meant to match exactly API definitions from service providers.
@@ -72,7 +72,7 @@ public class OpenAiClientExample {
 
 	public static void main(String[] args) {
 
-		// Get API key from OS environment variable OpenAiClient.OS_ENV_VAR_NAME
+		// Get API key from OS environment variable "OPENAI_API_KEY"
 		try (OpenAiClient client = new OpenAiClient()) {
 			
 			// Complete a sentence
@@ -138,7 +138,7 @@ The below example shows how to configure an `OpenAiClient` to use a proxy.
 [...]
 ```
 
-### Endpoints
+### <a name="endpoints"></a>Endpoints
 
 An endpoint uses an API client to provide some capabilities in form of services.
 
@@ -510,7 +510,7 @@ public class FunctionCallExample {
 							// In this example, we create a random reply instead.
 							// Notice these calls could be served in parallel.
 							results.add(
-									new ToolCallResult(call, (RND.nextInt(10) + 20) + "°C")
+								new ToolCallResult(call, (RND.nextInt(10) + 20) + "°C")
 							);
 						}
 
@@ -613,10 +613,10 @@ public class OracleExample {
 					// If not, answer the question
 					// Create context by finding similar text in the web page
 					List<Pair<EmbeddedText, Double>> context = 
-							knowledgeBase.search(
-								embeddingService.embed(question).get(0),
-								15, 0
-							);
+						knowledgeBase.search(
+							embeddingService.embed(question).get(0),
+							15, 0
+						);
 
 					// Use the context when answering
 					answer = answerSvc.answerWithEmbeddings(question, context);

@@ -77,8 +77,8 @@ public class FunctionCallExample {
 			// Tells the model which tools are available,
 			// Notice that the service works with both function
 			// and tool calls in the same way.
-//			bot.setModel("gpt-3.5-turbo-0613"); // This model uses function calls
-			bot.setModel("gpt-4-1106-preview"); // This model uses tool calls
+//			bot.setModel("gpt-3.5-turbo-0613"); // This uses simple function calls
+			bot.setModel("gpt-4-1106-preview"); // This uses parallel function calls (tools)
 			bot.setDefaulTools(TOOLS);
 
 			// Conversation loop
@@ -101,7 +101,9 @@ public class FunctionCallExample {
 							// Your call to the tool would go here.
 							// In this example, we create a random reply instead.
 							// Notice these calls could be served in parallel.
-							results.add(new ToolCallResult(call, (RND.nextInt(10) + 20) + "°C"));
+							results.add(
+									new ToolCallResult(call, (RND.nextInt(10) + 20) + "°C")
+							);
 						}
 
 						// Pass results back to the bot

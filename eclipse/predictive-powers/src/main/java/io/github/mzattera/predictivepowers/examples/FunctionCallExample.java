@@ -98,9 +98,9 @@ public class FunctionCallExample {
 							// The bot generated tool calls, print them
 							System.out.println("CALL " + " > " + call);
 
-							// Your call to the tool would go here.
-							// In this example, we create a random reply instead.
-							// Notice these calls could be served in parallel.
+							// Your call to the tool would go here
+							// In this example, we create a random reply
+							// Notice these calls could be served in parallel
 							results.add(
 								new ToolCallResult(
 									call,

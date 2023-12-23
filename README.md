@@ -830,6 +830,3 @@ public class GoogleSearchExample {
 	}
 }
 ```
-
-
-

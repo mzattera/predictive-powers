@@ -120,6 +120,7 @@ public interface ApiClient extends Closeable {
 						delayMillis = Integer.parseInt(response.header("Retry-After")) * 1000;
 					} catch (Exception e) {
 						// Else use manual backoff, max 1 minute
+						// TODO URGENT: we shoudl not put a max, but use MAX_TIMEOUT or MAX_RETRIES only
 						delayMillis = Math.min(61_000, (int) (delayMillis * 2.0 * (1.0 + RND.nextDouble())));
 					}
 					LOG.warn("HTTP " + response.code() + ": Waiting " + delayMillis + "ms: " + request.url() + message);

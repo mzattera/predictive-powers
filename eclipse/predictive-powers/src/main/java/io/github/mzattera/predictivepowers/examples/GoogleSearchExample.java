@@ -36,7 +36,7 @@ public class GoogleSearchExample {
 			
 			// Performs search and shows results.
 			for (SearchResult result: service.search("Massimliano Zattera")) {
-				System.out.println(result.getTitle() + ": " + result.getLink());
+				System.out.println(result.getTitle() + ": " + result.getUrl());
 			}
 		}
 	}

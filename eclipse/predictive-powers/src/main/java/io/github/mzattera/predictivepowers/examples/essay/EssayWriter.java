@@ -679,15 +679,15 @@ public class EssayWriter implements Closeable {
 		// Download the page content as a String
 		String content = null;
 		try {
-			content = cleanup(ExtractionUtil.fromUrl(link.getLink(), DOWNLOAD_TIMEOUT_MILLIS));
+			content = cleanup(ExtractionUtil.fromUrl(link.getUrl(), DOWNLOAD_TIMEOUT_MILLIS));
 		} catch (Exception e) {
 			// If an error occurs during page download, the page is skipped
-			LOG.error("Error downloading " + link.getLink(), e);
+			LOG.error("Error downloading " + link.getUrl(), e);
 			return new ArrayList<>();
 		}
 
 		if (content.length() < MINIMUM_PAGE_SIZE) { // Some links do not work or cannot be read or have warning messages
-			LOG.info("Content too short, skipping " + link.getLink());
+			LOG.info("Content too short, skipping " + link.getUrl());
 			return new ArrayList<>();
 		}
 

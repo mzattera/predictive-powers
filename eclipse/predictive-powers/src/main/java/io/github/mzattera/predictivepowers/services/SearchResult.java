@@ -46,26 +46,26 @@ public class SearchResult implements Serializable {
 	String title;
 
 	@NonNull
-	URL link;
+	URL url;
 
 	String mime;
 	String fileFormat;
 
 	@Override
 	public String toString() {
-		return (title == null ? "" : title + " ") + "[" + link + "]";
+		return (title == null ? "" : title + " ") + "[" + url + "]";
 	}
 
 	@Override
 	public boolean equals(Object other) {
 		if (other instanceof SearchResult)
-			return this.link.equals(((SearchResult) other).link);
+			return this.url.equals(((SearchResult) other).url);
 		else
 			return false;
 	}
 
 	@Override
 	public int hashCode() {
-		return link.hashCode();
+		return url.hashCode();
 	}
 }

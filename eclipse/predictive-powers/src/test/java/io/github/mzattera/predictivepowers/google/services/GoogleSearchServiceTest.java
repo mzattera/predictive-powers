@@ -38,7 +38,7 @@ public class GoogleSearchServiceTest {
 			
 			List<SearchResult> results =service.search("Massimiliano Zattera predictive-powers github");
 			assertTrue(results.size() > 0);
-			assertEquals(new URL("https://github.com/mzattera"), results.get(0).getLink());
+			assertEquals(new URL("https://github.com/mzattera"), results.get(0).getUrl());
 		}
 	}
 }

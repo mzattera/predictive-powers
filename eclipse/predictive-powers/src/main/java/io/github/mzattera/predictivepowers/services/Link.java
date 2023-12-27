@@ -28,7 +28,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 /**
- * A single result from an online search.
+ * A link to a web page, including its URL, an optional title and other parameters.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -39,7 +39,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @RequiredArgsConstructor
 @AllArgsConstructor
-public class SearchResult implements Serializable {
+public class Link implements Serializable {
 
 	private static final long serialVersionUID = -7975999709641989742L;
 
@@ -58,8 +58,8 @@ public class SearchResult implements Serializable {
 
 	@Override
 	public boolean equals(Object other) {
-		if (other instanceof SearchResult)
-			return this.url.equals(((SearchResult) other).url);
+		if (other instanceof Link)
+			return this.url.equals(((Link) other).url);
 		else
 			return false;
 	}

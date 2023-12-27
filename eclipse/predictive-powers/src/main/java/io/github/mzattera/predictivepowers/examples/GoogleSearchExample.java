@@ -20,7 +20,7 @@ import java.io.IOException;
 
 import io.github.mzattera.predictivepowers.SearchEndpoint;
 import io.github.mzattera.predictivepowers.google.endpoint.GoogleEndpoint;
-import io.github.mzattera.predictivepowers.services.SearchResult;
+import io.github.mzattera.predictivepowers.services.Link;
 import io.github.mzattera.predictivepowers.services.SearchService;
 
 public class GoogleSearchExample {
@@ -35,7 +35,7 @@ public class GoogleSearchExample {
 			SearchService service = endpoint.getSearchService();
 			
 			// Performs search and shows results.
-			for (SearchResult result: service.search("Massimliano Zattera")) {
+			for (Link result: service.search("Massimliano Zattera")) {
 				System.out.println(result.getTitle() + ": " + result.getUrl());
 			}
 		}

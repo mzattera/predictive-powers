@@ -55,7 +55,7 @@ import io.github.mzattera.predictivepowers.services.CompletionService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.EmbeddingService;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
-import io.github.mzattera.predictivepowers.services.SearchResult;
+import io.github.mzattera.predictivepowers.services.Link;
 import io.github.mzattera.predictivepowers.services.TextCompletion;
 import io.github.mzattera.util.ExtractionUtil;
 import io.github.mzattera.util.FileUtil;
@@ -200,12 +200,12 @@ public class EssayWriter implements Closeable {
 					buf.append(content.trim()).append("\n\n");
 				}
 				if ((context != null) && (context.size() > 0)) {
-					Set<SearchResult> links = new HashSet<>();
+					Set<Link> links = new HashSet<>();
 					buf.append("References for section ").append(id == null ? "" : id).append("\n");
 					for (int i = 0; i < context.size(); ++i) {
 						EmbeddedText emb = context.get(i);
 						double weight = contextWeight.get(i);
-						SearchResult link = (SearchResult) emb.get("url");
+						Link link = (Link) emb.get("url");
 						if (links.contains(link))
 							continue;
 						buf.append(weight > 0.85 ? "* " : "  ").append(link).append("\n");
@@ -396,8 +396,8 @@ public class EssayWriter implements Closeable {
 		System.out.println("Creating knowledge base for essay described in: " + structure.getCanonicalPath() + "...");
 		try (EssayWriter writer = new EssayWriter(structure)) {
 			// Googling
-			List<SearchResult> links = writer.google(maxLinks);
-			for (SearchResult link : links) {
+			List<Link> links = writer.google(maxLinks);
+			for (Link link : links) {
 				System.out.println(link.toString());
 			}
 
@@ -506,7 +506,7 @@ public class EssayWriter implements Closeable {
 	 * 
 	 * @return List of links relevant to essay content.
 	 */
-	public List<SearchResult> google() {
+	public List<Link> google() {
 		return google(Integer.MAX_VALUE);
 	}
 
@@ -516,13 +516,13 @@ public class EssayWriter implements Closeable {
 	 * @param maxLinks Maximum number of links to return.
 	 * @return List of links relevant to essay content.
 	 */
-	public List<SearchResult> google(int maxLinks) {
+	public List<Link> google(int maxLinks) {
 
 		System.out.println("Searching content online...");
 
 		// Googles each section in parallel, that is what parallelExecution() does
 
-		List<Callable<List<Pair<SearchResult, Integer>>>> tasks = new ArrayList<>();
+		List<Callable<List<Pair<Link, Integer>>>> tasks = new ArrayList<>();
 		for (Section chapter : essay.chapters) {
 			if (chapter.sections.size() == 0) // Google chapter
 				tasks.add(() -> google(chapter, chapter));
@@ -532,7 +532,7 @@ public class EssayWriter implements Closeable {
 				}
 			}
 		}
-		List<Pair<SearchResult, Integer>> allLinks = parallelExecution(tasks);
+		List<Pair<Link, Integer>> allLinks = parallelExecution(tasks);
 		System.out.println("Total of " + allLinks.size() + " found.");
 
 		// Collects links, starting from top-rank results and avoiding duplicates
@@ -540,13 +540,13 @@ public class EssayWriter implements Closeable {
 		allLinks.sort(new Comparator<>() {
 
 			@Override
-			public int compare(Pair<SearchResult, Integer> o1, Pair<SearchResult, Integer> o2) {
+			public int compare(Pair<Link, Integer> o1, Pair<Link, Integer> o2) {
 				return Integer.compare(o1.getRight(), o2.getRight());
 			}
 		});
 
-		Set<SearchResult> result = new HashSet<>();
-		for (Pair<SearchResult, Integer> l : allLinks) {
+		Set<Link> result = new HashSet<>();
+		for (Pair<Link, Integer> l : allLinks) {
 			if (result.size() >= maxLinks)
 				break;
 			if (!result.contains(l.getLeft()))
@@ -564,7 +564,7 @@ public class EssayWriter implements Closeable {
 	 * @return List of links relevant to essay content. Each link is returned in a
 	 *         pair together with its rank in search results.
 	 */
-	public List<Pair<SearchResult, Integer>> google(Section chapter, Section section) {
+	public List<Pair<Link, Integer>> google(Section chapter, Section section) {
 
 		System.out.println("Searching relevant pages for section " + section.id + ") " + section.title);
 
@@ -611,11 +611,11 @@ public class EssayWriter implements Closeable {
 		}
 
 		// Now submit each query and collect returned links
-		List<Pair<SearchResult, Integer>> result = new ArrayList<>();
+		List<Pair<Link, Integer>> result = new ArrayList<>();
 		for (String query : queries) {
 
 			System.out.println("Googling pages for: " + query);
-			List<SearchResult> links;
+			List<Link> links;
 			try {
 				links = google.getSearchService().search(query, LINKS_PER_QUERY);
 			} catch (Exception e) {
@@ -640,13 +640,13 @@ public class EssayWriter implements Closeable {
 	 * 
 	 * @param links The links to download.
 	 */
-	public void download(List<SearchResult> links) {
+	public void download(List<Link> links) {
 
 		System.out.println("Downloading " + links.size() + " pages.");
 
 		// Retrieve contents for each link in parallel and save it in the knowledge base
 		List<Callable<List<EmbeddedText>>> tasks = new ArrayList<>();
-		for (SearchResult link : links) {
+		for (Link link : links) {
 			tasks.add(() -> download(link));
 		}
 		kb.insert(parallelExecution(tasks));
@@ -659,7 +659,7 @@ public class EssayWriter implements Closeable {
 	 * @return The downloaded page, already embedded to be added to the knowledge
 	 *         base.
 	 */
-	private List<EmbeddedText> download(SearchResult link) {
+	private List<EmbeddedText> download(Link link) {
 
 		// Instantiate the service used to embed the downloaded pages
 		EmbeddingService embSvc = openAi.getEmbeddingService();

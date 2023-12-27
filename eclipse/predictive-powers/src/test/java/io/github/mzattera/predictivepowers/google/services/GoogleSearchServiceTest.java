@@ -26,7 +26,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.google.endpoint.GoogleEndpoint;
-import io.github.mzattera.predictivepowers.services.SearchResult;
+import io.github.mzattera.predictivepowers.services.Link;
 
 public class GoogleSearchServiceTest {
 
@@ -36,7 +36,7 @@ public class GoogleSearchServiceTest {
 		try (GoogleEndpoint endpoint = new GoogleEndpoint()) {
 			GoogleSearchService service = endpoint.getSearchService();
 			
-			List<SearchResult> results =service.search("Massimiliano Zattera predictive-powers github");
+			List<Link> results =service.search("Massimiliano Zattera predictive-powers github");
 			assertTrue(results.size() > 0);
 			assertEquals(new URL("https://github.com/mzattera"), results.get(0).getUrl());
 		}

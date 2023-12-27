@@ -28,7 +28,7 @@ import io.github.mzattera.predictivepowers.google.client.GoogleClient;
 import io.github.mzattera.predictivepowers.google.client.Result;
 import io.github.mzattera.predictivepowers.google.client.Search;
 import io.github.mzattera.predictivepowers.google.endpoint.GoogleEndpoint;
-import io.github.mzattera.predictivepowers.services.SearchResult;
+import io.github.mzattera.predictivepowers.services.Link;
 import io.github.mzattera.predictivepowers.services.SearchService;
 import lombok.Getter;
 import lombok.NonNull;
@@ -59,18 +59,18 @@ public class GoogleSearchService implements SearchService {
 	private final GoogleClient client;
 
 	@Override
-	public List<SearchResult> search(@NonNull String query) {
+	public List<Link> search(@NonNull String query) {
 		return search(query, 10);
 	}
 
 	@Override
-	public List<SearchResult> search(@NonNull String query, int n) {
+	public List<Link> search(@NonNull String query, int n) {
 		Search search = endpoint.getClient().list(query, n);
-		List<SearchResult> result = new ArrayList<>(search.getItems().size());
+		List<Link> result = new ArrayList<>(search.getItems().size());
 		for (Result i : search.getItems()) {
 			try {
 				// TODO urgent add all fields to SearchResult
-				result.add(SearchResult.builder().title(i.getTitle()).url(new URL(i.getLink())).build());
+				result.add(Link.builder().title(i.getTitle()).url(new URL(i.getLink())).build());
 			} catch (MalformedURLException e) {
 				LOG.error("Malformed URL in search result: " + i.getLink(), e);
 			}

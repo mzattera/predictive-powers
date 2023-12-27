@@ -40,7 +40,7 @@ public interface SearchService extends Service {
 	 * @param query The search to perform.
 	 * @return List of search results.
 	 */
-	List<SearchResult> search(@NonNull String query);
+	List<Link> search(@NonNull String query);
 
 	/**
 	 * Performs an online search.
@@ -49,5 +49,5 @@ public interface SearchService extends Service {
 	 * @param n Number of results to return at most.
 	 * @return List of search results.
 	 */
-	List<SearchResult> search(@NonNull String query, int n);
+	List<Link> search(@NonNull String query, int n);
 }

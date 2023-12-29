@@ -95,14 +95,13 @@ public interface ModelService extends AiService {
 		private Tokenizer tokenizer;
 
 		/**
-		 * Context size for a model (namely for GPT models) or -1 if undefined.
+		 * Context size for a model (namely for GPT models).
 		 */
-		// TODO Consider whether to move this to OpenAiModelData
 		private Integer contextSize;
-		
+
 		/**
-		 * Some models, even if with a huge context size, return only a limited amount
-		 * of tokens, this must be considered or it will cause errors.
+		 * Some models (namely GPT-4), even if with a huge context size, return only a
+		 * limited amount of tokens, this must be considered or it will cause errors.
 		 */
 		private final Integer maxNewTokens;
 	}
@@ -170,7 +169,7 @@ public interface ModelService extends AiService {
 	 *         was defined for given model.
 	 */
 	int getContextSize(@NonNull String model, int def);
-	
+
 	/**
 	 * 
 	 * @param model
@@ -178,12 +177,12 @@ public interface ModelService extends AiService {
 	 *         this limitation in addition to max context size.
 	 */
 	int getMaxNewTokens(@NonNull String model);
-	
+
 	/**
 	 * 
 	 * @param model
 	 * @return Maximum number of new tokens a model can generate; some models have
 	 *         this limitation in addition to max context size.
 	 */
-	int getMaxNewTokens(@NonNull String model, int def);	
+	int getMaxNewTokens(@NonNull String model, int def);
 }

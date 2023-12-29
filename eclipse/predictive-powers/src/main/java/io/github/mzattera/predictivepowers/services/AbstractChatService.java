@@ -52,7 +52,7 @@ public abstract class AbstractChatService implements ChatService {
 	private String personality = null;
 
 	@Getter
-	private int maxConversationSteps = 15;
+	private int maxConversationSteps = Integer.MAX_VALUE;
 
 	@Override
 	public void setMaxConversationSteps(int l) {

@@ -66,7 +66,9 @@ public class OpenAiChatService extends AbstractChatService {
 		super(ep.getModelService());
 		this.endpoint = ep;
 		this.defaultReq = defaultReq;
-		setMaxConversationTokens(Math.max(modelService.getContextSize(defaultReq.getModel()), 2046) * 3 / 4);
+		String model = defaultReq.getModel();
+		int maxReplyTk = Math.min(modelService.getContextSize(model) / 4, modelService.getMaxNewTokens(model));
+		setMaxConversationTokens(modelService.getContextSize(model) - maxReplyTk); 
 	}
 
 	@NonNull

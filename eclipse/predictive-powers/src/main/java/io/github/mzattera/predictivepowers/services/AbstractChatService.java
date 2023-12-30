@@ -45,13 +45,16 @@ public abstract class AbstractChatService implements ChatService {
 
 	@Getter
 	@Setter
-	private int maxHistoryLength = 30;
+	// Leave it unlimited as making it to short might cut function calls resulting
+	// in HTTP error 440
+	private int maxHistoryLength = Integer.MAX_VALUE;
 
 	@Getter
 	@Setter
 	private String personality = null;
 
 	@Getter
+	// OpenAI chat service adjusts this in constructor
 	private int maxConversationSteps = Integer.MAX_VALUE;
 
 	@Override
@@ -99,6 +102,9 @@ public abstract class AbstractChatService implements ChatService {
 	 *         as can fit, given current settings.
 	 */
 	protected List<ChatMessage> trimChat(List<ChatMessage> messages, boolean addPersonality) {
+
+		// TODO URGENT: for OpenAI models, do not leave tool results on top of
+		// conversation without corresponding calls, or it will cause HTTP error 400
 		List<ChatMessage> result = new ArrayList<>(messages.size());
 		Tokenizer counter = modelService.getTokenizer(getModel());
 

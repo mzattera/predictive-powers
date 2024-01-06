@@ -104,6 +104,23 @@ public final class FileUtil {
 	}
 
 	/**
+	 * @return Name of given file with new extension.
+	 */
+	public static String replaceExtension(@NonNull File f, @NonNull String ext) {
+		return replaceExtension(f.getName(), ext);
+	}
+
+	/**
+	 * @return Name of given file without its extension.
+	 */
+	public static String replaceExtension(@NonNull String fileName, @NonNull String ext) {
+		String result = removeExtension(fileName);
+		if (ext.startsWith("."))
+			return result + ext;
+		return result + "." + ext;
+	}
+
+	/**
 	 * Reads content of a file, assumed to be a UTF-8 string.
 	 * 
 	 * @param fileName

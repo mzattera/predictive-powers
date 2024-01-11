@@ -209,15 +209,7 @@ public class OpenAiModelService extends AbstractModelService {
 	 */
 	final static Map<String, OpenAiModelData> MODEL_CONFIG = new HashMap<>();
 	static {
-		MODEL_CONFIG.put("ada", new OpenAiModelData(2049));
-		MODEL_CONFIG.put("babbage", new OpenAiModelData(2049));
 		MODEL_CONFIG.put("babbage-002", new OpenAiModelData(16384));
-		MODEL_CONFIG.put("code-search-ada-code-001", new OpenAiModelData(2046));
-		MODEL_CONFIG.put("code-search-ada-text-001", new OpenAiModelData(2046));
-		MODEL_CONFIG.put("code-search-babbage-code-001", new OpenAiModelData(2046));
-		MODEL_CONFIG.put("code-search-babbage-text-001", new OpenAiModelData(2046));
-		MODEL_CONFIG.put("curie", new OpenAiModelData(2049));
-		MODEL_CONFIG.put("davinci", new OpenAiModelData(2049));
 		MODEL_CONFIG.put("davinci-002", new OpenAiModelData(16384));
 		MODEL_CONFIG.put("gpt-3.5-turbo", new OpenAiModelData(4096, SupportedCallType.FUNCTIONS));
 		MODEL_CONFIG.put("gpt-3.5-turbo-16k", new OpenAiModelData(16384, SupportedCallType.FUNCTIONS));
@@ -231,29 +223,10 @@ public class OpenAiModelService extends AbstractModelService {
 		MODEL_CONFIG.put("gpt-4-0613", new OpenAiModelData(8192, SupportedCallType.FUNCTIONS));
 		MODEL_CONFIG.put("gpt-4-32k", new OpenAiModelData(32768, SupportedCallType.FUNCTIONS));
 		MODEL_CONFIG.put("gpt-4-32k-0613", new OpenAiModelData(32768, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-4-0314", new OpenAiModelData(8192));
 		MODEL_CONFIG.put("gpt-4-32k-0314", new OpenAiModelData(32768));
 		MODEL_CONFIG.put("gpt-4-1106-preview", new OpenAiModelData(128000, SupportedCallType.TOOLS, 4096));
 		MODEL_CONFIG.put("gpt-4-vision-preview", new OpenAiModelData(128000, 4096));
-		MODEL_CONFIG.put("text-ada-001", new OpenAiModelData(2049));
-		MODEL_CONFIG.put("text-babbage-001", new OpenAiModelData(2049));
-		MODEL_CONFIG.put("text-curie-001", new OpenAiModelData(2049));
-		MODEL_CONFIG.put("text-davinci-001", new OpenAiModelData(2049));
-		MODEL_CONFIG.put("text-davinci-002", new OpenAiModelData(4093)); // Documentation says 4097 but it is incorrect
-		MODEL_CONFIG.put("text-davinci-003", new OpenAiModelData(4093));
 		MODEL_CONFIG.put("text-embedding-ada-002", new OpenAiModelData(8192));
-		MODEL_CONFIG.put("text-search-ada-doc-001", new OpenAiModelData(2046));
-		MODEL_CONFIG.put("text-search-ada-query-001", new OpenAiModelData(2046));
-		MODEL_CONFIG.put("text-search-babbage-doc-001", new OpenAiModelData(2046));
-		MODEL_CONFIG.put("text-search-babbage-query-001", new OpenAiModelData(2046));
-		MODEL_CONFIG.put("text-search-curie-doc-001", new OpenAiModelData(2046));
-		MODEL_CONFIG.put("text-search-curie-query-001", new OpenAiModelData(2046));
-		MODEL_CONFIG.put("text-search-davinci-doc-001", new OpenAiModelData(2046));
-		MODEL_CONFIG.put("text-search-davinci-query-001", new OpenAiModelData(2046));
-		MODEL_CONFIG.put("text-similarity-ada-001", new OpenAiModelData(2046));
-		MODEL_CONFIG.put("text-similarity-babbage-001", new OpenAiModelData(2046));
-		MODEL_CONFIG.put("text-similarity-curie-001", new OpenAiModelData(2046));
-		MODEL_CONFIG.put("text-similarity-davinci-001", new OpenAiModelData(2046));
 		MODEL_CONFIG.put("tts-1", new OpenAiModelData(4096));
 		MODEL_CONFIG.put("tts-1-1106", new OpenAiModelData(2046));
 		MODEL_CONFIG.put("tts-1-hd", new OpenAiModelData(2046));

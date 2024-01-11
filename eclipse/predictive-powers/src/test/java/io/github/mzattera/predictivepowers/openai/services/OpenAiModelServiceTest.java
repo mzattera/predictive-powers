@@ -40,21 +40,13 @@ class OpenAiModelServiceTest {
 		OLD_MODELS.add("ada-code-search-text");
 		OLD_MODELS.add("ada-search-document");
 		OLD_MODELS.add("ada-search-query");
-		OLD_MODELS.add("ada-similarity");
-		OLD_MODELS.add("babbage-code-search-code");
-		OLD_MODELS.add("babbage-code-search-text");
 		OLD_MODELS.add("babbage-search-document");
 		OLD_MODELS.add("babbage-search-query");
-		OLD_MODELS.add("babbage-similarity");
 		;
-		OLD_MODELS.add("curie-instruct-beta");
 		OLD_MODELS.add("curie-search-document");
 		OLD_MODELS.add("curie-search-query");
-		OLD_MODELS.add("curie-similarity");
-		OLD_MODELS.add("davinci-instruct-beta");
 		OLD_MODELS.add("davinci-search-document");
 		OLD_MODELS.add("davinci-search-query");
-		OLD_MODELS.add("davinci-similarity");
 		;
 		OLD_MODELS.add("whisper-1"); // OK, this is a trick
 	}

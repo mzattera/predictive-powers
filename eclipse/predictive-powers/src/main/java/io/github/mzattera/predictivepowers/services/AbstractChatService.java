@@ -108,6 +108,7 @@ public abstract class AbstractChatService implements ChatService {
 		List<ChatMessage> result = new ArrayList<>(messages.size());
 		Tokenizer counter = modelService.getTokenizer(getModel());
 
+		// TODO URGENT this is OpenAI specific code, it should be moved into an overriden method; addPersonality is not needed 
 		boolean personalityAdded = false;
 		if (addPersonality && (getPersonality() != null)) {
 			result.add(new ChatMessage(ChatMessage.Role.SYSTEM, getPersonality()));

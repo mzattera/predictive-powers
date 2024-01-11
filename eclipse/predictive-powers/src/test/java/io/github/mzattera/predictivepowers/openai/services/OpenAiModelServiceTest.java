@@ -36,19 +36,17 @@ class OpenAiModelServiceTest {
 
 	private final static Set<String> OLD_MODELS = new HashSet<>();
 	static {
+		// Model for decommissioned search point seem to be still there for some users
 		OLD_MODELS.add("ada-code-search-code");
 		OLD_MODELS.add("ada-code-search-text");
 		OLD_MODELS.add("ada-search-document");
 		OLD_MODELS.add("ada-search-query");
 		OLD_MODELS.add("babbage-search-document");
 		OLD_MODELS.add("babbage-search-query");
-		;
 		OLD_MODELS.add("curie-search-document");
 		OLD_MODELS.add("curie-search-query");
 		OLD_MODELS.add("davinci-search-document");
 		OLD_MODELS.add("davinci-search-query");
-		;
-		OLD_MODELS.add("whisper-1"); // OK, this is a trick
 	}
 
 	private final static Function FUNCTION = Function.builder() //
@@ -80,10 +78,10 @@ class OpenAiModelServiceTest {
 			for (Model m : models) {
 				String model = m.getId();
 
+				if (model.startsWith("whisper"))
+					continue; // Whisper models do not need size
 				if (model.startsWith("dall-e"))
 					continue; // DALL-E models do not need size
-				if (model.contains("-edit"))
-					continue; // Edits model do not need size
 				if (model.contains("ft-"))
 					continue; // fine-tunes can be ignored
 				if (deprecated.remove(model))

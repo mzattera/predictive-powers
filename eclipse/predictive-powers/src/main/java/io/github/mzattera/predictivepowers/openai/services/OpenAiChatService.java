@@ -17,6 +17,7 @@ package io.github.mzattera.predictivepowers.openai.services;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,10 +31,10 @@ import io.github.mzattera.predictivepowers.openai.client.chat.Tool;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolCallResult;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiTokenizer;
 import io.github.mzattera.predictivepowers.services.AbstractChatService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import lombok.Getter;
 import lombok.NonNull;
@@ -68,7 +69,7 @@ public class OpenAiChatService extends AbstractChatService {
 		this.defaultReq = defaultReq;
 		String model = defaultReq.getModel();
 		int maxReplyTk = Math.min(modelService.getContextSize(model) / 4, modelService.getMaxNewTokens(model));
-		setMaxConversationTokens(modelService.getContextSize(model) - maxReplyTk); 
+		setMaxConversationTokens(modelService.getContextSize(model) - maxReplyTk);
 	}
 
 	@NonNull
@@ -228,7 +229,7 @@ public class OpenAiChatService extends AbstractChatService {
 	 * The exchange is added to the conversation history.
 	 */
 	public OpenAiTextCompletion chat(String msg, ChatCompletionsRequest req) {
-		return chat(new ChatMessage(Role.USER, msg), req);
+		return chat(new OpenAiChatMessage(Role.USER, msg), req);
 	}
 
 	@Override
@@ -243,7 +244,7 @@ public class OpenAiChatService extends AbstractChatService {
 	 */
 	public OpenAiTextCompletion chat(ChatMessage msg, ChatCompletionsRequest req) {
 
-		List<ChatMessage> conversation = trimChat(history, true);
+		List<ChatMessage> conversation = trimConversation(history, true);
 		conversation.add(msg);
 
 		OpenAiTextCompletion result = chatCompletion(conversation, req);
@@ -282,7 +283,7 @@ public class OpenAiChatService extends AbstractChatService {
 	 */
 	public OpenAiTextCompletion chat(List<ToolCallResult> results, ChatCompletionsRequest req) {
 
-		List<ChatMessage> conversation = trimChat(history, true);
+		List<ChatMessage> conversation = trimConversation(history, true);
 
 		OpenAiTextCompletion completion;
 
@@ -292,11 +293,7 @@ public class OpenAiChatService extends AbstractChatService {
 			if (results.size() != 1)
 				throw new IllegalArgumentException("Current model supports only single function calls.");
 
-			ToolCallResult callResult = results.get(0);
-			OpenAiChatMessage msg = OpenAiChatMessage.builder() //
-					.role(Role.FUNCTION) //
-					.content(callResult.getResult()) //
-					.name(callResult.getName()).build();
+			OpenAiChatMessage msg = new OpenAiChatMessage(Role.FUNCTION, results.get(0));
 			conversation.add(msg);
 			completion = chatCompletion(conversation, req);
 
@@ -308,12 +305,7 @@ public class OpenAiChatService extends AbstractChatService {
 
 			List<OpenAiChatMessage> msgs = new ArrayList<>();
 			for (ToolCallResult result : results) {
-				msgs.add(OpenAiChatMessage.builder() //
-						.role(Role.TOOL) //
-						.toolCallId(result.getToolCallId()) //
-						.content(result.getResult()) //
-						.name(result.getName()).build() //
-				);
+				msgs.add(new OpenAiChatMessage(Role.TOOL, result));
 			}
 			conversation.addAll(msgs);
 			completion = chatCompletion(conversation, req);
@@ -348,7 +340,7 @@ public class OpenAiChatService extends AbstractChatService {
 	 * is used, if provided.
 	 */
 	public OpenAiTextCompletion complete(String prompt, ChatCompletionsRequest req) {
-		return complete(new ChatMessage(ChatMessage.Role.USER, prompt), req);
+		return complete(new OpenAiChatMessage(Role.USER, prompt), req);
 	}
 
 	@Override
@@ -365,7 +357,7 @@ public class OpenAiChatService extends AbstractChatService {
 	public OpenAiTextCompletion complete(ChatMessage prompt, ChatCompletionsRequest req) {
 		List<ChatMessage> msgs = new ArrayList<>();
 		if (getPersonality() != null)
-			msgs.add(new ChatMessage(ChatMessage.Role.SYSTEM, getPersonality()));
+			msgs.add(new OpenAiChatMessage(Role.SYSTEM, getPersonality()));
 		msgs.add(prompt);
 
 		return complete(msgs, req);
@@ -401,7 +393,7 @@ public class OpenAiChatService extends AbstractChatService {
 
 		String model = req.getModel();
 
-		req.setMessages(messages);
+		req.setMessages(messages.stream().map(element -> (OpenAiChatMessage) element).collect(Collectors.toList()));
 
 		boolean autofit = (req.getMaxTokens() == null) && (modelService.getContextSize(model, -1) != -1);
 
@@ -457,6 +449,47 @@ public class OpenAiChatService extends AbstractChatService {
 			// for next call, or maxTokens will remain fixed
 			if (autofit)
 				req.setMaxTokens(null);
+		}
+	}
+
+	@Override
+	protected List<ChatMessage> trimConversation(List<ChatMessage> messages) {
+		return trimConversation(messages, true);
+	}
+
+	/**
+	 * Trims given list of messages (typically a conversation history), so it fits
+	 * the limits set in this instance (that is, maximum conversation steps and
+	 * tokens).
+	 * 
+	 * @param addPersonality If true, personality will be added as a system message
+	 *                       at the beginning of the resulting conversation.
+	 * 
+	 * @return A new conversation, including agent personality and as many messages
+	 *         as can fit, given current settings.
+	 */
+	protected List<ChatMessage> trimConversation(List<ChatMessage> messages, boolean addPersonality) {
+
+		// Remove function call results left on top without corresponding calls, or this
+		// will cause HTTP 400 error
+		List<ChatMessage> l = new ArrayList<>(messages);
+		while (l.size() > 0) {
+			OpenAiChatMessage m = (OpenAiChatMessage) l.get(0);
+			if ((m.getRole() == Role.FUNCTION) || (m.getRole() == Role.TOOL))
+				l.remove(0);
+			else
+				break;
+		}
+
+		if (addPersonality && (getPersonality() != null)) {
+			// must add a system message on top with personality
+			ChatMessage sys = new OpenAiChatMessage(Role.SYSTEM, getPersonality());
+			int count = modelService.getTokenizer(getModel()).count(sys);
+			List<ChatMessage> result = trimConversation(messages, getMaxConversationSteps(), getMaxConversationTokens() - count);
+			result.add(0, sys);
+			return result;
+		} else {
+			return trimConversation(messages, getMaxConversationSteps(), getMaxConversationTokens());
 		}
 	}
 }

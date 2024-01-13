@@ -25,9 +25,9 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.AbstractQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
@@ -120,7 +120,8 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 		// TODO URGENT Better delimiters for context and questions
 		List<ChatMessage> instructions = new ArrayList<>();
 		if (completionService.getPersonality() == null)
-			instructions.add(new ChatMessage(Role.SYSTEM, "You are an AI assistant answering questions truthfully."));
+			instructions
+					.add(new OpenAiChatMessage(Role.SYSTEM, "You are an AI assistant answering questions truthfully."));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"Answer the below questions truthfully, strictly using only the information in the context. " + //
 						"When providing an answer, provide your reasoning as well, step by step. " + //
@@ -154,7 +155,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 		StringBuilder ctx = new StringBuilder("Context:\n");
 		int i = 0;
 		for (; i < context.size(); ++i) {
-			ChatMessage m = new ChatMessage(Role.USER, ctx.toString() + "\n" + context.get(i));
+			ChatMessage m = new OpenAiChatMessage(Role.USER, ctx.toString() + "\n" + context.get(i));
 			if ((tok + counter.count(m)) > getMaxContextTokens())
 				break;
 			ctx.append('\n').append(context.get(i));
@@ -165,7 +166,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 		}
 
 		ctx.append(qMsg);
-		instructions.add(new ChatMessage(Role.USER, ctx.toString()));
+		instructions.add(new OpenAiChatMessage(Role.USER, ctx.toString()));
 
 		OpenAiTextCompletion answerJson = completionService.complete(instructions);
 		QnAPair result = null;

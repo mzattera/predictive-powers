@@ -27,6 +27,7 @@ import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpo
 import io.github.mzattera.predictivepowers.services.AbstractModelService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ModelService;
+import io.github.mzattera.util.CharTokenizer;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -130,15 +131,18 @@ public class HuggingFaceModelService extends AbstractModelService {
 	private ModelData createData(@NonNull String model) {
 
 		// Uses DJL services to download proper tokenizer
-		ai.djl.huggingface.tokenizers.HuggingFaceTokenizer tokenizer = null;
+		Tokenizer tokenizer = null;
 		try {
-			tokenizer = ai.djl.huggingface.tokenizers.HuggingFaceTokenizer.newInstance(model);
+			tokenizer = new HuggingFaceTokenizer(ai.djl.huggingface.tokenizers.HuggingFaceTokenizer.newInstance(model));
 		} catch (Exception e) {
-			LOG.error("Cannot retrieve Hugging Face Tokenizer for model " + model, e);
-			return null;
+			// Not all models have a tokenizer, we fallback
+			LOG.warn("Cannot retrieve Hugging Face Tokenizer for model " + model, e);
+			tokenizer = CharTokenizer.getInstance();
 		}
 
-		ModelData result = ModelData.builder().tokenizer(new HuggingFaceTokenizer(tokenizer)).build();
+		// TODO maybe there is other metadata we cna read from Hugging Face (all the
+		// model data are files in a Git repo)
+		ModelData result = ModelData.builder().tokenizer(tokenizer).build();
 		put(model, result);
 		return result;
 	}

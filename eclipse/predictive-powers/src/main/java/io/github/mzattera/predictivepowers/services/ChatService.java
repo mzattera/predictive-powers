@@ -19,11 +19,13 @@ package io.github.mzattera.predictivepowers.services;
 import java.util.List;
 
 /**
- * Instances of this interface manage a chats with an agent.
+ * This is a service capable of holding conversations with the user. It is more
+ * advanced than {#link CompletionService}, as it can both complete a text
+ * prompt and hold a conversation. It exposes method to maintain the
+ * conversation history.
  * 
- * Chat history is kept in memory and updated as chat progresses. At the same
- * time, methods to use chat service as a simple completion service are also
- * provided.
+ * This service is not supposed to use any tool, just manage text messages back
+ * and forth.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -75,8 +77,6 @@ public interface ChatService extends AiService {
 	 * it is up o the developer to make sure the corresponding service still works
 	 * properly.
 	 * 
-	 * They can be manipulated in order to alter chat flow.
-	 * 
 	 * Notice this will grow up to {@link #getMaxHistoryLength}, unless cleared.
 	 * However, only latest messages are considered when calling the API (see
 	 * {@link getMaxConversationLength}).
@@ -84,14 +84,12 @@ public interface ChatService extends AiService {
 	List<ChatMessage> getHistory();
 
 	/**
-	 * Maximum number of messages to keep in chat history, regardless the
-	 * associated role.
+	 * Maximum number of messages to keep in chat history.
 	 */
 	int getMaxHistoryLength();
 
 	/**
-	 * Maximum number of messages to keep in chat history, regardless the
-	 * associated role.
+	 * Maximum number of messages to keep in chat history.
 	 */
 	void setMaxHistoryLength(int maxHistoryLength);
 
@@ -103,7 +101,7 @@ public interface ChatService extends AiService {
 
 	/**
 	 * Maximum number of history steps to consider when interacting with chat
-	 * service (ignoring last prompt).
+	 * service (ignoring last message).
 	 * 
 	 * Notice this does NOT limit length of conversation history (see
 	 * {@link #getMaxHistoryLength}).
@@ -112,7 +110,7 @@ public interface ChatService extends AiService {
 
 	/**
 	 * Maximum number of history steps to consider when interacting with chat
-	 * service (ignoring last prompt).
+	 * service (ignoring last message).
 	 * 
 	 * Notice this does NOT limit length of conversation history (see
 	 * {@link #getMaxHistoryLength}).
@@ -121,7 +119,7 @@ public interface ChatService extends AiService {
 
 	/**
 	 * Maximum number of tokens to keep in conversation when interacting with chat
-	 * service.
+	 * service (ignoring last message).
 	 * 
 	 * For some models, the higher this parameter, the smaller the allowed size of
 	 * the reply.
@@ -130,7 +128,7 @@ public interface ChatService extends AiService {
 
 	/**
 	 * Maximum number of tokens to keep in conversation when interacting with chat
-	 * service.
+	 * service (ignoring last message).
 	 * 
 	 * For some models, the higher this parameter, the smaller the allowed size of
 	 * the reply.
@@ -169,27 +167,29 @@ public interface ChatService extends AiService {
 	ChatCompletion chat(ChatMessage msg);
 
 	/**
-	 * Completes text outside a conversation (executes given prompt).
+	 * Completes text outside a conversation (executes given prompt ignoring and
+	 * without affecting conversation history).
 	 * 
-	 * Notice this does not consider or affects chat history but bot personality
-	 * is used, if provided.
+	 * Notice this does not consider or affects chat history but bot personality is
+	 * used, if provided.
 	 */
 	ChatCompletion complete(String prompt);
 
 	/**
-	 * Completes text outside a conversation (executes given prompt).
+	 * Completes text outside a conversation (executes given prompt ignoring and
+	 * without affecting conversation history).
 	 * 
-	 * Notice this does not consider or affects chat history but bot personality
-	 * is used, if provided.
+	 * Notice this does not consider or affects chat history but bot personality is
+	 * used, if provided.
 	 */
 	ChatCompletion complete(ChatMessage prompt);
 
 	/**
-	 * Completes text outside a conversation (executes given prompt).
+	 * Completes text outside a conversation (executes given prompt ignoring and
+	 * without affecting conversation history).
 	 * 
 	 * Notice the list of messages is supposed to be passed as-is to the chat API,
-	 * without modifications, including adding system messages to drive personality
-	 * (for services supporting that).
+	 * without modifications.
 	 */
 	ChatCompletion complete(List<ChatMessage> messages);
 }

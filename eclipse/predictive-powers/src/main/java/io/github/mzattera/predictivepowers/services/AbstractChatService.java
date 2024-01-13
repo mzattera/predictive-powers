@@ -18,7 +18,7 @@ package io.github.mzattera.predictivepowers.services;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
+import io.github.mzattera.predictivepowers.services.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +35,7 @@ import lombok.Setter;
 public abstract class AbstractChatService implements ChatService {
 
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
-	// values from a Map
+	// values from a Map, see CompletionService
 
 	@Getter
 	protected final ModelService modelService;
@@ -45,16 +45,13 @@ public abstract class AbstractChatService implements ChatService {
 
 	@Getter
 	@Setter
-	// Leave it unlimited as making it to short might cut function calls resulting
-	// in HTTP error 440
-	private int maxHistoryLength = Integer.MAX_VALUE;
+	private int maxHistoryLength = 1000;
 
 	@Getter
 	@Setter
 	private String personality = null;
 
 	@Getter
-	// OpenAI chat service adjusts this in constructor
 	private int maxConversationSteps = Integer.MAX_VALUE;
 
 	@Override
@@ -82,53 +79,48 @@ public abstract class AbstractChatService implements ChatService {
 
 	@Override
 	public ChatCompletion chat(String msg) {
-		return chat(new ChatMessage(Role.USER, msg));
+		return chat(new ChatMessage(Author.USER, msg));
 	}
 
 	@Override
 	public ChatCompletion complete(String prompt) {
-		return complete(new ChatMessage(Role.USER, prompt));
+		return complete(new ChatMessage(Author.USER, prompt));
 	}
 
 	/**
 	 * Trims given list of messages (typically a conversation history), so it fits
-	 * the limits set in this instance (that is, maximum conversation steps and
-	 * tokens).
+	 * the limits set in this instance (that is, {@link #maxConversationSteps} and
+	 * {@link #maxConversationTokens}).
 	 * 
 	 * @param addPersonality If true, personality will be added as a system message
 	 *                       at the beginning of the resulting conversation.
 	 * 
-	 * @return A new conversation, including agent personality and as many messages
-	 *         as can fit, given current settings.
+	 * @return A new conversation with as many messages as can fit, given this
+	 *         instance settings.
 	 */
-	protected List<ChatMessage> trimChat(List<ChatMessage> messages, boolean addPersonality) {
+	protected List<ChatMessage> trimConversation(List<ChatMessage> messages) {
+		return trimConversation(messages, maxConversationSteps, maxConversationTokens);
+	}
 
-		// TODO URGENT: for OpenAI models, do not leave tool results on top of
-		// conversation without corresponding calls, or it will cause HTTP error 400
+	/**
+	 * Trims given list of messages (typically a conversation history), so it fits
+	 * the given limits set in this instance.
+	 * 
+	 * @return A new conversation with as many messages as can fit, based on given
+	 *         limits.
+	 */
+	protected List<ChatMessage> trimConversation(List<ChatMessage> messages, int maxConversationSteps,
+			int maxConversationTokens) {
+
 		List<ChatMessage> result = new ArrayList<>(messages.size());
 		Tokenizer counter = modelService.getTokenizer(getModel());
-
-		// TODO URGENT this is OpenAI specific code, it should be moved into an
-		// overriden method; addPersonality is not needed
-		boolean personalityAdded = false;
-		if (addPersonality && (getPersonality() != null)) {
-			result.add(new ChatMessage(ChatMessage.Role.SYSTEM, getPersonality()));
-			personalityAdded = true;
-		}
-
-		int steps = 0; // Only history counts against steps.
+		int steps = 0;
 
 		for (int i = messages.size() - 1; i >= 0; --i) {
 			if (steps >= maxConversationSteps)
 				break;
 
-			ChatMessage msg = messages.get(i);
-			if (personalityAdded) {
-				// Insert after ChatMessage.Role.SYSTEM at the beginning of conversation
-				result.add(1, msg);
-			} else {
-				result.add(0, msg);
-			}
+			result.add(0, messages.get(i));
 
 			if (counter.count(result) > maxConversationTokens) {
 				// remove last msg, it exceeded number of tokens, then exit

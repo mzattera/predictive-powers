@@ -37,7 +37,7 @@ import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpo
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceCompletionService;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
-import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
+import io.github.mzattera.predictivepowers.services.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 
 /**
@@ -198,7 +198,7 @@ public class CompletionServiceTest {
 		Map<String, Object> params = new HashMap<>();
 		params.put("A", null);
 		params.put("A.B", "a.b");
-		params.put("C", Role.BOT);
+		params.put("C", Author.BOT);
 
 		assertEquals(null, CompletionService.fillSlots(null, new HashMap<>()));
 		assertEquals("banana", CompletionService.fillSlots("banana", null));

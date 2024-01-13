@@ -20,6 +20,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.ToString;
 
 /**
@@ -71,9 +72,10 @@ public class TextCompletion {
 	}
 
 	@Getter
+	@NonNull
 	private String text;
 
 	@Getter
-	// TODO marking this @NonNull causes subclasses builders to fail...
+	@NonNull
 	private FinishReason finishReason;
 }

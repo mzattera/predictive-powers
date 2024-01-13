@@ -47,7 +47,7 @@ public class ChatCompletion {
 	}
 
 	@Getter
-//	@NonNull
+//	TODO Setting to @NonNull causes issues with @SuperBuilder ChatGPT says I cna have a @Builder.Default method to check after creation, as I have no setters
 	private ChatMessage message;
 
 	@Getter

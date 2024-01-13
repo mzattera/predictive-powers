@@ -48,10 +48,12 @@ import io.github.mzattera.predictivepowers.google.client.GoogleClient;
 import io.github.mzattera.predictivepowers.google.endpoint.GoogleEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.services.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
+import io.github.mzattera.predictivepowers.services.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.EmbeddingService;
@@ -594,9 +596,9 @@ public class EssayWriter implements Closeable {
 		// Prepares the conversation; notice the call to fill the slots in the prompt
 		// template
 		List<ChatMessage> msgs = new ArrayList<>();
-		msgs.add(new ChatMessage(Role.SYSTEM,
+		msgs.add(new OpenAiChatMessage(Role.SYSTEM,
 				"You are an assistant helping a researcher in finding web pages that are relevant for the essay section they are writing."));
-		msgs.add(new ChatMessage(Role.USER, CompletionService.fillSlots(prompt, params)));
+		msgs.add(new ChatMessage(Author.USER, CompletionService.fillSlots(prompt, params)));
 
 		// Loops until the section has been successfully googled
 		List<String> queries;
@@ -743,7 +745,7 @@ public class EssayWriter implements Closeable {
 
 		// This is the prompt used for creating the section
 		List<ChatMessage> msgs = new ArrayList<>();
-		msgs.add(new ChatMessage(Role.SYSTEM,
+		msgs.add(new OpenAiChatMessage(Role.SYSTEM,
 				"You will be provided with a context and the summary of a section of an essay, both delimited by XML tags."
 						+ " Your task is to use the content of the context to write the entire section of the essay."
 						+ " Use a professional style." + " Avoid content repetitions but be detailed."
@@ -751,7 +753,7 @@ public class EssayWriter implements Closeable {
 						+ " Do not make up missing information or put placeholders for data you do not have."
 						+ " Only if enough information is available in the content, produce a text at least "
 						+ SECTION_LENGTH_TOKENS + " tokens long.\n\n"));
-		msgs.add(new ChatMessage(Role.USER, "")); // Placeholder
+		msgs.add(new ChatMessage(Author.USER, "")); // Placeholder
 
 		// Searches the knowledge base for relevant content
 		// (= builds the context)
@@ -771,7 +773,7 @@ public class EssayWriter implements Closeable {
 			params.put("context", c);
 
 			msgs.remove(msgs.size() - 1);
-			msgs.add(new ChatMessage(Role.USER, CompletionService.fillSlots(prompt, params)));
+			msgs.add(new ChatMessage(Author.USER, CompletionService.fillSlots(prompt, params)));
 			if (((int) (SECTION_LENGTH_TOKENS * 1.5) + counter.count(msgs)) > ctxSize)
 				break;
 			context = c; // Saves last context that would fit
@@ -780,7 +782,7 @@ public class EssayWriter implements Closeable {
 		// OK, now build the actual context
 		msgs.remove(msgs.size() - 1);
 		params.put("context", context);
-		msgs.add(new ChatMessage(Role.USER, CompletionService.fillSlots(prompt, params)));
+		msgs.add(new ChatMessage(Author.USER, CompletionService.fillSlots(prompt, params)));
 
 		// Add generated content to the section
 		section.content = chatSvc.complete(msgs).getText();

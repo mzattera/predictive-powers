@@ -92,14 +92,9 @@ public class ChatCompletionsRequest {
 		}
 	}
 
-	/**
-	 * Notice this can contain (and mostly will) {@link OpenAiChatMessage}, it has
-	 * been declared like this to ensure we can build a service across different
-	 * endpoints that will use ChatMessage interchangeably.
-	 */
 	@NonNull
 	@Builder.Default
-	List<ChatMessage> messages = new ArrayList<>();
+	List<OpenAiChatMessage> messages = new ArrayList<>();
 
 	@NonNull
 	String model;

@@ -138,7 +138,11 @@ public class OpenAiModelService extends AbstractModelService {
 		 * Counts tokens required to encode given request.
 		 */
 		public int count(@NonNull ChatCompletionsRequest req) {
-			return count(req.getMessages()) + countFunctions(req.getFunctions());
+			List<xyz.felh.openai.completion.chat.ChatMessage> l = new ArrayList<>(req.getMessages().size());
+			for (ChatMessage m : req.getMessages()) {
+				l.add(translate(m));
+			}
+			return TikTokenUtils.tokens(model, l) + countFunctions(req.getFunctions());
 		}
 
 		/**
@@ -157,22 +161,35 @@ public class OpenAiModelService extends AbstractModelService {
 		private xyz.felh.openai.completion.chat.ChatMessage translate(ChatMessage m) {
 
 			ChatMessageRole role;
-			switch (m.getRole()) {
-			case USER:
-				role = ChatMessageRole.USER;
-				break;
-			case BOT:
-				role = ChatMessageRole.ASSISTANT;
-				break;
-			case SYSTEM:
-				role = ChatMessageRole.SYSTEM;
-				break;
-			case FUNCTION:
-			case TOOL: // TODO URGENT add support for tool calls
-				role = ChatMessageRole.FUNCTION;
-				break;
-			default:
-				throw new IllegalArgumentException(); // Guard
+			if (m instanceof OpenAiChatMessage) {
+				switch (((OpenAiChatMessage) m).getRole()) {
+				case USER:
+					role = ChatMessageRole.USER;
+					break;
+				case BOT:
+					role = ChatMessageRole.ASSISTANT;
+					break;
+				case SYSTEM:
+					role = ChatMessageRole.SYSTEM;
+					break;
+				case FUNCTION:
+				case TOOL: // TODO URGENT add support for tool calls
+					role = ChatMessageRole.FUNCTION;
+					break;
+				default:
+					throw new IllegalArgumentException(); // Guard
+				}
+			} else {
+				switch (m.getAuthor()) {
+				case USER:
+					role = ChatMessageRole.USER;
+					break;
+				case BOT:
+					role = ChatMessageRole.ASSISTANT;
+					break;
+				default:
+					throw new IllegalArgumentException(); // Guard
+				}
 			}
 
 			xyz.felh.openai.completion.chat.ChatMessage result = new xyz.felh.openai.completion.chat.ChatMessage(role,
@@ -252,7 +269,8 @@ public class OpenAiModelService extends AbstractModelService {
 			if (modelType.startsWith("gpt-3.5-turbo-16k")) {
 				modelType = "gpt-3.5-turbo-16k";
 			} else {
-				if (modelType.startsWith("gpt-3.5-turbo") || modelType.equals("davinci-002") || modelType.equals("babbage-002")) {
+				if (modelType.startsWith("gpt-3.5-turbo") || modelType.equals("davinci-002")
+						|| modelType.equals("babbage-002")) {
 					modelType = "gpt-3.5-turbo";
 				} else {
 					if (modelType.startsWith("gpt-4-32k")) {

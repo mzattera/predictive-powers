@@ -27,8 +27,9 @@ import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
 
 public class OpenAiExceptionTest {
 
@@ -56,8 +57,8 @@ public class OpenAiExceptionTest {
 
 		try (OpenAiClient cli = new OpenAiClient()) {
 
-			ChatMessage msg = new ChatMessage(Role.USER, "Ciao!");
-			List<ChatMessage> msgs = new ArrayList<>();
+			OpenAiChatMessage msg = new OpenAiChatMessage(Role.USER, "Ciao!");
+			List<OpenAiChatMessage> msgs = new ArrayList<>();
 			msgs.add(msg);
 			ChatCompletionsRequest req = ChatCompletionsRequest.builder().model("gpt-3.5-turbo").maxTokens(10_000)
 					.messages(msgs).build();

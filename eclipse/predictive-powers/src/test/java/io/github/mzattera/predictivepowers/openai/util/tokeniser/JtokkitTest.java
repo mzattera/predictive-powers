@@ -24,6 +24,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
@@ -71,9 +73,9 @@ public class JtokkitTest {
 	@Test
 	void test03() {
 		List<ChatMessage> l = new ArrayList<>();
-		l.add(new ChatMessage(ChatMessage.Role.SYSTEM, "You are a usefl assistant"));
-		l.add(new ChatMessage(ChatMessage.Role.USER, "Hello"));
-		l.add(new ChatMessage(ChatMessage.Role.BOT, "Hi, how cna I help?"));
+		l.add(new OpenAiChatMessage(Role.SYSTEM, "You are a usefl assistant"));
+		l.add(new OpenAiChatMessage(Role.USER, "Hello"));
+		l.add(new OpenAiChatMessage(Role.BOT, "Hi, how cna I help?"));
 
 		Tokenizer tokenizer = svc.getTokenizer("gpt-3.5-turbo");
 		assertEquals(33, tokenizer.count(l));

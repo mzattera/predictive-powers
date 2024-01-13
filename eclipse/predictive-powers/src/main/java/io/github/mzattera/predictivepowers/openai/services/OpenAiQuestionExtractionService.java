@@ -30,8 +30,8 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
@@ -101,14 +101,14 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 		List<ChatMessage> instructions = new ArrayList<>();
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"You are a teacher and you are preparing an assessment from some text materials.", null));
-		instructions.add(new OpenAiChatMessage(ChatMessage.Role.SYSTEM,
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"Given a context, extract a set of questions and corresponding answers, then format them as a JSON array. Some examples are provided below.",
 				"example_user"));
-		instructions.add(new OpenAiChatMessage(ChatMessage.Role.SYSTEM, "Context:\n'''\n" //
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM, "Context:\n'''\n" //
 				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China–Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1⁄2 in) was most recently established in 2020 by the Chinese and Nepali authorities.\n" //
 				+ "Mount Everest attracts many climbers, including highly experienced mountaineers. There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the 'standard route') and the other from the north in Tibet. While not posing substantial technical climbing challenges on the standard route, Everest presents dangers such as altitude sickness, weather, and wind, as well as hazards from avalanches and the Khumbu Icefall. As of 2019, over 300 people have died on Everest, many of whose bodies remain on the mountain.\n" //
 				+ "'''", "example_user"));
-		instructions.add(new OpenAiChatMessage(ChatMessage.Role.SYSTEM, "[\n" //
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM, "[\n" //
 				+ "   {\n" //
 				+ "      \"question\":\"What is the highest mountain on Earth?\",\n" //
 				+ "      \"answer\":\"Mount Everest is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas.\"\n" //
@@ -134,16 +134,16 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 
 		// Provides instructions and examples
 		List<ChatMessage> instructions = new ArrayList<>();
-		instructions.add(new OpenAiChatMessage(ChatMessage.Role.SYSTEM,
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"You are a teacher and you are preparing an assessment from some text materials."));
-		instructions.add(new OpenAiChatMessage(ChatMessage.Role.SYSTEM,
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"Given a context, extract a set of true/false exercise and corresponding answers; make sure some questions require a 'true' answer and  some require a 'false' answer, then format them as a JSON array. Some examples are provided below.",
 				"example_user", null));
-		instructions.add(new OpenAiChatMessage(ChatMessage.Role.SYSTEM, "Context:\n'''\n" //
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM, "Context:\n'''\n" //
 				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China–Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1⁄2 in) was most recently established in 2020 by the Chinese and Nepali authorities.\n" //
 				+ "Mount Everest attracts many climbers, including highly experienced mountaineers. There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the 'standard route') and the other from the north in Tibet. While not posing substantial technical climbing challenges on the standard route, Everest presents dangers such as altitude sickness, weather, and wind, as well as hazards from avalanches and the Khumbu Icefall. As of 2019, over 300 people have died on Everest, many of whose bodies remain on the mountain.\n" //
 				+ "'''", "example_user", null));
-		instructions.add(new OpenAiChatMessage(ChatMessage.Role.BOT, "[\n" //
+		instructions.add(new OpenAiChatMessage(Role.BOT, "[\n" //
 				+ "   {\n" //
 				+ "      \"question\":\"Mount Everest is the highest mountain on Earth.\",\n" //
 				+ "      \"answer\":\"true\"\n" //
@@ -184,26 +184,26 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 	public List<QnAPair> getFillQuestions(String text) {
 		// Provides instructions and examples
 		List<ChatMessage> instructions = new ArrayList<>();
-		instructions.add(new OpenAiChatMessage(ChatMessage.Role.SYSTEM,
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"You are a teacher and you are preparing an assessment from some text materials."));
-		instructions.add(new OpenAiChatMessage(ChatMessage.Role.SYSTEM,
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"Create 'fill the blank' exercises with corresponding fill words from the given context, and format them as a JSON array. Make sure to generate questions where a missing word is replaced with a blank, denoted as '______', and provide the missing word as the answer.",
 				"example_user"));
-		instructions.add(new OpenAiChatMessage(ChatMessage.Role.SYSTEM, "Context:\r\n" + "'''\r\n"
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM, "Context:\r\n" + "'''\r\n"
 				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China\u2013Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1\u20442 in) was most recently established in 2020 by the Chinese and Nepali authorities.\r\n"
 				+ "'''", "example_user"));
-		instructions.add(new OpenAiChatMessage(ChatMessage.Role.SYSTEM,
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"[\r\n" + "   {\r\n" + "      \"question\":\"Which is Earth's highest mountain above sea level?\",\r\n"
 						+ "      \"answer\":\"Mount Everest\"\r\n" + "   }\r\n" + "]",
 				"example_assistant"));
-		instructions.add(new OpenAiChatMessage(ChatMessage.Role.SYSTEM,
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"This is wrong, this is not a  'fill the blank' exercises. Try again.", "example_user", null));
-		instructions.add(new OpenAiChatMessage(ChatMessage.Role.SYSTEM,
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"[\r\n" + "   {\r\n"
 						+ "      \"question\":\"Mount ______ is Earth's highest mountain above sea level.\",\r\n"
 						+ "      \"answer\":\"Everest\"\r\n" + "   }\r\n" + "]",
 				"example_assistant"));
-		instructions.add(new OpenAiChatMessage(ChatMessage.Role.SYSTEM, "This is correct.", "example_user", null));
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM, "This is correct.", "example_user", null));
 
 		List<QnAPair> result = getQuestions(instructions, text);
 		Iterator<QnAPair> it = result.iterator();
@@ -243,16 +243,16 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 
 		// Provides instructions and examples
 		List<ChatMessage> instructions = new ArrayList<>();
-		instructions.add(new OpenAiChatMessage(ChatMessage.Role.SYSTEM,
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"You are a teacher and you are preparing an assessment from some text materials."));
-		instructions.add(new OpenAiChatMessage(ChatMessage.Role.SYSTEM,
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"Given a context, extract a set of multiple-choice questions, corresponding answers, and a list of options for each question, then format them as a JSON array. Make sure the options for one question are all different. Some examples are provided below.",
 				"example_user"));
-		instructions.add(new OpenAiChatMessage(ChatMessage.Role.SYSTEM, "Context:\n'''\n" //
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM, "Context:\n'''\n" //
 				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China–Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1⁄2 in) was most recently established in 2020 by the Chinese and Nepali authorities.\n" //
 				+ "Mount Everest attracts many climbers, including highly experienced mountaineers. There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the 'standard route') and the other from the north in Tibet. While not posing substantial technical climbing challenges on the standard route, Everest presents dangers such as altitude sickness, weather, and wind, as well as hazards from avalanches and the Khumbu Icefall. As of 2019, over 300 people have died on Everest, many of whose bodies remain on the mountain.\n" //
 				+ "'''", "example_user"));
-		instructions.add(new OpenAiChatMessage(ChatMessage.Role.SYSTEM, "[\n" //
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM, "[\n" //
 				+ "   {\n" //
 				+ "      \"question\":\"What is the highest mountain on Earth?\",\n" //
 				+ "      \"options\":[\n" //
@@ -356,7 +356,7 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 	private List<QnAPair> getQuestionsShort(List<ChatMessage> instructions, String shortText) {
 
 		List<ChatMessage> prompt = new ArrayList<>(instructions);
-		prompt.add(new ChatMessage(ChatMessage.Role.USER, "Context:\n'''\n" //
+		prompt.add(new OpenAiChatMessage(Role.USER, "Context:\n'''\n" //
 				+ shortText //
 				+ "\n'''"));
 

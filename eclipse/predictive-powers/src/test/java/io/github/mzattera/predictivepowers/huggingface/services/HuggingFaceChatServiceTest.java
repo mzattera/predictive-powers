@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
+import io.github.mzattera.predictivepowers.services.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.TextCompletion;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 
@@ -54,7 +54,7 @@ public class HuggingFaceChatServiceTest {
 			assertEquals(cs.getPersonality(), personality);
 
 			// In completion, we do not consider history, but we consider personality.
-			cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "test"));
+			cs.getHistory().add(new ChatMessage(Author.USER, "test"));
 			assertEquals(1, cs.getHistory().size());
 			String question = "How high is Mt.Everest?";
 			ChatCompletion resp = cs.complete(question);
@@ -87,8 +87,8 @@ public class HuggingFaceChatServiceTest {
 
 			// Fake history
 			for (int i = 0; i < 10; ++i) {
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "user_" + i));
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.BOT, "bot_" + i));
+				cs.getHistory().add(new ChatMessage(Author.USER, "user_" + i));
+				cs.getHistory().add(new ChatMessage(Author.BOT, "bot_" + i));
 			}
 
 			cs.setMaxHistoryLength(4);
@@ -102,13 +102,13 @@ public class HuggingFaceChatServiceTest {
 			ChatCompletion resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 4);
-			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.USER);
+			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
 			assertEquals(cs.getHistory().get(0).getContent(), "user_" + 9);
-			assertEquals(cs.getHistory().get(1).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(1).getAuthor(), Author.BOT);
 			assertEquals(cs.getHistory().get(1).getContent(), "bot_" + 9);
-			assertEquals(cs.getHistory().get(2).getRole(), ChatMessage.Role.USER);
+			assertEquals(cs.getHistory().get(2).getAuthor(), Author.USER);
 			assertEquals(cs.getHistory().get(2).getContent(), question);
-			assertEquals(cs.getHistory().get(3).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(3).getAuthor(), Author.BOT);
 			assertEquals(cs.getHistory().get(3).getContent(), resp.getText());
 			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().size(), 1);
 			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().get(0), "user_" + 9);
@@ -122,8 +122,8 @@ public class HuggingFaceChatServiceTest {
 			// Fake history
 			cs.clearConversation();
 			for (int i = 0; i < 10; ++i) {
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "user_" + i));
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.BOT, "bot_" + i));
+				cs.getHistory().add(new ChatMessage(Author.USER, "user_" + i));
+				cs.getHistory().add(new ChatMessage(Author.BOT, "bot_" + i));
 			}
 			cs.setPersonality(null);
 			cs.setMaxNewTokens(100);
@@ -131,13 +131,13 @@ public class HuggingFaceChatServiceTest {
 			resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 4);
-			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.USER);
+			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
 			assertEquals(cs.getHistory().get(0).getContent(), "user_" + 9);
-			assertEquals(cs.getHistory().get(1).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(1).getAuthor(), Author.BOT);
 			assertEquals(cs.getHistory().get(1).getContent(), "bot_" + 9);
-			assertEquals(cs.getHistory().get(2).getRole(), ChatMessage.Role.USER);
+			assertEquals(cs.getHistory().get(2).getAuthor(), Author.USER);
 			assertEquals(cs.getHistory().get(2).getContent(), question);
-			assertEquals(cs.getHistory().get(3).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(3).getAuthor(), Author.BOT);
 			assertEquals(cs.getHistory().get(3).getContent(), resp.getText());
 			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().size(), 1);
 			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().get(0), "user_" + 9);
@@ -151,8 +151,8 @@ public class HuggingFaceChatServiceTest {
 			// Fake history
 			cs.clearConversation();
 			for (int i = 0; i < 10; ++i) {
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "user_" + i));
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.BOT, "bot_" + i));
+				cs.getHistory().add(new ChatMessage(Author.USER, "user_" + i));
+				cs.getHistory().add(new ChatMessage(Author.BOT, "bot_" + i));
 			}
 			cs.setPersonality(personality);
 			cs.setMaxNewTokens(null);
@@ -163,13 +163,13 @@ public class HuggingFaceChatServiceTest {
 			resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 4);
-			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.USER);
+			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
 			assertEquals(cs.getHistory().get(0).getContent(), "user_" + 9);
-			assertEquals(cs.getHistory().get(1).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(1).getAuthor(), Author.BOT);
 			assertEquals(cs.getHistory().get(1).getContent(), "bot_" + 9);
-			assertEquals(cs.getHistory().get(2).getRole(), ChatMessage.Role.USER);
+			assertEquals(cs.getHistory().get(2).getAuthor(), Author.USER);
 			assertEquals(cs.getHistory().get(2).getContent(), question);
-			assertEquals(cs.getHistory().get(3).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(3).getAuthor(), Author.BOT);
 			assertEquals(cs.getHistory().get(3).getContent(), resp.getText());
 			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().size(), 0);
 			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().size(), 0);
@@ -185,17 +185,17 @@ public class HuggingFaceChatServiceTest {
 			cs.setMaxConversationTokens(1);
 
 			List<ChatMessage> l = new ArrayList<>();
-			l.add(new ChatMessage(Role.USER, question));
+			l.add(new ChatMessage(Author.USER, question));
 			resp = cs.complete(l);
 			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 4);
-			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.USER);
+			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
 			assertEquals(cs.getHistory().get(0).getContent(), "user_" + 9);
-			assertEquals(cs.getHistory().get(1).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(1).getAuthor(), Author.BOT);
 			assertEquals(cs.getHistory().get(1).getContent(), "bot_" + 9);
-			assertEquals(cs.getHistory().get(2).getRole(), ChatMessage.Role.USER);
+			assertEquals(cs.getHistory().get(2).getAuthor(), Author.USER);
 			assertEquals(cs.getHistory().get(2).getContent(), question);
-			assertEquals(cs.getHistory().get(3).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(3).getAuthor(), Author.BOT);
 			assertEquals(cs.getHistory().get(3).getContent(), resp.getText());
 			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().size(), 0);
 			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().size(), 0);
@@ -218,10 +218,10 @@ public class HuggingFaceChatServiceTest {
 
 			// Fake history
 			for (int i = 0; i < 10; ++i) {
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "U1_" + i));
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "U2_" + i));
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.BOT, "B1_" + i));
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.BOT, "B2_" + i));
+				cs.getHistory().add(new ChatMessage(Author.USER, "U1_" + i));
+				cs.getHistory().add(new ChatMessage(Author.USER, "U2_" + i));
+				cs.getHistory().add(new ChatMessage(Author.BOT, "B1_" + i));
+				cs.getHistory().add(new ChatMessage(Author.BOT, "B2_" + i));
 			}
 
 			cs.setMaxHistoryLength(4);
@@ -230,13 +230,13 @@ public class HuggingFaceChatServiceTest {
 			ChatCompletion resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 4);
-			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(0).getAuthor(), Author.BOT);
 			assertEquals(cs.getHistory().get(0).getContent(), "B1_" + 9);
-			assertEquals(cs.getHistory().get(1).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(1).getAuthor(), Author.BOT);
 			assertEquals(cs.getHistory().get(1).getContent(), "B2_" + 9);
-			assertEquals(cs.getHistory().get(2).getRole(), ChatMessage.Role.USER);
+			assertEquals(cs.getHistory().get(2).getAuthor(), Author.USER);
 			assertEquals(cs.getHistory().get(2).getContent(), question);
-			assertEquals(cs.getHistory().get(3).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(3).getAuthor(), Author.BOT);
 			assertEquals(cs.getHistory().get(3).getContent(), resp.getText());
 			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().size(), 1);
 			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().get(0), "U1_9\nU2_9");
@@ -248,10 +248,10 @@ public class HuggingFaceChatServiceTest {
 
 			// Fake history
 			for (int i = 0; i < 10; ++i) {
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "U1_" + i));
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "U2_" + i));
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.BOT, "B1_" + i));
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.BOT, "B2_" + i));
+				cs.getHistory().add(new ChatMessage(Author.USER, "U1_" + i));
+				cs.getHistory().add(new ChatMessage(Author.USER, "U2_" + i));
+				cs.getHistory().add(new ChatMessage(Author.BOT, "B1_" + i));
+				cs.getHistory().add(new ChatMessage(Author.BOT, "B2_" + i));
 			}
 
 			cs.setMaxHistoryLength(4);
@@ -260,13 +260,13 @@ public class HuggingFaceChatServiceTest {
 			resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 4);
-			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(0).getAuthor(), Author.BOT);
 			assertEquals(cs.getHistory().get(0).getContent(), "B1_" + 9);
-			assertEquals(cs.getHistory().get(1).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(1).getAuthor(), Author.BOT);
 			assertEquals(cs.getHistory().get(1).getContent(), "B2_" + 9);
-			assertEquals(cs.getHistory().get(2).getRole(), ChatMessage.Role.USER);
+			assertEquals(cs.getHistory().get(2).getAuthor(), Author.USER);
 			assertEquals(cs.getHistory().get(2).getContent(), question);
-			assertEquals(cs.getHistory().get(3).getRole(), ChatMessage.Role.BOT);
+			assertEquals(cs.getHistory().get(3).getAuthor(), Author.BOT);
 			assertEquals(cs.getHistory().get(3).getContent(), resp.getText());
 			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().size(), 0);
 			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().size(), 0);
@@ -275,13 +275,12 @@ public class HuggingFaceChatServiceTest {
 			// Double chat message per role, starting with SYSTEM AND BOT
 
 			// Fake history
-			cs.getHistory().add(new ChatMessage(ChatMessage.Role.SYSTEM, "Should be ignored"));
-			cs.getHistory().add(new ChatMessage(ChatMessage.Role.BOT, "Should be ignored"));
+			cs.getHistory().add(new ChatMessage(Author.BOT, "Should be ignored"));
 			for (int i = 0; i < 1; ++i) {
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "U1_" + i));
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "U2_" + i));
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.BOT, "B1_" + i));
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.BOT, "B2_" + i));
+				cs.getHistory().add(new ChatMessage(Author.USER, "U1_" + i));
+				cs.getHistory().add(new ChatMessage(Author.USER, "U2_" + i));
+				cs.getHistory().add(new ChatMessage(Author.BOT, "B1_" + i));
+				cs.getHistory().add(new ChatMessage(Author.BOT, "B2_" + i));
 			}
 
 			cs.setMaxHistoryLength(6);
@@ -315,8 +314,8 @@ public class HuggingFaceChatServiceTest {
 
 			// Fake history
 			for (int i = 0; i < 10; ++i) {
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "user_" + i));
-				cs.getHistory().add(new ChatMessage(ChatMessage.Role.BOT, "bot_" + i));
+				cs.getHistory().add(new ChatMessage(Author.USER, "user_" + i));
+				cs.getHistory().add(new ChatMessage(Author.BOT, "bot_" + i));
 			}
 
 			cs.setMaxHistoryLength(1);
@@ -330,7 +329,7 @@ public class HuggingFaceChatServiceTest {
 			}
 
 			assertEquals(1, cs.getHistory().size());
-			assertEquals(ChatMessage.Role.BOT, cs.getHistory().get(0).getRole());
+			assertEquals(Author.BOT, cs.getHistory().get(0).getAuthor());
 		} // Close endpoint
 	}
 

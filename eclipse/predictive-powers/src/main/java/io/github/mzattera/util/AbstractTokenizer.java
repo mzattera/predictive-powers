@@ -27,7 +27,7 @@ import lombok.NonNull;
  * and {@link #count(List)}.
  * 
  * The default implementation simply put all message in a single list of texts,
- * with the role used as prefix.
+ * with the author used as prefix.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -36,7 +36,7 @@ public abstract class AbstractTokenizer implements Tokenizer {
 
 	@Override
 	public int count(@NonNull ChatMessage msg) {
-		return count(msg.getRole().toString() + ": " + msg.getContent());
+		return count(msg.getAuthor().toString() + ": " + msg.getContent());
 	}
 
 	@Override
@@ -45,7 +45,7 @@ public abstract class AbstractTokenizer implements Tokenizer {
 		for (ChatMessage m : msgs) {
 			if (sb.length() > 0)
 				sb.append('\n');
-			sb.append(m.getRole().toString() + ": " + m.getContent());
+			sb.append(m.getAuthor().toString() + ": " + m.getContent());
 		}
 		return count(sb.toString());
 	}

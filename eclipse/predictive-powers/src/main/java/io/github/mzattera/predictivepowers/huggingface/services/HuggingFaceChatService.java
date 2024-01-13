@@ -25,7 +25,7 @@ import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpo
 import io.github.mzattera.predictivepowers.services.AbstractChatService;
 import io.github.mzattera.predictivepowers.services.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
+import io.github.mzattera.predictivepowers.services.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import lombok.Getter;
 import lombok.NonNull;
@@ -125,9 +125,9 @@ public class HuggingFaceChatService extends AbstractChatService {
 	 */
 	public ChatCompletion chat(String msg, ConversationalRequest req) {
 
-		ChatCompletion resp = chatCompletion(msg, trimChat(getHistory(), false), req);
-		getHistory().add(new ChatMessage(Role.USER, msg));
-		getHistory().add(new ChatMessage(Role.BOT, resp.getText()));
+		ChatCompletion resp = chatCompletion(msg, trimConversation(getHistory()), req);
+		getHistory().add(new ChatMessage(Author.USER, msg));
+		getHistory().add(new ChatMessage(Author.BOT, resp.getText()));
 
 		// Make sure history is of desired length
 		while (history.size() > getMaxHistoryLength())
@@ -188,9 +188,7 @@ public class HuggingFaceChatService extends AbstractChatService {
 	/**
 	 * Completes given conversation.
 	 * 
-	 * Notice this does not consider or affects chat history. In addition, agent
-	 * personality is NOT considered, but can be injected as first message in the
-	 * list (though ignored by Hugging Face services).
+	 * Notice this does not consider or affects chat history.
 	 */
 	public ChatCompletion complete(List<ChatMessage> messages, ConversationalRequest req) {
 
@@ -198,7 +196,7 @@ public class HuggingFaceChatService extends AbstractChatService {
 
 		if (messages.size() == 0)
 			return ChatCompletion.builder() //
-					.message(ChatMessage.builder().content("").role(Role.BOT).build()) //
+					.message(ChatMessage.builder().content("").author(Author.BOT).build()) //
 					.finishReason(FinishReason.COMPLETED) //
 					.build();
 
@@ -209,74 +207,6 @@ public class HuggingFaceChatService extends AbstractChatService {
 		String msg = history[0].remove(history[0].size() - 1);
 
 		return chatCompletion(msg, history, req);
-	}
-
-	/**
-	 * Splits given conversation into two Lists with user utterances and
-	 * corresponding bot replies, respectively, as required by Hugging Face API.
-	 * 
-	 * Notice it also enforce respect of parameters such as max conversation length
-	 */
-	protected List<String>[] buildInputs(List<ChatMessage> msgs) {
-
-		@SuppressWarnings("unchecked")
-		List<String>[] result = new ArrayList[2];
-		result[0] = new ArrayList<String>(msgs.size());
-		result[1] = new ArrayList<String>(msgs.size());
-
-		if (msgs.size() == 0)
-			return result;
-
-		// Get to first user message, we want to be compatible with chatbots that have a
-		// personality and use SYSTEM messages, or with histories that have been
-		// shortened
-		int i = 0;
-		for (; (i < msgs.size()) && (msgs.get(i).getRole() != Role.USER); ++i)
-			;
-
-		Role lastRole = Role.USER;
-		StringBuilder sb = new StringBuilder();
-		for (; i < msgs.size(); ++i) {
-			ChatMessage m = msgs.get(i);
-
-			if (m.getRole() != lastRole) { // must save conversation we accumulated so far
-				switch (m.getRole()) {
-				case USER:
-					result[1].add(sb.toString());
-					break;
-				case BOT:
-					result[0].add(sb.toString());
-					break;
-				default:
-					throw new IllegalArgumentException("Role not supported");
-				}
-
-				lastRole = m.getRole();
-				sb.setLength(0);
-			}
-
-			// save this message in the buffer
-			if (sb.length() > 0)
-				sb.append('\n');
-			sb.append(m.getContent() == null ? "" : m.getContent());
-
-		} // for each message
-
-		// Last message
-		if (sb.length() > 0) { // must save conversation we accumulated so far
-			switch (lastRole) {
-			case USER:
-				result[0].add(sb.toString());
-				break;
-			case BOT:
-				result[1].add(sb.toString());
-				break;
-			default:
-				throw new IllegalArgumentException("Role not supported");
-			}
-		}
-
-		return result;
 	}
 
 	/**
@@ -313,8 +243,74 @@ public class HuggingFaceChatService extends AbstractChatService {
 		ConversationalResponse resp = endpoint.getClient().conversational(getModel(), req);
 
 		return ChatCompletion.builder() //
-				.message(ChatMessage.builder().content(resp.getGeneratedText()).role(Role.BOT).build()) //
+				.message(ChatMessage.builder().content(resp.getGeneratedText()).author(Author.BOT).build()) //
 				.finishReason(FinishReason.COMPLETED) //
 				.build();
+	}
+
+	/**
+	 * Splits given conversation into two Lists with user utterances and
+	 * corresponding bot replies, respectively, as required by Hugging Face API.
+	 * 
+	 * Notice it also enforce respect of parameters such as max conversation length
+	 */
+	protected List<String>[] buildInputs(List<ChatMessage> msgs) {
+
+		@SuppressWarnings("unchecked")
+		List<String>[] result = new ArrayList[2];
+		result[0] = new ArrayList<String>(msgs.size());
+		result[1] = new ArrayList<String>(msgs.size());
+
+		if (msgs.size() == 0)
+			return result;
+
+		// Get to first user message, in case history has beenshortened
+		int i = 0;
+		for (; (i < msgs.size()) && (msgs.get(i).getAuthor() != Author.USER); ++i)
+			;
+
+		Author lastAuthor = Author.USER;
+		StringBuilder sb = new StringBuilder();
+		for (; i < msgs.size(); ++i) {
+			ChatMessage m = msgs.get(i);
+
+			if (m.getAuthor() != lastAuthor) { // must save conversation we accumulated so far
+				switch (m.getAuthor()) {
+				case USER:
+					result[1].add(sb.toString());
+					break;
+				case BOT:
+					result[0].add(sb.toString());
+					break;
+				default:
+					throw new IllegalArgumentException("Role not supported");
+				}
+
+				lastAuthor = m.getAuthor();
+				sb.setLength(0);
+			}
+
+			// save this message in the buffer
+			if (sb.length() > 0)
+				sb.append('\n');
+			sb.append(m.getContent() == null ? "" : m.getContent());
+
+		} // for each message
+
+		// Last message
+		if (sb.length() > 0) { // must save conversation we accumulated so far
+			switch (lastAuthor) {
+			case USER:
+				result[0].add(sb.toString());
+				break;
+			case BOT:
+				result[1].add(sb.toString());
+				break;
+			default:
+				throw new IllegalArgumentException("Role not supported");
+			}
+		}
+
+		return result;
 	}
 }

@@ -45,7 +45,7 @@ import lombok.experimental.SuperBuilder;
 @ToString
 public class OpenAiTextCompletion extends ChatCompletion {
 
-	// TODO URGENT: Extend AgentCompletion instead. 
+	// TODO URGENT: Extend AgentCompletion instead and rename accordingly
 	
 	@Override 
 	public OpenAiChatMessage getMessage() {

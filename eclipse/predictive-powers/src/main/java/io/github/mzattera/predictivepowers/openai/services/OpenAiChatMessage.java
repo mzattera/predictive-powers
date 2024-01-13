@@ -24,10 +24,8 @@ import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolCallResult;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 

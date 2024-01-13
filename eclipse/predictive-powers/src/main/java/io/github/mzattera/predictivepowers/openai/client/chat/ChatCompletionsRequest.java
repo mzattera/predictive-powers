@@ -28,7 +28,6 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest.ResponseFormat.ResponseFormatSerializer;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
-import io.github.mzattera.predictivepowers.services.ChatMessage;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

@@ -23,6 +23,7 @@ import io.github.mzattera.predictivepowers.services.ChatMessage;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -37,6 +38,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @NoArgsConstructor
 //@RequiredArgsConstructor
+@ToString
 public class OpenAiChatMessage extends ChatMessage {
 
 	/**
@@ -80,11 +82,5 @@ public class OpenAiChatMessage extends ChatMessage {
 		super(role, content);
 		this.name = name;
 		this.functionCall = functionCall;
-	}
-
-	@Override
-	public String toString() {
-		return "OpenAiChatMessage [role=" + getRole() + ", content=" + getContent() + ", name=" + name + ", toolCalls="
-				+ toolCalls + ", toolCallId=" + toolCallId + ", functionCall=" + functionCall + "]";
 	}
 }

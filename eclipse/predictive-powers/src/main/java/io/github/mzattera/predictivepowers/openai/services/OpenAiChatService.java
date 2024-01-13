@@ -331,7 +331,7 @@ public class OpenAiChatService extends AbstractChatService {
 			history.remove(0);
 
 		return OpenAiTextCompletion.builder() //
-				.text(completion.getMessage().getContent()) //
+				.message(completion.getMessage()) //
 				.finishReason(completion.getFinishReason()) //
 				.toolCalls(completion.getToolCalls()).build();
 	}
@@ -444,13 +444,11 @@ public class OpenAiChatService extends AbstractChatService {
 				fc.add(new ToolCall(choice.getMessage().getFunctionCall()));
 				return OpenAiTextCompletion.builder() //
 						.finishReason(FinishReason.fromGptApi(choice.getFinishReason())) //
-						.text(choice.getMessage().getContent()) //
 						.message(choice.getMessage()) //
 						.toolCalls(fc).build();
 			}
 			return OpenAiTextCompletion.builder() //
 					.finishReason(FinishReason.fromGptApi(choice.getFinishReason())) //
-					.text(choice.getMessage().getContent()) //
 					.message(choice.getMessage()) //
 					.toolCalls(choice.getMessage().getToolCalls()).build();
 

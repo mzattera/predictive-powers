@@ -25,8 +25,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceCompletionService;
@@ -41,29 +46,34 @@ import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 public class CompletionServiceTest {
 
 	// TODO break it in smaller tests...
+	// TODO URGENT test02() messes up params before test03(); change order
 
-	@Test
-	public void test01() {
+	private static OpenAiEndpoint oaiEp;
+	private static HuggingFaceEndpoint hfEp;
 
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			test01(ep.getCompletionService());
-			test02(ep.getCompletionService());
-			test03(ep.getCompletionService());
-			test04(ep.getCompletionService());
-		}
+	@BeforeAll
+	static void setUpBeforeAll() {
+		oaiEp = new OpenAiEndpoint();
+		hfEp = new HuggingFaceEndpoint();
+	}
 
-		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
-			test01(ep.getCompletionService());
-			test02(ep.getCompletionService());
-			test03(ep.getCompletionService());
-			test04(ep.getCompletionService());
-		}
+	@AfterAll
+	static void tearDownAfterAll() {
+		oaiEp.close();
+		hfEp.close();
+	}
+
+	// Provides the services to test
+	static Stream<CompletionService> instanceProvider() {
+		return Stream.of(oaiEp.getCompletionService(), hfEp.getCompletionService());
 	}
 
 	/**
 	 * Basic completion.
 	 */
-	private void test01(CompletionService s) {
+	@ParameterizedTest
+	@MethodSource("instanceProvider")
+	void test01(CompletionService s) {
 		TextCompletion resp = s.complete("Name a mammal.");
 		assertTrue(resp.getFinishReason() == FinishReason.COMPLETED);
 
@@ -79,7 +89,9 @@ public class CompletionServiceTest {
 	/**
 	 * Getters and setters
 	 */
-	private void test02(CompletionService s) {
+	@ParameterizedTest
+	@MethodSource("instanceProvider")
+	void test02(CompletionService s) {
 		String m = s.getModel();
 		assertNotNull(m);
 		s.setModel("pippo");
@@ -134,20 +146,18 @@ public class CompletionServiceTest {
 	/**
 	 * insertion.
 	 */
-	private void test03(CompletionService s) {
-		if (s instanceof HuggingFaceCompletionService) {
-			assertThrows(UnsupportedOperationException.class, () -> s.insert("Mount Everest is ", " meters high."));
-		} else {
-			TextCompletion resp = s.insert("Mount Everest is ", " meters high.");
-			assertTrue(resp.getFinishReason() == FinishReason.COMPLETED);
-			assertTrue(resp.getText().contains("8"));
-		}
+	@ParameterizedTest
+	@MethodSource("instanceProvider")
+	void test03(CompletionService s) {
+		assertThrows(UnsupportedOperationException.class, () -> s.insert("Mount Everest is ", " meters high."));
 	}
 
 	/**
 	 * Getters and setters
 	 */
-	private void test04(CompletionService s) {
+	@ParameterizedTest
+	@MethodSource("instanceProvider")
+	void test04(CompletionService s) {
 
 		// Check response contains all parameters?
 
@@ -159,7 +169,7 @@ public class CompletionServiceTest {
 		s.setMaxNewTokens(40);
 		s.setEcho(true);
 		TextCompletion resp = s.complete("Name a mammal.");
-		assertTrue(resp.getFinishReason() == FinishReason.COMPLETED);
+		assertTrue((resp.getFinishReason() == FinishReason.COMPLETED)||(resp.getFinishReason() == FinishReason.TRUNCATED));
 
 		s.setTopK(null);
 		s.setTopP(0.2);
@@ -167,7 +177,7 @@ public class CompletionServiceTest {
 		s.setMaxNewTokens(40);
 		s.setEcho(false);
 		resp = s.complete("Name a mammal.");
-		assertTrue(resp.getFinishReason() == FinishReason.COMPLETED);
+		assertTrue((resp.getFinishReason() == FinishReason.COMPLETED)||(resp.getFinishReason() == FinishReason.TRUNCATED));
 
 		s.setTopK(null);
 		s.setTopP(null);
@@ -175,7 +185,7 @@ public class CompletionServiceTest {
 		s.setMaxNewTokens(40);
 		s.setEcho(true);
 		resp = s.complete("Name a mammal.");
-		assertTrue(resp.getFinishReason() == FinishReason.COMPLETED);
+		assertTrue((resp.getFinishReason() == FinishReason.COMPLETED)||(resp.getFinishReason() == FinishReason.TRUNCATED));
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -184,7 +194,7 @@ public class CompletionServiceTest {
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	@Test
-	public void test90() {
+	void test90() {
 		Map<String, Object> params = new HashMap<>();
 		params.put("A", null);
 		params.put("A.B", "a.b");

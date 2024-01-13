@@ -23,9 +23,9 @@ import io.github.mzattera.predictivepowers.huggingface.client.nlp.Conversational
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.ConversationalResponse;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractChatService;
+import io.github.mzattera.predictivepowers.services.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
-import io.github.mzattera.predictivepowers.services.TextCompletion;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import lombok.Getter;
 import lombok.NonNull;
@@ -39,10 +39,7 @@ import lombok.Setter;
  */
 public class HuggingFaceChatService extends AbstractChatService {
 
-	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
-	// values from a Map
-
-//	public static final String DEFAULT_MODEL = "microsoft/GODEL-v1_1-large-seq2seq";
+//	public static final String DEFAULT_MODEL = "microsoft/DialoGPT-medium";
 	public static final String DEFAULT_MODEL = "facebook/blenderbot-400M-distill";
 
 	public HuggingFaceChatService(HuggingFaceEndpoint ep) {
@@ -117,7 +114,7 @@ public class HuggingFaceChatService extends AbstractChatService {
 	}
 
 	@Override
-	public TextCompletion chat(String msg) {
+	public ChatCompletion chat(String msg) {
 		return chat(msg, defaultReq);
 	}
 
@@ -126,9 +123,9 @@ public class HuggingFaceChatService extends AbstractChatService {
 	 * 
 	 * The exchange is added to the conversation history.
 	 */
-	public TextCompletion chat(String msg, ConversationalRequest req) {
+	public ChatCompletion chat(String msg, ConversationalRequest req) {
 
-		TextCompletion resp = chatCompletion(msg, trimChat(getHistory(), false), req);
+		ChatCompletion resp = chatCompletion(msg, trimChat(getHistory(), false), req);
 		getHistory().add(new ChatMessage(Role.USER, msg));
 		getHistory().add(new ChatMessage(Role.BOT, resp.getText()));
 
@@ -140,7 +137,7 @@ public class HuggingFaceChatService extends AbstractChatService {
 	}
 
 	@Override
-	public TextCompletion chat(ChatMessage msg) {
+	public ChatCompletion chat(ChatMessage msg) {
 		return chat(msg, defaultReq);
 	}
 
@@ -149,12 +146,12 @@ public class HuggingFaceChatService extends AbstractChatService {
 	 * 
 	 * The exchange is added to the conversation history.
 	 */
-	public TextCompletion chat(ChatMessage msg, ConversationalRequest req) {
+	public ChatCompletion chat(ChatMessage msg, ConversationalRequest req) {
 		return chat(msg.getContent(), req);
 	}
 
 	@Override
-	public TextCompletion complete(String prompt) {
+	public ChatCompletion complete(String prompt) {
 		return complete(prompt, defaultReq);
 	}
 
@@ -164,12 +161,12 @@ public class HuggingFaceChatService extends AbstractChatService {
 	 * Notice this does not consider or affects chat history but agent personality
 	 * is used, if provided.
 	 */
-	public TextCompletion complete(String prompt, ConversationalRequest req) {
+	public ChatCompletion complete(String prompt, ConversationalRequest req) {
 		return chatCompletion(prompt, new ArrayList<>(), req);
 	}
 
 	@Override
-	public TextCompletion complete(ChatMessage prompt) {
+	public ChatCompletion complete(ChatMessage prompt) {
 		return complete(prompt.getContent(), defaultReq);
 	}
 
@@ -179,12 +176,12 @@ public class HuggingFaceChatService extends AbstractChatService {
 	 * Notice this does not consider or affects chat history but agent personality
 	 * is used, if provided.
 	 */
-	public TextCompletion complete(ChatMessage prompt, ConversationalRequest req) {
+	public ChatCompletion complete(ChatMessage prompt, ConversationalRequest req) {
 		return complete(prompt.getContent(), req);
 	}
 
 	@Override
-	public TextCompletion complete(List<ChatMessage> messages) {
+	public ChatCompletion complete(List<ChatMessage> messages) {
 		return complete(messages, defaultReq);
 	}
 
@@ -195,12 +192,15 @@ public class HuggingFaceChatService extends AbstractChatService {
 	 * personality is NOT considered, but can be injected as first message in the
 	 * list (though ignored by Hugging Face services).
 	 */
-	public TextCompletion complete(List<ChatMessage> messages, ConversationalRequest req) {
+	public ChatCompletion complete(List<ChatMessage> messages, ConversationalRequest req) {
 
 		// We assume last message in the list is current user utterance to be answered
 
 		if (messages.size() == 0)
-			return TextCompletion.builder().text("").finishReason(FinishReason.COMPLETED).build();
+			return ChatCompletion.builder() //
+					.message(ChatMessage.builder().content("").role(Role.BOT).build()) //
+					.finishReason(FinishReason.COMPLETED) //
+					.build();
 
 		// We split first, it is more complicated but in this way we ensure we support
 		// cases with multiple user messages in sequence, including at the end of
@@ -288,7 +288,7 @@ public class HuggingFaceChatService extends AbstractChatService {
 	 * @param msg      Last user message, to be replied to.
 	 * @param messages Past conversation so far.
 	 */
-	protected TextCompletion chatCompletion(String msg, List<ChatMessage> messages, ConversationalRequest req) {
+	protected ChatCompletion chatCompletion(String msg, List<ChatMessage> messages, ConversationalRequest req) {
 		return chatCompletion(msg, buildInputs(messages), req);
 	}
 
@@ -302,7 +302,7 @@ public class HuggingFaceChatService extends AbstractChatService {
 	 * @param history Two Lists with user utterances and corresponding bot replies,
 	 *                respectively.
 	 */
-	protected TextCompletion chatCompletion(String msg, List<String>[] history, ConversationalRequest req) {
+	protected ChatCompletion chatCompletion(String msg, List<String>[] history, ConversationalRequest req) {
 
 		if (history[0].size() != history[1].size())
 			throw new IllegalArgumentException("Conversation history must have a reply for each user message");
@@ -312,6 +312,9 @@ public class HuggingFaceChatService extends AbstractChatService {
 
 		ConversationalResponse resp = endpoint.getClient().conversational(getModel(), req);
 
-		return TextCompletion.builder().text(resp.getGeneratedText()).finishReason(FinishReason.COMPLETED).build();
+		return ChatCompletion.builder() //
+				.message(ChatMessage.builder().content(resp.getGeneratedText()).role(Role.BOT).build()) //
+				.finishReason(FinishReason.COMPLETED) //
+				.build();
 	}
 }

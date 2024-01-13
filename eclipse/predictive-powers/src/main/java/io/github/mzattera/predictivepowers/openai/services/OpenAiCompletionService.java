@@ -45,7 +45,7 @@ public class OpenAiCompletionService implements CompletionService {
 
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiCompletionService.class);
 
-	public static final String DEFAULT_MODEL = "text-davinci-003";
+	public static final String DEFAULT_MODEL = "davinci-002";
 
 	public OpenAiCompletionService(OpenAiEndpoint ep) {
 		this(ep, CompletionsRequest.builder().model(DEFAULT_MODEL).echo(false).n(1).build());
@@ -155,7 +155,7 @@ public class OpenAiCompletionService implements CompletionService {
 
 	@Override
 	public TextCompletion complete(String prompt) {
-		return insert(prompt, null, null, defaultReq);
+		return complete(prompt, null, defaultReq);
 	}
 
 	/**
@@ -166,12 +166,12 @@ public class OpenAiCompletionService implements CompletionService {
 	 * automatically, based on prompt length.
 	 */
 	public TextCompletion complete(String prompt, CompletionsRequest req) {
-		return insert(prompt, null, null, req);
+		return complete(prompt, null, req);
 	}
 
 	@Override
 	public TextCompletion complete(String prompt, Map<String, ? extends Object> parameters) {
-		return insert(prompt, null, parameters, defaultReq);
+		return complete(prompt, parameters, defaultReq);
 	}
 
 	/**
@@ -181,48 +181,9 @@ public class OpenAiCompletionService implements CompletionService {
 	 *                   {@link #fillSlots(String, Map)}.
 	 */
 	public TextCompletion complete(String prompt, Map<String, ? extends Object> parameters, CompletionsRequest req) {
-		return insert(prompt, null, parameters, req);
-	}
-
-	/**
-	 * Inserts text between given prompt and the suffix (executes given prompt).
-	 * 
-	 * It uses {@link #getDefaultReq()} parameters.
-	 */
-	@Override
-	public TextCompletion insert(String prompt, String suffix) {
-		return insert(prompt, suffix, null, defaultReq);
-	}
-
-	/**
-	 * Inserts text between given prompt and the suffix (executes given prompt).
-	 * uses provided {@link CompletionsRequest} to get parameters for the call.
-	 * 
-	 * Notice that if maxToxens is null, this method will try to set it
-	 * automatically, based on prompt length.
-	 */
-	public TextCompletion insert(String prompt, String suffix, CompletionsRequest req) {
-		return insert(prompt, suffix, null, req);
-	}
-
-	@Override
-	public TextCompletion insert(String prompt, String suffix, Map<String, ? extends Object> parameters) {
-		return insert(prompt, suffix, parameters, defaultReq);
-	}
-
-	/**
-	 * Inserts text between given prompt and the suffix (executes given prompt).
-	 * uses provided {@link CompletionsRequest} to get parameters for the call.
-	 * 
-	 * Notice that if maxToxens is null, this method will try to set it
-	 * automatically, based on prompt length.
-	 */
-	public TextCompletion insert(String prompt, String suffix, Map<String, ? extends Object> parameters,
-			CompletionsRequest req) {
 
 		String model = req.getModel();
 		req.setPrompt(CompletionService.fillSlots(prompt, parameters));
-		req.setSuffix(CompletionService.fillSlots(suffix, parameters));
 
 		boolean autofit = (req.getMaxTokens() == null) && (modelService.getContextSize(model, -1) != -1);
 		try {
@@ -231,8 +192,6 @@ public class OpenAiCompletionService implements CompletionService {
 				// Automatically set token limit, if needed
 				Tokenizer counter = modelService.getTokenizer(model);
 				int tok = counter.count(prompt);
-				if (suffix != null)
-					tok += counter.count(suffix);
 				int size = modelService.getContextSize(model) - tok;
 				if (size <= 0)
 					throw new IllegalArgumentException(
@@ -241,21 +200,21 @@ public class OpenAiCompletionService implements CompletionService {
 			}
 
 			CompletionsResponse resp = null;
-			try {
-				resp = endpoint.getClient().createCompletion(req);
-			} catch (OpenAiException e) {
-				if (e.isContextLengthExceeded()) { // Automatically recover if request is too long
-					int optimal = e.getMaxContextLength() - e.getPromptLength() - 1;
-					if (optimal > 0) {
-						LOG.warn("Reducing context length for OpenAI completion service from " + req.getMaxTokens() + " to "
-								+ optimal);
-						req.setMaxTokens(optimal);
-						resp = endpoint.getClient().createCompletion(req);
-						// TODO re-set old value?
+			while (resp == null) { // Loop till I get an answer
+				try {
+					resp = endpoint.getClient().createCompletion(req);
+				} catch (OpenAiException e) {
+					if (e.isContextLengthExceeded()) { // Automatically recover if request is too long
+						int optimal = e.getMaxContextLength() - e.getPromptLength() - 1;
+						if (optimal > 0) {
+							LOG.warn("Reducing reply length for OpenAI completion service from " + req.getMaxTokens()
+									+ " to " + optimal);
+							req.setMaxTokens(optimal);
+						} else
+							throw e; // Context too small anyway
 					} else
-						throw e; // Context too small anyway
-				} else
-					throw e; // Not a context issue
+						throw e; // Not a context length issue
+				}
 			}
 
 			CompletionsChoice choice = resp.getChoices().get(0);
@@ -267,5 +226,22 @@ public class OpenAiCompletionService implements CompletionService {
 			if (autofit)
 				req.setMaxTokens(null);
 		}
+	}
+
+	/**
+	 * Inserts text between given prompt and the suffix (executes given prompt).
+	 * 
+	 * It uses {@link #getDefaultReq()} parameters.
+	 */
+	@Override
+	public TextCompletion insert(String prompt, String suffix) {
+		// After 4th Jan., 2024, modles supporting the completions API are GPT-3.5 variants not recognizing the "suffix" parameter
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public TextCompletion insert(String prompt, String suffix, Map<String, ? extends Object> parameters) {
+		// After 4th Jan., 2024, modles supporting the completions API are GPT-3.5 variants not recognizing the "suffix" parameter
+		throw new UnsupportedOperationException();
 	}
 }

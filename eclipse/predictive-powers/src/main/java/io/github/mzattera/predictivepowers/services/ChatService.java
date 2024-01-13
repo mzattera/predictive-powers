@@ -22,7 +22,7 @@ import java.util.List;
  * Instances of this interface manage a chats with an agent.
  * 
  * Chat history is kept in memory and updated as chat progresses. At the same
- * time, methods to use chat service as a simple completion service are
+ * time, methods to use chat service as a simple completion service are also
  * provided.
  * 
  * @author Massimiliano "Maxi" Zattera
@@ -77,32 +77,28 @@ public interface ChatService extends AiService {
 	 * 
 	 * They can be manipulated in order to alter chat flow.
 	 * 
-	 * Notice this will grow up to {@link #maxHistoryLength}, unless cleared.
+	 * Notice this will grow up to {@link #getMaxHistoryLength}, unless cleared.
 	 * However, only latest messages are considered when calling the API (see
-	 * {@link maxConversationLength}).
+	 * {@link getMaxConversationLength}).
 	 */
 	List<ChatMessage> getHistory();
 
 	/**
-	 * Maximum number of steps to keep in chat history.
-	 * 
-	 * A step is a {@link ChatMessage} in the conversation, regardless the
-	 * associated role (so system message also count).
+	 * Maximum number of messages to keep in chat history, regardless the
+	 * associated role.
 	 */
 	int getMaxHistoryLength();
 
 	/**
-	 * Maximum number of steps to keep in chat history.
-	 * 
-	 * A step is a {@link ChatMessage} in the conversation, regardless the
-	 * associated role (so system message also count).
+	 * Maximum number of messages to keep in chat history, regardless the
+	 * associated role.
 	 */
 	void setMaxHistoryLength(int maxHistoryLength);
 
-	/** Personality of the agent. If null, agent has NO personality. */
+	/** Personality of the bot holding the conversation. */
 	String getPersonality();
 
-	/** Personality of the agent. If null, agent has NO personality. */
+	/** Personality of the bot holding the conversation. */
 	void setPersonality(String personality);
 
 	/**
@@ -110,7 +106,7 @@ public interface ChatService extends AiService {
 	 * service (ignoring last prompt).
 	 * 
 	 * Notice this does NOT limit length of conversation history (see
-	 * {@link #maxHistoryLength}).
+	 * {@link #getMaxHistoryLength}).
 	 */
 	int getMaxConversationSteps();
 
@@ -119,7 +115,7 @@ public interface ChatService extends AiService {
 	 * service (ignoring last prompt).
 	 * 
 	 * Notice this does NOT limit length of conversation history (see
-	 * {@link #maxHistoryLength}).
+	 * {@link #getMaxHistoryLength}).
 	 */
 	void setMaxConversationSteps(int l);
 
@@ -163,30 +159,30 @@ public interface ChatService extends AiService {
 	 * 
 	 * The exchange is added to the conversation history.
 	 */
-	TextCompletion chat(String msg);
+	ChatCompletion chat(String msg);
 
 	/**
 	 * Continues current chat, with the provided message.
 	 * 
 	 * The exchange is added to the conversation history.
 	 */
-	TextCompletion chat(ChatMessage msg);
+	ChatCompletion chat(ChatMessage msg);
 
 	/**
 	 * Completes text outside a conversation (executes given prompt).
 	 * 
-	 * Notice this does not consider or affects chat history but agent personality
+	 * Notice this does not consider or affects chat history but bot personality
 	 * is used, if provided.
 	 */
-	TextCompletion complete(String prompt);
+	ChatCompletion complete(String prompt);
 
 	/**
 	 * Completes text outside a conversation (executes given prompt).
 	 * 
-	 * Notice this does not consider or affects chat history but agent personality
+	 * Notice this does not consider or affects chat history but bot personality
 	 * is used, if provided.
 	 */
-	TextCompletion complete(ChatMessage prompt);
+	ChatCompletion complete(ChatMessage prompt);
 
 	/**
 	 * Completes text outside a conversation (executes given prompt).
@@ -195,5 +191,5 @@ public interface ChatService extends AiService {
 	 * without modifications, including adding system messages to drive personality
 	 * (for services supporting that).
 	 */
-	TextCompletion complete(List<ChatMessage> messages);
+	ChatCompletion complete(List<ChatMessage> messages);
 }

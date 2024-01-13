@@ -19,7 +19,9 @@ package io.github.mzattera.predictivepowers.openai.services;
 import java.util.List;
 
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolCall;
+import io.github.mzattera.predictivepowers.services.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.TextCompletion;
+import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -41,18 +43,23 @@ import lombok.experimental.SuperBuilder;
 @RequiredArgsConstructor
 @AllArgsConstructor
 @ToString
-public class OpenAiTextCompletion extends TextCompletion {
+public class OpenAiTextCompletion extends ChatCompletion {
 
-	/**
-	 * The original message as returned from the API.
-	 */
-	private OpenAiChatMessage message;
+	// TODO URGENT: Extend AgentCompletion instead. 
+	
+	@Override 
+	public OpenAiChatMessage getMessage() {
+		return (OpenAiChatMessage)super.getMessage();
+	}
+
+	// TODO URGENT These fields about tool calls should be abstracted into AgentCompletion
 
 	/**
 	 * List of tool calls, if the call generated function (tools) calls.
 	 */
 	private List<ToolCall> toolCalls;
 
+	
 	public boolean hasToolCalls() {
 		return ((toolCalls != null) && (toolCalls.size() > 0));
 	}
@@ -62,7 +69,7 @@ public class OpenAiTextCompletion extends TextCompletion {
 	}
 
 	public OpenAiTextCompletion(String text, FinishReason finishReason, List<ToolCall> toolCalls) {
-		super(text, finishReason);
+		super(OpenAiChatMessage.builder().content(text).build(), finishReason);
 		this.toolCalls = toolCalls;
 	}
 }

@@ -178,7 +178,7 @@ public class FunctionCallTest {
 			cs.clearConversation();
 			reply = cs.chat("How is the weather like in Dallas TX?");
 			assertTrue(reply.hasToolCalls());
-			assertEquals(FinishReason.FUNCTION_CALL, reply.getFinishReason());
+			assertEquals(FinishReason.OTHER, reply.getFinishReason());
 			assertEquals(1, reply.getToolCalls().size());
 			assertEquals(TOOLS.get(0).getFunction().getName(), reply.getToolCalls().get(0).getFunction().getName());
 			Map<String, Object> actual = new HashMap<>();
@@ -190,7 +190,7 @@ public class FunctionCallTest {
 			cs.clearConversation();
 			reply = cs.chat("How is the weather like in Dallas TX? Can you tell it in Farenheit?");
 			assertTrue(reply.hasToolCalls());
-			assertEquals(FinishReason.FUNCTION_CALL, reply.getFinishReason());
+			assertEquals(FinishReason.OTHER, reply.getFinishReason());
 			assertEquals(1, reply.getToolCalls().size());
 			assertEquals(TOOLS.get(0).getFunction().getName(), reply.getToolCalls().get(0).getFunction().getName());
 			actual.put("unit", "FARENHEIT");
@@ -224,7 +224,7 @@ public class FunctionCallTest {
 			cs.getDefaultReq().setFunctionCall(FunctionChoice.AUTO);
 			reply = cs.chat("How is the weather like in Dallas, TX?");
 			assertTrue(reply.hasToolCalls());
-			assertEquals(FinishReason.FUNCTION_CALL, reply.getFinishReason());
+			assertEquals(FinishReason.OTHER, reply.getFinishReason());
 
 			// This should inhibit function call
 			cs.clearConversation();

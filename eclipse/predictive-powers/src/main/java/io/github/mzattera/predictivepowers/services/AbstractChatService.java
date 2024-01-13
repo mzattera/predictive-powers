@@ -81,12 +81,12 @@ public abstract class AbstractChatService implements ChatService {
 	}
 
 	@Override
-	public TextCompletion chat(String msg) {
+	public ChatCompletion chat(String msg) {
 		return chat(new ChatMessage(Role.USER, msg));
 	}
 
 	@Override
-	public TextCompletion complete(String prompt) {
+	public ChatCompletion complete(String prompt) {
 		return complete(new ChatMessage(Role.USER, prompt));
 	}
 
@@ -108,7 +108,8 @@ public abstract class AbstractChatService implements ChatService {
 		List<ChatMessage> result = new ArrayList<>(messages.size());
 		Tokenizer counter = modelService.getTokenizer(getModel());
 
-		// TODO URGENT this is OpenAI specific code, it should be moved into an overriden method; addPersonality is not needed 
+		// TODO URGENT this is OpenAI specific code, it should be moved into an
+		// overriden method; addPersonality is not needed
 		boolean personalityAdded = false;
 		if (addPersonality && (getPersonality() != null)) {
 			result.add(new ChatMessage(ChatMessage.Role.SYSTEM, getPersonality()));

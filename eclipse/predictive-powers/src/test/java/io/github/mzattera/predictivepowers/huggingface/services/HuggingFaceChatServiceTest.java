@@ -26,6 +26,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.services.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.TextCompletion;
@@ -56,7 +57,7 @@ public class HuggingFaceChatServiceTest {
 			cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "test"));
 			assertEquals(1, cs.getHistory().size());
 			String question = "How high is Mt.Everest?";
-			TextCompletion resp = cs.complete(question);
+			ChatCompletion resp = cs.complete(question);
 			assertEquals(TextCompletion.FinishReason.COMPLETED, resp.getFinishReason());
 			assertEquals(1, cs.getHistory().size());
 			assertEquals(cs.getHistory().get(0).getContent(), "test");
@@ -98,7 +99,7 @@ public class HuggingFaceChatServiceTest {
 			assertEquals(Integer.MAX_VALUE, cs.getMaxConversationTokens());
 
 			String question = "How high is Mt.Everest?";
-			TextCompletion resp = cs.chat(question);
+			ChatCompletion resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 4);
 			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.USER);
@@ -226,7 +227,7 @@ public class HuggingFaceChatServiceTest {
 			cs.setMaxHistoryLength(4);
 			cs.setMaxConversationSteps(4);
 
-			TextCompletion resp = cs.chat(question);
+			ChatCompletion resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 4);
 			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.BOT);
@@ -328,7 +329,7 @@ public class HuggingFaceChatServiceTest {
 			} catch (Exception e) {
 			}
 
-			assertEquals(cs.getHistory().size(), 1);
+			assertEquals(1, cs.getHistory().size());
 			assertEquals(ChatMessage.Role.BOT, cs.getHistory().get(0).getRole());
 		} // Close endpoint
 	}

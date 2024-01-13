@@ -252,7 +252,7 @@ public class OpenAiModelService extends AbstractModelService {
 			if (modelType.startsWith("gpt-3.5-turbo-16k")) {
 				modelType = "gpt-3.5-turbo-16k";
 			} else {
-				if (modelType.startsWith("gpt-3.5-turbo")) {
+				if (modelType.startsWith("gpt-3.5-turbo") || modelType.equals("davinci-002") || modelType.equals("babbage-002")) {
 					modelType = "gpt-3.5-turbo";
 				} else {
 					if (modelType.startsWith("gpt-4-32k")) {

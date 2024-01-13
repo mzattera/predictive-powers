@@ -50,6 +50,8 @@ public class ChatMessage {
 		/** Marks messages coming from the bot (assistant) */
 		BOT("assistant"),
 
+		// TODO URGENT move these out of ChatMessage somehow?
+		
 		/**
 		 * Marks text used for bot configuration (e.g. in OpenAI ChatGPT). It might not
 		 * be supported by all services.

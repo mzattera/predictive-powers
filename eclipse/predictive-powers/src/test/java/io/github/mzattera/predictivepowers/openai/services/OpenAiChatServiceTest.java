@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.services.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.TextCompletion;
 
@@ -52,7 +53,7 @@ public class OpenAiChatServiceTest {
 			cs.getHistory().add(new ChatMessage(ChatMessage.Role.USER, "test"));
 			assertEquals(1, cs.getHistory().size());
 			String question = "How high is Mt.Everest?";
-			TextCompletion resp = cs.complete(question);
+			ChatCompletion resp = cs.complete(question);
 			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
 			assertEquals(1, cs.getHistory().size());
 			assertEquals(cs.getHistory().get(0).getContent(), "test");
@@ -94,7 +95,7 @@ public class OpenAiChatServiceTest {
 					Math.max(ep.getModelService().getContextSize(cs.getDefaultReq().getModel()), 2046) * 3 / 4);
 
 			String question = "How high is Mt.Everest?";
-			TextCompletion resp = cs.chat(question);
+			ChatCompletion resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 3);
 			assertEquals(cs.getHistory().get(0).getRole(), ChatMessage.Role.USER);

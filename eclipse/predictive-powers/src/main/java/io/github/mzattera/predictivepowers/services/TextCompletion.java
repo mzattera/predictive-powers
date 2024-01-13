@@ -17,16 +17,13 @@
 package io.github.mzattera.predictivepowers.services;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
-import lombok.experimental.SuperBuilder;
 
 /**
- * This class encapsulates a text completion response from the language model.
+ * This class encapsulates a response from a {@link CompletionService}.
  * 
  * In addition to providing the returned text, this also contains a reason why
  * the response terminated, which allows the developer to take corrective
@@ -35,11 +32,9 @@ import lombok.experimental.SuperBuilder;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-@Getter
-@Setter
-@SuperBuilder
+@Builder
 @NoArgsConstructor
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 @AllArgsConstructor
 @ToString
 public class TextCompletion {
@@ -58,16 +53,8 @@ public class TextCompletion {
 		/** Omitted content due to content filters */
 		INAPPROPRIATE,
 
-		/**
-		 * The API generated a function call (e.g. OpenAI function or tool call).
-		 * 
-		 * Notice that OpenAI API returns {@link #COMPLETED} if a function call was
-		 * forced when setting a function name with function_call request parameter.
-		 */
-		FUNCTION_CALL,
-
 		/** All finish reasons that do not fit in any other value */
-		UNKNOWN;
+		OTHER;
 
 		public static FinishReason fromGptApi(String reason) {
 			switch (reason) {
@@ -77,11 +64,8 @@ public class TextCompletion {
 				return FinishReason.TRUNCATED;
 			case "content_filter":
 				return FinishReason.INAPPROPRIATE;
-			case "function_call":
-			case "tool_calls":
-				return FinishReason.FUNCTION_CALL;
 			default:
-				return FinishReason.UNKNOWN;
+				return FinishReason.OTHER;
 			}
 		}
 	}
@@ -90,6 +74,6 @@ public class TextCompletion {
 	private String text;
 
 	@Getter
-	@NonNull
+	// TODO marking this @NonNull causes subclasses builders to fail...
 	private FinishReason finishReason;
 }

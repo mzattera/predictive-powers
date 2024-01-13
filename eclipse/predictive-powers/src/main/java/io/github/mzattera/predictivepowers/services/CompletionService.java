@@ -21,7 +21,10 @@ import java.util.Map.Entry;
 
 /**
  * A completion service provides methods to complete/generate text (prompt
- * execution).
+ * execution). This is more basic than a {@link ChatService} in that is meant to
+ * provide completions, but not to hold conversations. In addition, ChatService
+ * can normally be used to execute prompts as well, hence providing more
+ * functionalities.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -130,8 +133,9 @@ public interface CompletionService extends AiService {
 	public static String fillSlots(String prompt, Map<String, ? extends Object> parameters) {
 		if ((prompt == null) || (parameters == null))
 			return prompt;
+
 		for (Entry<String, ? extends Object> e : parameters.entrySet()) {
-			String regex = "{{" + e.getKey() + "}}";
+			String regex = "{{" + e.getKey() + "}}"; // No need to Pattern.quote()
 			if (e.getValue() == null)
 				prompt = prompt.replace(regex, "");
 			else

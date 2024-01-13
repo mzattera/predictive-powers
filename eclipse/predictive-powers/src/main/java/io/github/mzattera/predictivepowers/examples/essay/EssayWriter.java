@@ -49,14 +49,14 @@ import io.github.mzattera.predictivepowers.google.endpoint.GoogleEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
+import io.github.mzattera.predictivepowers.services.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.EmbeddingService;
-import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.Link;
-import io.github.mzattera.predictivepowers.services.TextCompletion;
+import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.util.ExtractionUtil;
 import io.github.mzattera.util.FileUtil;
 import lombok.AllArgsConstructor;
@@ -476,7 +476,7 @@ public class EssayWriter implements Closeable {
 		// using the draft in description
 		Map<String, String> params = new HashMap<>();
 		params.put("description", description);
-		TextCompletion resp = chatSvc.complete(CompletionService.fillSlots(
+		ChatCompletion resp = chatSvc.complete(CompletionService.fillSlots(
 				"You are tasked with creating the structure of a book based on the provided description. The book should consist of several chapters, each containing a title, a summary, and a list of sections. Each section should have a title and a summary. Please ensure that sections are not nested within each other.\n"
 						+ "\n"
 						+ "If possible, try to make the summaries of the chapters and sections at least 100 words long to provide substantial content for the book's outline.\n"

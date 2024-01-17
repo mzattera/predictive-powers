@@ -32,6 +32,8 @@ import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import xyz.felh.openai.jtokkit.api.Encoding;
 import xyz.felh.openai.jtokkit.utils.TikTokenUtils;
 
+
+// TODO URGENT Remove and use my own tokenizer
 public class JtokkitTest {
 
 	private final static OpenAiModelService svc = (new OpenAiEndpoint()).getModelService();
@@ -75,7 +77,7 @@ public class JtokkitTest {
 		List<ChatMessage> l = new ArrayList<>();
 		l.add(new OpenAiChatMessage(Role.SYSTEM, "You are a usefl assistant"));
 		l.add(new OpenAiChatMessage(Role.USER, "Hello"));
-		l.add(new OpenAiChatMessage(Role.BOT, "Hi, how cna I help?"));
+		l.add(new OpenAiChatMessage(Role.ASSISTANT, "Hi, how cna I help?"));
 
 		Tokenizer tokenizer = svc.getTokenizer("gpt-3.5-turbo");
 		assertEquals(33, tokenizer.count(l));

@@ -20,9 +20,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
@@ -183,24 +180,6 @@ public class HuggingFaceChatServiceTest {
 			cs.setMaxHistoryLength(4);
 			cs.setMaxConversationSteps(9999);
 			cs.setMaxConversationTokens(1);
-
-			List<ChatMessage> l = new ArrayList<>();
-			l.add(new ChatMessage(Author.USER, question));
-			resp = cs.complete(l);
-			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
-			assertEquals(cs.getHistory().size(), 4);
-			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(0).getContent(), "user_" + 9);
-			assertEquals(cs.getHistory().get(1).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(1).getContent(), "bot_" + 9);
-			assertEquals(cs.getHistory().get(2).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(2).getContent(), question);
-			assertEquals(cs.getHistory().get(3).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(3).getContent(), resp.getText());
-			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().size(), 0);
-			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().size(), 0);
-			assertEquals(cs.getDefaultReq().getInputs().getText(), question);
-			assertEquals(cs.getMaxNewTokens(), null);
 		} // Close endpoint
 	}
 
@@ -293,9 +272,6 @@ public class HuggingFaceChatServiceTest {
 			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().size(), 1);
 			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().get(0), "B1_0\nB2_0");
 			assertEquals(cs.getDefaultReq().getInputs().getText(), question);
-
-			// Empty list
-			resp = cs.complete(new ArrayList<>());
 		}
 	}
 

@@ -27,7 +27,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.client.chat.Function;
-import io.github.mzattera.predictivepowers.openai.client.chat.Tool;
+import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.ToolCallTest.GetCurrentWeatherParameters;
@@ -58,9 +58,9 @@ class OpenAiModelServiceTest {
 	static {
 		FUNCTIONS.add(FUNCTION);
 	}
-	private final static List<Tool> TOOLS = new ArrayList<>();
+	private final static List<OpenAiTool> TOOLS = new ArrayList<>();
 	static {
-		TOOLS.add(new Tool(FUNCTION));
+		TOOLS.add(new OpenAiTool(FUNCTION));
 	}
 
 	@Test

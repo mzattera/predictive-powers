@@ -16,8 +16,6 @@
 
 package io.github.mzattera.predictivepowers.openai.client.chat;
 
-import com.fasterxml.jackson.annotation.JsonValue;
-
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,8 +25,8 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Tool call that a completion model might return. This is used by the new
- * parallel function calling capability.
+ * Tool call that a model returns indicating it wants to call a tool. This is
+ * used by parallel function calling capability and Assistants API.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -42,21 +40,8 @@ import lombok.ToString;
 @ToString
 public class ToolCall {
 
-	public enum Type {
-		FUNCTION("function");
-
-		private final @NonNull String label;
-
-		private Type(@NonNull String label) {
-			this.label = label;
-		}
-
-		@Override
-		@JsonValue
-		public String toString() {
-			return label;
-		}
-	}
+	// TODO URGENT Expand with types supported by the Runs endpoint, and their
+	// parameters.
 
 	/**
 	 * The ID of the tool call.
@@ -68,15 +53,15 @@ public class ToolCall {
 	 * The type of the tool. Currently, only function is supported.
 	 */
 	@NonNull
-	Type type;
+	OpenAiTool.Type type;
 
 	/**
-	 * Name of the function to call.
+	 * A function call corresponding to this tool call.
 	 */
 	@NonNull
 	FunctionCall function;
 
 	public ToolCall(FunctionCall call) {
-		this("fake_id", Type.FUNCTION, call);
+		this("fake_id", OpenAiTool.Type.FUNCTION, call);
 	}
 }

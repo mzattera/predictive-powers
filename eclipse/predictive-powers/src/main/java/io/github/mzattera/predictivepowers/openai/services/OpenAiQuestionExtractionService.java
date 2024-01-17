@@ -31,7 +31,6 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
-import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
@@ -98,7 +97,7 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 	public List<QnAPair> getQuestions(String text) {
 
 		// Provides instructions and examples
-		List<ChatMessage> instructions = new ArrayList<>();
+		List<OpenAiChatMessage> instructions = new ArrayList<>();
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"You are a teacher and you are preparing an assessment from some text materials.", null));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
@@ -133,7 +132,7 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 	public List<QnAPair> getTFQuestions(String text) {
 
 		// Provides instructions and examples
-		List<ChatMessage> instructions = new ArrayList<>();
+		List<OpenAiChatMessage> instructions = new ArrayList<>();
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"You are a teacher and you are preparing an assessment from some text materials."));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
@@ -143,7 +142,7 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China–Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1⁄2 in) was most recently established in 2020 by the Chinese and Nepali authorities.\n" //
 				+ "Mount Everest attracts many climbers, including highly experienced mountaineers. There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the 'standard route') and the other from the north in Tibet. While not posing substantial technical climbing challenges on the standard route, Everest presents dangers such as altitude sickness, weather, and wind, as well as hazards from avalanches and the Khumbu Icefall. As of 2019, over 300 people have died on Everest, many of whose bodies remain on the mountain.\n" //
 				+ "'''", "example_user", null));
-		instructions.add(new OpenAiChatMessage(Role.BOT, "[\n" //
+		instructions.add(new OpenAiChatMessage(Role.ASSISTANT, "[\n" //
 				+ "   {\n" //
 				+ "      \"question\":\"Mount Everest is the highest mountain on Earth.\",\n" //
 				+ "      \"answer\":\"true\"\n" //
@@ -183,7 +182,7 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 	@Override
 	public List<QnAPair> getFillQuestions(String text) {
 		// Provides instructions and examples
-		List<ChatMessage> instructions = new ArrayList<>();
+		List<OpenAiChatMessage> instructions = new ArrayList<>();
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"You are a teacher and you are preparing an assessment from some text materials."));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
@@ -242,7 +241,7 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 	public List<QnAPair> getMCQuestions(String text) {
 
 		// Provides instructions and examples
-		List<ChatMessage> instructions = new ArrayList<>();
+		List<OpenAiChatMessage> instructions = new ArrayList<>();
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"You are a teacher and you are preparing an assessment from some text materials."));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
@@ -328,12 +327,16 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 	 * @param text
 	 * @return
 	 */
-	private List<QnAPair> getQuestions(List<ChatMessage> instructions, String text) {
+	private List<QnAPair> getQuestions(List<OpenAiChatMessage> instructions, String text) {
 
 		// Split text, based on prompt size
 		Tokenizer counter = getEndpoint().getModelService().getTokenizer(getModel());
 		int ctxSize = getEndpoint().getModelService().getContextSize(getModel());
-		int tok = counter.count(instructions);
+
+		// TODO URGENT Better counting
+		int tok = 0;
+		for (OpenAiChatMessage m : instructions)
+			tok += counter.count(m);
 
 		List<QnAPair> result = new ArrayList<>();
 
@@ -353,9 +356,9 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 	 * @param text
 	 * @return
 	 */
-	private List<QnAPair> getQuestionsShort(List<ChatMessage> instructions, String shortText) {
+	private List<QnAPair> getQuestionsShort(List<OpenAiChatMessage> instructions, String shortText) {
 
-		List<ChatMessage> prompt = new ArrayList<>(instructions);
+		List<OpenAiChatMessage> prompt = new ArrayList<>(instructions);
 		prompt.add(new OpenAiChatMessage(Role.USER, "Context:\n'''\n" //
 				+ shortText //
 				+ "\n'''"));

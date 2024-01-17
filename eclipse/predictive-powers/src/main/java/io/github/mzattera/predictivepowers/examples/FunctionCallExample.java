@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import io.github.mzattera.predictivepowers.openai.client.chat.Function;
-import io.github.mzattera.predictivepowers.openai.client.chat.Tool;
+import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolCallResult;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
@@ -56,9 +56,9 @@ public class FunctionCallExample {
 	}
 
 	// List of functions available to the bot (for now it is only 1).
-	private final static List<Tool> TOOLS = new ArrayList<>();
+	private final static List<OpenAiTool> TOOLS = new ArrayList<>();
 	static {
-		TOOLS.add(new Tool( //
+		TOOLS.add(new OpenAiTool( //
 				Function.builder() //
 						.name(FUNCTION_NAME) //
 						.description(FUNCTION_DESCRIPTION) //

@@ -51,14 +51,12 @@ import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiTokenizer;
 import io.github.mzattera.predictivepowers.services.ChatCompletion;
-import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.services.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.EmbeddingService;
 import io.github.mzattera.predictivepowers.services.Link;
-import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.util.ExtractionUtil;
 import io.github.mzattera.util.FileUtil;
 import lombok.AllArgsConstructor;
@@ -595,10 +593,10 @@ public class EssayWriter implements Closeable {
 
 		// Prepares the conversation; notice the call to fill the slots in the prompt
 		// template
-		List<ChatMessage> msgs = new ArrayList<>();
+		List<OpenAiChatMessage> msgs = new ArrayList<>();
 		msgs.add(new OpenAiChatMessage(Role.SYSTEM,
 				"You are an assistant helping a researcher in finding web pages that are relevant for the essay section they are writing."));
-		msgs.add(new ChatMessage(Author.USER, CompletionService.fillSlots(prompt, params)));
+		msgs.add(new OpenAiChatMessage(Role.USER, CompletionService.fillSlots(prompt, params)));
 
 		// Loops until the section has been successfully googled
 		List<String> queries;
@@ -744,7 +742,7 @@ public class EssayWriter implements Closeable {
 		params.put("summary", section.summary);
 
 		// This is the prompt used for creating the section
-		List<ChatMessage> msgs = new ArrayList<>();
+		List<OpenAiChatMessage> msgs = new ArrayList<>();
 		msgs.add(new OpenAiChatMessage(Role.SYSTEM,
 				"You will be provided with a context and the summary of a section of an essay, both delimited by XML tags."
 						+ " Your task is to use the content of the context to write the entire section of the essay."
@@ -753,14 +751,14 @@ public class EssayWriter implements Closeable {
 						+ " Do not make up missing information or put placeholders for data you do not have."
 						+ " Only if enough information is available in the content, produce a text at least "
 						+ SECTION_LENGTH_TOKENS + " tokens long.\n\n"));
-		msgs.add(new ChatMessage(Author.USER, "")); // Placeholder
+		msgs.add(new OpenAiChatMessage(Role.USER, "")); // Placeholder
 
 		// Searches the knowledge base for relevant content
 		// (= builds the context)
 		List<Pair<EmbeddedText, Double>> knowledge = kb.search(embSvc.embed(section.summary).get(0), 50, 0);
 
 		// See how much context can fit the prompt
-		Tokenizer counter = openAi.getModelService().getTokenizer(chatSvc.getModel());
+		OpenAiTokenizer counter = openAi.getModelService().getTokenizer(chatSvc.getModel());
 		int ctxSize = openAi.getModelService().getContextSize(chatSvc.getModel());
 		StringBuilder buf = new StringBuilder();
 		String context = "";
@@ -773,8 +771,9 @@ public class EssayWriter implements Closeable {
 			params.put("context", c);
 
 			msgs.remove(msgs.size() - 1);
-			msgs.add(new ChatMessage(Author.USER, CompletionService.fillSlots(prompt, params)));
-			if (((int) (SECTION_LENGTH_TOKENS * 1.5) + counter.count(msgs)) > ctxSize)
+			msgs.add(new OpenAiChatMessage(Role.USER, CompletionService.fillSlots(prompt, params)));
+
+			if (((int) (SECTION_LENGTH_TOKENS * 1.5) + counter.countOpenAiMessages(msgs)) > ctxSize)
 				break;
 			context = c; // Saves last context that would fit
 		}
@@ -782,7 +781,9 @@ public class EssayWriter implements Closeable {
 		// OK, now build the actual context
 		msgs.remove(msgs.size() - 1);
 		params.put("context", context);
-		msgs.add(new ChatMessage(Author.USER, CompletionService.fillSlots(prompt, params)));
+
+		// TODO URGENT restore
+//		msgs.add(new ChatMessage(Author.USER, CompletionService.fillSlots(prompt, params)));
 
 		// Add generated content to the section
 		section.content = chatSvc.complete(msgs).getText();

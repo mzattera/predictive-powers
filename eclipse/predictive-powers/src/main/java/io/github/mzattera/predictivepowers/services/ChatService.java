@@ -73,9 +73,9 @@ public interface ChatService extends AiService {
 	/**
 	 * These are the messages exchanged in the current chat. Implementations of this
 	 * interface are supposed to keep history updated by adding each user utterance
-	 * and the corresponding agent reply. If the history is manipulated differently,
-	 * it is up o the developer to make sure the corresponding service still works
-	 * properly.
+	 * and the corresponding agent reply.
+	 * 
+	 * It is assumed this cannot be manipulated to alter chat behavior.
 	 * 
 	 * Notice this will grow up to {@link #getMaxHistoryLength}, unless cleared.
 	 * However, only latest messages are considered when calling the API (see
@@ -100,8 +100,8 @@ public interface ChatService extends AiService {
 	void setPersonality(String personality);
 
 	/**
-	 * Maximum number of history steps to consider when interacting with chat
-	 * service (ignoring last message).
+	 * Maximum number of history messages to consider when interacting with chat
+	 * service (counting last message too).
 	 * 
 	 * Notice this does NOT limit length of conversation history (see
 	 * {@link #getMaxHistoryLength}).
@@ -109,8 +109,8 @@ public interface ChatService extends AiService {
 	int getMaxConversationSteps();
 
 	/**
-	 * Maximum number of history steps to consider when interacting with chat
-	 * service (ignoring last message).
+	 * Maximum number of history messages to consider when interacting with chat
+	 * service (counting last message too).
 	 * 
 	 * Notice this does NOT limit length of conversation history (see
 	 * {@link #getMaxHistoryLength}).
@@ -119,7 +119,7 @@ public interface ChatService extends AiService {
 
 	/**
 	 * Maximum number of tokens to keep in conversation when interacting with chat
-	 * service (ignoring last message).
+	 * service (counting last message too).
 	 * 
 	 * For some models, the higher this parameter, the smaller the allowed size of
 	 * the reply.
@@ -128,7 +128,7 @@ public interface ChatService extends AiService {
 
 	/**
 	 * Maximum number of tokens to keep in conversation when interacting with chat
-	 * service (ignoring last message).
+	 * service (counting last message too).
 	 * 
 	 * For some models, the higher this parameter, the smaller the allowed size of
 	 * the reply.
@@ -136,14 +136,12 @@ public interface ChatService extends AiService {
 	void setMaxConversationTokens(int n);
 
 	/**
-	 * Maximum amount of tokens to produce (not including the prompt and
-	 * conversation history).
+	 * Maximum amount of tokens to produce as a reply.
 	 */
 	Integer getMaxNewTokens();
 
 	/**
-	 * Maximum amount of tokens to produce (not including the prompt and
-	 * conversation history).
+	 * Maximum amount of tokens to produce as a reply.
 	 */
 	void setMaxNewTokens(Integer maxNewTokens);
 
@@ -183,13 +181,4 @@ public interface ChatService extends AiService {
 	 * used, if provided.
 	 */
 	ChatCompletion complete(ChatMessage prompt);
-
-	/**
-	 * Completes text outside a conversation (executes given prompt ignoring and
-	 * without affecting conversation history).
-	 * 
-	 * Notice the list of messages is supposed to be passed as-is to the chat API,
-	 * without modifications.
-	 */
-	ChatCompletion complete(List<ChatMessage> messages);
 }

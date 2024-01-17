@@ -55,6 +55,10 @@ public interface ModelService extends AiService {
 		 */
 		int count(@NonNull String text);
 
+		
+		// TODO URGENT it is better have messages counted, if needed, in instances of the interface, since algorithms cold change.
+		// TODO URGENT Probably OpenAiTokenizr should count length of requests, if possible, after they have been populated with messages 
+
 		/**
 		 * If you have an entire conversation, please notice {@link #count(Collection)}
 		 * is more suitable and returns more correct results.

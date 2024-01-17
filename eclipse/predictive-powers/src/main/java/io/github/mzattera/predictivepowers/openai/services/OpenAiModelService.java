@@ -133,6 +133,14 @@ public class OpenAiModelService extends AbstractModelService {
 				l.add(translate(m));
 			return TikTokenUtils.tokens(model, l);
 		}
+		
+		// TODO URGENTT this Tokenizer interface is a mess, leave only a method fro string and let each services add methods they please
+		public int countOpenAiMessages(@NonNull List<OpenAiChatMessage> msgs) {
+			List<xyz.felh.openai.completion.chat.ChatMessage> l = new ArrayList<>(msgs.size());
+			for (ChatMessage m : msgs)
+				l.add(translate(m));
+			return TikTokenUtils.tokens(model, l);
+		}
 
 		/**
 		 * Counts tokens required to encode given request.
@@ -166,7 +174,7 @@ public class OpenAiModelService extends AbstractModelService {
 				case USER:
 					role = ChatMessageRole.USER;
 					break;
-				case BOT:
+				case ASSISTANT:
 					role = ChatMessageRole.ASSISTANT;
 					break;
 				case SYSTEM:

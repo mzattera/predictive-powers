@@ -26,12 +26,15 @@ import lombok.experimental.SuperBuilder;
 /**
  * This class encapsulates a response from a {#link ChatService}.
  * 
- * It extends {@link TextCompletion} by providing a {@ChatMessage as response}.
+ * 
+ * In addition to providing the returned text, this also contains a reason why
+ * the response terminated, which allows the developer to take corrective
+ * measures, eventually.
+ * 
  * 
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-@Getter
 @SuperBuilder
 @NoArgsConstructor
 //@RequiredArgsConstructor
@@ -39,15 +42,12 @@ import lombok.experimental.SuperBuilder;
 @ToString
 public class ChatCompletion {
 
-	// TODO URGENT This should not extend TextCompletion or the builder should not
-	// have access to super.text()
-
 	public String getText() {
 		return message.getContent();
 	}
 
 	@Getter
-//	TODO Setting to @NonNull causes issues with @SuperBuilder ChatGPT says I cna have a @Builder.Default method to check after creation, as I have no setters
+//	TODO URGENT Setting to @NonNull causes issues with @SuperBuilder ChatGPT says I cna have a @Builder.Default method to check after creation, as I have no setters
 	private ChatMessage message;
 
 	@Getter

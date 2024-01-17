@@ -54,7 +54,7 @@ public class OpenAiChatMessage extends ChatMessage {
 		USER("user"),
 
 		/** Marks messages coming from the bot/agent/assistant */
-		BOT("assistant"),
+		ASSISTANT("assistant"),
 
 		// TODO URGENT move these out of ChatMessage somehow?
 
@@ -101,10 +101,21 @@ public class OpenAiChatMessage extends ChatMessage {
 		case USER:
 		case SYSTEM:
 			return Author.USER;
-		case BOT:
+		case ASSISTANT:
 		case FUNCTION:
 		case TOOL:
 			return Author.BOT;
+		default:
+			throw new IllegalArgumentException(); // Guard
+		}
+	}
+
+	private static Role authorToRole(Author author) {
+		switch (author) {
+		case USER:
+			return Role.USER;
+		case BOT:
+			return Role.ASSISTANT;
 		default:
 			throw new IllegalArgumentException(); // Guard
 		}
@@ -142,6 +153,10 @@ public class OpenAiChatMessage extends ChatMessage {
 	 */
 	FunctionCall functionCall;
 
+	public OpenAiChatMessage(ChatMessage msg) {
+		this(authorToRole(msg.getAuthor()), msg.getContent(), null, null);
+	}
+
 	public OpenAiChatMessage(Role role, String content) {
 		this(role, content, null, null);
 	}
@@ -150,6 +165,7 @@ public class OpenAiChatMessage extends ChatMessage {
 		this(role, content, name, null);
 	}
 
+	// TODO URGENT name and content are optional for a function call message
 	public OpenAiChatMessage(Role role, String content, String name, FunctionCall functionCall) {
 		super(roleToAuthor(role), content);
 		this.role = role;

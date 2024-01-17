@@ -16,6 +16,7 @@
 package io.github.mzattera.predictivepowers.openai.services;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,7 +28,7 @@ import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsCho
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.client.chat.Function;
-import io.github.mzattera.predictivepowers.openai.client.chat.Tool;
+import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolCallResult;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
@@ -35,6 +36,7 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Rol
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiTokenizer;
 import io.github.mzattera.predictivepowers.services.AbstractChatService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
+import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import lombok.Getter;
 import lombok.NonNull;
@@ -64,16 +66,16 @@ public class OpenAiChatService extends AbstractChatService {
 	}
 
 	public OpenAiChatService(OpenAiEndpoint ep, ChatCompletionsRequest defaultReq) {
-		super(ep.getModelService());
 		this.endpoint = ep;
 		this.defaultReq = defaultReq;
+		modelService = endpoint.getModelService();
 		String model = defaultReq.getModel();
 		int maxReplyTk = Math.min(modelService.getContextSize(model) / 4, modelService.getMaxNewTokens(model));
 		setMaxConversationTokens(modelService.getContextSize(model) - maxReplyTk);
 	}
 
-	@NonNull
 	@Getter
+	@NonNull
 	protected final OpenAiEndpoint endpoint;
 
 	@Override
@@ -96,6 +98,26 @@ public class OpenAiChatService extends AbstractChatService {
 	@NonNull
 	private final ChatCompletionsRequest defaultReq;
 
+	private final OpenAiModelService modelService;
+
+	private final List<OpenAiChatMessage> history = new ArrayList<>();
+
+	@Override
+	public List<ChatMessage> getHistory() {
+		return Collections.unmodifiableList(
+				history.stream().map(chatMessage -> (ChatMessage) chatMessage).collect(Collectors.toList()));
+	}
+
+	/** This is used for testing purposes only */
+	List<OpenAiChatMessage> getModifiableHistory() {
+		return history;
+	}
+
+	@Override
+	public void clearConversation() {
+		history.clear();
+	}
+
 	/**
 	 * Set the tools to be used in all subsequent request. This sets tools or
 	 * functions fields in defaultReq properly, taking automatically in
@@ -110,7 +132,7 @@ public class OpenAiChatService extends AbstractChatService {
 	 * @throws IllegalArgumentException if the model does not support function
 	 *                                  calls.
 	 */
-	public void setDefaulTools(List<Tool> tools) {
+	public void setDefaulTools(List<OpenAiTool> tools) {
 
 		if ((tools == null) || (tools.size() == 0)) { // No tools / functions used
 			defaultReq.setTools(null);
@@ -121,8 +143,8 @@ public class OpenAiChatService extends AbstractChatService {
 		switch (((OpenAiModelService) modelService).getSupportedCall(getModel())) {
 		case FUNCTIONS:
 			List<Function> f = new ArrayList<>(tools.size());
-			for (Tool t : tools) {
-				if (t.getType() != Tool.Type.FUNCTION) // paranoid, but will support future tools
+			for (OpenAiTool t : tools) {
+				if (t.getType() != OpenAiTool.Type.FUNCTION) // paranoid, but will support future tools
 					throw new IllegalArgumentException("Current model does only support old funtion calling API.");
 				f.add(t.getFunction());
 			}
@@ -150,15 +172,15 @@ public class OpenAiChatService extends AbstractChatService {
 	 * @throws IllegalArgumentException if the model does not support function
 	 *                                  calls.
 	 */
-	public List<Tool> getDefaulTools() {
+	public List<OpenAiTool> getDefaulTools() {
 
-		switch (((OpenAiModelService) modelService).getSupportedCall(getModel())) {
+		switch (modelService.getSupportedCall(getModel())) {
 		case FUNCTIONS:
 			if (defaultReq.getFunctions() == null)
 				return null;
-			List<Tool> result = new ArrayList<>(defaultReq.getFunctions().size());
+			List<OpenAiTool> result = new ArrayList<>(defaultReq.getFunctions().size());
 			for (Function t : defaultReq.getFunctions()) {
-				result.add(new Tool(t));
+				result.add(new OpenAiTool(t));
 			}
 			return result;
 		case TOOLS:
@@ -244,12 +266,20 @@ public class OpenAiChatService extends AbstractChatService {
 	 */
 	public OpenAiTextCompletion chat(ChatMessage msg, ChatCompletionsRequest req) {
 
-		List<ChatMessage> conversation = trimConversation(history, true);
-		conversation.add(msg);
+		OpenAiChatMessage m;
+		try {
+			m = (OpenAiChatMessage) msg;
+		} catch (ClassCastException e) { // Paranoid, in reality should never happen if used properly
+			m = new OpenAiChatMessage(msg);
+		}
+
+		List<OpenAiChatMessage> conversation = new ArrayList<>(history);
+		conversation.add(m);
+		trimConversation(conversation);
 
 		OpenAiTextCompletion result = chatCompletion(conversation, req);
 
-		history.add(msg);
+		history.add(m);
 		history.add(result.getMessage());
 
 		// Make sure history is of desired length
@@ -283,7 +313,7 @@ public class OpenAiChatService extends AbstractChatService {
 	 */
 	public OpenAiTextCompletion chat(List<ToolCallResult> results, ChatCompletionsRequest req) {
 
-		List<ChatMessage> conversation = trimConversation(history, true);
+		List<OpenAiChatMessage> conversation = new ArrayList<>(history);
 
 		OpenAiTextCompletion completion;
 
@@ -295,6 +325,7 @@ public class OpenAiChatService extends AbstractChatService {
 
 			OpenAiChatMessage msg = new OpenAiChatMessage(Role.FUNCTION, results.get(0));
 			conversation.add(msg);
+			trimConversation(conversation);
 			completion = chatCompletion(conversation, req);
 
 			history.add(msg);
@@ -308,6 +339,7 @@ public class OpenAiChatService extends AbstractChatService {
 				msgs.add(new OpenAiChatMessage(Role.TOOL, result));
 			}
 			conversation.addAll(msgs);
+			trimConversation(conversation);
 			completion = chatCompletion(conversation, req);
 
 			history.addAll(msgs);
@@ -355,16 +387,28 @@ public class OpenAiChatService extends AbstractChatService {
 	 * is used, if provided.
 	 */
 	public OpenAiTextCompletion complete(ChatMessage prompt, ChatCompletionsRequest req) {
-		List<ChatMessage> msgs = new ArrayList<>();
-		if (getPersonality() != null)
-			msgs.add(new OpenAiChatMessage(Role.SYSTEM, getPersonality()));
-		msgs.add(prompt);
+		List<OpenAiChatMessage> msgs = new ArrayList<>();
+
+		OpenAiChatMessage m;
+		try {
+			m = (OpenAiChatMessage) prompt;
+		} catch (ClassCastException e) { // Paranoid, in reality should never happen if used properly
+			m = new OpenAiChatMessage(prompt);
+		}
+		msgs.add(m);
+		trimConversation(msgs);
 
 		return complete(msgs, req);
 	}
 
-	@Override
-	public OpenAiTextCompletion complete(List<ChatMessage> messages) {
+	/**
+	 * Completes text outside a conversation (executes given prompt ignoring and
+	 * without affecting conversation history).
+	 * 
+	 * Notice the list of messages is supposed to be passed as-is to the chat API,
+	 * without modifications.
+	 */
+	public OpenAiTextCompletion complete(List<OpenAiChatMessage> messages) {
 		return complete(messages, defaultReq);
 	}
 
@@ -375,7 +419,7 @@ public class OpenAiChatService extends AbstractChatService {
 	 * personality is NOT considered, but can be injected as first message in the
 	 * list.
 	 */
-	public OpenAiTextCompletion complete(List<ChatMessage> messages, ChatCompletionsRequest req) {
+	public OpenAiTextCompletion complete(List<OpenAiChatMessage> messages, ChatCompletionsRequest req) {
 		return chatCompletion(messages, req);
 	}
 
@@ -389,11 +433,11 @@ public class OpenAiChatService extends AbstractChatService {
 	 * @param tools List of tools that can be called (this can be empty to prevent
 	 *              tool calls, or null to use the list of default tools).
 	 */
-	protected OpenAiTextCompletion chatCompletion(List<ChatMessage> messages, ChatCompletionsRequest req) {
+	private OpenAiTextCompletion chatCompletion(List<OpenAiChatMessage> messages, ChatCompletionsRequest req) {
 
 		String model = req.getModel();
 
-		req.setMessages(messages.stream().map(element -> (OpenAiChatMessage) element).collect(Collectors.toList()));
+		req.setMessages(messages);
 
 		boolean autofit = (req.getMaxTokens() == null) && (modelService.getContextSize(model, -1) != -1);
 
@@ -452,44 +496,76 @@ public class OpenAiChatService extends AbstractChatService {
 		}
 	}
 
-	@Override
-	protected List<ChatMessage> trimConversation(List<ChatMessage> messages) {
-		return trimConversation(messages, true);
-	}
-
 	/**
 	 * Trims given list of messages (typically a conversation history), so it fits
 	 * the limits set in this instance (that is, maximum conversation steps and
 	 * tokens).
 	 * 
-	 * @param addPersonality If true, personality will be added as a system message
-	 *                       at the beginning of the resulting conversation.
+	 * Notice the personality is always added to the trimmed list (if set).
 	 * 
-	 * @return A new conversation, including agent personality and as many messages
-	 *         as can fit, given current settings.
+	 * @throws IllegalArgumentException if no message can be added because of
+	 *                                  context size limitations.
 	 */
-	protected List<ChatMessage> trimConversation(List<ChatMessage> messages, boolean addPersonality) {
+	private void trimConversation(List<OpenAiChatMessage> messages) {
 
-		// Remove function call results left on top without corresponding calls, or this
+		// Remove tool call results left on top without corresponding calls, or this
 		// will cause HTTP 400 error
-		List<ChatMessage> l = new ArrayList<>(messages);
-		while (l.size() > 0) {
-			OpenAiChatMessage m = (OpenAiChatMessage) l.get(0);
-			if ((m.getRole() == Role.FUNCTION) || (m.getRole() == Role.TOOL))
-				l.remove(0);
+		// TODO make this more efficient?
+		while (messages.size() > 0) {
+			OpenAiChatMessage m = messages.get(0);
+			if (m.getRole() == Role.TOOL)
+				messages.remove(0);
 			else
 				break;
 		}
+		if (messages.size() == 0)
+			throw new IllegalArgumentException("Conversation history contains only tool call results");
 
-		if (addPersonality && (getPersonality() != null)) {
+		// TODO URGENT: Better counting of tokens
+
+		if (getPersonality() != null) {
+
 			// must add a system message on top with personality
-			ChatMessage sys = new OpenAiChatMessage(Role.SYSTEM, getPersonality());
+			OpenAiChatMessage sys = new OpenAiChatMessage(Role.SYSTEM, getPersonality());
 			int count = modelService.getTokenizer(getModel()).count(sys);
-			List<ChatMessage> result = trimConversation(messages, getMaxConversationSteps(), getMaxConversationTokens() - count);
-			result.add(0, sys);
-			return result;
+			if (count >= getMaxConversationTokens())
+				throw new IllegalArgumentException("Context to small: bot personality alone is " + count
+						+ " tokens and getMaxConversationTokens() returns " + getMaxConversationTokens());
+			trimConversation(messages, getMaxConversationSteps(), getMaxConversationTokens() - count);
+			if (messages.size() == 0)
+				throw new IllegalArgumentException("Context to small to fit last conversation message");
+			messages.add(0, sys);
 		} else {
-			return trimConversation(messages, getMaxConversationSteps(), getMaxConversationTokens());
+			trimConversation(messages, getMaxConversationSteps(), getMaxConversationTokens());
+			if (messages.size() == 0)
+				throw new IllegalArgumentException("Context to small to fit last conversation message");
 		}
+	}
+
+	private void trimConversation(List<OpenAiChatMessage> messages, int maxConversationSteps,
+			int maxConversationTokens) {
+
+		Tokenizer counter = modelService.getTokenizer(getModel());
+		int tok = 0;
+		int steps = 0;
+
+		for (int i = messages.size() - 1; i >= 0; --i) {
+			if (steps >= maxConversationSteps)
+				break;
+
+			// TODO urgent: it is not the correct way to count
+			tok += counter.count(messages.get(i));
+
+			if (tok > maxConversationTokens) {
+				break;
+			}
+
+			++steps;
+		}
+
+		if (steps == 0)
+			messages.clear();
+		else if (steps < messages.size())
+			messages.subList(0, messages.size()-steps).clear();
 	}
 }

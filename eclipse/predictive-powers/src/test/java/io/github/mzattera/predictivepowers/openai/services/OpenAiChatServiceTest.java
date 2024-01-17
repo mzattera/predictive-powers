@@ -51,13 +51,13 @@ public class OpenAiChatServiceTest {
 			assertEquals(cs.getPersonality(), personality);
 
 			// In completion, we do not consider history, but we consider personality.
-			cs.getHistory().add(new OpenAiChatMessage(Role.USER, "test"));
-			assertEquals(1, cs.getHistory().size());
+			cs.getModifiableHistory().add(new OpenAiChatMessage(Role.USER, "test"));
+			assertEquals(1, cs.getModifiableHistory().size());
 			String question = "How high is Mt.Everest?";
 			ChatCompletion resp = cs.complete(question);
 			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
-			assertEquals(1, cs.getHistory().size());
-			assertEquals(cs.getHistory().get(0).getContent(), "test");
+			assertEquals(1, cs.getModifiableHistory().size());
+			assertEquals(cs.getModifiableHistory().get(0).getContent(), "test");
 			assertEquals(cs.getDefaultReq().getMessages().size(), 2);
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getRole(), Role.SYSTEM);
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getContent(), personality);
@@ -66,7 +66,7 @@ public class OpenAiChatServiceTest {
 			assertEquals(cs.getDefaultReq().getMaxTokens(), null);
 
 			cs.clearConversation();
-			assertEquals(cs.getHistory().size(), 0);
+			assertEquals(cs.getModifiableHistory().size(), 0);
 		} // Close endpoint
 	}
 
@@ -87,7 +87,7 @@ public class OpenAiChatServiceTest {
 
 			// Fake history
 			for (int i = 0; i < 10; ++i) {
-				cs.getHistory().add(new OpenAiChatMessage(Role.USER, "" + i));
+				cs.getModifiableHistory().add(new OpenAiChatMessage(Role.USER, "" + i));
 			}
 
 			cs.setMaxHistoryLength(3);
@@ -98,22 +98,20 @@ public class OpenAiChatServiceTest {
 			String question = "How high is Mt.Everest?";
 			ChatCompletion resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
-			assertEquals(cs.getHistory().size(), 3);
-			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(0).getContent(), "" + 9);
-			assertEquals(cs.getHistory().get(1).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(1).getContent(), question);
-			assertEquals(cs.getHistory().get(2).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(2).getContent(), resp.getText());
-			assertEquals(4, cs.getDefaultReq().getMessages().size());
+			assertEquals(3, cs.getModifiableHistory().size());
+			assertEquals(cs.getModifiableHistory().get(0).getAuthor(), Author.USER);
+			assertEquals(cs.getModifiableHistory().get(0).getContent(), "" + 9);
+			assertEquals(cs.getModifiableHistory().get(1).getAuthor(), Author.USER);
+			assertEquals(cs.getModifiableHistory().get(1).getContent(), question);
+			assertEquals(cs.getModifiableHistory().get(2).getAuthor(), Author.BOT);
+			assertEquals(cs.getModifiableHistory().get(2).getContent(), resp.getText());
+			assertEquals(3, cs.getDefaultReq().getMessages().size());
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getRole(), Role.SYSTEM);
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getContent(), personality);
 			assertEquals(cs.getDefaultReq().getMessages().get(1).getRole(), Role.USER);
-			assertEquals(cs.getDefaultReq().getMessages().get(1).getContent(), "" + 8);
+			assertEquals(cs.getDefaultReq().getMessages().get(1).getContent(), "" + 9);
 			assertEquals(cs.getDefaultReq().getMessages().get(2).getRole(), Role.USER);
-			assertEquals(cs.getDefaultReq().getMessages().get(2).getContent(), "" + 9);
-			assertEquals(cs.getDefaultReq().getMessages().get(3).getRole(), Role.USER);
-			assertEquals(cs.getDefaultReq().getMessages().get(3).getContent(), question);
+			assertEquals(cs.getDefaultReq().getMessages().get(2).getContent(), question);
 			assertEquals(cs.getDefaultReq().getMaxTokens(), null);
 
 			// NO personality, history length and conversation steps limits ////////////
@@ -122,27 +120,25 @@ public class OpenAiChatServiceTest {
 			// Fake history
 			cs.clearConversation();
 			for (int i = 0; i < 10; ++i) {
-				cs.getHistory().add(new OpenAiChatMessage(Role.USER, "" + i));
+				cs.getModifiableHistory().add(new OpenAiChatMessage(Role.USER, "" + i));
 			}
 			cs.setPersonality(null);
 			cs.setMaxNewTokens(100);
 
 			resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
-			assertEquals(cs.getHistory().size(), 3);
-			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(0).getContent(), "" + 9);
-			assertEquals(cs.getHistory().get(1).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(1).getContent(), question);
-			assertEquals(cs.getHistory().get(2).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(2).getContent(), resp.getText());
-			assertEquals(3, cs.getDefaultReq().getMessages().size());
+			assertEquals(cs.getModifiableHistory().size(), 3);
+			assertEquals(cs.getModifiableHistory().get(0).getAuthor(), Author.USER);
+			assertEquals(cs.getModifiableHistory().get(0).getContent(), "" + 9);
+			assertEquals(cs.getModifiableHistory().get(1).getAuthor(), Author.USER);
+			assertEquals(cs.getModifiableHistory().get(1).getContent(), question);
+			assertEquals(cs.getModifiableHistory().get(2).getAuthor(), Author.BOT);
+			assertEquals(cs.getModifiableHistory().get(2).getContent(), resp.getText());
+			assertEquals(2, cs.getDefaultReq().getMessages().size());
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getRole(), Role.USER);
-			assertEquals(cs.getDefaultReq().getMessages().get(0).getContent(), "" + 8);
+			assertEquals(cs.getDefaultReq().getMessages().get(0).getContent(), "" + 9);
 			assertEquals(cs.getDefaultReq().getMessages().get(1).getRole(), Role.USER);
-			assertEquals(cs.getDefaultReq().getMessages().get(1).getContent(), "" + 9);
-			assertEquals(cs.getDefaultReq().getMessages().get(2).getRole(), Role.USER);
-			assertEquals(cs.getDefaultReq().getMessages().get(2).getContent(), question);
+			assertEquals(cs.getDefaultReq().getMessages().get(1).getContent(), question);
 			assertEquals(cs.getDefaultReq().getMaxTokens(), 100);
 
 			// Personality, history length and conversation tokens limits ////////////
@@ -150,23 +146,23 @@ public class OpenAiChatServiceTest {
 			// Fake history
 			cs.clearConversation();
 			for (int i = 0; i < 10; ++i) {
-				cs.getHistory().add(new OpenAiChatMessage(Role.USER, "" + i));
+				cs.getModifiableHistory().add(new OpenAiChatMessage(Role.USER, "" + i));
 			}
 			cs.setPersonality(personality);
 			cs.setMaxNewTokens(null);
 			cs.setMaxHistoryLength(3);
 			cs.setMaxConversationSteps(9999);
-			cs.setMaxConversationTokens(1);
+			cs.setMaxConversationTokens(30); // this should accomodate personality and question
 
 			resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
-			assertEquals(cs.getHistory().size(), 3);
-			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(0).getContent(), "" + 9);
-			assertEquals(cs.getHistory().get(1).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(1).getContent(), question);
-			assertEquals(cs.getHistory().get(2).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(2).getContent(), resp.getText());
+			assertEquals(cs.getModifiableHistory().size(), 3);
+			assertEquals(cs.getModifiableHistory().get(0).getAuthor(), Author.USER);
+			assertEquals(cs.getModifiableHistory().get(0).getContent(), "" + 9);
+			assertEquals(cs.getModifiableHistory().get(1).getAuthor(), Author.USER);
+			assertEquals(cs.getModifiableHistory().get(1).getContent(), question);
+			assertEquals(cs.getModifiableHistory().get(2).getAuthor(), Author.BOT);
+			assertEquals(cs.getModifiableHistory().get(2).getContent(), resp.getText());
 			assertEquals(2, cs.getDefaultReq().getMessages().size());
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getRole(), Role.SYSTEM);
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getContent(), personality);
@@ -179,23 +175,23 @@ public class OpenAiChatServiceTest {
 			// Fake history
 			cs.clearConversation();
 			for (int i = 0; i < 10; ++i) {
-				cs.getHistory().add(new OpenAiChatMessage(Role.USER, "" + i));
+				cs.getModifiableHistory().add(new OpenAiChatMessage(Role.USER, "" + i));
 			}
 			cs.setPersonality(null);
 			cs.setMaxNewTokens(null);
 			cs.setMaxHistoryLength(3);
 			cs.setMaxConversationSteps(9999);
-			cs.setMaxConversationTokens(1);
+			cs.setMaxConversationTokens(15);
 
 			resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
-			assertEquals(cs.getHistory().size(), 3);
-			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(0).getContent(), "" + 9);
-			assertEquals(cs.getHistory().get(1).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(1).getContent(), question);
-			assertEquals(cs.getHistory().get(2).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(2).getContent(), resp.getText());
+			assertEquals(cs.getModifiableHistory().size(), 3);
+			assertEquals(cs.getModifiableHistory().get(0).getAuthor(), Author.USER);
+			assertEquals(cs.getModifiableHistory().get(0).getContent(), "" + 9);
+			assertEquals(cs.getModifiableHistory().get(1).getAuthor(), Author.USER);
+			assertEquals(cs.getModifiableHistory().get(1).getContent(), question);
+			assertEquals(cs.getModifiableHistory().get(2).getAuthor(), Author.BOT);
+			assertEquals(cs.getModifiableHistory().get(2).getContent(), resp.getText());
 			assertEquals(1, cs.getDefaultReq().getMessages().size());
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getAuthor(), Author.USER);
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getContent(), question);
@@ -206,7 +202,7 @@ public class OpenAiChatServiceTest {
 			cs.setMaxNewTokens(null);
 			resp = cs.complete(question);
 			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
-			assertEquals(cs.getHistory().size(), 3);
+			assertEquals(cs.getModifiableHistory().size(), 3);
 			assertEquals(1, cs.getDefaultReq().getMessages().size());
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getAuthor(), Author.USER);
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getContent(), question);
@@ -230,7 +226,7 @@ public class OpenAiChatServiceTest {
 
 			// Fake history
 			for (int i = 0; i < 10; ++i) {
-				cs.getHistory().add(new OpenAiChatMessage(Role.USER, "" + i));
+				cs.getModifiableHistory().add(new OpenAiChatMessage(Role.USER, "" + i));
 			}
 
 			cs.setMaxHistoryLength(1);
@@ -245,7 +241,7 @@ public class OpenAiChatServiceTest {
 			}
 
 			// If chat fails, history is not changed
-			assertEquals(10, cs.getHistory().size());
+			assertEquals(10, cs.getModifiableHistory().size());
 		} // Close endpoint
 	}
 

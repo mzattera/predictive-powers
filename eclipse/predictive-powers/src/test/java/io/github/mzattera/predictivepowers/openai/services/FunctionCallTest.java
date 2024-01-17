@@ -37,7 +37,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.FunctionChoice;
-import io.github.mzattera.predictivepowers.openai.client.chat.Tool;
+import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelData.SupportedCallType;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
@@ -73,9 +73,9 @@ public class FunctionCallTest {
 		public int code;
 	}
 
-	private final static List<Tool> TOOLS = new ArrayList<>();
+	private final static List<OpenAiTool> TOOLS = new ArrayList<>();
 	static {
-		TOOLS.add(new Tool( //
+		TOOLS.add(new OpenAiTool( //
 				Function.builder() //
 						.name("get_current_weather") //
 						.description("Get the current weather in a given location.") //

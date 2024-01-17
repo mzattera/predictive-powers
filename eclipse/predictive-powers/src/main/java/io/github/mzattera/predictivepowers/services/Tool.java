@@ -14,27 +14,22 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.openai.client.chat;
-
-import com.fasterxml.jackson.annotation.JsonValue;
+package io.github.mzattera.predictivepowers.services;
 
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 
 /**
- * This is a tool definition for OpenAI parallel function calling feature in
- * chat completion API.
+ * This is a tool that an {@link AgentService} can call.
  * 
  * @author Massimiliano "Maxi" Zattera.
  *
  */
 @Getter
-@Setter
 @Builder
 @NoArgsConstructor
 @RequiredArgsConstructor
@@ -42,25 +37,7 @@ import lombok.ToString;
 @ToString
 public class Tool {
 
-	public enum Type {
-		FUNCTION("function");
-
-		private final @NonNull String label;
-
-		private Type(@NonNull String label) {
-			this.label = label;
-		}
-
-		@Override
-		@JsonValue
-		public String toString() {
-			return label;
-		}
-	}
-
+	/** Unique identifier for this tool */
 	@NonNull
-	final Type type = Type.FUNCTION;
-
-	@NonNull
-	Function function;
+	private String id;
 }

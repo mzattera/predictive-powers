@@ -118,7 +118,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 
 		// Provides instructions and examples
 		// TODO URGENT Better delimiters for context and questions
-		List<ChatMessage> instructions = new ArrayList<>();
+		List<OpenAiChatMessage> instructions = new ArrayList<>();
 		if (completionService.getPersonality() == null)
 			instructions
 					.add(new OpenAiChatMessage(Role.SYSTEM, "You are an AI assistant answering questions truthfully."));

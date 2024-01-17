@@ -120,7 +120,7 @@ public class ChatCompletionsRequest {
 	Double temperature;
 	Double topP;
 
-	List<Tool> tools;
+	List<OpenAiTool> tools;
 	ToolChoice toolChoice;
 
 	String user;

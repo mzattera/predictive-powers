@@ -36,7 +36,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
-import io.github.mzattera.predictivepowers.openai.client.chat.Tool;
+import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolCallResult;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolChoice;
@@ -80,9 +80,9 @@ public class ToolCallTest {
 			.description("Get the current weather in a given location.") //
 			.parameters(GetCurrentWeatherParameters.class).build() //
 	;
-	private final static List<Tool> TOOLS = new ArrayList<>();
+	private final static List<OpenAiTool> TOOLS = new ArrayList<>();
 	static {
-		TOOLS.add(new Tool(FUNCTION));
+		TOOLS.add(new OpenAiTool(FUNCTION));
 	}
 
 	/**
@@ -119,7 +119,7 @@ public class ToolCallTest {
 	 */
 	@Test
 	public void test52() throws JsonProcessingException {
-		Tool t = TOOLS.get(0);
+		OpenAiTool t = TOOLS.get(0);
 
 		String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(t);
 		assertEquals("{\r\n" + "  \"type\" : \"function\",\r\n" + "  \"function\" : {\r\n"
@@ -156,12 +156,12 @@ public class ToolCallTest {
 		ToolCall tc = ToolCall.builder() //
 				.function(fc) //
 				.Id("test_id") //
-				.type(ToolCall.Type.FUNCTION).build();
+				.type(OpenAiTool.Type.FUNCTION).build();
 
 		String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(tc);
 		assertEquals(
-				"{\r\n  \"type\" : \"function\",\r\n  \"function\" : {\r\n    \"name\" : \"testCall\",\r\n    \"arguments\" : \"{\\r\\n  \\\"name\\\" : \\\"pippo\\\",\\r\\n  \\\"value\\\" : 6\\r\\n}\"\r\n  },\r\n  \"id\" : \"test_id\"\r\n}"
-, json);
+				"{\r\n  \"type\" : \"function\",\r\n  \"function\" : {\r\n    \"name\" : \"testCall\",\r\n    \"arguments\" : \"{\\r\\n  \\\"name\\\" : \\\"pippo\\\",\\r\\n  \\\"value\\\" : 6\\r\\n}\"\r\n  },\r\n  \"id\" : \"test_id\"\r\n}",
+				json);
 	}
 
 	/**

@@ -26,6 +26,7 @@ import io.github.mzattera.predictivepowers.services.AbstractChatService;
 import io.github.mzattera.predictivepowers.services.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ChatMessage.Author;
+import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import lombok.Getter;
 import lombok.NonNull;
@@ -47,9 +48,9 @@ public class HuggingFaceChatService extends AbstractChatService {
 	}
 
 	public HuggingFaceChatService(HuggingFaceEndpoint ep, ConversationalRequest defaultReq) {
-		super(ep.getModelService());
 		this.endpoint = ep;
 		this.defaultReq = defaultReq;
+		this.modelService = endpoint.getModelService();
 	}
 
 	@NonNull
@@ -72,6 +73,29 @@ public class HuggingFaceChatService extends AbstractChatService {
 	@Getter
 	@Setter
 	private String model = DEFAULT_MODEL;
+
+	private final HuggingFaceModelService modelService;
+
+	// In HF service, chat history is two synchronized arrays of user utterances and
+	// bot responses
+	private final List<String> userMsgHistory = new ArrayList<>();
+	private final List<String> botMsgHistory = new ArrayList<>();
+
+	@Override
+	public List<ChatMessage> getHistory() {
+		List<ChatMessage> result = new ArrayList<>(userMsgHistory.size());
+		for (int i = 0; i < userMsgHistory.size(); ++i) {
+			result.add(new ChatMessage(Author.USER, userMsgHistory.get(i)));
+			result.add(new ChatMessage(Author.BOT, botMsgHistory.get(i)));
+		}
+		return result;
+	}
+
+	@Override
+	public void clearConversation() {
+		userMsgHistory.clear();
+		botMsgHistory.clear();
+	}
 
 	@Override
 	public Integer getTopK() {
@@ -125,13 +149,15 @@ public class HuggingFaceChatService extends AbstractChatService {
 	 */
 	public ChatCompletion chat(String msg, ConversationalRequest req) {
 
-		ChatCompletion resp = chatCompletion(msg, trimConversation(getHistory()), req);
-		getHistory().add(new ChatMessage(Author.USER, msg));
-		getHistory().add(new ChatMessage(Author.BOT, resp.getText()));
+		ChatCompletion resp = chatCompletion(msg, trimConversation(msg), req);
+		userMsgHistory.add(msg);
+		botMsgHistory.add(resp.getText());
 
 		// Make sure history is of desired length
-		while (history.size() > getMaxHistoryLength())
-			history.remove(0);
+		while (userMsgHistory.size() > getMaxHistoryLength()) {
+			userMsgHistory.remove(0);
+			botMsgHistory.remove(0);
+		}
 
 		return resp;
 	}
@@ -162,7 +188,7 @@ public class HuggingFaceChatService extends AbstractChatService {
 	 * is used, if provided.
 	 */
 	public ChatCompletion complete(String prompt, ConversationalRequest req) {
-		return chatCompletion(prompt, new ArrayList<>(), req);
+		return chatCompletion(prompt, trimConversation(prompt, new ArrayList<>(), new ArrayList<>()), req);
 	}
 
 	@Override
@@ -180,48 +206,6 @@ public class HuggingFaceChatService extends AbstractChatService {
 		return complete(prompt.getContent(), req);
 	}
 
-	@Override
-	public ChatCompletion complete(List<ChatMessage> messages) {
-		return complete(messages, defaultReq);
-	}
-
-	/**
-	 * Completes given conversation.
-	 * 
-	 * Notice this does not consider or affects chat history.
-	 */
-	public ChatCompletion complete(List<ChatMessage> messages, ConversationalRequest req) {
-
-		// We assume last message in the list is current user utterance to be answered
-
-		if (messages.size() == 0)
-			return ChatCompletion.builder() //
-					.message(ChatMessage.builder().content("").author(Author.BOT).build()) //
-					.finishReason(FinishReason.COMPLETED) //
-					.build();
-
-		// We split first, it is more complicated but in this way we ensure we support
-		// cases with multiple user messages in sequence, including at the end of
-		// conversation
-		List<String>[] history = buildInputs(messages);
-		String msg = history[0].remove(history[0].size() - 1);
-
-		return chatCompletion(msg, history, req);
-	}
-
-	/**
-	 * Completes given conversation.
-	 * 
-	 * Notice this does not consider or affects chat history. In addition, agent
-	 * personality is NOT considered.
-	 * 
-	 * @param msg      Last user message, to be replied to.
-	 * @param messages Past conversation so far.
-	 */
-	protected ChatCompletion chatCompletion(String msg, List<ChatMessage> messages, ConversationalRequest req) {
-		return chatCompletion(msg, buildInputs(messages), req);
-	}
-
 	/**
 	 * Completes given conversation.
 	 * 
@@ -232,7 +216,7 @@ public class HuggingFaceChatService extends AbstractChatService {
 	 * @param history Two Lists with user utterances and corresponding bot replies,
 	 *                respectively.
 	 */
-	protected ChatCompletion chatCompletion(String msg, List<String>[] history, ConversationalRequest req) {
+	private ChatCompletion chatCompletion(String msg, List<String>[] history, ConversationalRequest req) {
 
 		if (history[0].size() != history[1].size())
 			throw new IllegalArgumentException("Conversation history must have a reply for each user message");
@@ -249,66 +233,55 @@ public class HuggingFaceChatService extends AbstractChatService {
 	}
 
 	/**
-	 * Splits given conversation into two Lists with user utterances and
-	 * corresponding bot replies, respectively, as required by Hugging Face API.
 	 * 
-	 * Notice it also enforce respect of parameters such as max conversation length
+	 * @param msg Last message (not yet in history).
+	 * @return Trimmed version of conversation history considering context
+	 *         limitations set in this instance.
 	 */
-	protected List<String>[] buildInputs(List<ChatMessage> msgs) {
+	private List<String>[] trimConversation(String msg) {
+		return trimConversation(msg, userMsgHistory, botMsgHistory);
+	}
+
+	/**
+	 * 
+	 * @param msg         Last message (not yet in history).
+	 * @param userHistory History of user messages.
+	 * @param botHistory  History of bot messages.
+	 * @return Trimmed version of history passed to the call, considering context
+	 *         limitations set in this instance.
+	 */
+	private List<String>[] trimConversation(String msg, List<String> userHistory, List<String> botHistory) {
+		Tokenizer counter = modelService.getTokenizer(model);
+		int tok = counter.count(msg);
+		if (tok > getMaxConversationTokens())
+			throw new IllegalArgumentException("Last message size is " + tok
+					+ " and getMaxConversationTokens() returns " + getMaxConversationTokens());
+
+		int steps = 0;
+		for (int i = userHistory.size() - 1; i >= 0; ++i) {
+			if (steps >= getMaxConversationSteps())
+				break;
+
+			tok += counter.count(userHistory.get(i)) + counter.count(botHistory.get(i));
+			if (tok >= getMaxConversationTokens())
+				break;
+
+			++steps;
+		}
+		// Notice last message will be considered anyway
 
 		@SuppressWarnings("unchecked")
 		List<String>[] result = new ArrayList[2];
-		result[0] = new ArrayList<String>(msgs.size());
-		result[1] = new ArrayList<String>(msgs.size());
+		if (steps == 0) {
+			result[0] = new ArrayList<>();
+			result[1] = new ArrayList<>();
 
-		if (msgs.size() == 0)
-			return result;
-
-		// Get to first user message, in case history has beenshortened
-		int i = 0;
-		for (; (i < msgs.size()) && (msgs.get(i).getAuthor() != Author.USER); ++i)
-			;
-
-		Author lastAuthor = Author.USER;
-		StringBuilder sb = new StringBuilder();
-		for (; i < msgs.size(); ++i) {
-			ChatMessage m = msgs.get(i);
-
-			if (m.getAuthor() != lastAuthor) { // must save conversation we accumulated so far
-				switch (m.getAuthor()) {
-				case USER:
-					result[1].add(sb.toString());
-					break;
-				case BOT:
-					result[0].add(sb.toString());
-					break;
-				default:
-					throw new IllegalArgumentException("Role not supported");
-				}
-
-				lastAuthor = m.getAuthor();
-				sb.setLength(0);
-			}
-
-			// save this message in the buffer
-			if (sb.length() > 0)
-				sb.append('\n');
-			sb.append(m.getContent() == null ? "" : m.getContent());
-
-		} // for each message
-
-		// Last message
-		if (sb.length() > 0) { // must save conversation we accumulated so far
-			switch (lastAuthor) {
-			case USER:
-				result[0].add(sb.toString());
-				break;
-			case BOT:
-				result[1].add(sb.toString());
-				break;
-			default:
-				throw new IllegalArgumentException("Role not supported");
-			}
+		} else if (steps < userHistory.size()) {
+			result[0] = new ArrayList<>(userHistory.subList(userHistory.size() - steps, userHistory.size()));
+			result[1] = new ArrayList<>(botHistory.subList(botHistory.size() - steps, botHistory.size()));
+		} else {
+			result[0] = new ArrayList<>(userHistory);
+			result[1] = new ArrayList<>(botHistory);
 		}
 
 		return result;

@@ -18,23 +18,22 @@ package io.github.mzattera.predictivepowers.services;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 /**
- * A single message in a chat with an agent.
+ * This is a message exchanged with a {@link ChatService}.
  * 
  * @author Massmiliano "Maxi" Zattera.
  *
  */
 @Builder
 @NoArgsConstructor
-@RequiredArgsConstructor
-//@AllArgsConstructor
+//@RequiredArgsConstructor
+@AllArgsConstructor
 @ToString
 public class ChatMessage {
 
@@ -62,15 +61,13 @@ public class ChatMessage {
 	}
 
 	@Getter
-	@NonNull
-	Author author;
+	private Author author;
 
 	/**
 	 * Message content, can be null if a function call is returned instead.
 	 */
-	@JsonInclude(JsonInclude.Include.ALWAYS) // Needed for OpenAI function call API or it will throw HTTP 400 for
+	@JsonInclude(JsonInclude.Include.ALWAYS) // TODO move down? Needed for OpenAI function call API or it will throw HTTP 400 for
 												// function calls messages
 	@Getter
-	@NonNull
-	String content;
+	private String content;
 }

@@ -17,6 +17,7 @@
 package io.github.mzattera.predictivepowers.openai.client.chat;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -36,7 +37,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -51,7 +51,7 @@ import lombok.ToString;
 @Setter
 @Builder
 @NoArgsConstructor
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 @AllArgsConstructor
 @ToString
 public class FunctionCall {
@@ -110,5 +110,7 @@ public class FunctionCall {
 	 */
 	@JsonSerialize(using = ArgumentsSerializer.class)
 	@JsonDeserialize(using = ArgumentsDeserializer.class)
-	Map<String, Object> arguments;
+	@NonNull
+	@Builder.Default
+	Map<String, Object> arguments = new HashMap<>();
 }

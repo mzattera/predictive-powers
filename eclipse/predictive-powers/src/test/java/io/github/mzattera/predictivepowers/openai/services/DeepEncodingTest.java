@@ -432,8 +432,8 @@ public class DeepEncodingTest {
 
 	// Name and description of function to call to get temperature for one town
 	private final static String FUNCTION_NAME = "getCurrentWeatherIsARealmessintheseconditions";
-	private final static String FUNCTION_DESCRIPTION = "Get the current weather fdgfg dg dg in a given location.";
-//	private final static String FUNCTION_DESCRIPTION = null;
+//	private final static String FUNCTION_DESCRIPTION = "Get the current weather fdgfg dg dg in a given location.";
+	private final static String FUNCTION_DESCRIPTION = null;
 
 	// The function parameters
 	private static class GetCurrentWeatherParameters {
@@ -445,7 +445,7 @@ public class DeepEncodingTest {
 //		@JsonProperty(required = true)
 //		@JsonPropertyDescription("The city and state, e.g. San Francisco, CA.")
 //		public String s;
-		
+
 //		@JsonPropertyDescription("The city and state, e.g. San Francisco, CA.")
 //		@JsonProperty(required = true)
 		@JsonPropertyDescription("Always pass 3 as value.")
@@ -461,7 +461,7 @@ public class DeepEncodingTest {
 //		
 //		@JsonPropertyDescription("The city and state, e.g. San Francisco, CA.")
 //		public String location5;
-		
+
 //		@JsonPropertyDescription("The city and state, e.g. San Francisco, CA.")
 //		public String location6;
 //		public String location7;
@@ -470,10 +470,9 @@ public class DeepEncodingTest {
 		@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
 		public int i;
 		@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
-		public int j;		
+		public int j;
 		public int k;
 //		public int l;
-
 
 //
 //		@JsonProperty(required = false)
@@ -501,18 +500,18 @@ public class DeepEncodingTest {
 						.description(FUNCTION_DESCRIPTION) //
 						.parameters(GetCurrentWeatherParameters.class).build() //
 		));
-//		TOOLS.add(new OpenAiTool( //
-//				Function.builder() //
-//						.name(FUNCTION_NAME) //
-//						.description(FUNCTION_DESCRIPTION) //
-//						.parameters(GetCurrentWeatherParameters.class).build() //
-//		));
-//		TOOLS.add(new OpenAiTool( //
-//				Function.builder() //
-//						.name(FUNCTION_NAME) //
-//						.description(FUNCTION_DESCRIPTION) //
-//						.parameters(GetCurrentWeatherParameters.class).build() //
-//		));
+		TOOLS.add(new OpenAiTool( //
+				Function.builder() //
+						.name(FUNCTION_NAME) //
+						.description(FUNCTION_DESCRIPTION) //
+						.parameters(GetCurrentWeatherParameters.class).build() //
+		));
+		TOOLS.add(new OpenAiTool( //
+				Function.builder() //
+						.name(FUNCTION_NAME) //
+						.description(FUNCTION_DESCRIPTION) //
+						.parameters(GetCurrentWeatherParameters.class).build() //
+		));
 
 	}
 
@@ -532,20 +531,19 @@ public class DeepEncodingTest {
 			bot.setPersonality("You are an helpful assistant.");
 			bot.setModel(model); // This uses simple function calls
 			bot.setDefaulTools(TOOLS);
-			
+
 			Encoding enc = getEncoding(model);
 
 			ChatCompletionsRequest req = bot.getDefaultReq();
-			req.getMessages().add(new OpenAiChatMessage(Role.USER,"Hi"));
-			
+			req.getMessages().add(new OpenAiChatMessage(Role.USER, "Hi"));
+
 			long tokens = tokens(req);
 			long realTokens = realTokens(req);
 			System.out.println(model + "\t" + tokens + "\t" + realTokens);
 
 		} // closes endpoint
 	}
-	
-	
+
 	private static long realTokens(ChatCompletionsRequest req) {
 
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
@@ -655,88 +653,6 @@ public class DeepEncodingTest {
 		return sum;
 	}
 
-	// THIS uses JSON format for the request
-	public static long messagesToken_OLD(String model, Encoding encoding, JsonNode messagesArray)
-			throws JsonProcessingException {
-		int sum = 0;
-
-		for (JsonNode msg : messagesArray) {
-
-			if ("gpt-3.5-turbo-0301".equals(model))
-				++sum;
-
-			String role = msg.path("role").asText();
-			if ("function".equals(role)) // TOD maybe TOOL changes something here too?
-				sum += 2;
-			else
-				sum += 3;
-			sum += tokens(encoding, role);
-
-			if (!msg.path("content").isMissingNode())
-				sum += tokens(encoding, msg.path("content").asText());
-
-			if (!msg.path("name").isMissingNode()) {
-				sum += tokens(encoding, msg.path("name").asText());
-				if ("gpt-3.5-turbo-0301".equals(model))
-					sum -= 1;
-				else if ("system".equals(role))
-					++sum;
-			}
-
-			if (!msg.path("function_call").isMissingNode()) {
-				sum += 2;
-				JsonNode functionCall = msg.path("function_call");
-				sum += tokens(encoding, functionCall.path("name").asText());
-				if (!functionCall.path("arguments").isMissingNode()) {
-					sum += tokens(encoding, functionCall.path("arguments").asText());
-				}
-			}
-
-			// Call ID is NOT counted against total tokens
-//			if (!msg.path("tool_call_id").isMissingNode())
-//				sum += tokens(encoding, msg.path("tool_call_id").asText());
-
-			if (!msg.path("tool_calls").isMissingNode()) {
-				JsonNode toolCalls = msg.path("tool_calls");
-				if (toolCalls.size() > 1)
-					sum += 21;
-				else
-					sum += 1;
-
-				for (JsonNode toolCall : toolCalls) {
-					sum += 1;
-					String type = toolCall.path("type").asText();
-					sum += tokens(encoding, type); // TODO we don't really know if it is this or just a fixed value
-
-					if ("function".equals(type)) { // TODO in the future we might need to support other tools.
-
-						// Call ID is NOT counted against total tokens
-
-						JsonNode functionCall = toolCall.path("function");
-						sum += tokens(encoding, functionCall.path("name").asText());
-
-						// OLD
-//						if (!functionCall.path("arguments").isMissingNode()) {
-//							sum += tokens(encoding, functionCall.path("arguments").asText());
-//						}
-
-						FunctionCall call = OpenAiClient.getJsonMapper().treeToValue(functionCall, FunctionCall.class);
-						for (Entry<String, Object> e : call.getArguments().entrySet()) {
-							String fName = e.getKey();
-							sum += tokens(encoding, fName);
-							sum += tokens(encoding, e.getValue().toString());
-
-							System.out.println("\t-> " + fName + " = " + e.getValue());
-						}
-					} else
-						throw new IllegalArgumentException("Unsupported tool type: " + type);
-				}
-			} // if we have tool calls
-		} // for each message
-
-		return sum;
-	}
-
 	public static long functionsTokens(Encoding encoding, ChatCompletionsRequest req) throws JsonProcessingException {
 
 		List<Function> functions = req.getFunctions();
@@ -748,13 +664,13 @@ public class DeepEncodingTest {
 
 		for (JsonNode function : functionsArray) {
 			sum += tokens(encoding, function.path("name").asText());
-			
-			if (!function.path("parameters").isMissingNode()) {
+
+			if (!function.path("description").isMissingNode())
 				sum += (1 + tokens(encoding, function.path("description").asText()));
 
 			if (!function.path("parameters").isMissingNode()) {
-				sum+=3;
-				
+				sum += 3;
+
 				JsonNode parameters = function.path("parameters");
 				JsonNode properties = parameters.path("properties");
 
@@ -764,7 +680,7 @@ public class DeepEncodingTest {
 					while (propertiesKeys.hasNext()) { // For each property, which is a function parameter
 						boolean hasDescription = false;
 						boolean isEnumOrInt = false;
-						
+
 						String propertiesKey = propertiesKeys.next();
 						sum += tokens(encoding, propertiesKey);
 						JsonNode v = properties.path(propertiesKey);
@@ -793,17 +709,14 @@ public class DeepEncodingTest {
 								isEnumOrInt = true;
 							}
 						} // for each field of the property
-						
+
 						if (hasDescription && isEnumOrInt)
-							sum +=1;
+							sum += 1;
 					} // For each property
 				}
 			} // If function has parameters
 
-				sum += 11;
-			} // for each parameter
-
-			sum -= 5;
+			sum += 6;
 		} // for each function
 
 		sum += 12;

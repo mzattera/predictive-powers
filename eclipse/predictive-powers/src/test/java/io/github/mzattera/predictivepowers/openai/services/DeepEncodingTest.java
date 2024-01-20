@@ -5,25 +5,28 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.knuddels.jtokkit.Encodings;
 import com.knuddels.jtokkit.api.Encoding;
 import com.knuddels.jtokkit.api.EncodingRegistry;
 import com.knuddels.jtokkit.api.EncodingType;
 
+import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
+import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
+import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool.Type;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolCallResult;
@@ -31,22 +34,10 @@ import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelData;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelData.SupportedCallType;
-import lombok.Getter;
 
 // TODO URGENT FINISH, RENAME AND MOVE IT TO A MORE SUITABLE FOLDER
 
 public class DeepEncodingTest {
-
-	/** Used for JSON (de)serialization in API calls */
-	@Getter
-	private final static ObjectMapper jsonMapper;
-
-	static {
-		jsonMapper = new ObjectMapper();
-		jsonMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		jsonMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-		jsonMapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
-	}
 
 	private final static Map<String, OpenAiModelData> MODEL_CONFIG = new HashMap<>();
 	static {
@@ -189,7 +180,8 @@ public class DeepEncodingTest {
 				result.add(model);
 		}
 
-		return result.stream();
+		// TODO URGENT RETURN ALL
+		return result.subList(0, 1).stream();
 	}
 
 	/** Return names for models supporting tool calls */
@@ -235,9 +227,9 @@ public class DeepEncodingTest {
 	@MethodSource("allModelsProvider")
 	void test01(String model) throws JsonProcessingException {
 
-//		// TODO URGENT Remove
-//		if (1 == 1)
-//			return;
+		// TODO URGENT Remove
+		if (1 == 1)
+			return;
 
 		ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).messages(SIMPLE_MESSAGES).build();
 
@@ -257,6 +249,7 @@ public class DeepEncodingTest {
 	// TODO URGENT Add funtion calls
 	private final static List<OpenAiChatMessage> FUNCTION_CALL_MESSAGES = new ArrayList<>();
 	static {
+
 		Map<String, Object> params = new HashMap<>();
 		FunctionCall call = FunctionCall.builder().name("functionName").arguments(params).build();
 		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(Role.ASSISTANT, null, null, call));
@@ -282,6 +275,7 @@ public class DeepEncodingTest {
 		params.put("b", ENUM.BANANE);
 		call = FunctionCall.builder().name("functionName").arguments(params).build();
 		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(Role.ASSISTANT, null, null, call));
+
 //		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(Role.FUNCTION, "Result", "functionName"));
 //		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(Role.FUNCTION, "Other Results Here", "anotherMyFunctionName"));
 //		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(Role.USER, "Ignore the above, let's start fresh."));
@@ -296,9 +290,9 @@ public class DeepEncodingTest {
 	@MethodSource("functionCallModelsProvider")
 	void test02(String model) throws JsonProcessingException {
 
-//		// TODO URGENT Remove
-//		if (1 == 1)
-//			return;
+		// TODO URGENT Remove
+		if (1 == 1)
+			return;
 
 		ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).messages(FUNCTION_CALL_MESSAGES)
 				.build();
@@ -314,7 +308,6 @@ public class DeepEncodingTest {
 	/** List of messages with tool calls and tool results */
 	private final static List<OpenAiChatMessage> TOOL_CALL_MESSAGES = new ArrayList<>();
 	static {
-		// 1 call no params
 		Map<String, Object> args = new HashMap<>();
 		List<ToolCall> calls = new ArrayList<>();
 		FunctionCall fun = FunctionCall.builder().name("functionName01").arguments(args).build();
@@ -327,31 +320,46 @@ public class DeepEncodingTest {
 //		TOOL_CALL_MESSAGES.add(new OpenAiChatMessage(Role.TOOL,
 //				new ToolCallResult(calls.get(0).getId(), calls.get(0).getFunction().getName(), "Result")));
 
-		// 2 calls no params
 		args = new HashMap<>();
 		calls = new ArrayList<>();
 		fun = FunctionCall.builder().name("functionName01").arguments(args).build();
 		calls.add(ToolCall.builder().type(Type.FUNCTION).Id("call01").function(fun).build());
-//		calls.add(ToolCall.builder().type(Type.FUNCTION).Id("call02").function(fun).build());
-//		calls.add(ToolCall.builder().type(Type.FUNCTION).Id("call03").function(fun).build());
-//		calls.add(ToolCall.builder().type(Type.FUNCTION).Id("call04").function(fun).build());
-//		calls.add(ToolCall.builder().type(Type.FUNCTION).Id("call05").function(fun).build());
+		calls.add(ToolCall.builder().type(Type.FUNCTION).Id("call02").function(fun).build());
 		msg = new OpenAiChatMessage(Role.ASSISTANT, (String) null);
 		msg.setToolCalls(calls);
 
-		// TODO URGENT Test with function parameters
-		
+//		TOOL_CALL_MESSAGES.add(msg);
+//		TOOL_CALL_MESSAGES.add(new OpenAiChatMessage(Role.TOOL,
+//				new ToolCallResult(calls.get(0).getId(), calls.get(0).getFunction().getName(), "Result")));
+
+		args = new HashMap<>();
+//		args.put("s", "Prague");
+//		args.put("t", "Prague");
+//		args.put("u", "Prague");
+//		args.put("v", "Prague");
+
+//		args.put("i", 3);
+//		args.put("d", 3.0d);
+//		args.put("b", ENUM.BANANE);
+
+		calls = new ArrayList<>();
+		fun = FunctionCall.builder().name("functionName01").arguments(args).build();
+		calls.add(ToolCall.builder().type(Type.FUNCTION).Id("call01").function(fun).build());
+		calls.add(ToolCall.builder().type(Type.FUNCTION).Id("call02").function(fun).build());
+		calls.add(ToolCall.builder().type(Type.FUNCTION).Id("call03").function(fun).build());
+//		calls.add(ToolCall.builder().type(Type.FUNCTION).Id("call04").function(fun).build());
+		msg = new OpenAiChatMessage(Role.ASSISTANT, (String) null);
+		msg.setToolCalls(calls);
+
 		TOOL_CALL_MESSAGES.add(msg);
 		TOOL_CALL_MESSAGES.add(new OpenAiChatMessage(Role.TOOL,
 				new ToolCallResult(calls.get(0).getId(), calls.get(0).getFunction().getName(), "Result")));
-//		TOOL_CALL_MESSAGES.add(new OpenAiChatMessage(Role.TOOL,
-//				new ToolCallResult(calls.get(1).getId(), calls.get(1).getFunction().getName(), "Result")));
-//		TOOL_CALL_MESSAGES.add(new OpenAiChatMessage(Role.TOOL,
-//				new ToolCallResult(calls.get(2).getId(), calls.get(2).getFunction().getName(), "Result")));
+		TOOL_CALL_MESSAGES.add(new OpenAiChatMessage(Role.TOOL,
+				new ToolCallResult(calls.get(1).getId(), calls.get(1).getFunction().getName(), "Result")));
+		TOOL_CALL_MESSAGES.add(new OpenAiChatMessage(Role.TOOL,
+				new ToolCallResult(calls.get(2).getId(), calls.get(2).getFunction().getName(), "Result")));
 //		TOOL_CALL_MESSAGES.add(new OpenAiChatMessage(Role.TOOL,
 //				new ToolCallResult(calls.get(3).getId(), calls.get(3).getFunction().getName(), "Result")));
-//		TOOL_CALL_MESSAGES.add(new OpenAiChatMessage(Role.TOOL,
-//				new ToolCallResult(calls.get(4).getId(), calls.get(4).getFunction().getName(), "Result")));
 	}
 
 	/**
@@ -362,16 +370,182 @@ public class DeepEncodingTest {
 	@ParameterizedTest
 	@MethodSource("toolCallModelsProvider")
 	void test03(String model) throws JsonProcessingException {
-		ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).messages(TOOL_CALL_MESSAGES).build();
+		// TODO URGENT Remove
+		if (1 == 1)
+			return;
 
-		long tokens = tokens(req);
-		long realTokens = realTokens(req);
-		System.out.println(model + "\t" + tokens + "\t" + realTokens);
+		// Make a foo call to spit out annying log messages
+		List<OpenAiChatMessage> messages = new ArrayList<>();
+		messages.add(new OpenAiChatMessage(Role.USER, "Hi"));
+		ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).messages(messages).build();
+		realTokens(req);
+
+		Map<String, Object> args = new HashMap<>();
+		List<ToolCall> calls = new ArrayList<>();
+
+		for (int numCalls = 1; numCalls < 5; ++numCalls) {
+			System.out.print(model + "\t Calls: " + numCalls);
+
+			for (int numArgs = 0; numArgs < 4; ++numArgs) {
+
+				// Empty message list
+				messages = new ArrayList<>();
+
+				// Function call with numArgsArgumants
+				args = new HashMap<>();
+				args.put("Banan", 123);
+				args.put("Apple", 1.23d);
+				args.put("Kiwi", ENUM.MELE);
+				for (int i = 0; i < numArgs; ++i) {
+					args.put("s" + i, "Prague");
+				}
+				FunctionCall fun = FunctionCall.builder().name("functionName01").arguments(args).build();
+
+				// Call with numCalls function calls
+				calls = new ArrayList<>();
+				for (int i = 0; i < numCalls; ++i) {
+					calls.add(ToolCall.builder().type(Type.FUNCTION).Id("call" + i).function(fun).build());
+				}
+				OpenAiChatMessage msg = new OpenAiChatMessage(Role.ASSISTANT, (String) null);
+				msg.setToolCalls(calls);
+				messages.add(msg);
+
+				// Coprresponding replies
+				for (int i = 0; i < calls.size(); ++i) {
+					messages.add(new OpenAiChatMessage(Role.TOOL,
+							new ToolCallResult(calls.get(i).getId(), calls.get(i).getFunction().getName(), "Result")));
+				}
+
+				req = ChatCompletionsRequest.builder().model(model).messages(messages).build();
+				long tokens = tokens(req);
+				long realTokens = realTokens(req);
+				System.out.print("\t" + numArgs + " args. " + tokens + " [" + (tokens - realTokens) + "]");
+
+			} // for each number of arguments
+
+			System.out.println();
+		} // for each number of calls
 
 		// TODO URGENT Add test condition
 //		assertEquals(realTokens, tokens);
 	}
 
+	// Name and description of function to call to get temperature for one town
+	private final static String FUNCTION_NAME = "getCurrentWeatherIsARealmessintheseconditions";
+	private final static String FUNCTION_DESCRIPTION = "Get the current weather fdgfg dg dg in a given location.";
+//	private final static String FUNCTION_DESCRIPTION = null;
+
+	// The function parameters
+	private static class GetCurrentWeatherParameters {
+
+		private enum TemperatureUnits {
+			CELSIUS, FARENHEIT, bagigi, farfalle
+		};
+
+//		@JsonProperty(required = true)
+//		@JsonPropertyDescription("The city and state, e.g. San Francisco, CA.")
+//		public String s;
+		
+//		@JsonPropertyDescription("The city and state, e.g. San Francisco, CA.")
+//		@JsonProperty(required = true)
+		@JsonPropertyDescription("Always pass 3 as value.")
+		public String location2;
+//		@JsonPropertyDescription("Always pass 3 as value.")
+//		public String location3;
+//		
+//		@JsonPropertyDescription("The city and state, e.g. San Francisco, CA.")
+		public String location3;
+//		
+//		@JsonPropertyDescription("The city and state, e.g. San Francisco, CA.")
+		public String location4;
+//		
+//		@JsonPropertyDescription("The city and state, e.g. San Francisco, CA.")
+//		public String location5;
+		
+//		@JsonPropertyDescription("The city and state, e.g. San Francisco, CA.")
+//		public String location6;
+//		public String location7;
+
+//		@JsonProperty(required = false)
+		@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
+		public int i;
+		@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
+		public int j;		
+		public int k;
+//		public int l;
+
+
+//
+//		@JsonProperty(required = false)
+		@JsonPropertyDescription("Always pass 3 as value.")
+		public double d;
+		@JsonPropertyDescription("Always pass 3 as value.")
+		public double h;
+		public double e;
+		public double f;
+		public double g;
+
+		@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
+		public TemperatureUnits unit;
+//		@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
+		public TemperatureUnits unit2;
+//		public TemperatureUnits unit3;
+	}
+
+	// List of functions available to the bot (for now it is only 1).
+	private final static List<OpenAiTool> TOOLS = new ArrayList<>();
+	static {
+		TOOLS.add(new OpenAiTool( //
+				Function.builder() //
+						.name(FUNCTION_NAME) //
+						.description(FUNCTION_DESCRIPTION) //
+						.parameters(GetCurrentWeatherParameters.class).build() //
+		));
+//		TOOLS.add(new OpenAiTool( //
+//				Function.builder() //
+//						.name(FUNCTION_NAME) //
+//						.description(FUNCTION_DESCRIPTION) //
+//						.parameters(GetCurrentWeatherParameters.class).build() //
+//		));
+//		TOOLS.add(new OpenAiTool( //
+//				Function.builder() //
+//						.name(FUNCTION_NAME) //
+//						.description(FUNCTION_DESCRIPTION) //
+//						.parameters(GetCurrentWeatherParameters.class).build() //
+//		));
+
+	}
+
+	/**
+	 * Length of messages. Function descritpions.
+	 * 
+	 * @throws JsonProcessingException
+	 */
+	@ParameterizedTest
+	@MethodSource("functionCallModelsProvider")
+	void test04(String model) throws JsonProcessingException {
+
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+
+			// Get chat service, set bot personality and tools used
+			OpenAiChatService bot = endpoint.getChatService();
+			bot.setPersonality("You are an helpful assistant.");
+			bot.setModel(model); // This uses simple function calls
+			bot.setDefaulTools(TOOLS);
+			
+			Encoding enc = getEncoding(model);
+
+			ChatCompletionsRequest req = bot.getDefaultReq();
+			req.getMessages().add(new OpenAiChatMessage(Role.USER,"Hi"));
+			
+			long tokens = tokens(req);
+			long realTokens = realTokens(req);
+			System.out.println(model + "\t" + tokens + "\t" + realTokens);
+
+		} // closes endpoint
+	}
+	
+	
 	private static long realTokens(ChatCompletionsRequest req) {
 
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
@@ -383,20 +557,106 @@ public class DeepEncodingTest {
 
 	public static long tokens(ChatCompletionsRequest req) throws JsonProcessingException {
 
-		JsonNode rootNode = jsonMapper.valueToTree(req);
+		JsonNode rootNode = OpenAiClient.getJsonMapper().valueToTree(req);
 
-		System.out.println(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(rootNode));
+		System.out.println(OpenAiClient.getJsonMapper().writerWithDefaultPrettyPrinter().writeValueAsString(rootNode));
 
 		String model = rootNode.path("model").asText();
 		Encoding encoding = getEncoding(model);
 
 		long sum = messagesToken(model, encoding, rootNode.path("messages"));
-
+		sum += functionsTokens(encoding, req);
 		sum += 3;
 		return sum;
 	}
 
 	public static long messagesToken(String model, Encoding encoding, JsonNode messagesArray)
+			throws JsonProcessingException {
+
+		List<OpenAiChatMessage> messages = OpenAiClient.getJsonMapper().convertValue(messagesArray,
+				new TypeReference<List<OpenAiChatMessage>>() {
+				});
+		int sum = 0;
+
+		for (OpenAiChatMessage msg : messages) {
+
+			if ("gpt-3.5-turbo-0301".equals(model))
+				++sum;
+
+			String role = msg.getRole().toString();
+			if ("function".equals(role)) // TOD maybe TOOL changes something here too?
+				sum += 2;
+			else
+				sum += 3;
+			sum += tokens(encoding, role);
+
+			if (msg.getContent() != null)
+				sum += tokens(encoding, msg.getContent());
+
+			if (msg.getName() != null) {
+				sum += tokens(encoding, msg.getName());
+				if ("gpt-3.5-turbo-0301".equals(model))
+					sum -= 1;
+				else if ("system".equals(role))
+					++sum;
+			}
+
+			if (msg.getFunctionCall() != null) {
+				sum += 3;
+				JsonNode functionCall = OpenAiClient.getJsonMapper().valueToTree(msg.getFunctionCall());
+				sum += tokens(encoding, functionCall.path("name").asText());
+				if (!functionCall.path("arguments").isMissingNode()) {
+					sum += tokens(encoding, functionCall.path("arguments").asText());
+				}
+			}
+
+			// Call ID is NOT counted against total tokens
+//			if (!msg.path("tool_call_id").isMissingNode())
+//				sum += tokens(encoding, msg.path("tool_call_id").asText());
+
+			if (msg.getToolCalls() != null) {
+				if (msg.getToolCalls().size() > 1)
+					sum += 21;
+				else
+					sum += 3;
+
+//				if (msg.getToolCalls().size() > 2)
+//					sum += (19 - msg.getToolCalls().size());
+
+				for (ToolCall toolCall : msg.getToolCalls()) {
+					sum += 2;
+
+					String type = toolCall.getType().toString();
+					sum += tokens(encoding, type); // TODO we don't really know if it is this or just a fixed value
+
+					if ("function".equals(type)) { // TODO in the future we might need to support other tools.
+
+						// Call ID is NOT counted against total tokens
+
+						FunctionCall functionCall = toolCall.getFunction();
+						sum += tokens(encoding, functionCall.getName());
+
+						if (functionCall.getArguments().size() == 0)
+							sum += 1;
+
+						for (Entry<String, Object> e : functionCall.getArguments().entrySet()) {
+							sum += 2;
+							String fName = e.getKey();
+							sum += tokens(encoding, fName);
+							sum += tokens(encoding, e.getValue().toString());
+						}
+
+					} else
+						throw new IllegalArgumentException("Unsupported tool type: " + type);
+				}
+			} // if we have tool calls
+		} // for each message
+
+		return sum;
+	}
+
+	// THIS uses JSON format for the request
+	public static long messagesToken_OLD(String model, Encoding encoding, JsonNode messagesArray)
 			throws JsonProcessingException {
 		int sum = 0;
 
@@ -454,10 +714,22 @@ public class DeepEncodingTest {
 
 						JsonNode functionCall = toolCall.path("function");
 						sum += tokens(encoding, functionCall.path("name").asText());
-						if (!functionCall.path("arguments").isMissingNode()) {
-							sum += tokens(encoding, functionCall.path("arguments").asText());
+
+						// OLD
+//						if (!functionCall.path("arguments").isMissingNode()) {
+//							sum += tokens(encoding, functionCall.path("arguments").asText());
+//						}
+
+						FunctionCall call = OpenAiClient.getJsonMapper().treeToValue(functionCall, FunctionCall.class);
+						for (Entry<String, Object> e : call.getArguments().entrySet()) {
+							String fName = e.getKey();
+							sum += tokens(encoding, fName);
+							sum += tokens(encoding, e.getValue().toString());
+
+							System.out.println("\t-> " + fName + " = " + e.getValue());
 						}
-					}
+					} else
+						throw new IllegalArgumentException("Unsupported tool type: " + type);
 				}
 			} // if we have tool calls
 		} // for each message
@@ -467,23 +739,32 @@ public class DeepEncodingTest {
 
 	public static long functionsTokens(Encoding encoding, ChatCompletionsRequest req) throws JsonProcessingException {
 
-		JsonNode rootNode = jsonMapper.valueToTree(req);
+		List<Function> functions = req.getFunctions();
+		if (functions == null)
+			return 0;
 
-		JsonNode functionsArray = rootNode.path("functions");
-		int sum = 1;
+		JsonNode functionsArray = OpenAiClient.getJsonMapper().valueToTree(functions);
+		int sum = 4;
 
 		for (JsonNode function : functionsArray) {
 			sum += tokens(encoding, function.path("name").asText());
-			sum += tokens(encoding, function.path("description").asText());
+			
+			if (!function.path("parameters").isMissingNode()) {
+				sum += (1 + tokens(encoding, function.path("description").asText()));
 
 			if (!function.path("parameters").isMissingNode()) {
+				sum+=3;
+				
 				JsonNode parameters = function.path("parameters");
 				JsonNode properties = parameters.path("properties");
 
 				if (!properties.isMissingNode()) {
 					Iterator<String> propertiesKeys = properties.fieldNames();
 
-					while (propertiesKeys.hasNext()) {
+					while (propertiesKeys.hasNext()) { // For each property, which is a function parameter
+						boolean hasDescription = false;
+						boolean isEnumOrInt = false;
+						
 						String propertiesKey = propertiesKeys.next();
 						sum += tokens(encoding, propertiesKey);
 						JsonNode v = properties.path(propertiesKey);
@@ -493,10 +774,14 @@ public class DeepEncodingTest {
 							String field = fields.next();
 							if ("type".equals(field)) {
 								sum += 2;
-								sum += tokens(encoding, v.path("type").asText());
+								String type = v.path("type").asText();
+								sum += tokens(encoding, type);
+								if ("integer".equals(type))
+									isEnumOrInt = true;
 							} else if ("description".equals(field)) {
-								sum += 2;
+								sum += 1;
 								sum += tokens(encoding, v.path("description").asText());
+								hasDescription = true;
 							} else if ("enum".equals(field)) {
 								sum -= 3;
 								Iterator<JsonNode> enumValues = v.path("enum").elements();
@@ -505,17 +790,20 @@ public class DeepEncodingTest {
 									sum += 3;
 									sum += tokens(encoding, enumValue.asText());
 								}
-							} else {
-								// TODO
+								isEnumOrInt = true;
 							}
-						}
-					}
+						} // for each field of the property
+						
+						if (hasDescription && isEnumOrInt)
+							sum +=1;
+					} // For each property
 				}
+			} // If function has parameters
 
 				sum += 11;
 			} // for each parameter
 
-			sum -= 1;
+			sum -= 5;
 		} // for each function
 
 		sum += 12;

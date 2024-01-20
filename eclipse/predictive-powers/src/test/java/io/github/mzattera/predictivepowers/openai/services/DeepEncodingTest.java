@@ -16,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.knuddels.jtokkit.Encodings;
 import com.knuddels.jtokkit.api.Encoding;
 import com.knuddels.jtokkit.api.EncodingRegistry;
@@ -431,9 +432,9 @@ public class DeepEncodingTest {
 	}
 
 	// Name and description of function to call to get temperature for one town
-	private final static String FUNCTION_NAME = "getCurrentWeatherIsARealmessintheseconditions";
-//	private final static String FUNCTION_DESCRIPTION = "Get the current weather fdgfg dg dg in a given location.";
-	private final static String FUNCTION_DESCRIPTION = null;
+	private final static String FUNCTION_NAME = "getCurrentWeather";
+	private final static String FUNCTION_DESCRIPTION = "Get the current weather fdgfg dg dg in a given location.";
+//	private final static String FUNCTION_DESCRIPTION = null;
 
 	// The function parameters
 	private static class GetCurrentWeatherParameters {
@@ -447,14 +448,14 @@ public class DeepEncodingTest {
 //		public String s;
 
 //		@JsonPropertyDescription("The city and state, e.g. San Francisco, CA.")
-//		@JsonProperty(required = true)
+		@JsonProperty(required = true)
 		@JsonPropertyDescription("Always pass 3 as value.")
 		public String location2;
 //		@JsonPropertyDescription("Always pass 3 as value.")
-//		public String location3;
+		public String location3;
 //		
 //		@JsonPropertyDescription("The city and state, e.g. San Francisco, CA.")
-		public String location3;
+//		public String location3;
 //		
 //		@JsonPropertyDescription("The city and state, e.g. San Francisco, CA.")
 		public String location4;
@@ -469,10 +470,11 @@ public class DeepEncodingTest {
 //		@JsonProperty(required = false)
 		@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
 		public int i;
-		@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
+//		@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
+		@JsonProperty(required = true)
 		public int j;
 		public int k;
-//		public int l;
+		public int l;
 
 //
 //		@JsonProperty(required = false)
@@ -481,14 +483,16 @@ public class DeepEncodingTest {
 		@JsonPropertyDescription("Always pass 3 as value.")
 		public double h;
 		public double e;
+		@JsonProperty(required = true)
 		public double f;
 		public double g;
 
 		@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
 		public TemperatureUnits unit;
-//		@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
+		@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
 		public TemperatureUnits unit2;
-//		public TemperatureUnits unit3;
+		@JsonProperty(required = true)
+		public TemperatureUnits unit3;
 	}
 
 	// List of functions available to the bot (for now it is only 1).
@@ -512,17 +516,25 @@ public class DeepEncodingTest {
 						.description(FUNCTION_DESCRIPTION) //
 						.parameters(GetCurrentWeatherParameters.class).build() //
 		));
-
+		TOOLS.add(new OpenAiTool( //
+				Function.builder() //
+						.name(FUNCTION_NAME) //
+						.description(FUNCTION_DESCRIPTION) //
+						.parameters(GetCurrentWeatherParameters.class).build() //
+		));
 	}
 
 	/**
-	 * Length of messages. Function descritpions.
+	 * Length of messages. Function descriptions.
 	 * 
 	 * @throws JsonProcessingException
 	 */
 	@ParameterizedTest
 	@MethodSource("functionCallModelsProvider")
 	void test04(String model) throws JsonProcessingException {
+		// TODO URGENT Remove
+		if (1 == 1)
+			return;
 
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
@@ -532,7 +544,32 @@ public class DeepEncodingTest {
 			bot.setModel(model); // This uses simple function calls
 			bot.setDefaulTools(TOOLS);
 
-			Encoding enc = getEncoding(model);
+			ChatCompletionsRequest req = bot.getDefaultReq();
+			req.getMessages().add(new OpenAiChatMessage(Role.USER, "Hi"));
+
+			long tokens = tokens(req);
+			long realTokens = realTokens(req);
+			System.out.println(model + "\t" + tokens + "\t" + realTokens);
+
+		} // closes endpoint
+	}
+
+	/**
+	 * Length of messages. Tool descriptions.
+	 * 
+	 * @throws JsonProcessingException
+	 */
+	@ParameterizedTest
+	@MethodSource("toolCallModelsProvider")
+	void test05(String model) throws JsonProcessingException {
+
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+
+			// Get chat service, set bot personality and tools used
+			OpenAiChatService bot = endpoint.getChatService();
+			bot.setPersonality("You are an helpful assistant.");
+			bot.setModel(model); // This uses simple function calls
+			bot.setDefaulTools(TOOLS);
 
 			ChatCompletionsRequest req = bot.getDefaultReq();
 			req.getMessages().add(new OpenAiChatMessage(Role.USER, "Hi"));
@@ -564,6 +601,7 @@ public class DeepEncodingTest {
 
 		long sum = messagesToken(model, encoding, rootNode.path("messages"));
 		sum += functionsTokens(encoding, req);
+		sum += toolsTokens(encoding, req);
 		sum += 3;
 		return sum;
 	}
@@ -665,13 +703,13 @@ public class DeepEncodingTest {
 		for (JsonNode function : functionsArray) {
 			sum += tokens(encoding, function.path("name").asText());
 
-			if (!function.path("description").isMissingNode())
+			JsonNode description = function.path("description");
+			if (!description.isMissingNode())
 				sum += (1 + tokens(encoding, function.path("description").asText()));
 
+			JsonNode parameters = function.path("parameters");
 			if (!function.path("parameters").isMissingNode()) {
 				sum += 3;
-
-				JsonNode parameters = function.path("parameters");
 				JsonNode properties = parameters.path("properties");
 
 				if (!properties.isMissingNode()) {
@@ -720,6 +758,85 @@ public class DeepEncodingTest {
 		} // for each function
 
 		sum += 12;
+		return sum;
+	}
+
+	public static int toolsTokens(Encoding encoding, ChatCompletionsRequest req) throws JsonProcessingException {
+
+		List<OpenAiTool> tools = req.getTools();
+		if (tools == null)
+			return 0;
+
+		JsonNode toolsArray = OpenAiClient.getJsonMapper().valueToTree(tools);
+		int sum = 0;
+
+		for (JsonNode tool : toolsArray) {
+
+			if (!"function".equals(tool.path("type").asText()))
+				throw new IllegalArgumentException("Unsoported tool type: " + tool.path("type").asText());
+
+			JsonNode function = tool.path("function");
+			sum += tokens(encoding, function.path("name").asText());
+
+			JsonNode description = function.path("description");
+			if (!description.isMissingNode())
+				sum += (1 + tokens(encoding, function.path("description").asText()));
+
+			JsonNode parameters = function.path("parameters");
+			if (!function.path("parameters").isMissingNode()) {
+				JsonNode properties = parameters.path("properties");
+
+				if (!properties.isMissingNode()) {
+
+					if (properties.size() > 0)
+						sum += 3;
+
+					Iterator<String> propertiesKeys = properties.fieldNames();
+					while (propertiesKeys.hasNext()) {
+						boolean hasDescription = false;
+						boolean isDouble = false;
+
+						String propertiesKey = propertiesKeys.next();
+						sum += tokens(encoding, propertiesKey);
+						JsonNode v = properties.path(propertiesKey);
+
+						Iterator<String> fields = v.fieldNames();
+						while (fields.hasNext()) {
+							String field = fields.next();
+							if ("type".equals(field)) {
+								sum += 2;
+								String type = v.path("type").asText();
+								sum += tokens(encoding, type);
+								if ("number".equals(type))
+									isDouble = true;
+
+							} else if ("description".equals(field)) {
+								sum += 2;
+								sum += tokens(encoding, v.path("description").asText());
+								hasDescription = true;
+							} else if ("enum".equals(field)) {
+								sum -= 3;
+								Iterator<JsonNode> enumValues = v.path("enum").elements();
+								while (enumValues.hasNext()) {
+									JsonNode enumValue = enumValues.next();
+									sum += 3;
+									sum += tokens(encoding, enumValue.asText());
+								}
+							} else {
+								// TODO
+							}
+						} // for each field
+
+						if (hasDescription && isDouble)
+							sum -= 1;
+					} // for each property
+				} // if there are properties
+			} // if there are parameters
+
+			sum += 11;
+		} // for each tool
+
+		sum += 16;
 		return sum;
 	}
 

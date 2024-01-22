@@ -31,7 +31,7 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-public class SimpleTokenizer extends AbstractTokenizer {
+public class SimpleTokenizer implements Tokenizer {
 
 	/**
 	 * How many characters in a token (on average).

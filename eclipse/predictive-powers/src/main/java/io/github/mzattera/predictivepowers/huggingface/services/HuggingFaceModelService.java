@@ -58,25 +58,15 @@ public class HuggingFaceModelService extends AbstractModelService {
 		@NonNull
 		private final ai.djl.huggingface.tokenizers.HuggingFaceTokenizer tokenizer;
 
-		/**
-		 * 
-		 */
 		@Override
 		public int count(@NonNull String text) {
 			return tokenizer.encode(text).getTokens().length;
 		}
 
-		@Override
+		// TODO probably each model does differently
+		// Check DJL what the tokenizer does
 		public int count(@NonNull ChatMessage msg) {
 			return count(msg.getContent());
-		}
-
-		@Override
-		public int count(@NonNull List<ChatMessage> msgs) {
-			int result = 0;
-			for (ChatMessage m : msgs)
-				result += count(m.getContent());
-			return result;
 		}
 	}
 
@@ -86,7 +76,7 @@ public class HuggingFaceModelService extends AbstractModelService {
 	 * Single instance of the data Map, shared by all instances of this model
 	 * service class.
 	 */
-	private final static Map<String, ModelData> data = new ConcurrentHashMap<>();
+	private final static Map<String, ModeMetalData> data = new ConcurrentHashMap<>();
 
 	@NonNull
 	@Getter
@@ -114,8 +104,8 @@ public class HuggingFaceModelService extends AbstractModelService {
 	}
 
 	@Override
-	public ModelData get(@NonNull String model) {
-		ModelData result = data.get(model);
+	public ModeMetalData get(@NonNull String model) {
+		ModeMetalData result = data.get(model);
 		if (result == null)
 			return createData(model);
 		return result;
@@ -128,7 +118,7 @@ public class HuggingFaceModelService extends AbstractModelService {
 	 * @param model
 	 * @return The newly created data, or null if it cannot be created.
 	 */
-	private ModelData createData(@NonNull String model) {
+	private ModeMetalData createData(@NonNull String model) {
 
 		// Uses DJL services to download proper tokenizer
 		Tokenizer tokenizer = null;
@@ -142,7 +132,7 @@ public class HuggingFaceModelService extends AbstractModelService {
 
 		// TODO maybe there is other metadata we cna read from Hugging Face (all the
 		// model data are files in a Git repo)
-		ModelData result = ModelData.builder().tokenizer(tokenizer).build();
+		ModeMetalData result = ModeMetalData.builder().tokenizer(tokenizer).build();
 		put(model, result);
 		return result;
 	}

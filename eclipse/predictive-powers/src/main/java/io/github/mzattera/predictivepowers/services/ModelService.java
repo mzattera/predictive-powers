@@ -54,26 +54,6 @@ public interface ModelService extends AiService {
 		 * @return Number of tokens in given text.
 		 */
 		int count(@NonNull String text);
-
-		
-		// TODO URGENT it is better have messages counted, if needed, in instances of the interface, since algorithms cold change.
-		// TODO URGENT Probably OpenAiTokenizr should count length of requests, if possible, after they have been populated with messages 
-
-		/**
-		 * If you have an entire conversation, please notice {@link #count(Collection)}
-		 * is more suitable and returns more correct results.
-		 * 
-		 * @param text
-		 * @return Number of tokens in given chat message.
-		 */
-		int count(@NonNull ChatMessage msg);
-
-		/**
-		 * 
-		 * @param msgs Messages in a conversation.
-		 * @return Number of tokens in given set of chat messages (conversation).
-		 */
-		int count(@NonNull List<ChatMessage> msgs);
 	}
 
 	/**
@@ -91,7 +71,7 @@ public interface ModelService extends AiService {
 	@RequiredArgsConstructor
 	@AllArgsConstructor
 	@ToString
-	public static class ModelData {
+	public static class ModeMetalData {
 
 		/**
 		 * A tokenizer for this (text) model (if any).
@@ -100,12 +80,16 @@ public interface ModelService extends AiService {
 
 		/**
 		 * Context size for a model (namely for GPT models).
+		 * 
+		 * Null if unlimited.
 		 */
 		private Integer contextSize;
 
 		/**
 		 * Some models (namely GPT-4), even if with a huge context size, return only a
 		 * limited amount of tokens, this must be considered or it will cause errors.
+		 * 
+		 * Null if unlimited.
 		 */
 		private final Integer maxNewTokens;
 	}
@@ -118,24 +102,24 @@ public interface ModelService extends AiService {
 	/**
 	 * 
 	 * @param model
-	 * @return {@link ModelData} for given model, or null if it cannot be found.
+	 * @return {@link ModeMetalData} for given model, or null if it cannot be found.
 	 */
-	ModelData get(@NonNull String model);
+	ModeMetalData get(@NonNull String model);
 
 	/**
-	 * Sets the {@link ModelData} for given model.
+	 * Sets the {@link ModeMetalData} for given model.
 	 * 
 	 * @return the previous data for given model, or null if there was no mapping
 	 *         for key.
 	 */
-	ModelData put(@NonNull String model, @NonNull ModelData data);
+	ModeMetalData put(@NonNull String model, @NonNull ModeMetalData data);
 
 	/**
-	 * Deletes the {@link ModelData} for given model.
+	 * Deletes the {@link ModeMetalData} for given model.
 	 * 
 	 * @return Previously set ModelData, if any.
 	 */
-	ModelData remove(@NonNull String model);
+	ModeMetalData remove(@NonNull String model);
 
 	/**
 	 * 

@@ -28,10 +28,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
-import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
-import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiTokenizer;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 import io.github.mzattera.util.ChunkUtil;
@@ -65,7 +64,7 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 	private final OpenAiChatService completionService;
 
 	@Override
-	public AiEndpoint getEndpoint() {
+	public OpenAiEndpoint getEndpoint() {
 		return completionService.getEndpoint();
 	}
 
@@ -330,7 +329,7 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 	private List<QnAPair> getQuestions(List<OpenAiChatMessage> instructions, String text) {
 
 		// Split text, based on prompt size
-		Tokenizer counter = getEndpoint().getModelService().getTokenizer(getModel());
+		OpenAiTokenizer counter = getEndpoint().getModelService().getTokenizer(getModel());
 		int ctxSize = getEndpoint().getModelService().getContextSize(getModel());
 
 		// TODO URGENT Better counting

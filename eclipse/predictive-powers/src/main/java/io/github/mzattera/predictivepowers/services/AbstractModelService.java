@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
  * Abstract {@link ModelService} that can be sub-classed to create other
  * services faster (hopefully).
  * 
- * The constructor requires a Map to map models into their data, this allows
+ * The constructor requires a Map to map models into their metadata, this allows
  * more flexibility for subclasses to implement a singleton repository of data,
  * using a thread safe Map, etc.
  * 
@@ -37,26 +37,26 @@ import lombok.RequiredArgsConstructor;
 public abstract class AbstractModelService implements ModelService {
 
 	@NonNull
-	protected final Map<String, ModelData> data;
+	protected final Map<String, ModeMetalData> data;
 
 	@Override
-	public ModelData get(@NonNull String model) {
+	public ModeMetalData get(@NonNull String model) {
 		return data.get(model);
 	}
 
 	@Override
-	public ModelData put(@NonNull String model, @NonNull ModelData data) {
+	public ModeMetalData put(@NonNull String model, @NonNull ModeMetalData data) {
 		return this.data.put(model, data);
 	}
 
 	@Override
-	public ModelData remove(@NonNull String model) {
+	public ModeMetalData remove(@NonNull String model) {
 		return data.remove(model);
 	}
 
 	@Override
 	public Tokenizer getTokenizer(@NonNull String model) throws IllegalArgumentException {
-		ModelData data = get(model);
+		ModeMetalData data = get(model);
 		if ((data == null) || (data.getTokenizer() == null))
 			throw new IllegalArgumentException(
 					"No tokenizer found for model " + model + ". Consider registering model data");
@@ -65,7 +65,7 @@ public abstract class AbstractModelService implements ModelService {
 
 	@Override
 	public Tokenizer getTokenizer(@NonNull String model, Tokenizer def) {
-		ModelData data = get(model);
+		ModeMetalData data = get(model);
 		if ((data == null) || (data.getTokenizer() == null))
 			return def;
 		return data.getTokenizer();
@@ -73,7 +73,7 @@ public abstract class AbstractModelService implements ModelService {
 
 	@Override
 	public int getContextSize(@NonNull String model) throws IllegalArgumentException {
-		ModelData data = get(model);
+		ModeMetalData data = get(model);
 		if ((data == null) || (data.getContextSize() == null))
 			throw new IllegalArgumentException(
 					"No context size defined for model " + model + ". Consider registering model data");
@@ -82,7 +82,7 @@ public abstract class AbstractModelService implements ModelService {
 
 	@Override
 	public int getContextSize(@NonNull String model, int def) {
-		ModelData data = get(model);
+		ModeMetalData data = get(model);
 		if ((data == null) || (data.getContextSize() == null))
 			return def;
 		return data.getContextSize();
@@ -96,7 +96,7 @@ public abstract class AbstractModelService implements ModelService {
 	 */
 	@Override
 	public int getMaxNewTokens(@NonNull String model) {
-		ModelData data = get(model);
+		ModeMetalData data = get(model);
 		if ((data == null) || (data.getMaxNewTokens() == null))
 			throw new IllegalArgumentException(
 					"No maximum response length defined for model " + model + ". Consider registering model data");
@@ -110,7 +110,7 @@ public abstract class AbstractModelService implements ModelService {
 	 *         this limitation in addition to max context size.
 	 */
 	public int getMaxNewTokens(@NonNull String model, int def) {
-		ModelData data = get(model);
+		ModeMetalData data = get(model);
 		if ((data == null) || (data.getMaxNewTokens() == null))
 			return def;
 		return data.getMaxNewTokens();

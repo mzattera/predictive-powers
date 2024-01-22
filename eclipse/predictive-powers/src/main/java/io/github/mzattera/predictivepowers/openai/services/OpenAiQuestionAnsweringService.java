@@ -26,9 +26,9 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiTokenizer;
 import io.github.mzattera.predictivepowers.services.AbstractQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
 import io.github.mzattera.util.ChunkUtil;
@@ -72,7 +72,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 	}
 
 	@Override
-	public AiEndpoint getEndpoint() {
+	public OpenAiEndpoint getEndpoint() {
 		return completionService.getEndpoint();
 	}
 
@@ -114,7 +114,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 					.build();
 
 		String qMsg = "\nQuestion: " + question;
-		Tokenizer counter = getEndpoint().getModelService().getTokenizer(getModel());
+		OpenAiTokenizer counter = getEndpoint().getModelService().getTokenizer(getModel());
 
 		// Provides instructions and examples
 		// TODO URGENT Better delimiters for context and questions

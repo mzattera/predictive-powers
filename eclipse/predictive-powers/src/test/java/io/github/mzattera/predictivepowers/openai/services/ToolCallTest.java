@@ -41,7 +41,7 @@ import io.github.mzattera.predictivepowers.openai.client.chat.ToolCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolCallResult;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolChoice;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelData.SupportedCallType;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 
 /**

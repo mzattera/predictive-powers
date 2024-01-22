@@ -545,7 +545,7 @@ public class OpenAiChatService extends AbstractChatService {
 	private void trimConversation(List<OpenAiChatMessage> messages, int maxConversationSteps,
 			int maxConversationTokens) {
 
-		Tokenizer counter = modelService.getTokenizer(getModel());
+		OpenAiTokenizer counter = modelService.getTokenizer(getModel());
 		int tok = 0;
 		int steps = 0;
 

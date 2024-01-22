@@ -35,10 +35,12 @@ import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelData.SupportedCallType;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
 import io.github.mzattera.predictivepowers.services.AbstractModelService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ModelService;
+import io.github.mzattera.predictivepowers.services.ModelService.ModeMetalData;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -61,7 +63,8 @@ public class OpenAiModelService extends AbstractModelService {
 
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiModelService.class);
 
-	public static class OpenAiModelData extends ModelData {
+	@ToString
+	public static class OpenAiModelMetaData extends ModeMetalData {
 
 		public enum SupportedCallType {
 			NONE, FUNCTIONS, TOOLS
@@ -71,27 +74,39 @@ public class OpenAiModelService extends AbstractModelService {
 		@Getter
 		private final SupportedCallType supportedCallType;
 
-		public OpenAiModelData(int contextSize) {
-			this(contextSize, SupportedCallType.NONE, null);
+		public enum SupportedApi {
+			COMPLETIONS, CHAT
 		}
 
-		public OpenAiModelData(int contextSize, SupportedCallType supportedCallType) {
-			this(contextSize, supportedCallType, null);
+		/** The API this model supports */
+		@Getter
+		private final SupportedApi supportedApi;
+
+		public OpenAiModelMetaData(int contextSize) {
+			this(SupportedApi.CHAT, contextSize, null, SupportedCallType.NONE);
 		}
 
-		public OpenAiModelData(int contextSize, int maxNewTokens) {
-			this(contextSize, SupportedCallType.NONE, maxNewTokens);
+		public OpenAiModelMetaData(int contextSize, SupportedApi api) {
+			this(api, contextSize, null, SupportedCallType.NONE);
 		}
 
-		public OpenAiModelData(int contextSize, SupportedCallType supportedCallType, Integer maxNewTokens) {
+		public OpenAiModelMetaData(int contextSize, SupportedCallType supportedCallType) {
+			this(SupportedApi.CHAT, contextSize, null, supportedCallType);
+		}
+
+		public OpenAiModelMetaData(int contextSize, int maxNewTokens) {
+			this(SupportedApi.CHAT, contextSize, maxNewTokens, SupportedCallType.NONE);
+		}
+
+		public OpenAiModelMetaData(int contextSize, SupportedCallType supportedCallType, Integer maxNewTokens) {
+			this(SupportedApi.CHAT, contextSize, maxNewTokens, supportedCallType);
+		}
+
+		public OpenAiModelMetaData(SupportedApi api, int contextSize, Integer maxNewTokens,
+				SupportedCallType supportedCallType) {
 			super(null, contextSize, maxNewTokens);
 			this.supportedCallType = supportedCallType;
-		}
-
-		@Override
-		public String toString() {
-			return "OpenAiModelData [tokenizer=" + getTokenizer() + ", contextSize=" + getContextSize()
-					+ ", supportedCallType=" + supportedCallType + "]";
+			this.supportedApi = api;
 		}
 	}
 
@@ -119,22 +134,21 @@ public class OpenAiModelService extends AbstractModelService {
 			return TikTokenUtils.tokens(model, text);
 		}
 
-		@Override
 		public int count(@NonNull ChatMessage msg) {
 			List<ChatMessage> l = new ArrayList<>();
 			l.add(msg);
 			return count(l);
 		}
 
-		@Override
 		public int count(@NonNull List<ChatMessage> msgs) {
 			List<xyz.felh.openai.completion.chat.ChatMessage> l = new ArrayList<>(msgs.size());
 			for (ChatMessage m : msgs)
 				l.add(translate(m));
 			return TikTokenUtils.tokens(model, l);
 		}
-		
-		// TODO URGENTT this Tokenizer interface is a mess, leave only a method fro string and let each services add methods they please
+
+		// TODO URGENTT this Tokenizer interface is a mess, leave only a method fro
+		// string and let each services add methods they please
 		public int countOpenAiMessages(@NonNull List<OpenAiChatMessage> msgs) {
 			List<xyz.felh.openai.completion.chat.ChatMessage> l = new ArrayList<>(msgs.size());
 			for (ChatMessage m : msgs)
@@ -232,30 +246,30 @@ public class OpenAiModelService extends AbstractModelService {
 	 * Maps each model into its parameters. Paramters can be an int, which is then
 	 * interpreted as the context size or a Pair<int,SupportedCalls>.
 	 */
-	final static Map<String, OpenAiModelData> MODEL_CONFIG = new HashMap<>();
+	final static Map<String, OpenAiModelMetaData> MODEL_CONFIG = new HashMap<>();
 	static {
-		MODEL_CONFIG.put("babbage-002", new OpenAiModelData(16384));
-		MODEL_CONFIG.put("davinci-002", new OpenAiModelData(16384));
-		MODEL_CONFIG.put("gpt-3.5-turbo", new OpenAiModelData(4096, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-16k", new OpenAiModelData(16384, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-instruct", new OpenAiModelData(4096));
-		MODEL_CONFIG.put("gpt-3.5-turbo-instruct-0914", new OpenAiModelData(4096));
-		MODEL_CONFIG.put("gpt-3.5-turbo-1106", new OpenAiModelData(16385, SupportedCallType.TOOLS, 4096));
-		MODEL_CONFIG.put("gpt-3.5-turbo-0613", new OpenAiModelData(4096, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-16k-0613", new OpenAiModelData(16384, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-0301", new OpenAiModelData(4096));
-		MODEL_CONFIG.put("gpt-4", new OpenAiModelData(8192, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-4-0613", new OpenAiModelData(8192, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-4-32k", new OpenAiModelData(32768, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-4-32k-0613", new OpenAiModelData(32768, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-4-32k-0314", new OpenAiModelData(32768));
-		MODEL_CONFIG.put("gpt-4-1106-preview", new OpenAiModelData(128000, SupportedCallType.TOOLS, 4096));
-		MODEL_CONFIG.put("gpt-4-vision-preview", new OpenAiModelData(128000, 4096));
-		MODEL_CONFIG.put("text-embedding-ada-002", new OpenAiModelData(8192));
-		MODEL_CONFIG.put("tts-1", new OpenAiModelData(4096));
-		MODEL_CONFIG.put("tts-1-1106", new OpenAiModelData(2046));
-		MODEL_CONFIG.put("tts-1-hd", new OpenAiModelData(2046));
-		MODEL_CONFIG.put("tts-1-hd-1106", new OpenAiModelData(2046));
+		MODEL_CONFIG.put("babbage-002", new OpenAiModelMetaData(16384, SupportedApi.COMPLETIONS));
+		MODEL_CONFIG.put("davinci-002", new OpenAiModelMetaData(16384, SupportedApi.COMPLETIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo", new OpenAiModelMetaData(4096, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-16k", new OpenAiModelMetaData(16384, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-instruct", new OpenAiModelMetaData(4096, SupportedApi.COMPLETIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-instruct-0914", new OpenAiModelMetaData(4096, SupportedApi.COMPLETIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-1106", new OpenAiModelMetaData(16385, SupportedCallType.TOOLS, 4096));
+		MODEL_CONFIG.put("gpt-3.5-turbo-0613", new OpenAiModelMetaData(4096, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-16k-0613", new OpenAiModelMetaData(16384, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-0301", new OpenAiModelMetaData(4096));
+		MODEL_CONFIG.put("gpt-4", new OpenAiModelMetaData(8192, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-0613", new OpenAiModelMetaData(8192, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-32k", new OpenAiModelMetaData(32768, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-32k-0613", new OpenAiModelMetaData(32768, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-32k-0314", new OpenAiModelMetaData(32768));
+		MODEL_CONFIG.put("gpt-4-1106-preview", new OpenAiModelMetaData(128000, SupportedCallType.TOOLS, 4096));
+		MODEL_CONFIG.put("gpt-4-vision-preview", new OpenAiModelMetaData(128000, 4096));
+		MODEL_CONFIG.put("text-embedding-ada-002", new OpenAiModelMetaData(8192));
+		MODEL_CONFIG.put("tts-1", new OpenAiModelMetaData(4096));
+		MODEL_CONFIG.put("tts-1-1106", new OpenAiModelMetaData(2046));
+		MODEL_CONFIG.put("tts-1-hd", new OpenAiModelMetaData(2046));
+		MODEL_CONFIG.put("tts-1-hd-1106", new OpenAiModelMetaData(2046));
 	}
 
 	/**
@@ -264,9 +278,9 @@ public class OpenAiModelService extends AbstractModelService {
 	 * 
 	 * To add or remove models, act here.
 	 */
-	private final static Map<String, ModelData> data = new ConcurrentHashMap<>();
+	private final static Map<String, ModeMetalData> data = new ConcurrentHashMap<>();
 	static {
-		for (Entry<String, OpenAiModelData> e : MODEL_CONFIG.entrySet()) {
+		for (Entry<String, OpenAiModelMetaData> e : MODEL_CONFIG.entrySet()) {
 
 			// This is a work around since the tokenizer library we use might not have
 			// latest gpt-3 or -4 models rolled out every 3 months.
@@ -291,7 +305,7 @@ public class OpenAiModelService extends AbstractModelService {
 				}
 			}
 
-			OpenAiModelData cfg = e.getValue();
+			OpenAiModelMetaData cfg = e.getValue();
 			cfg.setTokenizer(new OpenAiTokenizer(modelType));
 
 			data.put(model, cfg);
@@ -324,6 +338,16 @@ public class OpenAiModelService extends AbstractModelService {
 	}
 
 	@Override
+	public OpenAiModelMetaData get(@NonNull String model) {
+		return (OpenAiModelMetaData)(super.get(model));
+	}
+
+	@Override
+	public OpenAiModelMetaData put(@NonNull String model, @NonNull ModeMetalData data) {
+		return (OpenAiModelMetaData)super.put(model, (OpenAiModelMetaData)data);
+	}
+	
+	@Override
 	public OpenAiTokenizer getTokenizer(@NonNull String model) throws IllegalArgumentException {
 		return (OpenAiTokenizer) super.getTokenizer(model);
 	}
@@ -351,26 +375,26 @@ public class OpenAiModelService extends AbstractModelService {
 	/**
 	 * 
 	 * @param model
-	 * @return The type of calls (function or tool) that the model supports, if any.
+	 * @return The type of calls (function or tool) that the model supports.
 	 */
 	public SupportedCallType getSupportedCall(@NonNull String model) {
-		ModelData data = get(model);
-		if ((data == null) || !(data instanceof OpenAiModelData))
-			return SupportedCallType.NONE;
-		else
-			return ((OpenAiModelData) data).getSupportedCallType();
+		OpenAiModelMetaData data = get(model);
+		if (data == null)
+			throw new IllegalArgumentException(
+					"No metadata found for model " + model + ". Consider registering model data");
+		return data.getSupportedCallType();
 	}
 
 	/**
 	 * 
 	 * @param model
-	 * @return The type of calls (function or tool) that the model supports, if any.
+	 * @return The API (chat or completions) that the model supports.
 	 */
-	public SupportedCallType getSupportedCall(@NonNull String model, SupportedCallType def) {
-		ModelData data = get(model);
-		if ((data == null) || !(data instanceof OpenAiModelData))
-			return def;
-		else
-			return ((OpenAiModelData) data).getSupportedCallType();
+	public SupportedApi getSupportedApi(@NonNull String model) {
+		OpenAiModelMetaData data = get(model);
+		if (data == null)
+			throw new IllegalArgumentException(
+					"No metadata found for model " + model + ". Consider registering model data");
+		return data.getSupportedApi();
 	}
 }

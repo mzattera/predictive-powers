@@ -1,5 +1,7 @@
 package io.github.mzattera.predictivepowers.openai.services;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -14,9 +16,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.knuddels.jtokkit.Encodings;
 import com.knuddels.jtokkit.api.Encoding;
 import com.knuddels.jtokkit.api.EncodingRegistry;
@@ -31,35 +31,34 @@ import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool.Type;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolCallResult;
+import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
+import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelData;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelData.SupportedCallType;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
 
 // TODO URGENT FINISH, RENAME AND MOVE IT TO A MORE SUITABLE FOLDER
 
 public class DeepEncodingTest {
 
-	private final static Map<String, OpenAiModelData> MODEL_CONFIG = new HashMap<>();
+	private final static Map<String, OpenAiModelMetaData> MODEL_CONFIG = new HashMap<>();
 	static {
-		// TODO Completions, to test
-		// TODO Add API to OpenAiModelData
-		// TODO Add proper tokenizer to OpenAiModelData, without going through model
-		// name/prefix
-//		MODEL_CONFIG.put("babbage-002", new OpenAiModelData(16384));
-//		MODEL_CONFIG.put("davinci-002", new OpenAiModelData(16384));
-//		MODEL_CONFIG.put("gpt-3.5-turbo-instruct", new OpenAiModelData(4096));
-//		MODEL_CONFIG.put("gpt-3.5-turbo-instruct-0914", new OpenAiModelData(4096));
+		MODEL_CONFIG.put("babbage-002", new OpenAiModelMetaData(16384, SupportedApi.COMPLETIONS));
+		MODEL_CONFIG.put("davinci-002", new OpenAiModelMetaData(16384, SupportedApi.COMPLETIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-instruct", new OpenAiModelMetaData(4096, SupportedApi.COMPLETIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-instruct-0914", new OpenAiModelMetaData(4096, SupportedApi.COMPLETIONS));
 
-		MODEL_CONFIG.put("gpt-3.5-turbo", new OpenAiModelData(4096, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-16k", new OpenAiModelData(16384, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-1106", new OpenAiModelData(16385, SupportedCallType.TOOLS, 4096));
-		MODEL_CONFIG.put("gpt-3.5-turbo-0613", new OpenAiModelData(4096, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-16k-0613", new OpenAiModelData(16384, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-0301", new OpenAiModelData(4096));
-		MODEL_CONFIG.put("gpt-4", new OpenAiModelData(8192, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-4-0613", new OpenAiModelData(8192, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-4-1106-preview", new OpenAiModelData(128000, SupportedCallType.TOOLS, 4096));
+		MODEL_CONFIG.put("gpt-3.5-turbo", new OpenAiModelMetaData(4096, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-16k", new OpenAiModelMetaData(16384, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-1106", new OpenAiModelMetaData(16385, SupportedCallType.TOOLS, 4096));
+		MODEL_CONFIG.put("gpt-3.5-turbo-0613", new OpenAiModelMetaData(4096, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-16k-0613", new OpenAiModelMetaData(16384, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-0301", new OpenAiModelMetaData(4096));
+		MODEL_CONFIG.put("gpt-4", new OpenAiModelMetaData(8192, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-0613", new OpenAiModelMetaData(8192, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-1106-preview", new OpenAiModelMetaData(128000, SupportedCallType.TOOLS, 4096));
 
 		// TODO URGENT Questo calcola token usando immagini e testo, mi da' linghezze
 		// strane se
@@ -175,26 +174,16 @@ public class DeepEncodingTest {
 
 	/** Return names for models supporting function calls */
 	static Stream<String> functionCallModelsProvider() {
-		List<String> result = new ArrayList<>();
-		for (String model : MODEL_CONFIG.keySet()) {
-			if (MODEL_CONFIG.get(model).getSupportedCallType() == SupportedCallType.FUNCTIONS)
-				result.add(model);
-		}
-
-		// TODO URGENT RETURN ALL
-		return result.subList(0, 1).stream();
+	    return MODEL_CONFIG.entrySet().stream()
+                .filter(e -> e.getValue().getSupportedCallType() == SupportedCallType.FUNCTIONS)
+                .map(Map.Entry::getKey);
 	}
 
 	/** Return names for models supporting tool calls */
 	static Stream<String> toolCallModelsProvider() {
-		List<String> result = new ArrayList<>();
-		for (String model : MODEL_CONFIG.keySet()) {
-			if (MODEL_CONFIG.get(model).getSupportedCallType() == SupportedCallType.TOOLS)
-				result.add(model);
-		}
-
-		// TODO URGENT RETURN ALL
-		return result.subList(0, 1).stream();
+	    return MODEL_CONFIG.entrySet().stream()
+                .filter(e -> e.getValue().getSupportedCallType() == SupportedCallType.TOOLS)
+                .map(Map.Entry::getKey);
 	}
 
 	/** List of messages without tool calls or tools results */
@@ -232,14 +221,30 @@ public class DeepEncodingTest {
 		if (1 == 1)
 			return;
 
-		ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).messages(SIMPLE_MESSAGES).build();
+		long tokens, realTokens;
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
-		long tokens = tokens(req);
-		long realTokens = realTokens(req);
-		System.out.println(model + "\t" + tokens + "\t" + realTokens);
+			SupportedApi api = endpoint.getModelService().getSupportedApi(model);
+			switch (api) {
+			case CHAT:
+				ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).messages(SIMPLE_MESSAGES)
+						.build();
+				tokens = tokens(req);
+				realTokens = realTokens(req);
+				break;
+			case COMPLETIONS:
+				CompletionsRequest creq = CompletionsRequest.builder().model(model).prompt("This is a prompt, quite short, but it's OK").build();
+				tokens = tokens(creq);
+				realTokens = realTokens(creq);
+				break;
+			default:
+				throw new IllegalArgumentException();
+			}
+			
+			System.out.println(model + " - " + api + "\t" + tokens + "\t" + realTokens);
+		}
 
-		// TODO URGENT Add test condition
-//		assertEquals(realTokens, tokens);
+		assertEquals(realTokens, tokens);
 	}
 
 	private static enum ENUM {
@@ -302,8 +307,7 @@ public class DeepEncodingTest {
 		long realTokens = realTokens(req);
 		System.out.println(model + "\t" + tokens + "\t" + realTokens);
 
-		// TODO URGENT Add test condition
-//		assertEquals(realTokens, tokens);
+		assertEquals(realTokens, tokens);
 	}
 
 	/** List of messages with tool calls and tool results */
@@ -371,6 +375,10 @@ public class DeepEncodingTest {
 	@ParameterizedTest
 	@MethodSource("toolCallModelsProvider")
 	void test03(String model) throws JsonProcessingException {
+		
+		// TODO URGENT when all calls have 0 arguments there is an error
+		// Check whether it happens if only ONE has zero arguments & compensate accordingly
+		
 		// TODO URGENT Remove
 		if (1 == 1)
 			return;
@@ -394,9 +402,6 @@ public class DeepEncodingTest {
 
 				// Function call with numArgsArgumants
 				args = new HashMap<>();
-				args.put("Banan", 123);
-				args.put("Apple", 1.23d);
-				args.put("Kiwi", ENUM.MELE);
 				for (int i = 0; i < numArgs; ++i) {
 					args.put("s" + i, "Prague");
 				}
@@ -551,6 +556,7 @@ public class DeepEncodingTest {
 			long realTokens = realTokens(req);
 			System.out.println(model + "\t" + tokens + "\t" + realTokens);
 
+			assertEquals(realTokens, tokens);
 		} // closes endpoint
 	}
 
@@ -562,6 +568,9 @@ public class DeepEncodingTest {
 	@ParameterizedTest
 	@MethodSource("toolCallModelsProvider")
 	void test05(String model) throws JsonProcessingException {
+		// TODO URGENT Remove
+		if (1 == 1)
+			return;
 
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
@@ -590,28 +599,43 @@ public class DeepEncodingTest {
 		}
 	}
 
+	private static long realTokens(CompletionsRequest req) {
+
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+			req.setMaxTokens(1);
+			CompletionsResponse resp = endpoint.getClient().createCompletion(req);
+			return resp.getUsage().getPromptTokens();
+		}
+	}
+
 	public static long tokens(ChatCompletionsRequest req) throws JsonProcessingException {
 
-		JsonNode rootNode = OpenAiClient.getJsonMapper().valueToTree(req);
+//		System.out.println(OpenAiClient.getJsonMapper().writerWithDefaultPrettyPrinter().writeValueAsString(req));
 
-		System.out.println(OpenAiClient.getJsonMapper().writerWithDefaultPrettyPrinter().writeValueAsString(rootNode));
-
-		String model = rootNode.path("model").asText();
+		String model = req.getModel();
 		Encoding encoding = getEncoding(model);
 
-		long sum = messagesToken(model, encoding, rootNode.path("messages"));
+		long sum = messagesToken(model, encoding, req.getMessages());
 		sum += functionsTokens(encoding, req);
 		sum += toolsTokens(encoding, req);
 		sum += 3;
 		return sum;
 	}
 
-	public static long messagesToken(String model, Encoding encoding, JsonNode messagesArray)
+	public static long tokens(CompletionsRequest req) throws JsonProcessingException {
+
+//		System.out.println(OpenAiClient.getJsonMapper().writerWithDefaultPrettyPrinter().writeValueAsString(req));
+
+		String model = req.getModel();
+		Encoding encoding = getEncoding(model);
+
+		long sum = encoding.countTokens(req.getPrompt());
+		return sum;
+	}
+
+	public static long messagesToken(String model, Encoding encoding, List<OpenAiChatMessage> messages)
 			throws JsonProcessingException {
 
-		List<OpenAiChatMessage> messages = OpenAiClient.getJsonMapper().convertValue(messagesArray,
-				new TypeReference<List<OpenAiChatMessage>>() {
-				});
 		int sum = 0;
 
 		for (OpenAiChatMessage msg : messages) {

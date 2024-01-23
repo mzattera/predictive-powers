@@ -35,42 +35,12 @@ import io.github.mzattera.predictivepowers.openai.client.completions.Completions
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
 
 // TODO URGENT FINISH, RENAME AND MOVE IT TO A MORE SUITABLE FOLDER
 
 public class DeepEncodingTest {
-
-	private final static Map<String, OpenAiModelMetaData> MODEL_CONFIG = new HashMap<>();
-	static {
-		MODEL_CONFIG.put("babbage-002", new OpenAiModelMetaData(16384, SupportedApi.COMPLETIONS));
-		MODEL_CONFIG.put("davinci-002", new OpenAiModelMetaData(16384, SupportedApi.COMPLETIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-instruct", new OpenAiModelMetaData(4096, SupportedApi.COMPLETIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-instruct-0914", new OpenAiModelMetaData(4096, SupportedApi.COMPLETIONS));
-
-		MODEL_CONFIG.put("gpt-3.5-turbo", new OpenAiModelMetaData(4096, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-16k", new OpenAiModelMetaData(16384, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-1106", new OpenAiModelMetaData(16385, SupportedCallType.TOOLS, 4096));
-		MODEL_CONFIG.put("gpt-3.5-turbo-0613", new OpenAiModelMetaData(4096, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-16k-0613", new OpenAiModelMetaData(16384, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-0301", new OpenAiModelMetaData(4096));
-		MODEL_CONFIG.put("gpt-4", new OpenAiModelMetaData(8192, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-4-0613", new OpenAiModelMetaData(8192, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-4-1106-preview", new OpenAiModelMetaData(128000, SupportedCallType.TOOLS, 4096));
-
-		// TODO URGENT Questo calcola token usando immagini e testo, mi da' linghezze
-		// strane se
-		// metto i nomi nei messaggi, ma almeno sbaglio in eccesso
-		// Magari lanciare un errore se si tenta di usare questo tokenizer? O
-		// accontentarsi di sbagliare in eccesso?
-//		MODEL_CONFIG.put("gpt-4-vision-preview", new OpenAiModelData(128000, 4096));
-
-//		MODEL_CONFIG.put("gpt-4-32k", new OpenAiModelData(32768, SupportedCallType.FUNCTIONS));
-//		MODEL_CONFIG.put("gpt-4-32k-0613", new OpenAiModelData(32768, SupportedCallType.FUNCTIONS));
-//		MODEL_CONFIG.put("gpt-4-32k-0314", new OpenAiModelData(32768));
-	}
 
 	private static final Map<String, String> MODEL_PREFIX_TO_ENCODING = new HashMap<>();
 	private static final Map<String, String> MODEL_TO_ENCODING = new HashMap<>();
@@ -168,22 +138,28 @@ public class DeepEncodingTest {
 	}
 
 	/** Return names for all models */
-	static Stream<String> allModelsProvider() {
-		return MODEL_CONFIG.keySet().stream();
+	static Stream<String> allCompletionModelsProvider() {
+		return OpenAiModelService.getModelsMetadata() //
+				.filter(e -> (e.getSupportedApi() == SupportedApi.CHAT)
+						|| (e.getSupportedApi() == SupportedApi.COMPLETIONS)) //
+				.filter(e -> !e.getModel().startsWith("gpt-4-32k")) //
+				.map(meta -> meta.getModel());
 	}
 
 	/** Return names for models supporting function calls */
-	static Stream<String> functionCallModelsProvider() {
-	    return MODEL_CONFIG.entrySet().stream()
-                .filter(e -> e.getValue().getSupportedCallType() == SupportedCallType.FUNCTIONS)
-                .map(Map.Entry::getKey);
+	static Stream<String> functionCallCompletionsModelsProvider() {
+		return OpenAiModelService.getModelsMetadata() //
+				.filter(e -> e.getSupportedCallType() == SupportedCallType.FUNCTIONS) //
+				.filter(e -> !e.getModel().startsWith("gpt-4-32k")) //
+				.map(e -> e.getModel());
 	}
 
 	/** Return names for models supporting tool calls */
-	static Stream<String> toolCallModelsProvider() {
-	    return MODEL_CONFIG.entrySet().stream()
-                .filter(e -> e.getValue().getSupportedCallType() == SupportedCallType.TOOLS)
-                .map(Map.Entry::getKey);
+	static Stream<String> toolCallCompletionsModelsProvider() {
+		return OpenAiModelService.getModelsMetadata()//
+				.filter(e -> e.getSupportedCallType() == SupportedCallType.TOOLS) //
+				.filter(e -> !e.getModel().startsWith("gpt-4-32k")) //
+				.map(e -> e.getModel());
 	}
 
 	/** List of messages without tool calls or tools results */
@@ -191,8 +167,9 @@ public class DeepEncodingTest {
 	static {
 		SIMPLE_MESSAGES.add(new OpenAiChatMessage(Role.SYSTEM, "You are a nice bot"));
 		SIMPLE_MESSAGES.add(new OpenAiChatMessage(Role.SYSTEM, "You are a nice bot", "system_user"));
-		SIMPLE_MESSAGES.add(new OpenAiChatMessage(Role.SYSTEM, "Thank you!", "system_assistant"));
+//		SIMPLE_MESSAGES.add(new OpenAiChatMessage(Role.SYSTEM, "Thank you!", "system_assistant"));
 		SIMPLE_MESSAGES.add(new OpenAiChatMessage(Role.ASSISTANT, "HI."));
+		SIMPLE_MESSAGES.add(new OpenAiChatMessage(Role.ASSISTANT, "HI.", "Tom_the_Assistant"));
 		SIMPLE_MESSAGES.add(new OpenAiChatMessage(Role.USER, "Hi", "maxi"));
 		SIMPLE_MESSAGES.add(new OpenAiChatMessage(Role.USER,
 				"Alan Mathison Turing OBE FRS (/ˈtjʊərɪŋ/; 23 June 1912 – 7 June 1954) was an English mathematician, computer scientist, logician, cryptanalyst, philosopher and theoretical biologist.[5] Turing was highly influential in the development of theoretical computer science, providing a formalisation of the concepts of algorithm and computation with the Turing machine, which can be considered a model of a general-purpose computer.[6][7][8] He is widely considered to be the father of theoretical computer science and artificial intelligence.[9]\r\n"
@@ -214,12 +191,8 @@ public class DeepEncodingTest {
 	 * @throws JsonProcessingException
 	 */
 	@ParameterizedTest
-	@MethodSource("allModelsProvider")
+	@MethodSource("allCompletionModelsProvider")
 	void test01(String model) throws JsonProcessingException {
-
-		// TODO URGENT Remove
-		if (1 == 1)
-			return;
 
 		long tokens, realTokens;
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
@@ -233,14 +206,15 @@ public class DeepEncodingTest {
 				realTokens = realTokens(req);
 				break;
 			case COMPLETIONS:
-				CompletionsRequest creq = CompletionsRequest.builder().model(model).prompt("This is a prompt, quite short, but it's OK").build();
+				CompletionsRequest creq = CompletionsRequest.builder().model(model)
+						.prompt("This is a prompt, quite short, but it's OK").build();
 				tokens = tokens(creq);
 				realTokens = realTokens(creq);
 				break;
 			default:
 				throw new IllegalArgumentException();
 			}
-			
+
 			System.out.println(model + " - " + api + "\t" + tokens + "\t" + realTokens);
 		}
 
@@ -293,12 +267,8 @@ public class DeepEncodingTest {
 	 * @throws JsonProcessingException
 	 */
 	@ParameterizedTest
-	@MethodSource("functionCallModelsProvider")
+	@MethodSource("functionCallCompletionsModelsProvider")
 	void test02(String model) throws JsonProcessingException {
-
-		// TODO URGENT Remove
-		if (1 == 1)
-			return;
 
 		ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).messages(FUNCTION_CALL_MESSAGES)
 				.build();
@@ -373,17 +343,11 @@ public class DeepEncodingTest {
 	 * @throws JsonProcessingException
 	 */
 	@ParameterizedTest
-	@MethodSource("toolCallModelsProvider")
+	@MethodSource("toolCallCompletionsModelsProvider")
 	void test03(String model) throws JsonProcessingException {
-		
-		// TODO URGENT when all calls have 0 arguments there is an error
-		// Check whether it happens if only ONE has zero arguments & compensate accordingly
-		
-		// TODO URGENT Remove
-		if (1 == 1)
-			return;
 
-		// Make a foo call to spit out annying log messages
+		// TODO URGENT Remove
+		// Make a foo call to spit out any log messages
 		List<OpenAiChatMessage> messages = new ArrayList<>();
 		messages.add(new OpenAiChatMessage(Role.USER, "Hi"));
 		ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).messages(messages).build();
@@ -427,13 +391,13 @@ public class DeepEncodingTest {
 				long realTokens = realTokens(req);
 				System.out.print("\t" + numArgs + " args. " + tokens + " [" + (tokens - realTokens) + "]");
 
+				assertEquals(realTokens, tokens);
+
 			} // for each number of arguments
 
 			System.out.println();
 		} // for each number of calls
 
-		// TODO URGENT Add test condition
-//		assertEquals(realTokens, tokens);
 	}
 
 	// Name and description of function to call to get temperature for one town
@@ -535,11 +499,8 @@ public class DeepEncodingTest {
 	 * @throws JsonProcessingException
 	 */
 	@ParameterizedTest
-	@MethodSource("functionCallModelsProvider")
+	@MethodSource("functionCallCompletionsModelsProvider")
 	void test04(String model) throws JsonProcessingException {
-		// TODO URGENT Remove
-		if (1 == 1)
-			return;
 
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
@@ -566,11 +527,8 @@ public class DeepEncodingTest {
 	 * @throws JsonProcessingException
 	 */
 	@ParameterizedTest
-	@MethodSource("toolCallModelsProvider")
+	@MethodSource("toolCallCompletionsModelsProvider")
 	void test05(String model) throws JsonProcessingException {
-		// TODO URGENT Remove
-		if (1 == 1)
-			return;
 
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
@@ -588,6 +546,48 @@ public class DeepEncodingTest {
 			System.out.println(model + "\t" + tokens + "\t" + realTokens);
 
 		} // closes endpoint
+	}
+
+	private final static List<OpenAiChatMessage> OTHER_MESSAGES = new ArrayList<>();
+	static {
+
+		Map<String, Object> args;
+		FunctionCall fun;
+
+		List<ToolCall> calls = new ArrayList<>();
+		for (int i = 0; i < 3; ++i) {
+			args = new HashMap<>();
+			fun = FunctionCall.builder().name("functionName01").arguments(args).build();
+
+			ToolCall call = ToolCall.builder().type(Type.FUNCTION).Id("call" + i).function(fun).build();
+			calls.add(call);
+		}
+		args = new HashMap<>();
+		args.put("param", "hello");
+		fun = FunctionCall.builder().name("functionNameXX").arguments(args).build();
+		ToolCall call = ToolCall.builder().type(Type.FUNCTION).Id("call" + calls.size()).function(fun).build();
+		calls.add(call);
+
+		OpenAiChatMessage msg = new OpenAiChatMessage(Role.ASSISTANT, (String) null);
+		msg.setToolCalls(calls);
+		OTHER_MESSAGES.add(msg);
+
+		for (int i = 0; i < calls.size(); ++i) {
+			OTHER_MESSAGES.add(new OpenAiChatMessage(Role.TOOL,
+					new ToolCallResult(calls.get(i).getId(), calls.get(i).getFunction().getName(), "Result")));
+		}
+	}
+
+	@ParameterizedTest
+	@MethodSource("toolCallCompletionsModelsProvider")
+	void test06(String model) throws JsonProcessingException {
+		ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).messages(OTHER_MESSAGES).build();
+
+		long tokens = tokens(req);
+		long realTokens = realTokens(req);
+		System.out.println(model + "\t" + tokens + "\t" + realTokens);
+
+		assertEquals(realTokens, tokens);
 	}
 
 	private static long realTokens(ChatCompletionsRequest req) {
@@ -654,11 +654,13 @@ public class DeepEncodingTest {
 				sum += tokens(encoding, msg.getContent());
 
 			if (msg.getName() != null) {
-				sum += tokens(encoding, msg.getName());
-				if ("gpt-3.5-turbo-0301".equals(model))
-					sum -= 1;
-				else if ("system".equals(role))
-					++sum;
+				if (!"gpt-4-vision-preview".equals(model)) {
+					sum += tokens(encoding, msg.getName());
+					if ("gpt-3.5-turbo-0301".equals(model))
+						--sum;
+					else if ("system".equals(role) || "assistant".equals(role))
+						++sum;
+				}
 			}
 
 			if (msg.getFunctionCall() != null) {
@@ -683,6 +685,8 @@ public class DeepEncodingTest {
 //				if (msg.getToolCalls().size() > 2)
 //					sum += (19 - msg.getToolCalls().size());
 
+				// This is true if all calls in the message have no parameters
+				boolean allCallsWithNoParams = true;
 				for (ToolCall toolCall : msg.getToolCalls()) {
 					sum += 2;
 
@@ -698,6 +702,8 @@ public class DeepEncodingTest {
 
 						if (functionCall.getArguments().size() == 0)
 							sum += 1;
+						else
+							allCallsWithNoParams = false;
 
 						for (Entry<String, Object> e : functionCall.getArguments().entrySet()) {
 							sum += 2;
@@ -708,6 +714,13 @@ public class DeepEncodingTest {
 
 					} else
 						throw new IllegalArgumentException("Unsupported tool type: " + type);
+				} // for each tool call
+
+				if (allCallsWithNoParams) {
+					if (msg.getToolCalls().size() > 1)
+						sum += 1;
+					else
+						sum -= 1;
 				}
 			} // if we have tool calls
 		} // for each message

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +31,7 @@ import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData;
 import io.github.mzattera.predictivepowers.openai.services.ToolCallTest.GetCurrentWeatherParameters;
 
 class OpenAiModelServiceTest {
@@ -70,7 +72,9 @@ class OpenAiModelServiceTest {
 			OpenAiChatService chatSvc = oai.getChatService();
 
 			Set<String> deprecated = new HashSet<>(OLD_MODELS);
-			Set<String> actual = new HashSet<>(OpenAiModelService.MODEL_CONFIG.keySet());
+			Set<String> actual = OpenAiModelService.getModelsMetadata() //
+					.map(OpenAiModelMetaData::getModel) //
+					.collect(Collectors.toSet());
 
 			List<Model> models = oai.getClient().listModels();
 			assertTrue(models.size() > 0);

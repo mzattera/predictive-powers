@@ -74,6 +74,11 @@ public interface ModelService extends AiService {
 	public static class ModeMetalData {
 
 		/**
+		 * The model this metadata refers to.
+		 */
+		private @NonNull String model;
+		
+		/**
 		 * A tokenizer for this (text) model (if any).
 		 */
 		private Tokenizer tokenizer;

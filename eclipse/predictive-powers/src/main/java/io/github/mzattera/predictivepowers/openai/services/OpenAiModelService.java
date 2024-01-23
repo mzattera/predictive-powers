@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,7 @@ import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
 import io.github.mzattera.predictivepowers.services.AbstractModelService;
@@ -75,36 +77,36 @@ public class OpenAiModelService extends AbstractModelService {
 		private final SupportedCallType supportedCallType;
 
 		public enum SupportedApi {
-			COMPLETIONS, CHAT
+			COMPLETIONS, CHAT, AUDIO, EMBEDDINGS
 		}
 
 		/** The API this model supports */
 		@Getter
 		private final SupportedApi supportedApi;
 
-		public OpenAiModelMetaData(int contextSize) {
-			this(SupportedApi.CHAT, contextSize, null, SupportedCallType.NONE);
+		public OpenAiModelMetaData(String model, int contextSize) {
+			this(model, SupportedApi.CHAT, contextSize, null, SupportedCallType.NONE);
 		}
 
-		public OpenAiModelMetaData(int contextSize, SupportedApi api) {
-			this(api, contextSize, null, SupportedCallType.NONE);
+		public OpenAiModelMetaData(String model, int contextSize, SupportedApi api) {
+			this(model, api, contextSize, null, SupportedCallType.NONE);
 		}
 
-		public OpenAiModelMetaData(int contextSize, SupportedCallType supportedCallType) {
-			this(SupportedApi.CHAT, contextSize, null, supportedCallType);
+		public OpenAiModelMetaData(String model, int contextSize, SupportedCallType supportedCallType) {
+			this(model, SupportedApi.CHAT, contextSize, null, supportedCallType);
 		}
 
-		public OpenAiModelMetaData(int contextSize, int maxNewTokens) {
-			this(SupportedApi.CHAT, contextSize, maxNewTokens, SupportedCallType.NONE);
+		public OpenAiModelMetaData(String model, int contextSize, int maxNewTokens) {
+			this(model, SupportedApi.CHAT, contextSize, maxNewTokens, SupportedCallType.NONE);
 		}
 
-		public OpenAiModelMetaData(int contextSize, SupportedCallType supportedCallType, Integer maxNewTokens) {
-			this(SupportedApi.CHAT, contextSize, maxNewTokens, supportedCallType);
+		public OpenAiModelMetaData(String model, int contextSize, Integer maxNewTokens, SupportedCallType supportedCallType) {
+			this(model, SupportedApi.CHAT, contextSize, maxNewTokens, supportedCallType);
 		}
 
-		public OpenAiModelMetaData(SupportedApi api, int contextSize, Integer maxNewTokens,
+		public OpenAiModelMetaData(String model, SupportedApi api, int contextSize, Integer maxNewTokens,
 				SupportedCallType supportedCallType) {
-			super(null, contextSize, maxNewTokens);
+			super(model, null, contextSize, maxNewTokens);
 			this.supportedCallType = supportedCallType;
 			this.supportedApi = api;
 		}
@@ -246,32 +248,36 @@ public class OpenAiModelService extends AbstractModelService {
 	 * Maps each model into its parameters. Paramters can be an int, which is then
 	 * interpreted as the context size or a Pair<int,SupportedCalls>.
 	 */
-	final static Map<String, OpenAiModelMetaData> MODEL_CONFIG = new HashMap<>();
+	private final static Map<String, OpenAiModelMetaData> MODEL_CONFIG = new HashMap<>();
 	static {
-		MODEL_CONFIG.put("babbage-002", new OpenAiModelMetaData(16384, SupportedApi.COMPLETIONS));
-		MODEL_CONFIG.put("davinci-002", new OpenAiModelMetaData(16384, SupportedApi.COMPLETIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo", new OpenAiModelMetaData(4096, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-16k", new OpenAiModelMetaData(16384, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-instruct", new OpenAiModelMetaData(4096, SupportedApi.COMPLETIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-instruct-0914", new OpenAiModelMetaData(4096, SupportedApi.COMPLETIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-1106", new OpenAiModelMetaData(16385, SupportedCallType.TOOLS, 4096));
-		MODEL_CONFIG.put("gpt-3.5-turbo-0613", new OpenAiModelMetaData(4096, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-16k-0613", new OpenAiModelMetaData(16384, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-0301", new OpenAiModelMetaData(4096));
-		MODEL_CONFIG.put("gpt-4", new OpenAiModelMetaData(8192, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-4-0613", new OpenAiModelMetaData(8192, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-4-32k", new OpenAiModelMetaData(32768, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-4-32k-0613", new OpenAiModelMetaData(32768, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-4-32k-0314", new OpenAiModelMetaData(32768));
-		MODEL_CONFIG.put("gpt-4-1106-preview", new OpenAiModelMetaData(128000, SupportedCallType.TOOLS, 4096));
-		MODEL_CONFIG.put("gpt-4-vision-preview", new OpenAiModelMetaData(128000, 4096));
-		MODEL_CONFIG.put("text-embedding-ada-002", new OpenAiModelMetaData(8192));
-		MODEL_CONFIG.put("tts-1", new OpenAiModelMetaData(4096));
-		MODEL_CONFIG.put("tts-1-1106", new OpenAiModelMetaData(2046));
-		MODEL_CONFIG.put("tts-1-hd", new OpenAiModelMetaData(2046));
-		MODEL_CONFIG.put("tts-1-hd-1106", new OpenAiModelMetaData(2046));
+		MODEL_CONFIG.put("babbage-002", new OpenAiModelMetaData("babbage-002", 16384, SupportedApi.COMPLETIONS));
+		MODEL_CONFIG.put("davinci-002", new OpenAiModelMetaData("davinci-002", 16384, SupportedApi.COMPLETIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo", new OpenAiModelMetaData("gpt-3.5-turbo", 4096, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-16k", new OpenAiModelMetaData("gpt-3.5-turbo-16k", 16384, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-instruct", new OpenAiModelMetaData("gpt-3.5-turbo-instruct", 4096, SupportedApi.COMPLETIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-instruct-0914", new OpenAiModelMetaData("gpt-3.5-turbo-instruct-0914", 4096, SupportedApi.COMPLETIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-1106", new OpenAiModelMetaData("gpt-3.5-turbo-1106", 16385, 4096, SupportedCallType.TOOLS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-0613", new OpenAiModelMetaData("gpt-3.5-turbo-0613", 4096, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-16k-0613", new OpenAiModelMetaData("gpt-3.5-turbo-16k-0613", 16384, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-0301", new OpenAiModelMetaData("gpt-3.5-turbo-0301", 4096));
+		MODEL_CONFIG.put("gpt-4", new OpenAiModelMetaData("gpt-4", 8192, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-0613", new OpenAiModelMetaData("gpt-4-0613", 8192, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-32k", new OpenAiModelMetaData("gpt-4-32k", 32768, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-32k-0613", new OpenAiModelMetaData("gpt-4-32k-0613", 32768, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-32k-0314", new OpenAiModelMetaData("gpt-4-32k-0314", 32768));
+		MODEL_CONFIG.put("gpt-4-1106-preview", new OpenAiModelMetaData("gpt-4-1106-preview", 128000, 4096, SupportedCallType.TOOLS));
+		MODEL_CONFIG.put("gpt-4-vision-preview", new OpenAiModelMetaData("gpt-4-vision-preview", 128000, 4096));
+		MODEL_CONFIG.put("text-embedding-ada-002", new OpenAiModelMetaData("text-embedding-ada-002", 8192, SupportedApi.EMBEDDINGS));
+		MODEL_CONFIG.put("tts-1", new OpenAiModelMetaData("tts-1", 4096, SupportedApi.AUDIO));
+		MODEL_CONFIG.put("tts-1-1106", new OpenAiModelMetaData("tts-1-1106", 2046, SupportedApi.AUDIO));
+		MODEL_CONFIG.put("tts-1-hd", new OpenAiModelMetaData("tts-1-hd", 2046, SupportedApi.AUDIO));
+		MODEL_CONFIG.put("tts-1-hd-1106", new OpenAiModelMetaData("tts-1-hd-1106", 2046, SupportedApi.AUDIO));
 	}
 
+	static Stream<OpenAiModelMetaData> getModelsMetadata() {
+		return MODEL_CONFIG.values().stream();
+	}
+	
 	/**
 	 * Single instance of the data Map, shared by all instances of this model
 	 * service class.

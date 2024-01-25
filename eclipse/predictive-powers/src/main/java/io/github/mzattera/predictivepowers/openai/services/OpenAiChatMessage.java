@@ -56,8 +56,6 @@ public class OpenAiChatMessage extends ChatMessage {
 		/** Marks messages coming from the bot/agent/assistant */
 		ASSISTANT("assistant"),
 
-		// TODO URGENT move these out of ChatMessage somehow?
-
 		/**
 		 * Marks text used for bot configuration (e.g. in OpenAI ChatGPT). It might not
 		 * be supported by all services.

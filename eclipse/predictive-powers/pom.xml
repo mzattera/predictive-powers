@@ -21,9 +21,7 @@
 		<retrofit.version>2.9.0</retrofit.version>
 		<tika.version>2.9.0</tika.version>
 		<djl.tokenizers.version>0.26.0</djl.tokenizers.version>
-		
-		<!-- There are newer versions, but this is last running on Java 11 -->
-		<jtokkit.version>1.4.4</jtokkit.version>
+		<jtokkit.version>0.6.1</jtokkit.version>
 	</properties>
 	<dependencies>
 
@@ -112,16 +110,10 @@
 		</dependency>
 
 		<!-- Tokens count for OpenAI models -->
-		<!-- TODO Remove this one -->
-		<dependency>
-			<groupId>xyz.felh</groupId>
-			<artifactId>jtokkit</artifactId>
-			<version>${jtokkit.version}</version>
-		</dependency>
 		<dependency>
 			<groupId>com.knuddels</groupId>
 			<artifactId>jtokkit</artifactId>
-			<version>0.6.1</version>
+			<version>${jtokkit.version}</version>
 		</dependency>
 
 		<!--

@@ -33,10 +33,8 @@ import io.github.mzattera.predictivepowers.openai.client.chat.ToolCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolCallResult;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiTokenizer;
 import io.github.mzattera.predictivepowers.services.AbstractChatService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import lombok.Getter;
 import lombok.NonNull;
@@ -44,7 +42,7 @@ import lombok.NonNull;
 /**
  * OpenAI based chat service.
  * 
- * The service supports bout function and tool calls transparently (it will
+ * The service supports both function and tool calls transparently (it will
  * handle either, based on the model is used). The service has a list of default
  * tools that will be used in each interaction with the service and that can be
  * overridden for each single service call.
@@ -406,7 +404,8 @@ public class OpenAiChatService extends AbstractChatService {
 	 * without affecting conversation history).
 	 * 
 	 * Notice the list of messages is supposed to be passed as-is to the chat API,
-	 * without modifications.
+	 * without modifications. This means bot personality is NOT added on top of the
+	 * list of messages, nor the list is checked or trimmed for excessive length.
 	 */
 	public OpenAiTextCompletion complete(List<OpenAiChatMessage> messages) {
 		return complete(messages, defaultReq);
@@ -415,12 +414,36 @@ public class OpenAiChatService extends AbstractChatService {
 	/**
 	 * Completes given conversation.
 	 * 
-	 * Notice this does not consider or affects chat history. In addition, agent
-	 * personality is NOT considered, but can be injected as first message in the
-	 * list.
+	 * Notice the list of messages is supposed to be passed as-is to the chat API,
+	 * without modifications. This means bot personality is NOT added on top of the
+	 * list of messages, nor the list is checked or trimmed for excessive length.
 	 */
 	public OpenAiTextCompletion complete(List<OpenAiChatMessage> messages, ChatCompletionsRequest req) {
 		return chatCompletion(messages, req);
+	}
+
+	/**
+	 * This method counts number of tokens that are consumed at each request to
+	 * provide bot instructions (personality) and list tools it can use. This is the
+	 * minimum size each request to the API will take. In addition, each request
+	 * will consume the tokens needed to encode messages, which include tool calls
+	 * and their corresponding replies.
+	 * 
+	 * @return Number of tokens in the request including bot personality and tools
+	 *         (functions) descriptions, but excluding any other message.
+	 */
+	public int getBaseTokens() {
+		List<OpenAiChatMessage> old = defaultReq.getMessages();
+
+		List<OpenAiChatMessage> msgs = new ArrayList<>();
+		if (getPersonality() != null) {
+			msgs.add(new OpenAiChatMessage(Role.SYSTEM, getPersonality()));
+		}
+		defaultReq.setMessages(msgs);
+		int result = modelService.getTokenizer(getModel()).count(defaultReq);
+		defaultReq.setMessages(old);
+
+		return result;
 	}
 
 	/**
@@ -444,12 +467,11 @@ public class OpenAiChatService extends AbstractChatService {
 		try {
 			if (autofit) {
 				// Automatically set token limit, if needed
-				OpenAiTokenizer counter = (OpenAiTokenizer) modelService.getTokenizer(model);
-				int tok = counter.count(req); // Notice we must count function definitions too
-				int size = modelService.getContextSize(model) - tok - 5;
+				int tok = modelService.getTokenizer(model).count(req);
+				int size = modelService.getContextSize(model) - tok - 5; // Paranoid :) coount is now exact
 				if (size <= 0)
-					throw new IllegalArgumentException(
-							"Your prompt exceeds context size: " + modelService.getContextSize(model));
+					throw new IllegalArgumentException("Requests size (" + tok + ") exceeds model context size ("
+							+ modelService.getContextSize(model) + ")");
 				req.setMaxTokens(Math.min(size, modelService.getMaxNewTokens(model)));
 			}
 
@@ -464,7 +486,7 @@ public class OpenAiChatService extends AbstractChatService {
 								+ optimal);
 						req.setMaxTokens(optimal);
 						resp = endpoint.getClient().createChatCompletion(req);
-						// TODO re-set old value?
+						// TODO URGENT re-set old value?
 					} else
 						throw e; // Context too small anyway
 				} else
@@ -501,7 +523,8 @@ public class OpenAiChatService extends AbstractChatService {
 	 * the limits set in this instance (that is, maximum conversation steps and
 	 * tokens).
 	 * 
-	 * Notice the personality is always added to the trimmed list (if set).
+	 * Notice the personality is always and automatically added to the trimmed list
+	 * (if set).
 	 * 
 	 * @throws IllegalArgumentException if no message can be added because of
 	 *                                  context size limitations.
@@ -511,6 +534,8 @@ public class OpenAiChatService extends AbstractChatService {
 		// Remove tool call results left on top without corresponding calls, or this
 		// will cause HTTP 400 error
 		// TODO make this more efficient?
+		// TODO urgent test if this fails with FUNCTION too
+		// TODO URGENT add a test case
 		while (messages.size() > 0) {
 			OpenAiChatMessage m = messages.get(0);
 			if (m.getRole() == Role.TOOL)
@@ -519,43 +544,33 @@ public class OpenAiChatService extends AbstractChatService {
 				break;
 		}
 		if (messages.size() == 0)
-			throw new IllegalArgumentException("Conversation history contains only tool call results");
+			throw new IllegalArgumentException("Messages contain only tool call results without corresponding calls");
 
-		// TODO URGENT: Better counting of tokens
+		int count = getBaseTokens();
+		if (count >= getMaxConversationTokens())
+			throw new IllegalArgumentException("Context to small: request alone is " + count
+					+ " tokens and getMaxConversationTokens() returns " + getMaxConversationTokens());
+		trimConversation(messages, getMaxConversationSteps(), getMaxConversationTokens() - count -5);
+		if (messages.size() == 0)
+			throw new IllegalArgumentException("Context to small to fit a single message");
 
-		if (getPersonality() != null) {
-
+		if (getPersonality() != null)
 			// must add a system message on top with personality
-			OpenAiChatMessage sys = new OpenAiChatMessage(Role.SYSTEM, getPersonality());
-			int count = modelService.getTokenizer(getModel()).count(sys);
-			if (count >= getMaxConversationTokens())
-				throw new IllegalArgumentException("Context to small: bot personality alone is " + count
-						+ " tokens and getMaxConversationTokens() returns " + getMaxConversationTokens());
-			trimConversation(messages, getMaxConversationSteps(), getMaxConversationTokens() - count);
-			if (messages.size() == 0)
-				throw new IllegalArgumentException("Context to small to fit last conversation message");
-			messages.add(0, sys);
-		} else {
-			trimConversation(messages, getMaxConversationSteps(), getMaxConversationTokens());
-			if (messages.size() == 0)
-				throw new IllegalArgumentException("Context to small to fit last conversation message");
-		}
+			messages.add(0, new OpenAiChatMessage(Role.SYSTEM, getPersonality()));
 	}
 
+	// Trims down the list of messages accordingly to given limits.
 	private void trimConversation(List<OpenAiChatMessage> messages, int maxConversationSteps,
 			int maxConversationTokens) {
 
 		OpenAiTokenizer counter = modelService.getTokenizer(getModel());
-		int tok = 0;
+		
 		int steps = 0;
-
 		for (int i = messages.size() - 1; i >= 0; --i) {
 			if (steps >= maxConversationSteps)
 				break;
 
-			// TODO urgent: it is not the correct way to count
-			tok += counter.count(messages.get(i));
-
+			int tok =counter.count(messages.subList(i, messages.size()));
 			if (tok > maxConversationTokens) {
 				break;
 			}
@@ -566,6 +581,6 @@ public class OpenAiChatService extends AbstractChatService {
 		if (steps == 0)
 			messages.clear();
 		else if (steps < messages.size())
-			messages.subList(0, messages.size()-steps).clear();
+			messages.subList(0, messages.size() - steps).clear();
 	}
 }

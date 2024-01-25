@@ -22,6 +22,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 /**
@@ -30,6 +31,8 @@ import lombok.ToString;
  * @author Massmiliano "Maxi" Zattera.
  *
  */
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 //@RequiredArgsConstructor
@@ -60,7 +63,6 @@ public class ChatMessage {
 		}
 	}
 
-	@Getter
 	private Author author;
 
 	/**
@@ -68,6 +70,5 @@ public class ChatMessage {
 	 */
 	@JsonInclude(JsonInclude.Include.ALWAYS) // TODO move down? Needed for OpenAI function call API or it will throw HTTP 400 for
 												// function calls messages
-	@Getter
 	private String content;
 }

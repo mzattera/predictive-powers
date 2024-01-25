@@ -23,16 +23,11 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
-import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiTokenizer;
 import io.github.mzattera.predictivepowers.services.AbstractQuestionAnsweringService;
-import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
-import io.github.mzattera.util.ChunkUtil;
-import lombok.Getter;
 import lombok.NonNull;
 
 /**
@@ -60,15 +55,12 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 	}
 
 	public OpenAiQuestionAnsweringService(OpenAiEndpoint ep) {
-		this(ep.getChatService());
+		completionService = ep.getChatService();
+		completionService.setPersonality(null);
+		completionService.getDefaultReq().setTemperature(0.0); // TODO test best settings.
 
-		// TODO test best settings.
-		completionService.getDefaultReq().setTemperature(0.0);
-	}
-
-	public OpenAiQuestionAnsweringService(OpenAiChatService completionService) {
-		this.completionService = completionService;
-		setMaxContextTokens(getEndpoint().getModelService().getContextSize(getModel()) * 3 / 4);
+		// TODO URGENT set a completion model that supports this
+//		completionService.getDefaultReq().setResponseFormat(ResponseFormat.JSON); // More robust replies
 	}
 
 	@Override
@@ -93,7 +85,6 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 	 * instance.
 	 */
 	@NonNull
-	@Getter
 	private final OpenAiChatService completionService;
 
 	/**
@@ -113,60 +104,85 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 			return QnAPair.builder().question(question).answer("I do not know.").explanation("No context was provided.")
 					.build();
 
-		String qMsg = "\nQuestion: " + question;
-		OpenAiTokenizer counter = getEndpoint().getModelService().getTokenizer(getModel());
-
 		// Provides instructions and examples
-		// TODO URGENT Better delimiters for context and questions
 		List<OpenAiChatMessage> instructions = new ArrayList<>();
-		if (completionService.getPersonality() == null)
-			instructions
-					.add(new OpenAiChatMessage(Role.SYSTEM, "You are an AI assistant answering questions truthfully."));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
-				"Answer the below questions truthfully, strictly using only the information in the context. " + //
-						"When providing an answer, provide your reasoning as well, step by step. " + //
-						"If the answer cannot be found in the context, reply with \"I do not know.\". " + //
-						"Strictly return the answer and explanation in JSON format.",
+				"You are an agent that answers users' questions truthfully.\n"
+						+ "At each conversation step, you will be provided with a user's question, in a <question> tag,"
+						+ " and a context, in a <context> tags, containing the information you must use to answer"
+						+ " the question.\n"
+						+ "Your task is to answer the question using only the data provided in the corresponding context."
+						+ " Importantly, do not use any additional information when answering the question,"
+						+ " except that is contained in the context. If the answer cannot be found in the context,"
+						+ " reply with \"I do not know.\".\n"
+						+ "When creating the answer, think step by step and provide your reasoning as well.\n"
+						+ "Return both the answer and the reasoning in JSON format."));
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
+				"<context>\n" + "Biglydoos are small rodent similar to mice.\n" + "Biglydoos eat cranberries.\n"
+						+ "Biglydoos are green.\n" + "</context>\n" + "<question>Do biglydoos eat fruits?</question>",
 				"example_user"));
-		instructions.add(new OpenAiChatMessage(Role.SYSTEM, "Context:\n" + //
-				"Biglydoos are small rodent similar to mice.\n" + //
-				"Biglydoos eat cranberries.\n" + //
-				"Question: What color are biglydoos?", "example_user"));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM, //
-				"{\"answer\": \"I do not know.\", \"explanation\": \"1. This information is not provided in the context.\"}",
+				"{\n" + "  \"answer\": \"Yes, biglydoos eat fruits.\",\n"
+						+ "  \"explanation\": \"1. The context states: \"Biglydoos eat cranberries\".\\n"
+						+ "2. Cranberries are a kind of fruit.\\n" + "3. Therefore, biglydoos eat fruits.\"\n" + "}",
 				"example_assistant"));
-		instructions.add(new OpenAiChatMessage(Role.SYSTEM, "Context:\n" + //
-				"Biglydoos are small rodent similar to mice.\n" + //
-				"Biglydoos eat cranberries.\n" + //
-				"Question: Do biglydoos eat fruits?", "example_user"));
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
+				"<context>\n" + "Biglydoos are small rodent similar to mice.\n" + "Biglydoos eat cranberries.\n"
+						+ "</context>\n" + "<question>What color are biglydoos?</question>",
+				"example_user"));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM, //
-				"{\"answer\": \"Yes, biglydoos eat fruits.\", " + //
-						"\"explanation\": " + //
-						"\"1. The context states: \"Biglydoos eat cranberries.\"\\n" + //
-						"2. Cranberries are a kind of fruit.\\n" + //
-						"3. Therefore, biglydoos eat fruits.\"}",
+				"{\n" + "  \"answer\": \"I do not know.\",\n"
+						+ "  \"explanation\": \"1. This information is not provided in the context.\"\n" + "}",
 				"example_assistant"));
+		StringBuilder b = new StringBuilder();
+		b.append("<context>\n</context>\n");
+		b.append("<question>").append(question).append("</question>");
+		OpenAiChatMessage userMsg = new OpenAiChatMessage(Role.USER, b.toString());
+		instructions.add(userMsg);
+
+		// Calculate size of instructions
+		OpenAiTokenizer counter = getEndpoint().getModelService().getTokenizer(getModel());
+		int ctxSize = getEndpoint().getModelService().getContextSize(getModel());
+		int instructionSize = completionService.getBaseTokens() + counter.count(instructions) + 5;
+		if (instructionSize >= ctxSize)
+			throw new IllegalArgumentException("Instrutions too long to fit the context");
+
+		// TODO Allow the developer to set this ratio?
+		// 3/4 of the remaining context is allocated for the input text
+		int txtSize = 3 * (ctxSize - instructionSize) / 4;
+		if (txtSize <= 0)
+			throw new IllegalArgumentException("Instrutions too long to fit the context");
+
+		// the remaining 1/4 for the generated list of questions
+		int replySize = ctxSize - instructionSize - txtSize;
+		if (replySize <= 0)
+			throw new IllegalArgumentException("Instrutions too long to fit the context");
+		completionService
+				.setMaxNewTokens(Math.min(replySize, getEndpoint().getModelService().getMaxNewTokens(getModel())));
 
 		// Builds biggest context possible
-		// TODO here the context size is correctly counted by looking only at the
-		// context; however, this might cause problem as the actual prompt is longer,
-		// should we add a method to let the developer know the size of the prompt?
+		b.setLength(0);
 		int tok = 0;
-		StringBuilder ctx = new StringBuilder("Context:\n");
 		int i = 0;
 		for (; i < context.size(); ++i) {
-			ChatMessage m = new OpenAiChatMessage(Role.USER, ctx.toString() + "\n" + context.get(i));
-			if ((tok + counter.count(m)) > getMaxContextTokens())
+			String ctx = context.get(i);
+			int t = counter.count(ctx);
+			if (tok + t > txtSize)
 				break;
-			ctx.append('\n').append(context.get(i));
-		}
+			tok += t;
 
-		if (i == 0) { // The first context was too big already, take a share
-			ctx.append(ChunkUtil.split(context.get(0), getMaxContextTokens(), counter).get(0));
+			if (i > 0)
+				b.append("\n");
+			b.append(context.get(i));
 		}
+		if (i == 0)
+			throw new IllegalArgumentException("First piece of context too big");
+		String ctx = b.toString();
 
-		ctx.append(qMsg);
-		instructions.add(new OpenAiChatMessage(Role.USER, ctx.toString()));
+		b.setLength(0);
+		b.append("<context>\n").append(ctx).append("\n</context>\n");
+		b.append("<question>").append(question).append("</question>");
+		userMsg.setContent(b.toString());
 
 		OpenAiTextCompletion answerJson = completionService.complete(instructions);
 		QnAPair result = null;
@@ -178,7 +194,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 			result = QnAPair.builder().question(question).answer(answerJson.getText()).build();
 		}
 
-		for (int j = 0; j < Math.max(1, i); ++j) {
+		for (int j = 0; j < i; ++j) {
 			result.getContext().add(context.get(j));
 		}
 

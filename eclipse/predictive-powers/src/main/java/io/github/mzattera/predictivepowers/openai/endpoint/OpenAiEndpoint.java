@@ -114,17 +114,9 @@ public class OpenAiEndpoint implements AiEndpoint {
 		return new OpenAiQuestionExtractionService(this);
 	}
 
-	public OpenAiQuestionExtractionService getQuestionExtractionService(@NonNull OpenAiChatService cs) {
-		return new OpenAiQuestionExtractionService(cs);
-	}
-
 	@Override
 	public OpenAiQuestionAnsweringService getQuestionAnsweringService() {
 		return new OpenAiQuestionAnsweringService(this);
-	}
-
-	public OpenAiQuestionAnsweringService getQuestionAnsweringService(@NonNull OpenAiChatService cs) {
-		return new OpenAiQuestionAnsweringService(cs);
 	}
 
 	@Override

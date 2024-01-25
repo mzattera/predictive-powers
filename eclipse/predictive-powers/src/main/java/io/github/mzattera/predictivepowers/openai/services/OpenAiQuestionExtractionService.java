@@ -30,11 +30,9 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiTokenizer;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 import io.github.mzattera.util.ChunkUtil;
-import lombok.Getter;
 import lombok.NonNull;
 
 /**
@@ -60,7 +58,6 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 	 * This underlying service is used for executing required prompts.
 	 */
 	@NonNull
-	@Getter
 	private final OpenAiChatService completionService;
 
 	@Override
@@ -79,14 +76,12 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 	}
 
 	public OpenAiQuestionExtractionService(OpenAiEndpoint ep) {
-		this(ep.getChatService());
+		completionService = ep.getChatService();
+		completionService.setPersonality(null); // personality will be in instructions
+		completionService.getDefaultReq().setTemperature(0.0); // TODO test best settings.
 
-		// TODO test best settings.
-		completionService.getDefaultReq().setTemperature(0.0);
-	}
-
-	public OpenAiQuestionExtractionService(OpenAiChatService completionService) {
-		this.completionService = completionService;
+		// TODO URGENT set a completion model that supports this
+//		completionService.getDefaultReq().setResponseFormat(ResponseFormat.JSON); // More robust replies
 	}
 
 	/**
@@ -133,7 +128,7 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 		// Provides instructions and examples
 		List<OpenAiChatMessage> instructions = new ArrayList<>();
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
-				"You are a teacher and you are preparing an assessment from some text materials."));
+				"You are a teacher and you are preparing an assessment from some text materials.", null));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"Given a context, extract a set of true/false exercise and corresponding answers; make sure some questions require a 'true' answer and  some require a 'false' answer, then format them as a JSON array. Some examples are provided below.",
 				"example_user", null));
@@ -183,7 +178,7 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 		// Provides instructions and examples
 		List<OpenAiChatMessage> instructions = new ArrayList<>();
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
-				"You are a teacher and you are preparing an assessment from some text materials."));
+				"You are a teacher and you are preparing an assessment from some text materials.", null));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"Create 'fill the blank' exercises with corresponding fill words from the given context, and format them as a JSON array. Make sure to generate questions where a missing word is replaced with a blank, denoted as '______', and provide the missing word as the answer.",
 				"example_user"));
@@ -242,7 +237,7 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 		// Provides instructions and examples
 		List<OpenAiChatMessage> instructions = new ArrayList<>();
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
-				"You are a teacher and you are preparing an assessment from some text materials."));
+				"You are a teacher and you are preparing an assessment from some text materials.", null));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"Given a context, extract a set of multiple-choice questions, corresponding answers, and a list of options for each question, then format them as a JSON array. Make sure the options for one question are all different. Some examples are provided below.",
 				"example_user"));
@@ -328,20 +323,29 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 	 */
 	private List<QnAPair> getQuestions(List<OpenAiChatMessage> instructions, String text) {
 
-		// Split text, based on prompt size
+		// Calculate size of instructions
 		OpenAiTokenizer counter = getEndpoint().getModelService().getTokenizer(getModel());
 		int ctxSize = getEndpoint().getModelService().getContextSize(getModel());
+		int instructionSize = completionService.getBaseTokens() + counter.count(instructions) + 10;
+		if (instructionSize >= ctxSize)
+			throw new IllegalArgumentException("Instrutions too long to fit the context");
 
-		// TODO URGENT Better counting
-		int tok = 0;
-		for (OpenAiChatMessage m : instructions)
-			tok += counter.count(m);
+		// TODO Allow the developer to set this ratio?
+		// 2/3 of the remaining context is allocated for the input text
+		int txtSize = 2 * (ctxSize - instructionSize) / 3;
+		if (txtSize <= 5)
+			throw new IllegalArgumentException("Instrutions too long to fit the context");
 
+		// the remaining 1/3 for the generated list of questions
+		int replySize = ctxSize - instructionSize - txtSize;
+		if (replySize <= 0)
+			throw new IllegalArgumentException("Instrutions too long to fit the context");
+		completionService
+				.setMaxNewTokens(Math.min(replySize, getEndpoint().getModelService().getMaxNewTokens(getModel())));
+
+		// Chunk text with a sliding & slightly overlapping window
 		List<QnAPair> result = new ArrayList<>();
-
-		// This splits a longer text in chinks such that 1/3 of the model size is free
-		// for the generated answer (or that the answer is 1/2 of the input text).
-		for (String t : ChunkUtil.split(text, Math.max(1, (ctxSize - tok) * 2 / 3), counter)) {
+		for (String t : ChunkUtil.split(text, txtSize / 5, 5, 4, counter)) {
 			result.addAll(getQuestionsShort(instructions, t));
 		}
 

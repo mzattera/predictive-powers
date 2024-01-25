@@ -51,7 +51,7 @@ import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiTokenizer;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiTokenizer;
 import io.github.mzattera.predictivepowers.services.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
@@ -773,7 +773,7 @@ public class EssayWriter implements Closeable {
 			msgs.remove(msgs.size() - 1);
 			msgs.add(new OpenAiChatMessage(Role.USER, CompletionService.fillSlots(prompt, params)));
 
-			if (((int) (SECTION_LENGTH_TOKENS * 1.5) + counter.countOpenAiMessages(msgs)) > ctxSize)
+			if (((int) (SECTION_LENGTH_TOKENS * 1.5) + counter.count(msgs)) > ctxSize)
 				break;
 			context = c; // Saves last context that would fit
 		}

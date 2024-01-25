@@ -17,6 +17,7 @@ package io.github.mzattera.predictivepowers.openai.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -27,6 +28,9 @@ import io.github.mzattera.predictivepowers.services.QnAPair;
 
 public class OpenAiQuestionExtractionTest {
 
+	// TODO URGENT Add a test to check text is split and trimmed correctly....if possible...
+	
+	
 	@Test
 	void test01() throws Exception {
 
@@ -34,16 +38,12 @@ public class OpenAiQuestionExtractionTest {
 		// Make sure you specify your API key n OPENAI_KEY system environment variable.
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
-			// Download Credit Suisse financial statement 2022 PDF and extract its text.
-			// We keep only one piece of 750 tokens, as extracting questions from a long
-			// text might result in a timeout
-			String context = "Donatien Alphonse Franquois, Marquis de Sade, was a French nobleman, revolutionary politician, philosopher and writer famous for his literary depictions of a libertine sexuality as well as numerous accusations of sex crimes.";
-
 			OpenAiQuestionExtractionService q = endpoint.getQuestionExtractionService();
-			q.getCompletionService().getDefaultReq().setTemperature(0.0);
+			String context = "Donatien Alphonse Franquois, Marquis de Sade, was a French nobleman, revolutionary politician, philosopher and writer famous for his literary depictions of a libertine sexuality as well as numerous accusations of sex crimes.";
 
 			// Get some FAQs and print them
 			List<QnAPair> QnA = q.getQuestions(context);
+			assertTrue(QnA.size() > 0);
 			for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
 				System.out.println(QnA.get(i).toString());
 			}
@@ -51,6 +51,7 @@ public class OpenAiQuestionExtractionTest {
 
 			// Demo fill-in questions
 			QnA = q.getFillQuestions(context);
+			assertTrue(QnA.size() > 0);
 			for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
 				System.out.println(QnA.get(i).toString());
 			}
@@ -58,6 +59,7 @@ public class OpenAiQuestionExtractionTest {
 
 			// Demo true/false questions
 			QnA = q.getTFQuestions(context);
+			assertTrue(QnA.size() > 0);
 			for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
 				System.out.println(QnA.get(i).toString());
 			}
@@ -65,6 +67,7 @@ public class OpenAiQuestionExtractionTest {
 
 			// Demo multiple choice questions
 			QnA = q.getMCQuestions(context);
+			assertTrue(QnA.size() > 0);
 			for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
 				System.out.println(QnA.get(i).toString());
 			}

@@ -16,16 +16,12 @@
 
 package io.github.mzattera.predictivepowers.services;
 
-import java.util.Collection;
 import java.util.List;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
-import lombok.experimental.SuperBuilder;
 
 /**
  * Instances of this interface provide services to list available models end
@@ -37,11 +33,9 @@ import lombok.experimental.SuperBuilder;
 public interface ModelService extends AiService {
 
 	/**
-	 * * As for many models parameters are expressed in terms of tokens, it is
+	 * As for many models parameters are expressed in terms of tokens, it is
 	 * necessary to "tokenize" text; the way this happens is model-specific as each
 	 * family of models has its own tokenizer.
-	 * 
-	 * For now, instances of this interface only provide methods to count tokens.
 	 * 
 	 * @author Massimiliano "Maxi" Zattera
 	 *
@@ -64,31 +58,29 @@ public interface ModelService extends AiService {
 	 * @author Massimiliano "Maxi" Zattera.
 	 *
 	 */
-	@Getter
-	@Setter
-	@SuperBuilder
-//	@NoArgsConstructor
 	@RequiredArgsConstructor
-	@AllArgsConstructor
 	@ToString
-	public static class ModeMetalData {
+	public static class ModelMetaData {
 
 		/**
 		 * The model this metadata refers to.
 		 */
-		private @NonNull String model;
-		
+		@Getter
+		private final @NonNull String model;
+
 		/**
 		 * A tokenizer for this (text) model (if any).
 		 */
-		private Tokenizer tokenizer;
+		@Getter
+		private final Tokenizer tokenizer;
 
 		/**
 		 * Context size for a model (namely for GPT models).
 		 * 
 		 * Null if unlimited.
 		 */
-		private Integer contextSize;
+		@Getter
+		private final Integer contextSize;
 
 		/**
 		 * Some models (namely GPT-4), even if with a huge context size, return only a
@@ -96,6 +88,7 @@ public interface ModelService extends AiService {
 		 * 
 		 * Null if unlimited.
 		 */
+		@Getter
 		private final Integer maxNewTokens;
 	}
 
@@ -107,24 +100,24 @@ public interface ModelService extends AiService {
 	/**
 	 * 
 	 * @param model
-	 * @return {@link ModeMetalData} for given model, or null if it cannot be found.
+	 * @return {@link ModelMetaData} for given model, or null if it cannot be found.
 	 */
-	ModeMetalData get(@NonNull String model);
+	ModelMetaData get(@NonNull String model);
 
 	/**
-	 * Sets the {@link ModeMetalData} for given model.
+	 * Sets the {@link ModelMetaData} for given model.
 	 * 
 	 * @return the previous data for given model, or null if there was no mapping
 	 *         for key.
 	 */
-	ModeMetalData put(@NonNull String model, @NonNull ModeMetalData data);
+	ModelMetaData put(@NonNull String model, @NonNull ModelMetaData data);
 
 	/**
-	 * Deletes the {@link ModeMetalData} for given model.
+	 * Deletes the {@link ModelMetaData} for given model.
 	 * 
 	 * @return Previously set ModelData, if any.
 	 */
-	ModeMetalData remove(@NonNull String model);
+	ModelMetaData remove(@NonNull String model);
 
 	/**
 	 * 

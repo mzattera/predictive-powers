@@ -39,13 +39,16 @@ import io.github.mzattera.util.ResourceUtil;
 
 public class QuestionAnsweringTest {
 
-	// TODO break it in smaller tests...
+	// TODO URGENT Make it work for both providers and break it into smaller test
+	// TODO If possible, for OpenAI, add a test to check if context was built and trimmed properly
 
 	@Test
 	public void test() throws ClassNotFoundException, IOException {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			test(ep);
 		}
+		
+		// TODO URGENT re-enable
 //		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
 //			test(ep);
 //		}

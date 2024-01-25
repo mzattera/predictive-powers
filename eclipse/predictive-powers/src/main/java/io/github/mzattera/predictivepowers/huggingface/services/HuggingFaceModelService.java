@@ -76,7 +76,7 @@ public class HuggingFaceModelService extends AbstractModelService {
 	 * Single instance of the data Map, shared by all instances of this model
 	 * service class.
 	 */
-	private final static Map<String, ModeMetalData> data = new ConcurrentHashMap<>();
+	private final static Map<String, ModelMetaData> data = new ConcurrentHashMap<>();
 
 	@NonNull
 	@Getter
@@ -104,8 +104,8 @@ public class HuggingFaceModelService extends AbstractModelService {
 	}
 
 	@Override
-	public ModeMetalData get(@NonNull String model) {
-		ModeMetalData result = data.get(model);
+	public ModelMetaData get(@NonNull String model) {
+		ModelMetaData result = data.get(model);
 		if (result == null)
 			return createData(model);
 		return result;
@@ -118,7 +118,7 @@ public class HuggingFaceModelService extends AbstractModelService {
 	 * @param model
 	 * @return The newly created data, or null if it cannot be created.
 	 */
-	private ModeMetalData createData(@NonNull String model) {
+	private ModelMetaData createData(@NonNull String model) {
 
 		// Uses DJL services to download proper tokenizer
 		Tokenizer tokenizer = null;
@@ -132,7 +132,7 @@ public class HuggingFaceModelService extends AbstractModelService {
 
 		// TODO maybe there is other metadata we cna read from Hugging Face (all the
 		// model data are files in a Git repo)
-		ModeMetalData result = ModeMetalData.builder().tokenizer(tokenizer).build();
+		ModelMetaData result = new ModelMetaData(model, tokenizer, null, null);
 		put(model, result);
 		return result;
 	}

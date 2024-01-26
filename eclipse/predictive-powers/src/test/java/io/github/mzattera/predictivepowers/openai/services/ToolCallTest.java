@@ -52,7 +52,7 @@ import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
  */
 public class ToolCallTest {
 
-	private final static String MODEL = "gpt-4-1106-preview";
+	private final static String MODEL = "gpt-4-preview";
 
 	private final static ObjectMapper mapper = new ObjectMapper();
 

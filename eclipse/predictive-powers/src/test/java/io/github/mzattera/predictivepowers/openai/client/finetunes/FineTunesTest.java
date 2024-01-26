@@ -34,6 +34,8 @@ import io.github.mzattera.util.ResourceUtil;
 
 class FineTunesTest {
 
+	private static final String MODEL = "babbage-002";
+
 	@Test
 	void test01() throws IOException {
 		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
@@ -43,7 +45,7 @@ class FineTunesTest {
 			File training = c.uploadFile(ResourceUtil.getResourceFile("sentiment_training_dataset.jsonl"), "fine-tune");
 
 			// Start tuning the model
-			FineTunesRequest req = FineTunesRequest.builder().trainingFile(training.getId()).model("ada").build();
+			FineTunesRequest req = FineTunesRequest.builder().trainingFile(training.getId()).model(MODEL).build();
 			FineTune tuned = c.createFineTune(req);
 			String status = tuned.getStatus();
 			System.out.println("Status=" + status);
@@ -126,7 +128,7 @@ class FineTunesTest {
 			File training = c.uploadFile(ResourceUtil.getResourceFile("sentiment_training_dataset.jsonl"), "fine-tune");
 
 			// Start tuning the model
-			FineTunesRequest req = FineTunesRequest.builder().trainingFile(training.getId()).model("ada").nEpochs(10)
+			FineTunesRequest req = FineTunesRequest.builder().trainingFile(training.getId()).model(MODEL).nEpochs(10)
 					.build();
 			FineTune tuned = c.createFineTune(req);
 //			while (!tuned.getStatus().equals("running")) { // Wait for tuning to start -> seems it is not needed

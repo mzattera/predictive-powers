@@ -38,15 +38,15 @@ public class OpenAiExceptionTest {
 
 		try (OpenAiClient cli = new OpenAiClient()) {
 
-			CompletionsRequest req = CompletionsRequest.builder().model("text-davinci-003").maxTokens(10_000)
+			CompletionsRequest req = CompletionsRequest.builder().model("davinci-002").maxTokens(20_000)
 					.prompt("Ciao!").build();
 			OpenAiException e = assertThrows(OpenAiException.class, () -> cli.createCompletion(req));
 			assertEquals(400, e.code());
 			assertTrue(e.isContextLengthExceeded());
 			assertEquals(3, e.getPromptLength());
-			assertEquals(10000, e.getCompletionLength());
-			assertEquals(10003, e.getRequestLength());
-			assertEquals(4097, e.getMaxContextLength());
+			assertEquals(20000, e.getCompletionLength());
+			assertEquals(20003, e.getRequestLength());
+			assertEquals(16385, e.getMaxContextLength());
 		}
 	}
 

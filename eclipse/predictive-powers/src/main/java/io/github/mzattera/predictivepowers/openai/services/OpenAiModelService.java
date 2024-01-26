@@ -22,9 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
@@ -46,14 +43,14 @@ import lombok.ToString;
  */
 public class OpenAiModelService extends AbstractModelService {
 
-	@ToString
+	@ToString(callSuper=true)
 	public static class OpenAiModelMetaData extends ModelMetaData {
 
 		@Override
 		public OpenAiTokenizer getTokenizer() {
-			return (OpenAiTokenizer)super.getTokenizer();
+			return (OpenAiTokenizer) super.getTokenizer();
 		}
-		
+
 		public enum SupportedCallType {
 			NONE, FUNCTIONS, TOOLS
 		}
@@ -63,7 +60,7 @@ public class OpenAiModelService extends AbstractModelService {
 		private final SupportedCallType supportedCallType;
 
 		public enum SupportedApi {
-			COMPLETIONS, CHAT, AUDIO, EMBEDDINGS
+			COMPLETIONS, CHAT, AUDIO, EMBEDDINGS, OTHER
 		}
 
 		/** The API this model supports */
@@ -106,7 +103,8 @@ public class OpenAiModelService extends AbstractModelService {
 	private final static Map<String, ModelMetaData> MODEL_CONFIG = new HashMap<>();
 	static {
 		MODEL_CONFIG.put("babbage-002", new OpenAiModelMetaData("babbage-002", 16384, SupportedApi.COMPLETIONS));
-		MODEL_CONFIG.put("davinci-002", new OpenAiModelMetaData("davinci-002", 16384, SupportedApi.COMPLETIONS));
+		MODEL_CONFIG.put("davinci-002", new OpenAiModelMetaData("davinci-002", 16385, SupportedApi.COMPLETIONS));
+
 		MODEL_CONFIG.put("gpt-3.5-turbo", new OpenAiModelMetaData("gpt-3.5-turbo", 4096, SupportedCallType.FUNCTIONS));
 		MODEL_CONFIG.put("gpt-3.5-turbo-16k",
 				new OpenAiModelMetaData("gpt-3.5-turbo-16k", 16384, SupportedCallType.FUNCTIONS));
@@ -120,8 +118,13 @@ public class OpenAiModelService extends AbstractModelService {
 				new OpenAiModelMetaData("gpt-3.5-turbo-0613", 4096, SupportedCallType.FUNCTIONS));
 		MODEL_CONFIG.put("gpt-3.5-turbo-16k-0613",
 				new OpenAiModelMetaData("gpt-3.5-turbo-16k-0613", 16384, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-0301", new OpenAiModelMetaData("gpt-3.5-turbo-0301", 4096));
+		MODEL_CONFIG.put("gpt-3.5-turbo-0301", new OpenAiModelMetaData("gpt-3.5-turbo-0301", 4096, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-1106",
+				new OpenAiModelMetaData("gpt-3.5-turbo-1106", 16385, 4096, SupportedCallType.TOOLS));
+
 		MODEL_CONFIG.put("gpt-4", new OpenAiModelMetaData("gpt-4", 8192, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-turbo-preview",
+				new OpenAiModelMetaData("gpt-4-turbo-preview", 128000, SupportedCallType.TOOLS));
 		MODEL_CONFIG.put("gpt-4-0613", new OpenAiModelMetaData("gpt-4-0613", 8192, SupportedCallType.FUNCTIONS));
 		MODEL_CONFIG.put("gpt-4-32k", new OpenAiModelMetaData("gpt-4-32k", 32768, SupportedCallType.FUNCTIONS));
 		MODEL_CONFIG.put("gpt-4-32k-0613",
@@ -129,9 +132,17 @@ public class OpenAiModelService extends AbstractModelService {
 		MODEL_CONFIG.put("gpt-4-32k-0314", new OpenAiModelMetaData("gpt-4-32k-0314", 32768));
 		MODEL_CONFIG.put("gpt-4-1106-preview",
 				new OpenAiModelMetaData("gpt-4-1106-preview", 128000, 4096, SupportedCallType.TOOLS));
-		MODEL_CONFIG.put("gpt-4-vision-preview", new OpenAiModelMetaData("gpt-4-vision-preview", 128000, 4096));
+		MODEL_CONFIG.put("gpt-4-0125-preview",
+				new OpenAiModelMetaData("gpt-4-0125-preview", 128000, SupportedCallType.TOOLS));
+		MODEL_CONFIG.put("gpt-4-vision-preview", new OpenAiModelMetaData("gpt-4-vision-preview", 128000, 4096, SupportedCallType.FUNCTIONS));
+
+		MODEL_CONFIG.put("text-embedding-3-large",
+				new OpenAiModelMetaData("text-embedding-3-large", 8191, SupportedApi.EMBEDDINGS));
+		MODEL_CONFIG.put("text-embedding-3-small",
+				new OpenAiModelMetaData("text-embedding-3-small", 8192, SupportedApi.EMBEDDINGS));
 		MODEL_CONFIG.put("text-embedding-ada-002",
 				new OpenAiModelMetaData("text-embedding-ada-002", 8192, SupportedApi.EMBEDDINGS));
+
 		MODEL_CONFIG.put("tts-1", new OpenAiModelMetaData("tts-1", 4096, SupportedApi.AUDIO));
 		MODEL_CONFIG.put("tts-1-1106", new OpenAiModelMetaData("tts-1-1106", 2046, SupportedApi.AUDIO));
 		MODEL_CONFIG.put("tts-1-hd", new OpenAiModelMetaData("tts-1-hd", 2046, SupportedApi.AUDIO));

@@ -204,10 +204,10 @@ public class CompletionServiceTest {
 		assertEquals("banana", CompletionService.fillSlots("banana", null));
 		assertEquals("", CompletionService.fillSlots("{{A}}", params));
 		assertEquals("a.b", CompletionService.fillSlots("{{A.B}}", params));
-		assertEquals("assistant", CompletionService.fillSlots("{{C}}", params));
-		assertEquals(" a.b assistant", CompletionService.fillSlots("{{A}} {{A.B}} {{C}}", params));
-		assertEquals(" a.b assistant {{D}}", CompletionService.fillSlots("{{A}} {{A.B}} {{C}} {{D}}", params));
-		assertEquals(" a.b assistant {{D}} a.b assistant {{D}}",
+		assertEquals("bot", CompletionService.fillSlots("{{C}}", params));
+		assertEquals(" a.b bot", CompletionService.fillSlots("{{A}} {{A.B}} {{C}}", params));
+		assertEquals(" a.b bot {{D}}", CompletionService.fillSlots("{{A}} {{A.B}} {{C}} {{D}}", params));
+		assertEquals(" a.b bot {{D}} a.b assistant {{D}}",
 				CompletionService.fillSlots("{{A}} {{A.B}} {{C}} {{D}}{{A}} {{A.B}} {{C}} {{D}}", params));
 	}
 }

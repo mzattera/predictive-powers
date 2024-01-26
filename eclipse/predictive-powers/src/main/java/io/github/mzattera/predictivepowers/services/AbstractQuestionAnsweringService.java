@@ -39,16 +39,16 @@ public abstract class AbstractQuestionAnsweringService implements QuestionAnswer
 	private String model;
 
 	@Getter
-	private int maxContextTokens;
+	private Integer maxContextTokens = null;
 
 	@Override
-	public void setMaxContextTokens(int maxContextTokens) {
-		if (maxContextTokens < 1)
-			throw new IllegalArgumentException("Context needs to be of at least 1 token in size: " + maxContextTokens);		
-	
+	public void setMaxContextTokens(Integer maxContextTokens) {
+		if ((maxContextTokens != null) && (maxContextTokens.intValue() < 1))
+			throw new IllegalArgumentException("Context needs to be of at least 1 token in size: " + maxContextTokens);
+
 		this.maxContextTokens = maxContextTokens;
 	}
-	
+
 	@Override
 	public QnAPair answer(String question, @NonNull String context) {
 

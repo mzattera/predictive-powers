@@ -51,8 +51,10 @@ public class OpenAiTokenizerTest {
 
 	/** Return names for all chat /completions models */
 	static Stream<OpenAiModelMetaData> allCompletionModelsProvider() {
-		return modelSvc.listModels().stream().filter(model -> !model.startsWith("gpt-4-32k")) //
+		return modelSvc.listModels().stream() //
+				.filter(model -> !model.startsWith("gpt-4-32k")) //
 				.map(model -> modelSvc.get(model)) //
+				.filter(meta -> meta != null) //
 				.filter(meta -> (meta.getSupportedApi() == SupportedApi.CHAT)
 						|| (meta.getSupportedApi() == SupportedApi.COMPLETIONS));
 	}

@@ -39,8 +39,6 @@ import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsReq
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
-import io.github.mzattera.predictivepowers.openai.client.edits.EditsRequest;
-import io.github.mzattera.predictivepowers.openai.client.edits.EditsResponse;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
@@ -212,10 +210,6 @@ public class OpenAiClient implements ApiClient {
 
 	public ChatCompletionsResponse createChatCompletion(ChatCompletionsRequest req) {
 		return callApi(api.chatCompletions(req));
-	}
-
-	public EditsResponse createEdit(EditsRequest req) {
-		return callApi(api.edits(req));
 	}
 
 	public List<Image> createImage(ImagesRequest req) {

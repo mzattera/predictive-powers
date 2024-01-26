@@ -32,6 +32,8 @@ import lombok.ToString;
 @ToString
 public class OpenAiTokenizer implements Tokenizer {
 
+	// TODO Urgent add costs for the vision API see calculator on Model API 
+	
 	@Getter
 	@NonNull
 	private final String model;
@@ -70,6 +72,8 @@ public class OpenAiTokenizer implements Tokenizer {
 		MODEL_TO_ENCODING.put("babbage-002", "cl100k_base");
 
 		// embeddings
+		MODEL_TO_ENCODING.put("text-embedding-3-large", "cl100k_base");
+		MODEL_TO_ENCODING.put("text-embedding-3-small", "cl100k_base");
 		MODEL_TO_ENCODING.put("text-embedding-ada-002", "cl100k_base");
 
 		// DEPRECATED MODELS

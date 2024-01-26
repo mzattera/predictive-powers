@@ -118,10 +118,6 @@ public class HuggingFaceQuestionAnsweringService extends AbstractQuestionAnsweri
 			ctx.append(context.get(i)).append('\n');
 		}
 
-		if (i == 0) { // The first context was too big already, take a share
-			ctx.append(ChunkUtil.split(context.get(0), getMaxContextTokens(), counter).get(0));
-		}
-
 		req.getInputs().setQuestion(question);
 		req.getInputs().setContext(ctx.toString());
 

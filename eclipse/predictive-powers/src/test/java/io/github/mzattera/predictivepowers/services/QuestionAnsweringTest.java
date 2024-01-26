@@ -40,14 +40,15 @@ import io.github.mzattera.util.ResourceUtil;
 public class QuestionAnsweringTest {
 
 	// TODO URGENT Make it work for both providers and break it into smaller test
-	// TODO If possible, for OpenAI, add a test to check if context was built and trimmed properly
+	// TODO If possible, for OpenAI, add a test to check if context was built and
+	// trimmed properly
 
 	@Test
 	public void test() throws ClassNotFoundException, IOException {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			test(ep);
 		}
-		
+
 		// TODO URGENT re-enable
 //		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
 //			test(ep);
@@ -171,6 +172,7 @@ public class QuestionAnsweringTest {
 				List<Pair<EmbeddedText, Double>> context = kb.search(es.embed(question).get(0), 50, 0);
 				QnAPair answer = qas.answerWithEmbeddings(question, context);
 
+				assertEquals(0, answer.getContext().size());
 				assertTrue("I do not know.".equals(answer.getAnswer()) || "Olaf".equals(answer.getAnswer()));
 			}
 		}

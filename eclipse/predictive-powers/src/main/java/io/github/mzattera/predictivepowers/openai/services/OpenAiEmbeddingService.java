@@ -51,7 +51,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 
-	public static final String DEFAULT_MODEL = "text-embedding-ada-002";
+	public static final String DEFAULT_MODEL = "text-embedding-3-small";
 
 	public OpenAiEmbeddingService(OpenAiEndpoint ep) {
 		this(ep, EmbeddingsRequest.builder().model(DEFAULT_MODEL).build());

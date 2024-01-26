@@ -147,9 +147,8 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 		if (instructionSize >= ctxSize)
 			throw new IllegalArgumentException("Instrutions too long to fit the context");
 
-		// TODO Allow the developer to set this ratio?
 		// 3/4 of the remaining context is allocated for the input text
-		int txtSize = 3 * (ctxSize - instructionSize) / 4;
+		int txtSize = (getMaxContextTokens() != null ? getMaxContextTokens() : 3 * (ctxSize - instructionSize) / 4);
 		if (txtSize <= 0)
 			throw new IllegalArgumentException("Instrutions too long to fit the context");
 
@@ -175,8 +174,6 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 				b.append("\n");
 			b.append(context.get(i));
 		}
-		if (i == 0)
-			throw new IllegalArgumentException("First piece of context too big");
 		String ctx = b.toString();
 
 		b.setLength(0);

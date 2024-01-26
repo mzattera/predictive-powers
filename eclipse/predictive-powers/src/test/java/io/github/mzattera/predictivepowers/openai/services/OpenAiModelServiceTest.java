@@ -24,31 +24,28 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
 import io.github.mzattera.predictivepowers.openai.services.ToolCallTest.GetCurrentWeatherParameters;
 
 class OpenAiModelServiceTest {
 
+	// TODO URGENT add tests to check max context size for all models
+
+	// Models still returned by models API, but decommissioned
 	private final static Set<String> OLD_MODELS = new HashSet<>();
 	static {
-		// Model for decommissioned search point seem to be still there for some users
-		OLD_MODELS.add("ada-code-search-code");
-		OLD_MODELS.add("ada-code-search-text");
-		OLD_MODELS.add("ada-search-document");
-		OLD_MODELS.add("ada-search-query");
-		OLD_MODELS.add("babbage-search-document");
-		OLD_MODELS.add("babbage-search-query");
-		OLD_MODELS.add("curie-search-document");
-		OLD_MODELS.add("curie-search-query");
-		OLD_MODELS.add("davinci-search-document");
-		OLD_MODELS.add("davinci-search-query");
+		// Not needed any longer, left here in case the problem re-appears
 	}
 
 	private final static Function FUNCTION = Function.builder() //
@@ -65,6 +62,9 @@ class OpenAiModelServiceTest {
 		TOOLS.add(new OpenAiTool(FUNCTION));
 	}
 
+	/**
+	 * Check list of models is complete.
+	 */
 	@Test
 	void test01() {
 		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
@@ -82,6 +82,7 @@ class OpenAiModelServiceTest {
 			for (Model m : models) {
 				String model = m.getId();
 
+				// TODO add these to metadata as well
 				if (model.startsWith("whisper"))
 					continue; // Whisper models do not need size
 				if (model.startsWith("dall-e"))
@@ -95,50 +96,6 @@ class OpenAiModelServiceTest {
 				if (!model.startsWith("tts-")) // Text to speech models do not have encoders
 					assertTrue(modelSvc.getTokenizer(model) != null);
 				assertTrue(modelSvc.getContextSize(model) > 0);
-
-				// Test function calling for GPT models to ensure supported call model is set
-				// correctly
-				if (model.startsWith("gpt-")) {
-					System.out.println("Testing function call for " + model);
-					chatSvc.setModel(model);
-					chatSvc.clearConversation();
-
-					// Bypass setDefaultTools() to make sure we test the correct function call type
-					switch (modelSvc.getSupportedCall(model)) {
-					case TOOLS:
-						chatSvc.getDefaultReq().setFunctions(null);
-						chatSvc.getDefaultReq().setTools(TOOLS);
-						OpenAiTextCompletion result = chatSvc.chat("What is the temperature il London?");
-						assertTrue(result.hasToolCalls());
-						break;
-					case FUNCTIONS:
-						chatSvc.getDefaultReq().setFunctions(FUNCTIONS);
-						chatSvc.getDefaultReq().setTools(null);
-						result = chatSvc.chat("What is the temperature il London?");
-						assertTrue(result.hasToolCalls());
-						break;
-					case NONE:
-						chatSvc.getDefaultReq().setFunctions(FUNCTIONS);
-						chatSvc.getDefaultReq().setTools(null);
-						try {
-							result = chatSvc.chat("What is the temperature il London?");
-							assertFalse(result.hasToolCalls());
-						} catch (Exception e) {
-							// the model should error indeed
-						}
-						chatSvc.getDefaultReq().setFunctions(null);
-						chatSvc.getDefaultReq().setTools(TOOLS);
-						try {
-							result = chatSvc.chat("What is the temperature il London?");
-							assertFalse(result.hasToolCalls());
-						} catch (Exception e) {
-							// the model should error indeed
-						}
-						break;
-					default:
-						throw new IllegalArgumentException(); // paranoid
-					}
-				}
 
 				assertTrue(actual.remove(model));
 			}
@@ -170,6 +127,65 @@ class OpenAiModelServiceTest {
 			Model model = oai.getClient().retrieveModel(id);
 			assertEquals(id, model.getId());
 			assertEquals("model", model.getObject());
+		} // Close endpoint
+	}
+
+	/** Return names for all chat /completions models */
+	static Stream<OpenAiModelMetaData> allChatModelsProvider() {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+			OpenAiModelService modelSvc = endpoint.getModelService();
+			return modelSvc.listModels().stream() //
+					.filter(model -> !model.startsWith("gpt-4-32k")) //
+					.map(model -> modelSvc.get(model)) //
+					.filter(meta -> meta != null) //
+					.filter(meta -> meta.getSupportedApi() == SupportedApi.CHAT);
+		}
+	}
+
+	/**
+	 * Check function call mode is listed correctly.
+	 */
+	@ParameterizedTest
+	@MethodSource("allChatModelsProvider")
+	void test03(OpenAiModelMetaData md) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
+			OpenAiChatService chatSvc = oai.getChatService();
+
+			// Bypass setDefaultTools() to make sure we test the correct function call type
+			switch (md.getSupportedCallType()) {
+			case TOOLS:
+				chatSvc.getDefaultReq().setFunctions(null);
+				chatSvc.getDefaultReq().setTools(TOOLS);
+				OpenAiTextCompletion result = chatSvc.chat("What is the temperature il London?");
+				assertTrue(result.hasToolCalls());
+				break;
+			case FUNCTIONS:
+				chatSvc.getDefaultReq().setFunctions(FUNCTIONS);
+				chatSvc.getDefaultReq().setTools(null);
+				result = chatSvc.chat("What is the temperature il London?");
+				assertTrue(result.hasToolCalls());
+				break;
+			case NONE:
+				chatSvc.getDefaultReq().setFunctions(FUNCTIONS);
+				chatSvc.getDefaultReq().setTools(null);
+				try {
+					result = chatSvc.chat("What is the temperature il London?");
+					assertFalse(result.hasToolCalls());
+				} catch (Exception e) {
+					// the model should error indeed
+				}
+				chatSvc.getDefaultReq().setFunctions(null);
+				chatSvc.getDefaultReq().setTools(TOOLS);
+				try {
+					result = chatSvc.chat("What is the temperature il London?");
+					assertFalse(result.hasToolCalls());
+				} catch (Exception e) {
+					// the model should error indeed
+				}
+				break;
+			default:
+				throw new IllegalArgumentException(); // paranoid
+			}
 		} // Close endpoint
 	}
 }

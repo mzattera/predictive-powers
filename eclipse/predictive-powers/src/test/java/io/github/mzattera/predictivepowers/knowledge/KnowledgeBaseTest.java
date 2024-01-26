@@ -51,7 +51,7 @@ public class KnowledgeBaseTest {
 			OpenAiEmbeddingService es = ep.getEmbeddingService();
 			KnowledgeBase kb = new KnowledgeBase();
 
-			// Do not use saved version here, ass we still want to test embedding size.
+			// Do not use saved version here, as we still want to test embedding size.
 			List<String> test = new ArrayList<>();
 			test.add("La somma delle parti e' maggiore del tutto");
 			test.add("Una tigre corre nella foresta.");

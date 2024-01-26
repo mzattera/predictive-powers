@@ -22,8 +22,6 @@ import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsReq
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
-import io.github.mzattera.predictivepowers.openai.client.edits.EditsRequest;
-import io.github.mzattera.predictivepowers.openai.client.edits.EditsResponse;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
@@ -66,9 +64,6 @@ public interface OpenAiApi {
 
 	@POST("chat/completions")
 	Single<ChatCompletionsResponse> chatCompletions(@Body ChatCompletionsRequest req);
-
-	@POST("edits")
-	Single<EditsResponse> edits(@Body EditsRequest req);
 
 	@POST("images/generations")
 	Single<DataList<Image>> imagesGenerations(@Body ImagesRequest req);

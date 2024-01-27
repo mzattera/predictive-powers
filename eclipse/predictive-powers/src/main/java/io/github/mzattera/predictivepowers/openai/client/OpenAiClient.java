@@ -42,9 +42,9 @@ import io.github.mzattera.predictivepowers.openai.client.completions.Completions
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
-import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTune;
-import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTuneEvent;
-import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTunesRequest;
+import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTuningJob;
+import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTuningJobEvent;
+import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTuningRequest;
 import io.github.mzattera.predictivepowers.openai.client.images.Image;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
@@ -463,27 +463,43 @@ public class OpenAiClient implements ApiClient {
 		download(callApi(api.filesContent(fileId)), downloadedFile);
 	}
 
-	public FineTune createFineTune(FineTunesRequest req) {
-		return callApi(api.fineTunesCreate(req));
+	public FineTuningJob createFineTuningJob(FineTuningRequest req) {
+		return callApi(api.fineTuningJobsCreate(req));
 	}
 
-	public List<FineTune> listFineTunes() {
-		return callApi(api.fineTunes()).getData();
+	public List<FineTuningJob> listFineTuningJobs() {
+		return callApi(api.fineTuningJobs(null, null)).getData();
 	}
 
-	public FineTune retrieveFineTune(String fineTuneId) {
-		return callApi(api.fineTunes(fineTuneId));
+	public List<FineTuningJob> listFineTuningJobs(int limit) {
+		return callApi(api.fineTuningJobs(null, limit)).getData();
 	}
 
-	public FineTune cancelFineTune(String fineTuneId) {
-		return callApi(api.fineTunesCancel(fineTuneId));
+	public List<FineTuningJob> listFineTuningJobs(String after, int limit) {
+		return callApi(api.fineTuningJobs(after, limit)).getData();
 	}
 
-	public List<FineTuneEvent> listFineTuneEvents(String fineTuneId) {
-		return callApi(api.fineTunesEvents(fineTuneId)).getData();
+	public List<FineTuningJobEvent> listFineTuningEvents(@NonNull String fineTuningJobId) {
+		return callApi(api.fineTuningJobsEvents(fineTuningJobId, null, null)).getData();
 	}
 
-	public DeleteResponse deleteFineTuneModel(String model) {
+	public List<FineTuningJobEvent> listFineTuningEvents(@NonNull String fineTuningJobId, int limit) {
+		return callApi(api.fineTuningJobsEvents(fineTuningJobId, null, limit)).getData();
+	}
+
+	public List<FineTuningJobEvent> listFineTuningEvents(@NonNull String fineTuningJobId, String after, int limit) {
+		return callApi(api.fineTuningJobsEvents(fineTuningJobId, after, limit)).getData();
+	}
+
+	public FineTuningJob retrieveFineTuningJob(@NonNull String fineTuningJobId) {
+		return callApi(api.fineTuningJobsGet(fineTuningJobId));
+	}
+
+	public FineTuningJob cancelFineTuning(@NonNull String fineTuningJobId) {
+		return callApi(api.fineTuningJobsCancel(fineTuningJobId));
+	}
+
+	public DeleteResponse deleteFineTunedModel(@NonNull String model) {
 		return callApi(api.modelsDelete(model));
 	}
 

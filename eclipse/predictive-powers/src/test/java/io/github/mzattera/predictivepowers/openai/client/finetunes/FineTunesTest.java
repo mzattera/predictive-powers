@@ -45,8 +45,8 @@ class FineTunesTest {
 			File training = c.uploadFile(ResourceUtil.getResourceFile("sentiment_training_dataset.jsonl"), "fine-tune");
 
 			// Start tuning the model
-			FineTunesRequest req = FineTunesRequest.builder().trainingFile(training.getId()).model(MODEL).build();
-			FineTune tuned = c.createFineTune(req);
+			FineTuningRequest req = FineTuningRequest.builder().trainingFile(training.getId()).model(MODEL).build();
+			FineTuningJob tuned = c.createFineTuningJob(req);
 			String status = tuned.getStatus();
 			System.out.println("Status=" + status);
 
@@ -58,10 +58,12 @@ class FineTunesTest {
 				} catch (InterruptedException e1) {
 				}
 
-				tuned = c.retrieveFineTune(tuned.getId());
+				tuned = c.retrieveFineTuningJob(tuned.getId());
 				status = tuned.getStatus();
 				System.out.println("Status=" + status);
 			}
+			
+			assertEquals("succeeded", status);
 		} // Close endpoint
 	}
 
@@ -101,14 +103,14 @@ class FineTunesTest {
 		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			OpenAiClient c = oai.getClient();
 
-			List<FineTune> fineTunes = c.listFineTunes();
+			List<FineTuningJob> fineTunes = c.listFineTuningJobs();
 			assertTrue(fineTunes.size() > 0);
 
-			List<FineTuneEvent> events = c.listFineTuneEvents(fineTunes.get(0).getId());
+			List<FineTuningJobEvent> events = c.listFineTuningEvents(fineTunes.get(0).getId());
 			assertTrue(events.size() > 0);
-			assertEquals("fine-tune-event", events.get(0).getObject());
+			assertEquals("fine_tuning.job.event", events.get(0).getObject());
 
-			for (FineTuneEvent e : events) {
+			for (FineTuningJobEvent e : events) {
 				System.out.println(e.toString());
 			}
 		} // Close endpoint
@@ -128,14 +130,16 @@ class FineTunesTest {
 			File training = c.uploadFile(ResourceUtil.getResourceFile("sentiment_training_dataset.jsonl"), "fine-tune");
 
 			// Start tuning the model
-			FineTunesRequest req = FineTunesRequest.builder().trainingFile(training.getId()).model(MODEL).nEpochs(10)
-					.build();
-			FineTune tuned = c.createFineTune(req);
+			FineTuningRequest req = FineTuningRequest.builder() //
+					.trainingFile(training.getId()) //
+					.model(MODEL) //
+					.hyperparameters(Hyperparameters.builder().nEpochs("10").build()).build();
+			FineTuningJob tuned = c.createFineTuningJob(req);
 //			while (!tuned.getStatus().equals("running")) { // Wait for tuning to start -> seems it is not needed
 //			}
 
 			// Cancel
-			c.cancelFineTune(tuned.getId());
+			c.cancelFineTuning(tuned.getId());
 		} // Close endpoint
 	}
 

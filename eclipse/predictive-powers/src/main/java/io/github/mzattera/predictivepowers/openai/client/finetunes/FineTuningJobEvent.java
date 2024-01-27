@@ -16,49 +16,30 @@
 
 package io.github.mzattera.predictivepowers.openai.client.finetunes;
 
-import java.util.List;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Request for fine-tunes OpenAI API.
+ * A fine-tuning event, as defined in the OpenAI API.
  * 
  * @author Massimiliano "Maxi" Zattera
- *
  */
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 @AllArgsConstructor
 @ToString
-public class FineTunesRequest {
+public class FineTuningJobEvent {
 
-	@NonNull
-	String trainingFile;
-
-	String validationFile;
-	String model;
-
-	@JsonProperty("n_epochs") // must do for single lower case initial
-	Integer nEpochs;
-	
-	Integer batchSize;
-	Double learningRateMultiplier;
-	Double promptLossWeight;
-	Boolean computeClassificationMetrics;
-	Integer classificationNClasses;
-	String classificationPositiveClass;
-	List<Double> classificationBetas;
-	String suffix;
+	String id;
+	long createdAt;
+	String level;
+	String message;
+	String object;
 }

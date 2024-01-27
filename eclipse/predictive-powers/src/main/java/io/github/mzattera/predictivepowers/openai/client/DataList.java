@@ -23,7 +23,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Sometimes OpenAI API returns list of data i this format.
+ * Sometimes OpenAI API returns list of data in this format.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -35,4 +35,5 @@ public class DataList<T> {
 
 	String object;
 	List<T> data;
+	Boolean hasMore;
 }

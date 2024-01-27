@@ -25,15 +25,16 @@ import io.github.mzattera.predictivepowers.openai.client.completions.Completions
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
-import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTune;
-import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTuneEvent;
-import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTunesRequest;
+import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTuningJob;
+import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTuningJobEvent;
+import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTuningRequest;
 import io.github.mzattera.predictivepowers.openai.client.images.Image;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsRequest;
 import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsResponse;
 import io.reactivex.Single;
+import lombok.NonNull;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import retrofit2.http.Body;
@@ -41,6 +42,7 @@ import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 import retrofit2.http.Path;
+import retrofit2.http.Query;
 
 /**
  * Retrofit definition for OpenAI API.
@@ -57,7 +59,7 @@ public interface OpenAiApi {
 	Single<Model> models(@Path("model") String modelId);
 
 	@DELETE("models/{model}")
-	Single<DeleteResponse> modelsDelete(@Path("model") String model);
+	Single<DeleteResponse> modelsDelete(@Path("model") @NonNull String model);
 
 	@POST("completions")
 	Single<CompletionsResponse> completions(@Body CompletionsRequest req);
@@ -101,20 +103,22 @@ public interface OpenAiApi {
 	@GET("files/{file_id}/content")
 	Single<ResponseBody> filesContent(@Path("file_id") String fileId);
 
-	@POST("fine-tunes")
-	Single<FineTune> fineTunesCreate(@Body FineTunesRequest req);
+	@POST("fine_tuning/jobs")
+	Single<FineTuningJob> fineTuningJobsCreate(@Body FineTuningRequest req);
 
-	@GET("fine-tunes")
-	Single<DataList<FineTune>> fineTunes();
+	@GET("fine_tuning/jobs")
+	Single<DataList<FineTuningJob>> fineTuningJobs(@Query("after") String after, @Query("limit") Integer limit);
 
-	@GET("fine-tunes/{fine_tune_id}")
-	Single<FineTune> fineTunes(@Path("fine_tune_id") String fineTuneId);
+	@GET("fine_tuning/jobs/{fine_tuning_job_id}/events")
+	Single<DataList<FineTuningJobEvent>> fineTuningJobsEvents(
+			@Path("fine_tuning_job_id") @NonNull String fineTuningJobId, @Query("after") String after,
+			@Query("limit") Integer limit);
 
-	@POST("fine-tunes/{fine_tune_id}/cancel")
-	Single<FineTune> fineTunesCancel(@Path("fine_tune_id") String fineTuneId);
+	@GET("fine_tuning/jobs/{fine_tuning_job_id}")
+	Single<FineTuningJob> fineTuningJobsGet(@Path("fine_tuning_job_id") @NonNull String fineTuningJobId);
 
-	@GET("fine-tunes/{fine_tune_id}/events")
-	Single<DataList<FineTuneEvent>> fineTunesEvents(@Path("fine_tune_id") String fineTuneId);
+	@POST("fine_tuning/jobs/{fine_tuning_job_id}/cancel")
+	Single<FineTuningJob> fineTuningJobsCancel(@Path("fine_tuning_job_id") @NonNull String fineTuningJobId);
 
 	@POST("moderations")
 	Single<ModerationsResponse> moderations(@Body ModerationsRequest req);

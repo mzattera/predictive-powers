@@ -16,28 +16,37 @@
 
 package io.github.mzattera.predictivepowers.openai.client.finetunes;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Fine-tunes hyper parameters, as defined by OpenAI API.
+ * Request for fine-tuning OpenAI API.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@RequiredArgsConstructor
+@AllArgsConstructor
 @ToString
-public class Hyperparams {
+public class FineTuningRequest {
 
-	int batchSize;
-	double learningRateMultiplier;
-	
-	@JsonProperty("n_epochs") // must do for single lower case initial
-	int nEpochs;
-	
-	double promptLossWeight;
+	@NonNull
+	String model;
+
+	@NonNull
+	String trainingFile;
+
+	Hyperparameters hyperparameters;
+	String suffix;
+	String validationFile;
 }

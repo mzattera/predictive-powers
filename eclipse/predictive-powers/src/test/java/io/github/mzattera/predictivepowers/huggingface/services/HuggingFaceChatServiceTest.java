@@ -19,12 +19,12 @@ package io.github.mzattera.predictivepowers.huggingface.services;
 import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.ChatCompletion;
-import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.TextCompletion;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
@@ -51,19 +51,13 @@ public class HuggingFaceChatServiceTest {
 			assertEquals(cs.getPersonality(), personality);
 
 			// In completion, we do not consider history, but we consider personality.
-			cs.getHistory().add(new ChatMessage(Author.USER, "test"));
-			assertEquals(1, cs.getHistory().size());
 			String question = "How high is Mt.Everest?";
 			ChatCompletion resp = cs.complete(question);
 			assertEquals(TextCompletion.FinishReason.COMPLETED, resp.getFinishReason());
-			assertEquals(1, cs.getHistory().size());
-			assertEquals(cs.getHistory().get(0).getContent(), "test");
+			assertEquals(0, cs.getHistory().size());
 			assertEquals(0, cs.getDefaultReq().getInputs().getPastUserInputs().size());
 			assertEquals(0, cs.getDefaultReq().getInputs().getGeneratedResponses().size());
 			assertEquals(cs.getDefaultReq().getInputs().getText(), question);
-
-			cs.clearConversation();
-			assertEquals(cs.getHistory().size(), 0);
 		} // Close endpoint
 	}
 
@@ -82,12 +76,6 @@ public class HuggingFaceChatServiceTest {
 			cs.setPersonality(personality);
 			assertEquals(cs.getPersonality(), personality);
 
-			// Fake history
-			for (int i = 0; i < 10; ++i) {
-				cs.getHistory().add(new ChatMessage(Author.USER, "user_" + i));
-				cs.getHistory().add(new ChatMessage(Author.BOT, "bot_" + i));
-			}
-
 			cs.setMaxHistoryLength(4);
 			cs.setMaxConversationSteps(2);
 
@@ -98,214 +86,62 @@ public class HuggingFaceChatServiceTest {
 			String question = "How high is Mt.Everest?";
 			ChatCompletion resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
-			assertEquals(cs.getHistory().size(), 4);
+			assertEquals(2, cs.getHistory().size());
 			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(0).getContent(), "user_" + 9);
+			assertEquals(cs.getHistory().get(0).getContent(), question);
 			assertEquals(cs.getHistory().get(1).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(1).getContent(), "bot_" + 9);
-			assertEquals(cs.getHistory().get(2).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(2).getContent(), question);
-			assertEquals(cs.getHistory().get(3).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(3).getContent(), resp.getText());
-			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().size(), 1);
-			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().get(0), "user_" + 9);
-			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().size(), 1);
-			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().get(0), "bot_" + 9);
+			assertEquals(cs.getHistory().get(1).getContent(), resp.getText());
+			assertEquals(0, cs.getDefaultReq().getInputs().getPastUserInputs().size());
+			assertEquals(0, cs.getDefaultReq().getInputs().getGeneratedResponses().size());
 			assertEquals(cs.getDefaultReq().getInputs().getText(), question);
 
 			// NO personality, history length and conversation steps limits ////////////
 			// Also testing maxTokens
 
 			// Fake history
-			cs.clearConversation();
-			for (int i = 0; i < 10; ++i) {
-				cs.getHistory().add(new ChatMessage(Author.USER, "user_" + i));
-				cs.getHistory().add(new ChatMessage(Author.BOT, "bot_" + i));
-			}
 			cs.setPersonality(null);
 			cs.setMaxNewTokens(100);
+			cs.setMaxHistoryLength(4);
+			cs.setMaxConversationSteps(2);
 
 			resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
-			assertEquals(cs.getHistory().size(), 4);
+			assertEquals(2, cs.getHistory().size(), 4);
 			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(0).getContent(), "user_" + 9);
+			assertEquals(cs.getHistory().get(0).getContent(), question);
 			assertEquals(cs.getHistory().get(1).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(1).getContent(), "bot_" + 9);
 			assertEquals(cs.getHistory().get(2).getAuthor(), Author.USER);
 			assertEquals(cs.getHistory().get(2).getContent(), question);
 			assertEquals(cs.getHistory().get(3).getAuthor(), Author.BOT);
 			assertEquals(cs.getHistory().get(3).getContent(), resp.getText());
-			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().size(), 1);
-			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().get(0), "user_" + 9);
-			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().size(), 1);
-			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().get(0), "bot_" + 9);
+			assertEquals(1, cs.getDefaultReq().getInputs().getPastUserInputs().size());
+			assertEquals(question, cs.getDefaultReq().getInputs().getPastUserInputs().get(0));
+			assertEquals(1, cs.getDefaultReq().getInputs().getGeneratedResponses().size());
 			assertEquals(cs.getDefaultReq().getInputs().getText(), question);
 			assertEquals(cs.getMaxNewTokens(), 100);
 
 			// Personality, history length and conversation tokens limits ////////////
 
 			// Fake history
-			cs.clearConversation();
-			for (int i = 0; i < 10; ++i) {
-				cs.getHistory().add(new ChatMessage(Author.USER, "user_" + i));
-				cs.getHistory().add(new ChatMessage(Author.BOT, "bot_" + i));
-			}
 			cs.setPersonality(personality);
 			cs.setMaxNewTokens(null);
 			cs.setMaxHistoryLength(4);
 			cs.setMaxConversationSteps(9999);
 			cs.setMaxConversationTokens(1);
 
-			resp = cs.chat(question);
-			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
-			assertEquals(cs.getHistory().size(), 4);
-			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(0).getContent(), "user_" + 9);
-			assertEquals(cs.getHistory().get(1).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(1).getContent(), "bot_" + 9);
-			assertEquals(cs.getHistory().get(2).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(2).getContent(), question);
-			assertEquals(cs.getHistory().get(3).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(3).getContent(), resp.getText());
-			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().size(), 0);
-			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().size(), 0);
-			assertEquals(cs.getDefaultReq().getInputs().getText(), question);
-			assertEquals(cs.getMaxNewTokens(), null);
+			assertThrows(IllegalArgumentException.class, () -> cs.chat(question));
 
 			// Completion
-
 			cs.setPersonality(personality);
 			cs.setMaxNewTokens(null);
-			cs.setMaxHistoryLength(4);
+			cs.setMaxHistoryLength(9999);
 			cs.setMaxConversationSteps(9999);
-			cs.setMaxConversationTokens(1);
-		} // Close endpoint
-	}
-
-	/**
-	 * Test special HF way of building conversation hstory.
-	 */
-	@Test
-	public void test05() {
-		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
-			HuggingFaceChatService cs = ep.getChatService();
-			assertEquals(Integer.MAX_VALUE, cs.getMaxConversationTokens());
-			String question = "How high is Mt.Everest?";
-
-			// Double chat message per role
-
-			// Fake history
-			for (int i = 0; i < 10; ++i) {
-				cs.getHistory().add(new ChatMessage(Author.USER, "U1_" + i));
-				cs.getHistory().add(new ChatMessage(Author.USER, "U2_" + i));
-				cs.getHistory().add(new ChatMessage(Author.BOT, "B1_" + i));
-				cs.getHistory().add(new ChatMessage(Author.BOT, "B2_" + i));
-			}
-
-			cs.setMaxHistoryLength(4);
-			cs.setMaxConversationSteps(4);
-
-			ChatCompletion resp = cs.chat(question);
-			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
-			assertEquals(cs.getHistory().size(), 4);
-			assertEquals(cs.getHistory().get(0).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(0).getContent(), "B1_" + 9);
-			assertEquals(cs.getHistory().get(1).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(1).getContent(), "B2_" + 9);
-			assertEquals(cs.getHistory().get(2).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(2).getContent(), question);
-			assertEquals(cs.getHistory().get(3).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(3).getContent(), resp.getText());
-			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().size(), 1);
-			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().get(0), "U1_9\nU2_9");
-			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().size(), 1);
-			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().get(0), "B1_9\nB2_9");
-			assertEquals(cs.getDefaultReq().getInputs().getText(), question);
-
-			// Double chat message per role, very short conversation steps
-
-			// Fake history
-			for (int i = 0; i < 10; ++i) {
-				cs.getHistory().add(new ChatMessage(Author.USER, "U1_" + i));
-				cs.getHistory().add(new ChatMessage(Author.USER, "U2_" + i));
-				cs.getHistory().add(new ChatMessage(Author.BOT, "B1_" + i));
-				cs.getHistory().add(new ChatMessage(Author.BOT, "B2_" + i));
-			}
-
-			cs.setMaxHistoryLength(4);
-			cs.setMaxConversationSteps(2); // Should consider only last 2 bot message, which are ingored
-
-			resp = cs.chat(question);
-			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
-			assertEquals(cs.getHistory().size(), 4);
-			assertEquals(cs.getHistory().get(0).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(0).getContent(), "B1_" + 9);
-			assertEquals(cs.getHistory().get(1).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(1).getContent(), "B2_" + 9);
-			assertEquals(cs.getHistory().get(2).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(2).getContent(), question);
-			assertEquals(cs.getHistory().get(3).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(3).getContent(), resp.getText());
-			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().size(), 0);
-			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().size(), 0);
-			assertEquals(cs.getDefaultReq().getInputs().getText(), question);
-
-			// Double chat message per role, starting with SYSTEM AND BOT
-
-			// Fake history
-			cs.getHistory().add(new ChatMessage(Author.BOT, "Should be ignored"));
-			for (int i = 0; i < 1; ++i) {
-				cs.getHistory().add(new ChatMessage(Author.USER, "U1_" + i));
-				cs.getHistory().add(new ChatMessage(Author.USER, "U2_" + i));
-				cs.getHistory().add(new ChatMessage(Author.BOT, "B1_" + i));
-				cs.getHistory().add(new ChatMessage(Author.BOT, "B2_" + i));
-			}
-
-			cs.setMaxHistoryLength(6);
-			cs.setMaxConversationSteps(6);
-
-			resp = cs.chat(question);
-			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
-			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().size(), 1);
-			assertEquals(cs.getDefaultReq().getInputs().getPastUserInputs().get(0), "U1_0\nU2_0");
-			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().size(), 1);
-			assertEquals(cs.getDefaultReq().getInputs().getGeneratedResponses().get(0), "B1_0\nB2_0");
-			assertEquals(cs.getDefaultReq().getInputs().getText(), question);
-		}
-	}
-
-	/**
-	 * Check chat and history management with exception.
-	 */
-	@Test
-	public void test03() {
-		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
-			HuggingFaceChatService cs = ep.getChatService();
-
-			// Personality, history length and conversation steps limits ////////////
-
-			// Personality
-			cs.setPersonality(null);
-
-			// Fake history
-			for (int i = 0; i < 10; ++i) {
-				cs.getHistory().add(new ChatMessage(Author.USER, "user_" + i));
-				cs.getHistory().add(new ChatMessage(Author.BOT, "bot_" + i));
-			}
-
-			cs.setMaxHistoryLength(1);
-			cs.setMaxConversationTokens(999_999);
-
-			String question = "How high is Mt.Everest?";
-
-			try {
-				cs.chat(question);
-			} catch (Exception e) {
-			}
-
-			assertEquals(1, cs.getHistory().size());
-			assertEquals(Author.BOT, cs.getHistory().get(0).getAuthor());
+			cs.setMaxConversationTokens(9999);
+			cs.clearConversation();
+			assertEquals(0, cs.getHistory().size());
+			resp = cs.complete(question);
+			assertEquals(0, cs.getHistory().size());
+			
 		} // Close endpoint
 	}
 

@@ -154,9 +154,11 @@ public class HuggingFaceChatService extends AbstractChatService {
 		botMsgHistory.add(resp.getText());
 
 		// Make sure history is of desired length
-		while (userMsgHistory.size() > getMaxHistoryLength()) {
-			userMsgHistory.remove(0);
-			botMsgHistory.remove(0);
+		// TODO Make it more efficient
+		int toTrim = userMsgHistory.size() - (getMaxHistoryLength()/2);
+		if (toTrim > 0){
+			userMsgHistory.subList(toTrim, userMsgHistory.size()).clear();
+			botMsgHistory.subList(toTrim, botMsgHistory.size()).clear();
 		}
 
 		return resp;
@@ -258,7 +260,7 @@ public class HuggingFaceChatService extends AbstractChatService {
 					+ " and getMaxConversationTokens() returns " + getMaxConversationTokens());
 
 		int steps = 0;
-		for (int i = userHistory.size() - 1; i >= 0; ++i) {
+		for (int i = userHistory.size() - 1; i >= 0; --i) {
 			if (steps >= getMaxConversationSteps())
 				break;
 

@@ -168,7 +168,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 			int t = counter.count(ctx);
 			if (tok + t > txtSize)
 				break;
-			tok += t;
+			tok += (t + 1);
 
 			if (i > 0)
 				b.append("\n");

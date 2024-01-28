@@ -75,7 +75,7 @@ public interface ChatService extends AiService {
 	 * interface are supposed to keep history updated by adding each user utterance
 	 * and the corresponding agent reply.
 	 * 
-	 * It is assumed this cannot be manipulated to alter chat behavior.
+	 * Notice is this not expected to be manipulated.
 	 * 
 	 * Notice this will grow up to {@link #getMaxHistoryLength}, unless cleared.
 	 * However, only latest messages are considered when calling the API (see

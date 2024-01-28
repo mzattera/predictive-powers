@@ -125,12 +125,11 @@ public class HuggingFaceModelService extends AbstractModelService {
 		try {
 			tokenizer = new HuggingFaceTokenizer(ai.djl.huggingface.tokenizers.HuggingFaceTokenizer.newInstance(model));
 		} catch (Exception e) {
-			// Not all models have a tokenizer, we fallback
+			// Not all models have a tokenizer
 			LOG.warn("Cannot retrieve Hugging Face Tokenizer for model " + model, e);
-			tokenizer = CharTokenizer.getInstance();
 		}
 
-		// TODO maybe there is other metadata we cna read from Hugging Face (all the
+		// TODO maybe there is other metadata we can read from Hugging Face (all the
 		// model data are files in a Git repo)
 		ModelMetaData result = new ModelMetaData(model, tokenizer, null, null);
 		put(model, result);

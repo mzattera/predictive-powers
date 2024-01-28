@@ -171,7 +171,7 @@ public class HuggingFaceClient implements ApiClient {
 	public static String getApiKey() {
 		String apiKey = System.getenv(OS_ENV_VAR_NAME);
 		if (apiKey == null)
-			throw new IllegalArgumentException("OpenAI API key is not provided and it cannot be found in "
+			throw new IllegalArgumentException("Hugging Face API key is not provided and it cannot be found in "
 					+ OS_ENV_VAR_NAME + " system environment variable");
 		return apiKey;
 	}

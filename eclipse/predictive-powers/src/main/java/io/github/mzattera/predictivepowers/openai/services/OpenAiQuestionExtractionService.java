@@ -155,16 +155,11 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 		Iterator<QnAPair> it = result.iterator();
 		while (it.hasNext()) {
 			QnAPair q = it.next();
-			if (q.getAnswer() == null) {// bad result
+			q.setAnswer(q.getAnswer().trim().toLowerCase());
+			if (!"true".equals(q.getAnswer()) && "false".equals(q.getAnswer())) {// bad result
 				LOG.info("QnA pair removed: {}", q);
 				it.remove();
-				continue;
 			}
-
-			q.setAnswer(q.getAnswer().trim().toLowerCase());
-			if (!q.getAnswer().equals("true") && !q.getAnswer().equals("false")) // bad result
-				LOG.info("QnA pair removed: {}", q);
-			it.remove();
 		}
 
 		return result;
@@ -326,7 +321,7 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 		// Calculate size of instructions
 		OpenAiTokenizer counter = getEndpoint().getModelService().getTokenizer(getModel());
 		int ctxSize = getEndpoint().getModelService().getContextSize(getModel());
-		int instructionSize = completionService.getBaseTokens() + counter.count(instructions) + 10;
+		int instructionSize = completionService.getBaseTokens() + counter.count(instructions) + 5;
 		if (instructionSize >= ctxSize)
 			throw new IllegalArgumentException("Instrutions too long to fit the context");
 

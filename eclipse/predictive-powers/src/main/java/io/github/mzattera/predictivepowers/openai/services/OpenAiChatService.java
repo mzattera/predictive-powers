@@ -43,9 +43,8 @@ import lombok.NonNull;
  * OpenAI based chat service.
  * 
  * The service supports both function and tool calls transparently (it will
- * handle either, based on the model is used). The service has a list of default
- * tools that will be used in each interaction with the service and that can be
- * overridden for each single service call.
+ * handle either, based on which model is used). The service has a list of
+ * default tools that will be used in each interaction with the service.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -68,6 +67,9 @@ public class OpenAiChatService extends AbstractChatService {
 		this.defaultReq = defaultReq;
 		modelService = endpoint.getModelService();
 		String model = defaultReq.getModel();
+
+		// With GPT you pay max tokens, even if they are not geneated, so we put a
+		// reasonable limit here
 		int maxReplyTk = Math.min(modelService.getContextSize(model) / 4, modelService.getMaxNewTokens(model));
 		setMaxConversationTokens(modelService.getContextSize(model) - maxReplyTk);
 	}
@@ -106,7 +108,7 @@ public class OpenAiChatService extends AbstractChatService {
 				history.stream().map(chatMessage -> (ChatMessage) chatMessage).collect(Collectors.toList()));
 	}
 
-	/** This is used for testing purposes only */
+	/** Fore testing purposes only. This is not meant to be used. */
 	List<OpenAiChatMessage> getModifiableHistory() {
 		return history;
 	}
@@ -238,6 +240,30 @@ public class OpenAiChatService extends AbstractChatService {
 		defaultReq.setMaxTokens(maxNewTokens);
 	}
 
+	/**
+	 * This method counts number of tokens that are consumed at each request to
+	 * provide bot instructions (personality) and list tools it can use. This is the
+	 * minimum size each request to the API will take. In addition, each request
+	 * will consume the tokens needed to encode messages, which include tool calls
+	 * and their corresponding replies.
+	 * 
+	 * @return Number of tokens in the request including bot personality and tools
+	 *         (functions) descriptions, but excluding any other message.
+	 */
+	public int getBaseTokens() {
+		List<OpenAiChatMessage> old = defaultReq.getMessages();
+
+		List<OpenAiChatMessage> msgs = new ArrayList<>();
+		if (getPersonality() != null) {
+			msgs.add(new OpenAiChatMessage(Role.SYSTEM, getPersonality()));
+		}
+		defaultReq.setMessages(msgs);
+		int result = modelService.getTokenizer(getModel()).count(defaultReq);
+		defaultReq.setMessages(old);
+
+		return result;
+	}
+
 	@Override
 	public OpenAiTextCompletion chat(String msg) {
 		return chat(msg, defaultReq);
@@ -281,8 +307,9 @@ public class OpenAiChatService extends AbstractChatService {
 		history.add(result.getMessage());
 
 		// Make sure history is of desired length
-		while (history.size() > getMaxHistoryLength())
-			history.remove(0);
+		int toTrim = history.size() - getMaxHistoryLength();
+		if (toTrim > 0)
+			history.subList(0, toTrim).clear();
 
 		return result;
 	}
@@ -423,30 +450,6 @@ public class OpenAiChatService extends AbstractChatService {
 	}
 
 	/**
-	 * This method counts number of tokens that are consumed at each request to
-	 * provide bot instructions (personality) and list tools it can use. This is the
-	 * minimum size each request to the API will take. In addition, each request
-	 * will consume the tokens needed to encode messages, which include tool calls
-	 * and their corresponding replies.
-	 * 
-	 * @return Number of tokens in the request including bot personality and tools
-	 *         (functions) descriptions, but excluding any other message.
-	 */
-	public int getBaseTokens() {
-		List<OpenAiChatMessage> old = defaultReq.getMessages();
-
-		List<OpenAiChatMessage> msgs = new ArrayList<>();
-		if (getPersonality() != null) {
-			msgs.add(new OpenAiChatMessage(Role.SYSTEM, getPersonality()));
-		}
-		defaultReq.setMessages(msgs);
-		int result = modelService.getTokenizer(getModel()).count(defaultReq);
-		defaultReq.setMessages(old);
-
-		return result;
-	}
-
-	/**
 	 * Completes given conversation.
 	 * 
 	 * Notice this does not consider or affects chat history. In addition, agent
@@ -468,7 +471,7 @@ public class OpenAiChatService extends AbstractChatService {
 			if (autofit) {
 				// Automatically set token limit, if needed
 				int tok = modelService.getTokenizer(model).count(req);
-				int size = modelService.getContextSize(model) - tok - 5; // Paranoid :) coount is now exact
+				int size = modelService.getContextSize(model) - tok - 5; // Paranoid :) count is now exact
 				if (size <= 0)
 					throw new IllegalArgumentException("Requests size (" + tok + ") exceeds model context size ("
 							+ modelService.getContextSize(model) + ")");
@@ -482,11 +485,16 @@ public class OpenAiChatService extends AbstractChatService {
 				if (e.isContextLengthExceeded()) { // Automatically recover if request is too long
 					int optimal = e.getMaxContextLength() - e.getPromptLength() - 1;
 					if (optimal > 0) {
+						// TODO URGENT Add a test case
 						LOG.warn("Reducing context length for OpenAI chat service from " + req.getMaxTokens() + " to "
 								+ optimal);
+						int old = req.getMaxTokens();
 						req.setMaxTokens(optimal);
-						resp = endpoint.getClient().createChatCompletion(req);
-						// TODO URGENT re-set old value?
+						try {
+							resp = endpoint.getClient().createChatCompletion(req);
+						} finally {
+							req.setMaxTokens(old);
+						}
 					} else
 						throw e; // Context too small anyway
 				} else
@@ -546,43 +554,27 @@ public class OpenAiChatService extends AbstractChatService {
 		if (messages.size() == 0)
 			throw new IllegalArgumentException("Messages contain only tool call results without corresponding calls");
 
-		// TODO URGENT we should NOT count base tokens as we will be counting messages and stuff
-		controlla altri srevizi facciano i conti con la base
-		int count = getBaseTokens();
-		if (count >= getMaxConversationTokens())
-			throw new IllegalArgumentException("Context to small: request alone is " + count
-					+ " tokens and getMaxConversationTokens() returns " + getMaxConversationTokens());
-		trimConversation(messages, getMaxConversationSteps(), getMaxConversationTokens() - count -5);
-		if (messages.size() == 0)
-			throw new IllegalArgumentException("Context to small to fit a single message");
-
-		if (getPersonality() != null)
-			// must add a system message on top with personality
-			messages.add(0, new OpenAiChatMessage(Role.SYSTEM, getPersonality()));
-	}
-
-	// Trims down the list of messages accordingly to given limits.
-	private void trimConversation(List<OpenAiChatMessage> messages, int maxConversationSteps,
-			int maxConversationTokens) {
-
+		// Trims down the list of messages accordingly to given limits.
 		OpenAiTokenizer counter = modelService.getTokenizer(getModel());
-		
 		int steps = 0;
 		for (int i = messages.size() - 1; i >= 0; --i) {
-			if (steps >= maxConversationSteps)
+			if (steps >= getMaxConversationSteps())
 				break;
 
-			int tok =counter.count(messages.subList(i, messages.size()));
-			if (tok > maxConversationTokens) {
+			int tok = counter.count(messages.subList(i, messages.size()));
+			if (tok > getMaxConversationTokens()) {
 				break;
 			}
 
 			++steps;
 		}
-
 		if (steps == 0)
-			messages.clear();
+			throw new IllegalArgumentException("Context to small to fit a single message");
 		else if (steps < messages.size())
 			messages.subList(0, messages.size() - steps).clear();
+
+		if (getPersonality() != null)
+			// must add a system message on top with personality
+			messages.add(0, new OpenAiChatMessage(Role.SYSTEM, getPersonality()));
 	}
 }

@@ -751,7 +751,8 @@ public class EssayWriter implements Closeable {
 						+ " Do not make up missing information or put placeholders for data you do not have."
 						+ " Only if enough information is available in the content, produce a text at least "
 						+ SECTION_LENGTH_TOKENS + " tokens long.\n\n"));
-		msgs.add(new OpenAiChatMessage(Role.USER, "")); // Placeholder
+		OpenAiChatMessage ctxMsg = new OpenAiChatMessage(Role.USER, "");
+		msgs.add(ctxMsg); // Placeholder
 
 		// Searches the knowledge base for relevant content
 		// (= builds the context)
@@ -761,7 +762,7 @@ public class EssayWriter implements Closeable {
 		OpenAiTokenizer counter = openAi.getModelService().getTokenizer(chatSvc.getModel());
 		int ctxSize = openAi.getModelService().getContextSize(chatSvc.getModel());
 		StringBuilder buf = new StringBuilder();
-		String context = "";
+		String context = ""; 
 		int i = 0;
 		for (; i < knowledge.size(); ++i) {
 
@@ -770,8 +771,7 @@ public class EssayWriter implements Closeable {
 			String c = cleanup(buf.toString());
 			params.put("context", c);
 
-			msgs.remove(msgs.size() - 1);
-			msgs.add(new OpenAiChatMessage(Role.USER, CompletionService.fillSlots(prompt, params)));
+			ctxMsg.setContent(CompletionService.fillSlots(prompt, params));
 
 			if (((int) (SECTION_LENGTH_TOKENS * 1.5) + counter.count(msgs)) > ctxSize)
 				break;
@@ -779,11 +779,7 @@ public class EssayWriter implements Closeable {
 		}
 
 		// OK, now build the actual context
-		msgs.remove(msgs.size() - 1);
-		params.put("context", context);
-
-		// TODO URGENT restore
-//		msgs.add(new ChatMessage(Author.USER, CompletionService.fillSlots(prompt, params)));
+		ctxMsg.setContent(context);
 
 		// Add generated content to the section
 		section.content = chatSvc.complete(msgs).getText();

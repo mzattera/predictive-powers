@@ -192,7 +192,7 @@ public class OpenAiCompletionService implements CompletionService {
 				// Automatically set token limit, if needed
 				Tokenizer counter = modelService.getTokenizer(model);
 				int tok = counter.count(prompt);
-				int size = modelService.getContextSize(model) - tok;
+				int size = modelService.getContextSize(model) - tok -5;
 				if (size <= 0)
 					throw new IllegalArgumentException(
 							"Your proompt exceeds context size: " + modelService.getContextSize(model));

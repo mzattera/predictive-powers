@@ -23,13 +23,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Stream;
 
 import org.apache.tika.exception.TikaException;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.xml.sax.SAXException;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -50,6 +57,27 @@ import io.github.mzattera.util.ResourceUtil;
  *
  */
 public class EmbeddingServiceTest {
+
+	private static AiEndpoint[] a;
+
+	@BeforeAll
+	static void init() {
+		a = new AiEndpoint[] { new OpenAiEndpoint(), new HuggingFaceEndpoint() };
+	}
+
+	@AfterAll
+	static void tearDown() {
+		for (AiEndpoint ep : a)
+			try {
+				ep.close();
+			} catch (IOException e) {
+			}
+	}
+
+	/** @return List of endpoints which services must be tested. */
+	static Stream<AiEndpoint> endpoints() {
+		return Arrays.stream(a);
+	}
 
 	/**
 	 * Tests embedding serialization.
@@ -73,30 +101,11 @@ public class EmbeddingServiceTest {
 		assertEquals(json, json2);
 	}
 
-	// TODO break it in smaller tests...
+	// TODO URGENT ? add tests using embedding windows, check length and size of the
+	// returned pieces too
 
-	// TODO URGENT ? add tests using embedding windows, check length and size of the returned pieces too
-
-	@Test
-	public void test00() throws IOException, SAXException, TikaException {
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			test01(ep);
-			test02(ep);
-			test03(ep);
-			test04(ep);
-			test05(ep);
-			test06(ep);
-		}
-		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
-			test01(ep);
-			test02(ep);
-			test03(ep);
-			test04(ep);
-			test05(ep);
-			test06(ep);
-		}
-	}
-
+	@ParameterizedTest
+	@MethodSource("endpoints")
 	public void test01(AiEndpoint ep) {
 		EmbeddingService es = ep.getEmbeddingService();
 		Random rnd = new Random();
@@ -140,10 +149,12 @@ public class EmbeddingServiceTest {
 		}
 	}
 
+	@ParameterizedTest
+	@MethodSource("endpoints")
 	public void test02(AiEndpoint ep) {
 		EmbeddingService es = ep.getEmbeddingService();
 		if (es instanceof HuggingFaceEmbeddingService)
-			return; // TODO it seems the tokenizer always returns 128, regardless input size; this
+			return; // TODO  it seems the tokenizer always returns 128, regardless input size; this
 					// might affect other aspects, to be investigated
 
 		Tokenizer counter = es.getEndpoint().getModelService().getTokenizer(es.getModel());
@@ -165,6 +176,8 @@ public class EmbeddingServiceTest {
 	 * @throws SAXException
 	 * @throws TikaException
 	 */
+	@ParameterizedTest
+	@MethodSource("endpoints")
 	public void test03(AiEndpoint ep) throws IOException, SAXException, TikaException {
 		EmbeddingService es = ep.getEmbeddingService();
 
@@ -200,6 +213,8 @@ public class EmbeddingServiceTest {
 	 * @throws SAXException
 	 * @throws IOException
 	 */
+	@ParameterizedTest
+	@MethodSource("endpoints")
 	public void test04(AiEndpoint ep) throws IOException, SAXException, TikaException {
 		EmbeddingService es = ep.getEmbeddingService();
 		Map<File, List<EmbeddedText>> base = es.embedFolder(ResourceUtil.getResourceFile("recursion"));
@@ -214,8 +229,12 @@ public class EmbeddingServiceTest {
 	 * @throws TikaException
 	 * @throws SAXException
 	 * @throws IOException
+	 * @throws URISyntaxException
 	 */
-	public void test05(AiEndpoint ep) throws MalformedURLException, IOException, SAXException, TikaException {
+	@ParameterizedTest
+	@MethodSource("endpoints")
+	public void test05(AiEndpoint ep)
+			throws MalformedURLException, IOException, SAXException, TikaException, URISyntaxException {
 		EmbeddingService es = ep.getEmbeddingService();
 		es.embedURL("https://en.wikipedia.org/wiki/Alan_Turing");
 	}
@@ -223,6 +242,8 @@ public class EmbeddingServiceTest {
 	/**
 	 * Getters and setters
 	 */
+	@ParameterizedTest
+	@MethodSource("endpoints")
 	public void test06(AiEndpoint ep) {
 		EmbeddingService s = ep.getEmbeddingService();
 

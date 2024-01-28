@@ -60,12 +60,16 @@ public class OpenAiModelService extends AbstractModelService {
 		private final SupportedCallType supportedCallType;
 
 		public enum SupportedApi {
-			COMPLETIONS, CHAT, AUDIO, EMBEDDINGS, OTHER
+			COMPLETIONS, CHAT, TTS, STT, EMBEDDINGS, IMAGES, OTHER
 		}
 
 		/** The API this model supports */
 		@Getter
 		private final SupportedApi supportedApi;
+
+		public OpenAiModelMetaData(@NonNull String model, SupportedApi api) {
+			this(model, api, null, null, SupportedCallType.NONE);
+		}
 
 		public OpenAiModelMetaData(@NonNull String model, int contextSize) {
 			this(model, SupportedApi.CHAT, contextSize, null, SupportedCallType.NONE);
@@ -88,7 +92,7 @@ public class OpenAiModelService extends AbstractModelService {
 			this(model, SupportedApi.CHAT, contextSize, maxNewTokens, supportedCallType);
 		}
 
-		public OpenAiModelMetaData(@NonNull String model, SupportedApi api, int contextSize, Integer maxNewTokens,
+		public OpenAiModelMetaData(@NonNull String model, SupportedApi api, Integer contextSize, Integer maxNewTokens,
 				SupportedCallType supportedCallType) {
 			super(model, new OpenAiTokenizer(model), contextSize, maxNewTokens);
 			this.supportedCallType = supportedCallType;
@@ -143,10 +147,16 @@ public class OpenAiModelService extends AbstractModelService {
 		MODEL_CONFIG.put("text-embedding-ada-002",
 				new OpenAiModelMetaData("text-embedding-ada-002", 8192, SupportedApi.EMBEDDINGS));
 
-		MODEL_CONFIG.put("tts-1", new OpenAiModelMetaData("tts-1", 4096, SupportedApi.AUDIO));
-		MODEL_CONFIG.put("tts-1-1106", new OpenAiModelMetaData("tts-1-1106", 2046, SupportedApi.AUDIO));
-		MODEL_CONFIG.put("tts-1-hd", new OpenAiModelMetaData("tts-1-hd", 2046, SupportedApi.AUDIO));
-		MODEL_CONFIG.put("tts-1-hd-1106", new OpenAiModelMetaData("tts-1-hd-1106", 2046, SupportedApi.AUDIO));
+		MODEL_CONFIG.put("tts-1", new OpenAiModelMetaData("tts-1", 4096, SupportedApi.TTS));
+		MODEL_CONFIG.put("tts-1-1106", new OpenAiModelMetaData("tts-1-1106", 2046, SupportedApi.TTS));
+		MODEL_CONFIG.put("tts-1-hd", new OpenAiModelMetaData("tts-1-hd", 2046, SupportedApi.TTS));
+		MODEL_CONFIG.put("tts-1-hd-1106", new OpenAiModelMetaData("tts-1-hd-1106", 2046, SupportedApi.TTS));
+
+		MODEL_CONFIG.put("whisper-1", new OpenAiModelMetaData("whisper-1", SupportedApi.STT));
+
+		MODEL_CONFIG.put("dall-e-2", new OpenAiModelMetaData("dall-e-2", SupportedApi.IMAGES));
+		MODEL_CONFIG.put("dall-e-3", new OpenAiModelMetaData("dall-e-3", SupportedApi.IMAGES));
+		
 	}
 
 	static Stream<OpenAiModelMetaData> getModelsMetadata() {

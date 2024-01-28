@@ -17,7 +17,8 @@
 package io.github.mzattera.predictivepowers.google.services;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,9 +43,9 @@ import lombok.RequiredArgsConstructor;
  */
 @RequiredArgsConstructor
 public class GoogleSearchService implements SearchService {
-	
+
 	// TODO Add more methods
-	
+
 	public GoogleSearchService(GoogleEndpoint endpoint) {
 		this(endpoint, endpoint.getClient());
 	}
@@ -70,8 +71,8 @@ public class GoogleSearchService implements SearchService {
 		for (Result i : search.getItems()) {
 			try {
 				// TODO URGENT add all fields to SearchResult
-				result.add(Link.builder().title(i.getTitle()).url(new URL(i.getLink())).build());
-			} catch (MalformedURLException e) {
+				result.add(Link.builder().title(i.getTitle()).url((new URI(i.getLink())).toURL()).build());
+			} catch (MalformedURLException | URISyntaxException e) {
 				LOG.error("Malformed URL in search result: " + i.getLink(), e);
 			}
 		}

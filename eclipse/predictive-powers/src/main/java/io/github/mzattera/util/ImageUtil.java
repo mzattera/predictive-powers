@@ -22,6 +22,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 import javax.imageio.ImageIO;
@@ -59,9 +61,11 @@ public final class ImageUtil {
 
 	/**
 	 * Reads Java image from a URL.
+	 * 
+	 * @throws URISyntaxException
 	 */
-	public static BufferedImage fromUrl(String url) throws IOException {
-		return fromUrl(new URL(url));
+	public static BufferedImage fromUrl(String url) throws IOException, URISyntaxException {
+		return fromUrl((new URI(url)).toURL());
 	}
 
 	/**
@@ -93,7 +97,7 @@ public final class ImageUtil {
 	public static BufferedImage fromBytes(byte[] rawImage) throws IOException {
 		return ImageIO.read(new ByteArrayInputStream(rawImage));
 	}
-	
+
 	/**
 	 * Write Java image into a file, then return a link to the file itself.
 	 */

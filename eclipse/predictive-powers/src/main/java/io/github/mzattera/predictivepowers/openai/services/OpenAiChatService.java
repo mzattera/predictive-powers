@@ -541,18 +541,21 @@ public class OpenAiChatService extends AbstractChatService {
 
 		// Remove tool call results left on top without corresponding calls, or this
 		// will cause HTTP 400 error
-		// TODO make this more efficient?
 		// TODO urgent test if this fails with FUNCTION too
 		// TODO URGENT add a test case
-		while (messages.size() > 0) {
-			OpenAiChatMessage m = messages.get(0);
-			if (m.getRole() == Role.TOOL)
-				messages.remove(0);
-			else
-				break;
+		int firstNonToolIndex = 0;
+		for (OpenAiChatMessage m : messages) {
+		    if (m.getRole() == Role.TOOL) {
+		        firstNonToolIndex++;
+		    } else {
+		        break;
+		    }
 		}
-		if (messages.size() == 0)
-			throw new IllegalArgumentException("Messages contain only tool call results without corresponding calls");
+		if (firstNonToolIndex > 0) {
+		    messages.subList(0, firstNonToolIndex).clear();
+			if (messages.size() == 0)
+				throw new IllegalArgumentException("Messages contain only tool call results without corresponding calls");
+		}
 
 		// Trims down the list of messages accordingly to given limits.
 		OpenAiTokenizer counter = modelService.getTokenizer(getModel());

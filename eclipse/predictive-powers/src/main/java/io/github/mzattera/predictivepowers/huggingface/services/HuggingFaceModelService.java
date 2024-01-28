@@ -27,7 +27,6 @@ import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpo
 import io.github.mzattera.predictivepowers.services.AbstractModelService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ModelService;
-import io.github.mzattera.util.CharTokenizer;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;

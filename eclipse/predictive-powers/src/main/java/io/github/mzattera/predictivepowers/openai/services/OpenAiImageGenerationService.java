@@ -18,8 +18,12 @@ package io.github.mzattera.predictivepowers.openai.services;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.github.mzattera.predictivepowers.openai.client.images.Image;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
@@ -40,6 +44,8 @@ import lombok.RequiredArgsConstructor;
  */
 @RequiredArgsConstructor
 public class OpenAiImageGenerationService implements ImageGenerationService {
+
+	private final static Logger LOG = LoggerFactory.getLogger(OpenAiImageGenerationService.class);
 
 	public static final String DEFAULT_MODEL = "dall-e-3";
 
@@ -76,7 +82,11 @@ public class OpenAiImageGenerationService implements ImageGenerationService {
 		return createImage(prompt, n, width, height, defaultReq);
 	}
 
-	/** Create images using parameters in the provided request. */
+	/**
+	 * Create images using parameters in the provided request.
+	 * 
+	 * @throws URISyntaxException
+	 */
 	public List<BufferedImage> createImage(String prompt, int n, int width, int height, ImagesRequest req)
 			throws IOException {
 
@@ -88,7 +98,11 @@ public class OpenAiImageGenerationService implements ImageGenerationService {
 		List<Image> images = endpoint.getClient().createImage(req);
 		List<BufferedImage> result = new ArrayList<>(images.size());
 		for (Image img : images)
-			result.add(ImageUtil.fromUrl(img.getUrl()));
+			try {
+				result.add(ImageUtil.fromUrl(img.getUrl()));
+			} catch (URISyntaxException e) {
+				LOG.warn("Malformed URL from OpenAI API", e);
+			}
 
 		return result;
 	}
@@ -108,7 +122,11 @@ public class OpenAiImageGenerationService implements ImageGenerationService {
 		List<Image> images = endpoint.getClient().createImageVariation(prompt, req);
 		List<BufferedImage> result = new ArrayList<>(images.size());
 		for (Image img : images)
-			result.add(ImageUtil.fromUrl(img.getUrl()));
+			try {
+				result.add(ImageUtil.fromUrl(img.getUrl()));
+			} catch (URISyntaxException e) {
+				LOG.warn("Malformed URL from OpenAI API", e);
+			}
 
 		return result;
 	}

@@ -20,7 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -31,14 +32,14 @@ import io.github.mzattera.predictivepowers.services.Link;
 public class GoogleSearchServiceTest {
 
 	@Test
-	public void test01() throws MalformedURLException {
+	public void test01() throws URISyntaxException, MalformedURLException {
 
 		try (GoogleEndpoint endpoint = new GoogleEndpoint()) {
 			GoogleSearchService service = endpoint.getSearchService();
 			
 			List<Link> results =service.search("Massimiliano Zattera predictive-powers github");
 			assertTrue(results.size() > 0);
-			assertEquals(new URL("https://github.com/mzattera"), results.get(0).getUrl());
+			assertEquals((new URI("https://github.com/mzattera")).toURL(), results.get(0).getUrl());
 		}
 	}
 }

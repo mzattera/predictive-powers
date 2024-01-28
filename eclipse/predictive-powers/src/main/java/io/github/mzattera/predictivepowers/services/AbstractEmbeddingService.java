@@ -18,6 +18,8 @@ package io.github.mzattera.predictivepowers.services;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -102,8 +104,8 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 
 	@Override
 	public List<EmbeddedText> embedURL(String url)
-			throws MalformedURLException, IOException, SAXException, TikaException {
-		return embedURL(new URL(url));
+			throws MalformedURLException, IOException, SAXException, TikaException, URISyntaxException {
+		return embedURL((new URI(url)).toURL());
 	}
 
 	@Override

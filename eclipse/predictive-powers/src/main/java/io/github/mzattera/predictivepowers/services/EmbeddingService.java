@@ -18,7 +18,7 @@ package io.github.mzattera.predictivepowers.services;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
@@ -103,7 +103,7 @@ public interface EmbeddingService extends AiService {
 	/**
 	 * Same as calling {@link #embed(String)} using content at given URL.
 	 */
-	List<EmbeddedText> embedURL(String url) throws MalformedURLException, IOException, SAXException, TikaException;
+	List<EmbeddedText> embedURL(String url) throws IOException, SAXException, TikaException, URISyntaxException;
 
 	/**
 	 * Same as calling {@link #embed(String)} using content at given URL.

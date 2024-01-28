@@ -18,6 +18,8 @@ package io.github.mzattera.predictivepowers.openai.services;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -194,8 +196,8 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 	}
 
 	public List<EmbeddedText> embedURL(String url, EmbeddingsRequest req)
-			throws MalformedURLException, IOException, SAXException, TikaException {
-		return embedURL(new URL(url), req);
+			throws MalformedURLException, IOException, SAXException, TikaException, URISyntaxException {
+		return embedURL((new URI(url)).toURL(), req);
 	}
 
 	public List<EmbeddedText> embedURL(URL url, EmbeddingsRequest req) throws IOException, SAXException, TikaException {

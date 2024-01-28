@@ -81,22 +81,22 @@ class OpenAiModelServiceTest {
 			for (Model m : models) {
 				String model = m.getId();
 
-				// TODO add these to metadata as well
-				if (model.startsWith("whisper"))
-					continue; // Whisper models do not need size
-				if (model.startsWith("dall-e"))
-					continue; // DALL-E models do not need size
 				if (model.contains("ft-"))
 					continue; // fine-tunes can be ignored
 				if (deprecated.remove(model))
 					continue; // Skip old models
 
+				assertTrue(actual.remove(model));
+
+				OpenAiModelMetaData md = modelSvc.get(model);
+				assertTrue(md != null);
+				if ((md.getSupportedApi() == SupportedApi.IMAGES) || (md.getSupportedApi() == SupportedApi.STT))
+					continue;
+
 				// Check that tokenizer and context size are provided
-				if (!model.startsWith("tts-")) // Text to speech models do not have encoders
+				if (md.getSupportedApi() != SupportedApi.TTS) // Text to speech models do not have encoders
 					assertTrue(modelSvc.getTokenizer(model) != null);
 				assertTrue(modelSvc.getContextSize(model) > 0);
-
-				assertTrue(actual.remove(model));
 			}
 
 			// Check OLD_MODELS does not contain things we do not need any longer.
@@ -129,7 +129,7 @@ class OpenAiModelServiceTest {
 		} // Close endpoint
 	}
 
-	/** Return names for all chat /completions models */
+	/** @return The meta data for all chat /completions models */
 	static Stream<OpenAiModelMetaData> allChatModelsProvider() {
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 			OpenAiModelService modelSvc = endpoint.getModelService();

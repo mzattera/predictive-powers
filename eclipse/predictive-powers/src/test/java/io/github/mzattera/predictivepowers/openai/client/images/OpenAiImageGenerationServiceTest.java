@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -38,7 +39,7 @@ class OpenAiImageGenerationServiceTest {
 	// TODO add test for createImageEdit()
 
 	@Test
-	void test01() throws IOException {
+	void test01() throws IOException, URISyntaxException {
 		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			String prompt = "A portrait of a blonde lady, with green eyes, holding a green apple. On the background a red wall with a window opened on a country landscape with a lake. In the sky an eagle flies. Neoromantic oil portrait style";
 			ImagesRequest req = new ImagesRequest();
@@ -112,6 +113,6 @@ class OpenAiImageGenerationServiceTest {
 			System.out.println("Image saved as: " + tmp.getCanonicalPath());
 		} // Close endpoint
 	}
-	
+
 	// TODO Add test for image variations using DALL-E 3
 }

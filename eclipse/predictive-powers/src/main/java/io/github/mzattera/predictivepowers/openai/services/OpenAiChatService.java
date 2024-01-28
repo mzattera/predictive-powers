@@ -546,6 +546,8 @@ public class OpenAiChatService extends AbstractChatService {
 		if (messages.size() == 0)
 			throw new IllegalArgumentException("Messages contain only tool call results without corresponding calls");
 
+		// TODO URGENT we should NOT count base tokens as we will be counting messages and stuff
+		controlla altri srevizi facciano i conti con la base
 		int count = getBaseTokens();
 		if (count >= getMaxConversationTokens())
 			throw new IllegalArgumentException("Context to small: request alone is " + count

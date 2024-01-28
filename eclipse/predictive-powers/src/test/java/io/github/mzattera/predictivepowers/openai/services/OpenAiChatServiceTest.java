@@ -152,7 +152,7 @@ public class OpenAiChatServiceTest {
 			cs.setMaxNewTokens(null);
 			cs.setMaxHistoryLength(3);
 			cs.setMaxConversationSteps(9999);
-			cs.setMaxConversationTokens(30); // this should accomodate personality and question
+			cs.setMaxConversationTokens(33); // this should accomodate personality and question
 
 			resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
@@ -181,7 +181,7 @@ public class OpenAiChatServiceTest {
 			cs.setMaxNewTokens(null);
 			cs.setMaxHistoryLength(3);
 			cs.setMaxConversationSteps(9999);
-			cs.setMaxConversationTokens(15);
+			cs.setMaxConversationTokens(21);
 
 			resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);

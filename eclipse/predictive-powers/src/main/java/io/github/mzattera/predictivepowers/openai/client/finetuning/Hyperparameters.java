@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.openai.client.finetunes;
+package io.github.mzattera.predictivepowers.openai.client.finetuning;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

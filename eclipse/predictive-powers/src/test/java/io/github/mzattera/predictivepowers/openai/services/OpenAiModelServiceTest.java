@@ -69,7 +69,6 @@ class OpenAiModelServiceTest {
 	void test01() {
 		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			OpenAiModelService modelSvc = oai.getModelService();
-			OpenAiChatService chatSvc = oai.getChatService();
 
 			Set<String> deprecated = new HashSet<>(OLD_MODELS);
 			Set<String> actual = OpenAiModelService.getModelsMetadata() //

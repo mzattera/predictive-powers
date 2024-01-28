@@ -42,9 +42,9 @@ import io.github.mzattera.predictivepowers.openai.client.completions.Completions
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
-import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTuningJob;
-import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTuningJobEvent;
-import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTuningRequest;
+import io.github.mzattera.predictivepowers.openai.client.finetuning.FineTuningJob;
+import io.github.mzattera.predictivepowers.openai.client.finetuning.FineTuningJobEvent;
+import io.github.mzattera.predictivepowers.openai.client.finetuning.FineTuningRequest;
 import io.github.mzattera.predictivepowers.openai.client.images.Image;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.mzattera.predictivepowers.openai.client.finetunes;
+package io.github.mzattera.predictivepowers.openai.client.finetuning;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -28,12 +28,19 @@ import org.xml.sax.SAXException;
 
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
+import io.github.mzattera.predictivepowers.openai.client.finetuning.FineTuningJob;
+import io.github.mzattera.predictivepowers.openai.client.finetuning.FineTuningJobEvent;
+import io.github.mzattera.predictivepowers.openai.client.finetuning.FineTuningRequest;
+import io.github.mzattera.predictivepowers.openai.client.finetuning.Hyperparameters;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.util.ExtractionUtil;
 import io.github.mzattera.util.ResourceUtil;
 
 class FineTunesTest {
 
+	// TODO test tuning a model with chat
+	// TODO test all auto in Hyperpearmeters....and test using Hyperparameters
+	
 	private static final String MODEL = "babbage-002";
 
 	@Test

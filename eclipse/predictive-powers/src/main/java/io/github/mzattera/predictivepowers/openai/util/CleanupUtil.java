@@ -23,7 +23,7 @@ import java.util.Set;
 
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
-import io.github.mzattera.predictivepowers.openai.client.finetunes.FineTuningJob;
+import io.github.mzattera.predictivepowers.openai.client.finetuning.FineTuningJob;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 

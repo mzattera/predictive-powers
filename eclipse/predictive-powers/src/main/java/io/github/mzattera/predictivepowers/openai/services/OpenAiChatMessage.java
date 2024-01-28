@@ -42,7 +42,7 @@ import lombok.ToString;
 @NoArgsConstructor
 //@RequiredArgsConstructor
 //@AllArgsConstructor
-@ToString
+@ToString(callSuper = true)
 public class OpenAiChatMessage extends ChatMessage {
 
 	/**

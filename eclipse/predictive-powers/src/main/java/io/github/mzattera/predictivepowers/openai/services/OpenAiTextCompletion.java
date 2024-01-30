@@ -18,13 +18,12 @@ package io.github.mzattera.predictivepowers.openai.services;
 
 import java.util.List;
 
-import io.github.mzattera.predictivepowers.openai.client.chat.ToolCall;
-import io.github.mzattera.predictivepowers.services.ChatCompletion;
+import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
+import io.github.mzattera.predictivepowers.services.AgentCompletion;
 import io.github.mzattera.predictivepowers.services.TextCompletion;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
@@ -40,36 +39,23 @@ import lombok.experimental.SuperBuilder;
 @Setter
 @SuperBuilder
 //@NoArgsConstructor
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 @AllArgsConstructor
 @ToString
-public class OpenAiTextCompletion extends ChatCompletion {
+public class OpenAiTextCompletion extends AgentCompletion {
 
 	// TODO URGENT: Extend AgentCompletion instead and rename accordingly
-	
-	@Override 
+
+	@Override
 	public OpenAiChatMessage getMessage() {
-		return (OpenAiChatMessage)super.getMessage();
+		return (OpenAiChatMessage) super.getMessage();
 	}
 
-	// TODO URGENT These fields about tool calls should be abstracted into AgentCompletion
-
-	/**
-	 * List of tool calls, if the call generated function (tools) calls.
-	 */
-	private List<ToolCall> toolCalls;
-
-	
-	public boolean hasToolCalls() {
-		return ((toolCalls != null) && (toolCalls.size() > 0));
-	}
-
-	public OpenAiTextCompletion(String text, String finishReason, List<ToolCall> toolCalls) {
+	public OpenAiTextCompletion(String text, String finishReason, List<OpenAiToolCall> toolCalls) {
 		this(text, FinishReason.fromGptApi(finishReason), toolCalls);
 	}
 
-	public OpenAiTextCompletion(String text, FinishReason finishReason, List<ToolCall> toolCalls) {
-		super(OpenAiChatMessage.builder().content(text).build(), finishReason);
-		this.toolCalls = toolCalls;
+	public OpenAiTextCompletion(String text, FinishReason finishReason, List<OpenAiToolCall> toolCalls) {
+		super(OpenAiChatMessage.builder().content(text).build(), finishReason, toolCalls);
 	}
 }

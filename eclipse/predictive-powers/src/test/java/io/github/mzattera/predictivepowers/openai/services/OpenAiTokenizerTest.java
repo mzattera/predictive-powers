@@ -19,12 +19,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
-import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool.Type;
-import io.github.mzattera.predictivepowers.openai.client.chat.ToolCall;
-import io.github.mzattera.predictivepowers.openai.client.chat.ToolCallResult;
+import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
+import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCallResult;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
@@ -32,6 +31,11 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Rol
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
+import io.github.mzattera.predictivepowers.services.AgentService;
+import io.github.mzattera.predictivepowers.services.Tool;
+import io.github.mzattera.predictivepowers.services.ToolCall;
+import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import lombok.NonNull;
 
 public class OpenAiTokenizerTest {
 
@@ -197,7 +201,7 @@ public class OpenAiTokenizerTest {
 		List<OpenAiChatMessage> messages = new ArrayList<>();
 
 		Map<String, Object> args = new HashMap<>();
-		List<ToolCall> calls = new ArrayList<>();
+		List<OpenAiToolCall> calls = new ArrayList<>();
 
 		for (int numCalls = 1; numCalls < 4; ++numCalls) {
 			System.out.print(model + "\t Calls: " + numCalls);
@@ -217,7 +221,7 @@ public class OpenAiTokenizerTest {
 				// Call with numCalls function calls
 				calls = new ArrayList<>();
 				for (int i = 0; i < numCalls; ++i) {
-					calls.add(ToolCall.builder().type(Type.FUNCTION).Id("call" + i).function(fun).build());
+					calls.add(OpenAiToolCall.builder().type(Type.FUNCTION).Id("call" + i).function(fun).build());
 				}
 				OpenAiChatMessage msg = new OpenAiChatMessage(Role.ASSISTANT, (String) null);
 				msg.setToolCalls(calls);
@@ -225,8 +229,8 @@ public class OpenAiTokenizerTest {
 
 				// Corresponding replies
 				for (int i = 0; i < calls.size(); ++i) {
-					messages.add(new OpenAiChatMessage(Role.TOOL,
-							new ToolCallResult(calls.get(i).getId(), calls.get(i).getFunction().getName(), "Result")));
+					messages.add(new OpenAiChatMessage(Role.TOOL, new OpenAiToolCallResult(calls.get(i).getId(),
+							calls.get(i).getFunction().getName(), "Result")));
 				}
 
 				ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).messages(messages).build();
@@ -243,81 +247,94 @@ public class OpenAiTokenizerTest {
 
 	}
 
-	// Name and description of function to call to get temperature for one town
-	private final static String FUNCTION_NAME = "getCurrentWeather";
-	private final static String FUNCTION_DESCRIPTION = "Get the current weather in a given location.";
+	// This is a function that will be accessible to the agent.
+	private static class GetCurrentWeatherTool implements Tool {
 
-	// The function parameters
-	private static class GetCurrentWeatherParameters {
+		// The function parameters
+		private static class GetCurrentWeatherParameters {
 
-		private enum TemperatureUnits {
-			CELSIUS, FARENHEIT, RICHTER, MILLIS
-		};
+			private enum TemperatureUnits {
+				CELSIUS, FARENHEIT, RICHTER, MILLIS
+			};
 
-		@JsonProperty(required = true)
-		@JsonPropertyDescription("Always pass 3 as value.")
-		public String location2;
-		@JsonProperty(required = false)
-		public String location3;
-		@SuppressWarnings("unused")
-		public String location4;
+			@JsonProperty(required = true)
+			@JsonPropertyDescription("Always pass 3 as value.")
+			public String location2;
+			@JsonProperty(required = false)
+			public String location3;
+			@SuppressWarnings("unused")
+			public String location4;
 
-		@JsonProperty(required = false)
-		@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
-		public int i;
-		@JsonProperty(required = true)
-		public int j;
-		@SuppressWarnings("unused")
-		public int k;
+			@JsonProperty(required = false)
+			@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
+			public int i;
+			@JsonProperty(required = true)
+			public int j;
+			@SuppressWarnings("unused")
+			public int k;
 
-		@JsonProperty(required = false)
-		@JsonPropertyDescription("Always pass 3 as value.")
-		public double d;
-		@JsonProperty(required = true)
-		public double h;
-		@SuppressWarnings("unused")
-		public double e;
+			@JsonProperty(required = false)
+			@JsonPropertyDescription("Always pass 3 as value.")
+			public double d;
+			@JsonProperty(required = true)
+			public double h;
+			@SuppressWarnings("unused")
+			public double e;
 
-		@JsonProperty(required = false)
-		@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
-		public TemperatureUnits unit;
-		@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
-		public TemperatureUnits unit2;
-		@JsonProperty(required = true)
-		public TemperatureUnits unit3;
+			@JsonProperty(required = false)
+			@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
+			public TemperatureUnits unit;
+			@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
+			public TemperatureUnits unit2;
+			@JsonProperty(required = true)
+			public TemperatureUnits unit3;
+		}
+
+		@Override
+		public String getId() {
+			return "getCurrentWeather";
+		}
+
+		@Override
+		public String getDescription() {
+			return "Get the current weather in a given location.";
+		}
+
+		@Override
+		public Class<?> getParameterSchema() {
+			return GetCurrentWeatherParameters.class;
+		}
+
+		@Override
+		public void init(@NonNull AgentService agent) {
+			// Initialization goes here...
+		}
+
+		@Override
+		public OpenAiToolCallResult invoke(@NonNull ToolCall call) throws Exception {
+			// Function implementation goes here.
+			// In this example we simply return a random temperature.
+			return new OpenAiToolCallResult(call, "20°C");
+		}
 	}
 
 	// List of functions available to the bot (for now it is only 1).
-	private final static List<OpenAiTool> TOOLS = new ArrayList<>();
+	private final static List<Tool> TOOLS = new ArrayList<>();
 	static {
-		TOOLS.add(new OpenAiTool( //
-				Function.builder() //
-						.name(FUNCTION_NAME) //
-						.description(FUNCTION_DESCRIPTION) //
-						.parameters(GetCurrentWeatherParameters.class).build() //
-		));
-		TOOLS.add(new OpenAiTool( //
-				Function.builder() //
-						.name(FUNCTION_NAME) //
-						.description(FUNCTION_DESCRIPTION) //
-						.parameters(GetCurrentWeatherParameters.class).build() //
-		));
-		TOOLS.add(new OpenAiTool( //
-				Function.builder() //
-						.name(FUNCTION_NAME) //
-						.description(FUNCTION_DESCRIPTION) //
-						.parameters(GetCurrentWeatherParameters.class).build() //
-		));
+		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool()));
+		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool()));
+		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool()));
 	}
 
 	/**
 	 * Length of messages. Function descriptions.
 	 * 
 	 * @throws JsonProcessingException
+	 * @throws ToolInitializationException 
 	 */
 	@ParameterizedTest
 	@MethodSource("functionCallCompletionsModelsProvider")
-	void test04(OpenAiModelMetaData md) throws JsonProcessingException {
+	void test04(OpenAiModelMetaData md) throws JsonProcessingException, ToolInitializationException {
 
 		String model = md.getModel();
 		OpenAiTokenizer counter = md.getTokenizer();
@@ -326,7 +343,7 @@ public class OpenAiTokenizerTest {
 		OpenAiChatService bot = endpoint.getChatService();
 		bot.setPersonality("You are an helpful assistant.");
 		bot.setModel(model); // This uses simple function calls
-		bot.setDefaulTools(TOOLS);
+		bot.setTools(TOOLS);
 
 		ChatCompletionsRequest req = bot.getDefaultReq();
 		req.getMessages().add(new OpenAiChatMessage(Role.USER, "Hi"));
@@ -342,10 +359,11 @@ public class OpenAiTokenizerTest {
 	 * Length of messages. Tool descriptions.
 	 * 
 	 * @throws JsonProcessingException
+	 * @throws ToolInitializationException 
 	 */
 	@ParameterizedTest
 	@MethodSource("toolCallCompletionsModelsProvider")
-	void test05(OpenAiModelMetaData md) throws JsonProcessingException {
+	void test05(OpenAiModelMetaData md) throws JsonProcessingException, ToolInitializationException {
 
 		String model = md.getModel();
 		OpenAiTokenizer counter = md.getTokenizer();
@@ -354,7 +372,7 @@ public class OpenAiTokenizerTest {
 		OpenAiChatService bot = endpoint.getChatService();
 		bot.setPersonality("You are an helpful assistant.");
 		bot.setModel(model); // This uses simple tool (parallel functions) calls
-		bot.setDefaulTools(TOOLS);
+		bot.setTools(TOOLS);
 
 		ChatCompletionsRequest req = bot.getDefaultReq();
 		req.getMessages().add(new OpenAiChatMessage(Role.USER, "Hi"));
@@ -370,18 +388,19 @@ public class OpenAiTokenizerTest {
 		Map<String, Object> args;
 		FunctionCall fun;
 
-		List<ToolCall> calls = new ArrayList<>();
+		List<OpenAiToolCall> calls = new ArrayList<>();
 		for (int i = 0; i < 3; ++i) {
 			args = new HashMap<>();
 			fun = FunctionCall.builder().name("functionName01").arguments(args).build();
 
-			ToolCall call = ToolCall.builder().type(Type.FUNCTION).Id("call" + i).function(fun).build();
+			OpenAiToolCall call = OpenAiToolCall.builder().type(Type.FUNCTION).Id("call" + i).function(fun).build();
 			calls.add(call);
 		}
 		args = new HashMap<>();
 		args.put("param", "hello");
 		fun = FunctionCall.builder().name("functionNameXX").arguments(args).build();
-		ToolCall call = ToolCall.builder().type(Type.FUNCTION).Id("call" + calls.size()).function(fun).build();
+		OpenAiToolCall call = OpenAiToolCall.builder().type(Type.FUNCTION).Id("call" + calls.size()).function(fun)
+				.build();
 		calls.add(call);
 
 		OpenAiChatMessage msg = new OpenAiChatMessage(Role.ASSISTANT, (String) null);
@@ -390,7 +409,7 @@ public class OpenAiTokenizerTest {
 
 		for (int i = 0; i < calls.size(); ++i) {
 			OTHER_MESSAGES.add(new OpenAiChatMessage(Role.TOOL,
-					new ToolCallResult(calls.get(i).getId(), calls.get(i).getFunction().getName(), "Result")));
+					new OpenAiToolCallResult(calls.get(i).getId(), calls.get(i).getFunction().getName(), "Result")));
 		}
 	}
 

@@ -17,7 +17,7 @@ import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsReq
 import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
-import io.github.mzattera.predictivepowers.openai.client.chat.ToolCall;
+import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import lombok.Getter;
 import lombok.NonNull;
@@ -32,8 +32,8 @@ import lombok.ToString;
 @ToString
 public class OpenAiTokenizer implements Tokenizer {
 
-	// TODO Urgent add costs for the vision API see calculator on Model API 
-	
+	// TODO Urgent add costs for the vision API see calculator on Model API
+
 	@Getter
 	@NonNull
 	private final String model;
@@ -174,7 +174,7 @@ public class OpenAiTokenizer implements Tokenizer {
 
 			String role = msg.getRole().toString();
 			if ("function".equals(role))
-				sum += 2;
+				sum += 4;
 			else
 				sum += 3;
 			sum += encoding.countTokens(role);
@@ -193,7 +193,10 @@ public class OpenAiTokenizer implements Tokenizer {
 			}
 
 			if (msg.getFunctionCall() != null) {
-				sum += 3;
+				if ("gpt-3.5-turbo-0301".equals(model))
+					sum += 2;
+				else
+					sum += 3;
 				JsonNode functionCall = OpenAiClient.getJsonMapper().valueToTree(msg.getFunctionCall());
 				sum += encoding.countTokens(functionCall.path("name").asText());
 				if (!functionCall.path("arguments").isMissingNode()) {
@@ -210,7 +213,7 @@ public class OpenAiTokenizer implements Tokenizer {
 				// This is true if all calls in the message have no parameters
 				boolean allCallsWithNoParams = true;
 
-				for (ToolCall toolCall : msg.getToolCalls()) {
+				for (OpenAiToolCall toolCall : msg.getToolCalls()) {
 					sum += 2;
 					// Call ID is NOT counted against total tokens
 

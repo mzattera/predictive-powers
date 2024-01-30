@@ -128,7 +128,7 @@ public class OpenAiModelService extends AbstractModelService {
 
 		MODEL_CONFIG.put("gpt-4", new OpenAiModelMetaData("gpt-4", 8192, SupportedCallType.FUNCTIONS));
 		MODEL_CONFIG.put("gpt-4-turbo-preview",
-				new OpenAiModelMetaData("gpt-4-turbo-preview", 128000, SupportedCallType.TOOLS));
+				new OpenAiModelMetaData("gpt-4-turbo-preview", 128000, 4096, SupportedCallType.TOOLS));
 		MODEL_CONFIG.put("gpt-4-0613", new OpenAiModelMetaData("gpt-4-0613", 8192, SupportedCallType.FUNCTIONS));
 		MODEL_CONFIG.put("gpt-4-32k", new OpenAiModelMetaData("gpt-4-32k", 32768, SupportedCallType.FUNCTIONS));
 		MODEL_CONFIG.put("gpt-4-32k-0613",

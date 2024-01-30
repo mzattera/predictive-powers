@@ -143,7 +143,7 @@ public class HuggingFaceCompletionService implements CompletionService {
 	}
 
 	@Override
-	public TextCompletion complete(String prompt, Map<String, ? extends Object> parameters) {
+	public TextCompletion complete(String prompt, Map<String, Object> parameters) {
 		return complete(prompt, parameters, defaultReq);
 	}
 
@@ -153,7 +153,7 @@ public class HuggingFaceCompletionService implements CompletionService {
 	 * @param parameters Parameters used for slot filling. See
 	 *                   {@link #fillSlots(String, Map)}.
 	 */
-	public TextCompletion complete(String prompt, Map<String, ? extends Object> parameters, TextGenerationRequest req) {
+	public TextCompletion complete(String prompt, Map<String, Object> parameters, TextGenerationRequest req) {
 		req.getInputs().clear();
 		req.getInputs().add(CompletionService.fillSlots(prompt, parameters));
 
@@ -167,7 +167,7 @@ public class HuggingFaceCompletionService implements CompletionService {
 	}
 
 	@Override
-	public TextCompletion insert(String prompt, String suffix, Map<String, ? extends Object> parameters) {
+	public TextCompletion insert(String prompt, String suffix, Map<String, Object> parameters) {
 		throw new UnsupportedOperationException();
 	}
 }

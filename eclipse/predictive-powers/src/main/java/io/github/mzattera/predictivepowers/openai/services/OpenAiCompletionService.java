@@ -170,7 +170,7 @@ public class OpenAiCompletionService implements CompletionService {
 	}
 
 	@Override
-	public TextCompletion complete(String prompt, Map<String, ? extends Object> parameters) {
+	public TextCompletion complete(String prompt, Map<String, Object> parameters) {
 		return complete(prompt, parameters, defaultReq);
 	}
 
@@ -192,7 +192,7 @@ public class OpenAiCompletionService implements CompletionService {
 				// Automatically set token limit, if needed
 				Tokenizer counter = modelService.getTokenizer(model);
 				int tok = counter.count(prompt);
-				int size = modelService.getContextSize(model) - tok -5;
+				int size = modelService.getContextSize(model) - tok - 5;
 				if (size <= 0)
 					throw new IllegalArgumentException(
 							"Your proompt exceeds context size: " + modelService.getContextSize(model));
@@ -235,13 +235,15 @@ public class OpenAiCompletionService implements CompletionService {
 	 */
 	@Override
 	public TextCompletion insert(String prompt, String suffix) {
-		// After 4th Jan., 2024, modles supporting the completions API are GPT-3.5 variants not recognizing the "suffix" parameter
+		// After 4th Jan., 2024, modles supporting the completions API are GPT-3.5
+		// variants not recognizing the "suffix" parameter
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public TextCompletion insert(String prompt, String suffix, Map<String, ? extends Object> parameters) {
-		// After 4th Jan., 2024, modles supporting the completions API are GPT-3.5 variants not recognizing the "suffix" parameter
+	public TextCompletion insert(String prompt, String suffix, Map<String, Object> parameters) {
+		// After 4th Jan., 2024, modles supporting the completions API are GPT-3.5
+		// variants not recognizing the "suffix" parameter
 		throw new UnsupportedOperationException();
 	}
 }

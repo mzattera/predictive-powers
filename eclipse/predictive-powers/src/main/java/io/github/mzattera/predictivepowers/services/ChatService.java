@@ -81,7 +81,7 @@ public interface ChatService extends AiService {
 	 * However, only latest messages are considered when calling the API (see
 	 * {@link getMaxConversationLength}).
 	 */
-	List<ChatMessage> getHistory();
+	List<? extends ChatMessage> getHistory();
 
 	/**
 	 * Maximum number of messages to keep in chat history.

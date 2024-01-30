@@ -16,16 +16,9 @@
 
 package io.github.mzattera.predictivepowers.openai.client.chat;
 
-import java.io.IOException;
-
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.kjetland.jackson.jsonSchema.JsonSchemaGenerator;
 
+import io.github.mzattera.predictivepowers.services.Tool;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -51,22 +44,6 @@ import lombok.ToString;
 @ToString
 public class Function {
 
-	/** Used for JSON (de)serialization of function parameters as schema */
-	@Getter
-	private final static JsonSchemaGenerator schemaGenerator = new JsonSchemaGenerator(new ObjectMapper());
-
-	/**
-	 * Custom serializer to create JSON schema for function parameters.
-	 */
-	private static class ParametersSerializer extends JsonSerializer<Class<?>> {
-
-		@Override
-		public void serialize(Class<?> c, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
-				throws IOException, JsonProcessingException {
-			jsonGenerator.writeTree(schemaGenerator.generateJsonSchema(c));
-		}
-	}
-
 	/**
 	 * The name of the function to be called. Must be a-z, A-Z, 0-9, or contain
 	 * underscores and dashes, with a maximum length of 64.
@@ -87,7 +64,7 @@ public class Function {
 	 * OpenAI seems to support only parameters that are either native Java types,
 	 * String, and enumerations.
 	 */
-	@JsonSerialize(using = ParametersSerializer.class, as = Class.class)
+	@JsonSerialize(using = Tool.ParametersSerializer.class, as = Class.class)
 	@NonNull // OpenAi errors otherwise
 	Class<?> parameters;
 }

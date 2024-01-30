@@ -16,6 +16,10 @@
 
 package io.github.mzattera.predictivepowers.openai.client.chat;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import io.github.mzattera.predictivepowers.services.ToolCall;
+import io.github.mzattera.predictivepowers.services.ToolCallResult;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -37,13 +41,16 @@ import lombok.ToString;
 @RequiredArgsConstructor
 //@AllArgsConstructor
 @ToString
-public class ToolCallResult {
+public class OpenAiToolCallResult implements ToolCallResult {
 
 	/** ID for the call generating this result. */
 	@NonNull
 	String toolCallId;
 
-	/** Name of the function being called. */
+	/**
+	 * Name of the function being called (ID of corresponding tool, until only
+	 * function calls are supported).
+	 */
 	@NonNull
 	String name;
 
@@ -51,10 +58,17 @@ public class ToolCallResult {
 	@NonNull
 	String result;
 
+	@JsonIgnore
+	@Override
+	public @NonNull String getToolId() {
+		return getName();
+		
+	}
+
 	/**
-	 * Builds the result for given call.
+	 * Builds the result for given tool call.
 	 */
-	public ToolCallResult(ToolCall call, String result) {
-		this(call.getId(), call.getFunction().getName(), result);
+	public OpenAiToolCallResult(ToolCall call, String result) {
+		this(call.getId(), call.getTool().getId(), result);
 	}
 }

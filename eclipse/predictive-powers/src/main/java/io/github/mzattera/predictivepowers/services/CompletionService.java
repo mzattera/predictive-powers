@@ -100,7 +100,7 @@ public interface CompletionService extends AiService {
 	 * @param parameters Parameters used for slot filling. See
 	 *                   {@link #fillSlots(String, Map)}.
 	 */
-	TextCompletion complete(String prompt, Map<String, ? extends Object> parameters);
+	TextCompletion complete(String prompt, Map<String, Object> parameters);
 
 	/**
 	 * Inserts text between given prompt and the suffix.
@@ -114,7 +114,7 @@ public interface CompletionService extends AiService {
 	 *                   {@link #fillSlots(String, Map)}. This will be use to fill
 	 *                   slots both in the prompt and the suffix.
 	 */
-	TextCompletion insert(String prompt, String suffix, Map<String, ? extends Object> parameters);
+	TextCompletion insert(String prompt, String suffix, Map<String, Object> parameters);
 
 	/**
 	 * Replaces 'slots' in a prompt.

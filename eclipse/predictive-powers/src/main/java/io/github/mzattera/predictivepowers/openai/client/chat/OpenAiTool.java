@@ -19,7 +19,12 @@ package io.github.mzattera.predictivepowers.openai.client.chat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import io.github.mzattera.predictivepowers.services.AgentService;
 import io.github.mzattera.predictivepowers.services.Tool;
+import io.github.mzattera.predictivepowers.services.ToolCall;
+import io.github.mzattera.predictivepowers.services.ToolCallResult;
+import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -40,13 +45,13 @@ import lombok.ToString;
 //@RequiredArgsConstructor
 //@AllArgsConstructor
 @ToString
-public class OpenAiTool extends Tool {
+public class OpenAiTool implements Tool {
 
-	/** The code interpreter tool, for Assistants. */ 
+	/** The code interpreter tool, for Assistants. */
 	public final static OpenAiTool CODE_INTERPRETER = new OpenAiTool(Type.CODE_INTERPRETER);
-	
-	/** The retrieval tool, for Assistants. */ 
-	public final static OpenAiTool RETRIEVAL = new OpenAiTool(Type.CODE_INTERPRETER);  
+
+	/** The retrieval tool, for Assistants. */
+	public final static OpenAiTool RETRIEVAL = new OpenAiTool(Type.CODE_INTERPRETER);
 
 	public enum Type {
 
@@ -65,28 +70,102 @@ public class OpenAiTool extends Tool {
 		}
 	}
 
+	Type type;
+
+	Function function;
+
 	@Override
 	@JsonIgnore
-	// Suppress serialization of this field
 	public String getId() {
 		if (type == Type.FUNCTION)
 			return function.name;
 		return type.toString();
 	}
 
-	@NonNull
-	Type type;
+	@JsonIgnore
+	@Override
+	public String getDescription() {
+		if (type == Type.FUNCTION)
+			return function.getDescription();
+		return ("This is the " + type + " tool available to OpenAI assistants.");
+	}
 
-	Function function;
+	private final static class NoParameters {
+	}
+
+	@JsonIgnore
+	@Override
+	public Class<?> getParameterSchema() {
+		if (type == Type.FUNCTION)
+			return function.getParameters();
+		return NoParameters.class;
+	}
 
 	private OpenAiTool(Type type) {
 		if (type == Type.FUNCTION)
 			throw new IllegalArgumentException("Function must be provided");
 		this.type = type;
+		this.wrappedTool = null;
 	}
 
-	public OpenAiTool(Function function) {
+	/**
+	 * Create a "function" from its description. Notice that if you use this
+	 * construction than {@ #invoke(Map)} will throw UnsoupportedMethodException
+	 * when called.
+	 */
+	OpenAiTool(Function function) {
 		this.type = Type.FUNCTION;
 		this.function = function;
+		this.wrappedTool = null;
+	}
+
+	@JsonIgnore
+	@Getter(AccessLevel.PROTECTED)
+	@Setter(AccessLevel.NONE)
+	protected Tool wrappedTool;
+
+	/**
+	 * Create an instance of this class as a wrapper around given tool. This will
+	 * automatically invoke the tool when {@ #invoke(Map)} is called for this
+	 * instance.
+	 */
+	public OpenAiTool(Tool tool) {
+		this.type = Type.FUNCTION;
+		this.function = Function.builder() //
+				.name(tool.getId()) //
+				.description(tool.getDescription()) //
+				.parameters(tool.getParameterSchema()).build();
+		this.wrappedTool = tool;
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if ((o == null) || !(o instanceof OpenAiTool))
+			return false;
+		return this.getId().equals(((OpenAiTool) o).getId());
+	}
+
+	@Override
+	public int hashCode() {
+		return this.getId().hashCode();
+	}
+
+	@Override
+	public void init(@NonNull AgentService agent) throws ToolInitializationException {
+		if (wrappedTool != null)
+			wrappedTool.init(agent);
+	}
+
+	/**
+	 * Unless this instance has been built as a wrapper, this method will throw
+	 * UnsupportedOperationException.
+	 * 
+	 * @throws Exception
+	 */
+	@Override
+	public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
+		if (wrappedTool != null)
+			return wrappedTool.invoke(call);
+		throw new UnsupportedOperationException();
 	}
 }

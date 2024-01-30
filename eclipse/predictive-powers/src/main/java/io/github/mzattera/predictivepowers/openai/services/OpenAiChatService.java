@@ -16,9 +16,11 @@
 package io.github.mzattera.predictivepowers.openai.services;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,14 +30,18 @@ import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsCho
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.client.chat.Function;
+import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
-import io.github.mzattera.predictivepowers.openai.client.chat.ToolCall;
-import io.github.mzattera.predictivepowers.openai.client.chat.ToolCallResult;
+import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.AbstractChatService;
+import io.github.mzattera.predictivepowers.services.AgentService;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
+import io.github.mzattera.predictivepowers.services.Tool;
+import io.github.mzattera.predictivepowers.services.ToolCallResult;
+import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -49,7 +55,7 @@ import lombok.NonNull;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public class OpenAiChatService extends AbstractChatService {
+public class OpenAiChatService extends AbstractChatService implements AgentService {
 
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiChatService.class);
 
@@ -103,9 +109,8 @@ public class OpenAiChatService extends AbstractChatService {
 	private final List<OpenAiChatMessage> history = new ArrayList<>();
 
 	@Override
-	public List<ChatMessage> getHistory() {
-		return Collections.unmodifiableList(
-				history.stream().map(chatMessage -> (ChatMessage) chatMessage).collect(Collectors.toList()));
+	public List<OpenAiChatMessage> getHistory() {
+		return Collections.unmodifiableList(history);
 	}
 
 	/** Fore testing purposes only. This is not meant to be used. */
@@ -118,77 +123,112 @@ public class OpenAiChatService extends AbstractChatService {
 		history.clear();
 	}
 
+	// TODO URGENT add tests to check all the methods to manipulate tools
+
+	private final Map<String, OpenAiTool> tools = new HashMap<>();
+
+	@Override
+	public List<OpenAiTool> getTools() {
+		return Collections.unmodifiableList(new ArrayList<>(tools.values()));
+	}
+
+	@Override
+	public void setTools(Collection<? extends Tool> list) throws ToolInitializationException {
+
+		tools.clear();
+		if (list != null) {
+			try {
+				addTools(list);
+			} catch (ToolInitializationException e) {
+				tools.clear();
+				throw e;
+			}
+		}
+
+		setDefaultTools();
+	}
+
+	@Override
+	public void addTool(@NonNull Tool tool) throws ToolInitializationException {
+
+		// TODO? Re-enable? it has been disable for easier tests 
+//		if (tools.containsKey(tool.getId()))
+//			throw new ToolInitializationException("Duplicated tool: " + tool.getId());
+
+		tool.init(this);
+		try {
+			tools.put(tool.getId(), (OpenAiTool) tool);
+		} catch (ClassCastException e) {
+			// Wrap the Tool into an OpenAiTool, so we can use any tool with function calls
+			tools.put(tool.getId(), new OpenAiTool(tool));
+		}
+		setDefaultTools();
+	}
+
+	@Override
+	public void addTools(Collection<? extends Tool> tools) throws ToolInitializationException {
+
+		if (tools == null)
+			return;
+		for (Tool tool : tools)
+			addTool(tool);
+	}
+
+	@Override
+	public OpenAiTool removeTool(@NonNull String id) {
+
+		OpenAiTool result = tools.remove(id);
+		if (result != null)
+			setDefaultTools();
+		return result;
+	}
+
+	@Override
+	public OpenAiTool removeTool(Tool tool) {
+		return removeTool(tool.getId());
+	}
+
+	@Override
+	public void clearTools() {
+		tools.clear();
+		setDefaultTools();
+	}
+
 	/**
 	 * Set the tools to be used in all subsequent request. This sets tools or
 	 * functions fields in defaultReq properly, taking automatically in
 	 * consideration whether the model support functions or tool calls.
 	 * 
 	 * This is easier than setting tools or functions fields in defaultReq directly.
-	 * single or parallel (tools) function calls.
 	 * 
-	 * @param tools List of tools to be used in all subsequent calls of this
-	 *              service.
-	 * 
-	 * @throws IllegalArgumentException if the model does not support function
-	 *                                  calls.
+	 * @throws UnsupportedOperationException if the model does not support function
+	 *                                       calls.
 	 */
-	public void setDefaulTools(List<OpenAiTool> tools) {
+	private void setDefaultTools() {
 
-		if ((tools == null) || (tools.size() == 0)) { // No tools / functions used
+		if (tools.size() == 0) { // No tools / functions used
 			defaultReq.setTools(null);
 			defaultReq.setFunctions(null);
 			return;
 		}
 
-		switch (((OpenAiModelService) modelService).getSupportedCall(getModel())) {
+		switch (modelService.getSupportedCall(getModel())) {
 		case FUNCTIONS:
 			List<Function> f = new ArrayList<>(tools.size());
-			for (OpenAiTool t : tools) {
+			for (OpenAiTool t : tools.values()) {
 				if (t.getType() != OpenAiTool.Type.FUNCTION) // paranoid, but will support future tools
-					throw new IllegalArgumentException("Current model does only support old funtion calling API.");
+					throw new UnsupportedOperationException("Current model supports only old funtion calling API.");
 				f.add(t.getFunction());
 			}
 			defaultReq.setFunctions(f);
 			defaultReq.setTools(null);
 			break;
 		case TOOLS:
-			defaultReq.setTools(tools);
+			defaultReq.setTools(new ArrayList<>(tools.values()));
 			defaultReq.setFunctions(null);
 			break;
 		default:
-			throw new IllegalArgumentException("Current model does not support function calling.");
-		}
-	}
-
-	/**
-	 * Gets the tools to used in all subsequent calls to this service
-	 * 
-	 * @return Content of tools or functions fields in defaultReq, taking
-	 *         automatically in consideration whether the model support functions.
-	 * 
-	 *         This is easier than accessing tools or functions fields in defaultReq
-	 *         directly.
-	 * 
-	 * @throws IllegalArgumentException if the model does not support function
-	 *                                  calls.
-	 */
-	public List<OpenAiTool> getDefaulTools() {
-
-		switch (modelService.getSupportedCall(getModel())) {
-		case FUNCTIONS:
-			if (defaultReq.getFunctions() == null)
-				return null;
-			List<OpenAiTool> result = new ArrayList<>(defaultReq.getFunctions().size());
-			for (Function t : defaultReq.getFunctions()) {
-				result.add(new OpenAiTool(t));
-			}
-			return result;
-		case TOOLS:
-			if (defaultReq.getTools() == null)
-				return null;
-			return defaultReq.getTools();
-		default:
-			throw new IllegalArgumentException("Current model does not support function calling.");
+			throw new UnsupportedOperationException("Current model does not support function calling.");
 		}
 	}
 
@@ -323,7 +363,7 @@ public class OpenAiChatService extends AbstractChatService {
 	 * 
 	 * @param results the list of results from various call.
 	 */
-	public OpenAiTextCompletion chat(List<ToolCallResult> results) {
+	public OpenAiTextCompletion chat(List<? extends ToolCallResult> results) {
 		return chat(results, defaultReq);
 	}
 
@@ -336,7 +376,7 @@ public class OpenAiChatService extends AbstractChatService {
 	 * 
 	 * @param results the list of results from various call.
 	 */
-	public OpenAiTextCompletion chat(List<ToolCallResult> results, ChatCompletionsRequest req) {
+	public OpenAiTextCompletion chat(List<? extends ToolCallResult> results, ChatCompletionsRequest req) {
 
 		List<OpenAiChatMessage> conversation = new ArrayList<>(history);
 
@@ -376,8 +416,9 @@ public class OpenAiChatService extends AbstractChatService {
 		}
 
 		// Make sure history is of desired length
-		while (history.size() > getMaxHistoryLength())
-			history.remove(0);
+		int toTrim = history.size() - getMaxHistoryLength();
+		if (toTrim > 0)
+			history.subList(toTrim, history.size()).clear();
 
 		return OpenAiTextCompletion.builder() //
 				.message(completion.getMessage()) //
@@ -506,12 +547,22 @@ public class OpenAiChatService extends AbstractChatService {
 
 				// If the model returned a function call, transparently translate it into a tool
 				// call
-				List<ToolCall> fc = new ArrayList<>();
-				fc.add(new ToolCall(choice.getMessage().getFunctionCall()));
+				List<OpenAiToolCall> calls = new ArrayList<>();
+				FunctionCall funCall = choice.getMessage().getFunctionCall();
+				OpenAiToolCall toolCall = new OpenAiToolCall(funCall);
+				toolCall.setTool(tools.get(funCall.getName()));
+				calls.add(toolCall);
 				return OpenAiTextCompletion.builder() //
 						.finishReason(FinishReason.fromGptApi(choice.getFinishReason())) //
 						.message(choice.getMessage()) //
-						.toolCalls(fc).build();
+						.toolCalls(calls).build();
+			}
+			if (choice.getMessage().getToolCalls() != null) {
+
+				// Augment tool calls with corresponding OpenAITool
+				for (OpenAiToolCall toolCall : choice.getMessage().getToolCalls()) {
+					toolCall.setTool(tools.get(toolCall.getFunction().getName()));
+				}
 			}
 			return OpenAiTextCompletion.builder() //
 					.finishReason(FinishReason.fromGptApi(choice.getFinishReason())) //
@@ -545,16 +596,17 @@ public class OpenAiChatService extends AbstractChatService {
 		// TODO URGENT add a test case
 		int firstNonToolIndex = 0;
 		for (OpenAiChatMessage m : messages) {
-		    if (m.getRole() == Role.TOOL) {
-		        firstNonToolIndex++;
-		    } else {
-		        break;
-		    }
+			if (m.getRole() == Role.TOOL) {
+				firstNonToolIndex++;
+			} else {
+				break;
+			}
 		}
 		if (firstNonToolIndex > 0) {
-		    messages.subList(0, firstNonToolIndex).clear();
+			messages.subList(0, firstNonToolIndex).clear();
 			if (messages.size() == 0)
-				throw new IllegalArgumentException("Messages contain only tool call results without corresponding calls");
+				throw new IllegalArgumentException(
+						"Messages contain only tool call results without corresponding calls");
 		}
 
 		// Trims down the list of messages accordingly to given limits.

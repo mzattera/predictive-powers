@@ -60,7 +60,7 @@ public class FunctionCall {
 	 * Custom serializer as Arguments are returned as String, we'd like to have them
 	 * as a Map....
 	 */
-	private static final class ArgumentsSerializer extends StdSerializer<Map<String, Object>> {
+	public  static final class ArgumentsSerializer extends StdSerializer<Map<String, Object>> {
 
 		private static final long serialVersionUID = 2127829900119652867L;
 

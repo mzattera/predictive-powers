@@ -51,6 +51,7 @@ import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiTokenizer;
 import io.github.mzattera.predictivepowers.services.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.CompletionService;
@@ -662,7 +663,7 @@ public class EssayWriter implements Closeable {
 	private List<EmbeddedText> download(Link link) {
 
 		// Instantiate the service used to embed the downloaded pages
-		EmbeddingService embSvc = openAi.getEmbeddingService();
+		OpenAiEmbeddingService embSvc = openAi.getEmbeddingService();
 
 		// Set the maximum size for each embedded text chunk;
 		// the following calculation ensures approximately 15 embeddings

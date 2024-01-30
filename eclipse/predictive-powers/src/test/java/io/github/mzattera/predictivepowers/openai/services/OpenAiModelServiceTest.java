@@ -34,9 +34,9 @@ import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.FunctionCallTest.GetCurrentWeatherTool;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
-import io.github.mzattera.predictivepowers.openai.services.ToolCallTest.GetCurrentWeatherParameters;
 
 class OpenAiModelServiceTest {
 
@@ -51,7 +51,7 @@ class OpenAiModelServiceTest {
 	private final static Function FUNCTION = Function.builder() //
 			.name("get_current_weather") //
 			.description("Get the current weather in a given location.") //
-			.parameters(GetCurrentWeatherParameters.class).build() //
+			.parameters(GetCurrentWeatherTool.GetCurrentWeatherParameters.class).build() //
 	;
 	private final static List<Function> FUNCTIONS = new ArrayList<>();
 	static {
@@ -59,7 +59,7 @@ class OpenAiModelServiceTest {
 	}
 	private final static List<OpenAiTool> TOOLS = new ArrayList<>();
 	static {
-		TOOLS.add(new OpenAiTool(FUNCTION));
+		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool()));
 	}
 
 	/**
@@ -150,7 +150,7 @@ class OpenAiModelServiceTest {
 		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			OpenAiChatService chatSvc = oai.getChatService();
 
-			// Bypass setDefaultTools() to make sure we test the correct function call type
+			// Bypass setTools() to make sure we test the correct function call type
 			switch (md.getSupportedCallType()) {
 			case TOOLS:
 				chatSvc.getDefaultReq().setFunctions(null);

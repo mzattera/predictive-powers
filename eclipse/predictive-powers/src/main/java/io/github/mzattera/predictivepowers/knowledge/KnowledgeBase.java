@@ -218,7 +218,7 @@ public class KnowledgeBase implements Serializable {
 	 * 
 	 * @param e
 	 */
-	public void insert(Collection<EmbeddedText> e) {
+	public void insert(Collection<? extends EmbeddedText> e) {
 		insert(DEFAULT_DOMAIN, e);
 	}
 
@@ -228,7 +228,7 @@ public class KnowledgeBase implements Serializable {
 	 * @param domain Domain name.
 	 * @param e
 	 */
-	public void insert(String domain, Collection<EmbeddedText> e) {
+	public void insert(String domain, Collection<? extends EmbeddedText> e) {
 		writeLock.lock();
 		try {
 			Set<EmbeddedText> set = domains.get(domain);

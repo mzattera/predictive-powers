@@ -16,6 +16,12 @@
 
 package io.github.mzattera.predictivepowers.openai.client.chat;
 
+import java.util.Map;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
+import io.github.mzattera.predictivepowers.services.ToolCall;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -36,9 +42,9 @@ import lombok.ToString;
 @Builder
 @NoArgsConstructor
 @RequiredArgsConstructor
-//	@AllArgsConstructor
+@AllArgsConstructor
 @ToString
-public class ToolCall {
+public class OpenAiToolCall implements ToolCall {
 
 	// TODO URGENT Expand with types supported by the Runs endpoint, and their
 	// parameters.
@@ -56,12 +62,26 @@ public class ToolCall {
 	OpenAiTool.Type type;
 
 	/**
+	 * The tool to call.
+	 * This is not handled by OpenAI API, so it will always be null if this instance was created with direct API calls.
+	 * Services implemented on top of the API will handle this automatically and transparently.
+	 */
+	@JsonIgnore
+	OpenAiTool tool;
+	
+	/**
 	 * A function call corresponding to this tool call.
 	 */
 	@NonNull
 	FunctionCall function;
 
-	public ToolCall(FunctionCall call) {
+	@Override
+	@JsonIgnore
+	public Map<String, Object> getArguments() {
+		return function.getArguments();
+	}
+
+	public OpenAiToolCall(FunctionCall call) {
 		this("fake_id", OpenAiTool.Type.FUNCTION, call);
 	}
 }

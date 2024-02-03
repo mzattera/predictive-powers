@@ -16,6 +16,8 @@
 
 package io.github.mzattera.predictivepowers.openai.client;
 
+import io.github.mzattera.predictivepowers.openai.client.assistants.Assistant;
+import io.github.mzattera.predictivepowers.openai.client.assistants.AssistantsRequest;
 import io.github.mzattera.predictivepowers.openai.client.audio.AudioResponse;
 import io.github.mzattera.predictivepowers.openai.client.audio.AudioSpeechRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
@@ -107,12 +109,12 @@ public interface OpenAiApi {
 	Single<FineTuningJob> fineTuningJobsCreate(@Body FineTuningRequest req);
 
 	@GET("fine_tuning/jobs")
-	Single<DataList<FineTuningJob>> fineTuningJobs(@Query("after") String after, @Query("limit") Integer limit);
+	Single<DataList<FineTuningJob>> fineTuningJobs(@Query("limit") Integer limit, @Query("after") String after);
 
 	@GET("fine_tuning/jobs/{fine_tuning_job_id}/events")
 	Single<DataList<FineTuningJobEvent>> fineTuningJobsEvents(
-			@Path("fine_tuning_job_id") @NonNull String fineTuningJobId, @Query("after") String after,
-			@Query("limit") Integer limit);
+			@Path("fine_tuning_job_id") @NonNull String fineTuningJobId, @Query("limit") Integer limit,
+			@Query("after") String after);
 
 	@GET("fine_tuning/jobs/{fine_tuning_job_id}")
 	Single<FineTuningJob> fineTuningJobsGet(@Path("fine_tuning_job_id") @NonNull String fineTuningJobId);
@@ -122,4 +124,36 @@ public interface OpenAiApi {
 
 	@POST("moderations")
 	Single<ModerationsResponse> moderations(@Body ModerationsRequest req);
+
+	@POST("assistants")
+	Single<Assistant> assistantsCreate(@Body AssistantsRequest req);
+
+	@POST("assistants/{assistant_id}/files")
+	Single<File> assistantsFiles(@Path("assistant_id") @NonNull String assistantId, @Body File req);
+
+	@GET("assistants")
+	Single<DataList<Assistant>> assistants(@Query("limit") Integer limit, @Query("order") String order,
+			@Query("after") String after, @Query("before") String before);
+
+	@GET("assistants/{assistant_id}/files")
+	Single<DataList<File>> assistantsFiles(@Path("assistant_id") @NonNull String assistantId,
+			@Query("limit") Integer limit, @Query("order") String order, @Query("after") String after,
+			@Query("before") String before);
+
+	@GET("assistants/{assistant_id}")
+	Single<Assistant> assistantsGet(@Path("assistant_id") @NonNull String assistantId);
+
+	@GET("assistants/{assistant_id}/files/{file_id}")
+	Single<File> assistantsFilesGet(@Path("assistant_id") @NonNull String assistantId,
+			@Path("file_id") @NonNull String fileId);
+
+	@POST("assistants/{assistant_id}")
+	Single<Assistant> assistantsModify(@Path("assistant_id") @NonNull String assistantId, @Body AssistantsRequest req);
+
+	@DELETE("assistants/{assistant_id}")
+	Single<DeleteResponse> assistantsDelete(@Path("assistant_id") @NonNull String assistantId);
+
+	@DELETE("assistants/{assistant_id}/files/{file_id}")
+	Single<DeleteResponse> assistantsFilesDelete(@Path("assistant_id") @NonNull String assistantId,
+			@Path("file_id") @NonNull String fileId);
 }

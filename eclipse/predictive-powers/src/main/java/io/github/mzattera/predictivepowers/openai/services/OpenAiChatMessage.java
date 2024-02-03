@@ -30,8 +30,11 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * This extends {@link ChatMessage} with fields to support OpenAI chat
- * completion, in particular function calling.
+ * This extends {@link ChatMessage} with fields to support OpenAI chat and
+ * assistants API. Notice that each API will populate only fields that are
+ * supported by it, so expect some of the fields to be null.
+ * 
+ * Check API documentation to see which fields are supported.
  * 
  * @author Massmiliano "Maxi" Zattera.
  *
@@ -44,6 +47,9 @@ import lombok.ToString;
 //@AllArgsConstructor
 @ToString(callSuper = true)
 public class OpenAiChatMessage extends ChatMessage {
+
+	// TOOD URGENT Add support for files chat and assistant services must handle
+	// them properly
 
 	/**
 	 * The originator of the message.
@@ -150,7 +156,7 @@ public class OpenAiChatMessage extends ChatMessage {
 	 * This is now deprecated and replaced by {@link #toolCalls} in newer models.
 	 */
 	FunctionCall functionCall;
-
+	
 	public OpenAiChatMessage(ChatMessage msg) {
 		this(authorToRole(msg.getAuthor()), msg.getContent(), null, null);
 	}

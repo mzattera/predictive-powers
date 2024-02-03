@@ -16,81 +16,31 @@
 
 package io.github.mzattera.predictivepowers.services;
 
-import java.util.Collection;
-import java.util.List;
-
 import lombok.NonNull;
 
 /**
- * This service represents an agent (assistant) which is able to hold a
- * conversation with the user.
- * 
- * It is more advanced than {#link ChatService}, as it can invoke {@link Tool}s
- * that an agent can invoke to complete its tasks and use files in chat messages
- * (see {@link AgentMessage}).
+ * This service provides {@link Agent}s to the user.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
 public interface AgentService extends ChatService {
 
-	/**
-	 * Get tools available to the agent.
-	 * 
-	 * Notice this is an unmodifiable list; use other methods to populate tools list
-	 * properly.
-	 */
-	List<? extends Tool> getTools();
+	// TODO URGENT: Implement
 
-	/**
-	 * Set the list of tools available to the agent to the given one. Notice a tool
-	 * must be initialized calling its {@link Tool#init(AgentService)} method before
-	 * the agent can invoke it.
-	 * 
-	 * @throws ToolInitializationException if an error happens while initializing
-	 *                                     any of the tools.
-	 */
-	void setTools(@NonNull Collection<? extends Tool> tools) throws ToolInitializationException;
+	// TODO define parameters e.g. tools & files?
+	Agent createAgent ();
+	
+	Agent getAgent(); // Returns default agent
 
-	/**
-	 * Add one tool to the list of tools available to the agent. Notice a tool must
-	 * be initialized calling its {@link Tool#init(AgentService)} method before the
-	 * agent can invoke it.
-	 * 
-	 * 
-	 * @throws ToolInitializationException if an error happens while initializing
-	 *                                     the tool.
-	 */
-	void addTool(@NonNull Tool tool) throws ToolInitializationException;
+	Agent getAgent(@NonNull String agentId);
 
-	/**
-	 * Add given tools to the list of tools available to the agent. Notice a tool
-	 * must be initialized calling its {@link Tool#init(AgentService)} method before
-	 * the agent can invoke it.
-	 * 
-	 * 
-	 * @throws ToolInitializationException if an error happens while initializing
-	 *                                     any of the tools.
-	 */
-	void addTools(@NonNull Collection<? extends Tool> tools) throws ToolInitializationException;
+	// Possibly not needed and overcomplicated
+	Agent getAgentForUser(@NonNull String userName);
 
-	/**
-	 * Remove one tool from list of tools available to the agent.
-	 * 
-	 * @param id The unique ID for the tool.
-	 * @return Removed tool, or null if no such tool existed..
-	 */
-	Tool removeTool(@NonNull String id);
-
-	/**
-	 * Remove one tool from list of tools available to the agent.
-	 * 
-	 * @return Removed tool, or null if no such tool existed..
-	 */
-	Tool removeTool(@NonNull Tool tool);
-
-	/**
-	 * Remove all tools available to the agent.
-	 */
-	void clearTools();
+	// Possibly not needed and overcomplicated
+	Agent getAgentForUser(@NonNull String userName, @NonNull String agentId);
+	
+	// Cascade delete conversations, files, etc.
+	void deleteAgtent(@NonNull String agentId);
 }

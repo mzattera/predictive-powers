@@ -36,4 +36,6 @@ public class DataList<T> {
 	String object;
 	List<T> data;
 	Boolean hasMore;
+	String firstId;
+	String lastId;
 }

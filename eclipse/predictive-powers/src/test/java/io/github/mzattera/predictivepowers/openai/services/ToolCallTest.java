@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -42,7 +41,7 @@ import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCallResu
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolChoice;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
-import io.github.mzattera.predictivepowers.services.AgentService;
+import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolCall;
@@ -86,6 +85,7 @@ public class ToolCallTest {
 			@JsonPropertyDescription("Temperature unit (Celsius or Farenheit). This is optional.")
 			public TemperatureUnits unit;
 
+			@SuppressWarnings("unused")
 			public Integer fooParameter;
 
 			@JsonPropertyDescription("Unique API code, this is an integer which must be passed and it is always equal to 6.")
@@ -108,7 +108,7 @@ public class ToolCallTest {
 		}
 
 		@Override
-		public void init(@NonNull AgentService agent) {
+		public void init(@NonNull Agent agent) {
 			// Initialization goes here...
 		}
 

@@ -19,7 +19,7 @@ package io.github.mzattera.predictivepowers.services;
 import java.util.Map;
 
 /**
- * {@link AgentService}s can invoke tools. This interface represents a single
+ * {@link Agent}s can invoke tools. This interface represents a single
  * tool invocation.
  * 
  * @author Massimiliano "Maxi" Zattera

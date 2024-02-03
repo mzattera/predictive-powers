@@ -17,6 +17,8 @@
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonValue;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -41,6 +43,23 @@ import lombok.ToString;
 @ToString
 public class EmbeddingsRequest {
 
+	public enum EncodingFormat {
+
+		FLOAT("float"), BASE_64("base64");
+
+		private final @NonNull String label;
+
+		private EncodingFormat(@NonNull String label) {
+			this.label = label;
+		}
+
+		@Override
+		@JsonValue
+		public String toString() {
+			return label;
+		}
+	}
+	
 	@NonNull
 	String model;
 
@@ -50,9 +69,14 @@ public class EmbeddingsRequest {
 	 * To get embeddings for multiple inputs in a single request, pass multiple
 	 * strings.
 	 */
+	// TODO in reality this supports multiple formats, but I do not think they are really useful
 	@NonNull
 	@Builder.Default
 	List<String> input = new ArrayList<>();
 
+	EncodingFormat encodingFormat;
+	
+	Integer dimensions;
+	
 	String user;
 }

@@ -17,7 +17,6 @@
 package io.github.mzattera.predictivepowers.services;
 
 import java.io.IOException;
-import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -30,7 +29,7 @@ import lombok.Getter;
 import lombok.NonNull;
 
 /**
- * This is a tool that an {@link AgentService} can invoke to perform a task.
+ * This is a tool that an {@link Agent} can invoke to perform a task.
  * 
  * @author Massimiliano "Maxi" Zattera.
  *
@@ -70,9 +69,13 @@ public interface Tool {
 	/**
 	 * 
 	 * @return A class which JSON Schema Object will be used to describe the
-	 *         parameters of the tool. See
+	 *         parameters of the tool.
+	 * 
+	 *         See
 	 *         {@link io.github.mzattera.predictivepowers.examples.FunctionCallExample}
-	 *         for an example.
+	 *         or
+	 *         {@linkplain https://platform.openai.com/docs/guides/text-generation/function-calling
+	 *         here}. for examples.
 	 */
 	Class<?> getParameterSchema();
 
@@ -82,7 +85,7 @@ public interface Tool {
 	 * @return True if the tool was successfully initialized and can now be invoked,
 	 *         false otherwise.
 	 */
-	void init(@NonNull AgentService agent) throws ToolInitializationException;
+	void init(@NonNull Agent agent) throws ToolInitializationException;
 
 	/**
 	 * Invokes (executes) the tool.

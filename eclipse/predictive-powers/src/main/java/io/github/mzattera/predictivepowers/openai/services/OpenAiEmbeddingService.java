@@ -83,12 +83,28 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 		defaultReq.setModel(model);
 	}
 
-	@Override
-	public void setDefaultTextTokens(int defaultTextTokens) {
-		if (defaultTextTokens <= 0)
-			throw new IllegalArgumentException("defaultTextTokens must be > 0: " + defaultTextTokens);
+	Integer dimensions = null;
 
-		super.setDefaultTextTokens(defaultTextTokens);
+	/**
+	 * 
+	 * @return Dimensions for the generated embeddings, or null if this is left to
+	 *         model default.
+	 */
+	public Integer getDimensions() {
+		return defaultReq.getDimensions();
+	}
+
+	/**
+	 * Set dimensions for the generated embeddings, not all models support this.
+	 * Refer to API documentation for possible values.
+	 * 
+	 * @param dimensions Dimensions for the generated embeddings, or null to use
+	 *                   model default.
+	 * @return
+	 */
+	public void setDimensions(Integer dimensions) {
+		// See https://openai.com/blog/new-embedding-models-and-api-updates
+		defaultReq.setDimensions(dimensions);
 	}
 
 	public List<EmbeddedText> embed(String text, EmbeddingsRequest req) {
@@ -145,21 +161,6 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 		return result;
 	}
 
-	private List<EmbeddedText> embed(EmbeddingsRequest req) {
-
-		List<EmbeddedText> result = new ArrayList<>(req.getInput().size());
-		EmbeddingsResponse res = endpoint.getClient().createEmbeddings(req);
-
-		for (Embedding e : res.getData()) {
-			int index = e.getIndex();
-			EmbeddedText et = EmbeddedText.builder().text(req.getInput().get(index)).embedding(e.getEmbedding())
-					.model(res.getModel()).build();
-			result.add(et);
-		}
-
-		return result;
-	}
-
 	public List<EmbeddedText> embed(Collection<String> text, EmbeddingsRequest req) {
 		return embed(text, getDefaultTextTokens(), 1, 1, req);
 	}
@@ -202,5 +203,20 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 
 	public List<EmbeddedText> embedURL(URL url, EmbeddingsRequest req) throws IOException, SAXException, TikaException {
 		return embed(ExtractionUtil.fromUrl(url), req);
+	}
+
+	private List<EmbeddedText> embed(EmbeddingsRequest req) {
+	
+		List<EmbeddedText> result = new ArrayList<>(req.getInput().size());
+		EmbeddingsResponse res = endpoint.getClient().createEmbeddings(req);
+	
+		for (Embedding e : res.getData()) {
+			int index = e.getIndex();
+			EmbeddedText et = EmbeddedText.builder().text(req.getInput().get(index)).embedding(e.getEmbedding())
+					.model(res.getModel()).build();
+			result.add(et);
+		}
+	
+		return result;
 	}
 }

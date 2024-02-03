@@ -36,7 +36,7 @@ import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.AbstractChatService;
-import io.github.mzattera.predictivepowers.services.AgentService;
+import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import io.github.mzattera.predictivepowers.services.Tool;
@@ -55,8 +55,12 @@ import lombok.NonNull;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public class OpenAiChatService extends AbstractChatService implements AgentService {
+public class OpenAiChatService extends AbstractChatService implements Agent {
 
+	// TODO : Add support for different users? Maybe not, as we are not persisting this agent.
+	// TODO URGENT Move agent methods that can be reused into AbstractAgentService
+	// TODO URGENT Add methods ot handle files in messages here (for vision as URL)
+	
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiChatService.class);
 
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
@@ -94,6 +98,16 @@ public class OpenAiChatService extends AbstractChatService implements AgentServi
 		defaultReq.setModel(model);
 	}
 
+	@Override
+	public String getId() {
+		return "OpenAI-chat-API-model-" + getModel();
+	}
+
+	@Override
+	public String getUserId() {
+		return null;
+	}
+	
 	/**
 	 * This request, with its parameters, is used as default setting for each call.
 	 * 

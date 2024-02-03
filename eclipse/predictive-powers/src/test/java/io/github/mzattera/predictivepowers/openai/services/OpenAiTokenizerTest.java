@@ -31,7 +31,7 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Rol
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
-import io.github.mzattera.predictivepowers.services.AgentService;
+import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolCall;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
@@ -306,7 +306,7 @@ public class OpenAiTokenizerTest {
 		}
 
 		@Override
-		public void init(@NonNull AgentService agent) {
+		public void init(@NonNull Agent agent) {
 			// Initialization goes here...
 		}
 

@@ -168,11 +168,11 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 			int t = counter.count(ctx);
 			if (tok + t > txtSize)
 				break;
-			tok += (t + 1);
+			tok += (t + 5);
 
 			if (i > 0)
 				b.append("\n");
-			b.append(context.get(i));
+			b.append(ctx);
 		}
 		String ctx = b.toString();
 

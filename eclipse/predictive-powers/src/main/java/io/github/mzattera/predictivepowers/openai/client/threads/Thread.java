@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.openai.client.files;
+package io.github.mzattera.predictivepowers.openai.client.threads;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
 /**
- * OpenAI File data, as returned by /files API.
+ * OpenAI Thread data, as returned by /files API.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -29,17 +32,17 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class File {
+public class Thread {
 
 	String id;
 	String object;
-	Long bytes;
 	long createdAt;
-	String filename;
-	String purpose;
 
 	/**
-	 * If the file was attached to an assistant, this will be the assistant ID.
+	 * Set of 16 key-value pairs that can be attached to an object. This can be
+	 * useful for storing additional information about the object in a structured
+	 * format. Keys can be a maximum of 64 characters long and values can be a
+	 * maximum of 512 characters long.
 	 */
-	String assistantId;
+	Map<String, String> metadata = new HashMap<>();
 }

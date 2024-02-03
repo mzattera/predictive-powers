@@ -34,6 +34,8 @@ import org.xml.sax.SAXException;
  *
  */
 public interface EmbeddingService extends AiService {
+	
+	// TODO When using embeddings or list of strings, would be nice to avoid duplicates, e.g. an embedding for a short sentence which is already contained in an embedding for a bigger sentence.
 
 	/**
 	 * Get default number of tokens for each piece of text being embedded. This is
@@ -45,7 +47,7 @@ public interface EmbeddingService extends AiService {
 	 * Set default number of tokens for each piece of text being embedded. This is
 	 * used if no chunk size was specified when embedding content.
 	 */
-	void setDefaultTextTokens(int maxTokens);
+	void setDefaultTextTokens(int defaultTokens);
 
 	/**
 	 * Create embeddings for given text. Text is split in chunks of
@@ -79,7 +81,7 @@ public interface EmbeddingService extends AiService {
 	/**
 	 * Create embeddings for given set of texts. Before embedding, each text in the
 	 * input set is chunked following the algorithm described in
-	 * {@link io.github.mzattera.util.ChunkUtil}.
+	 * {@link io.github.mzattera.util.ChunkUtil#split(String, int, int, int, io.github.mzattera.predictivepowers.services.ModelService.Tokenizer)}.
 	 * 
 	 * As embedding model might have a maximum length for text being embedded, each
 	 * chunk might be further split into several parts before embeddings are

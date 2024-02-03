@@ -19,7 +19,7 @@ package io.github.mzattera.predictivepowers.openai.client.chat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-import io.github.mzattera.predictivepowers.services.AgentService;
+import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolCall;
 import io.github.mzattera.predictivepowers.services.ToolCallResult;
@@ -151,7 +151,7 @@ public class OpenAiTool implements Tool {
 	}
 
 	@Override
-	public void init(@NonNull AgentService agent) throws ToolInitializationException {
+	public void init(@NonNull Agent agent) throws ToolInitializationException {
 		if (wrappedTool != null)
 			wrappedTool.init(agent);
 	}

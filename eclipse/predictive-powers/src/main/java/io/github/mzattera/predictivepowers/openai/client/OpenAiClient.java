@@ -55,11 +55,15 @@ import io.github.mzattera.util.ImageUtil;
 import io.reactivex.Single;
 import lombok.Getter;
 import lombok.NonNull;
+import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 import okhttp3.ResponseBody;
+import okio.Buffer;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
@@ -156,25 +160,52 @@ public class OpenAiClient implements ApiClient {
 	 */
 	public OpenAiClient(OkHttpClient http) {
 
-		client = http;
+//		client = http;
 
-		// Debug code below, outputs the request
-//		client = http.newBuilder().addInterceptor(new Interceptor() {
+		// Debug code below
+		client = http.newBuilder() //
+				
+				// Debug code below, outputs the request
+				.addInterceptor(new Interceptor() {
+
+					@Override
+					public Response intercept(Chain chain) throws IOException {
+						Request req = chain.request();
+
+						if (req.body() != null) {
+							Buffer buffer = new Buffer();
+							req.body().writeTo(buffer);
+							String bodyContent = buffer.readUtf8();
+							System.out.println("Request body: " + bodyContent);
+						}
+
+						return chain.proceed(req);
+					}
+				}) //
 //
-//			@Override
-//			public Response intercept(Chain chain) throws IOException {
-//				Request req = chain.request();
+//				// Debug code below, outputs the response
+//				.addInterceptor(new Interceptor() {
 //
-//				if (req.body() != null) {
-//					Buffer buffer = new Buffer();
-//					req.body().writeTo(buffer);
-//					String bodyContent = buffer.readUtf8();
-//					System.out.println("Request body: " + bodyContent);
-//				}
+//					@Override
+//					public Response intercept(Chain chain) throws IOException {
 //
-//				return chain.proceed(req);
-//			}
-//		}).build();
+//						Response response = chain.proceed(chain.request());
+//						if (response.body() != null) {
+//							BufferedSource source = response.body().source();
+//							source.request(Long.MAX_VALUE);
+//
+//							@SuppressWarnings("deprecation")
+//							Buffer buffer = source.buffer();
+//
+//							Buffer clone = buffer.clone();
+//							System.out.println("Response body: " + clone.readUtf8());
+//						}
+//
+//						return response; // Return the original response unaltered
+//					}
+//				}) //
+				
+				.build();
 
 		Retrofit retrofit = new Retrofit.Builder().baseUrl(API_BASE_URL).client(client)
 				.addConverterFactory(JacksonConverterFactory.create(jsonMapper))
@@ -472,11 +503,11 @@ public class OpenAiClient implements ApiClient {
 	}
 
 	public List<FineTuningJob> listFineTuningJobs(int limit) {
-		return callApi(api.fineTuningJobs(null, limit)).getData();
+		return callApi(api.fineTuningJobs(limit, null)).getData();
 	}
 
 	public List<FineTuningJob> listFineTuningJobs(String after, int limit) {
-		return callApi(api.fineTuningJobs(after, limit)).getData();
+		return callApi(api.fineTuningJobs(limit, after)).getData();
 	}
 
 	public List<FineTuningJobEvent> listFineTuningEvents(@NonNull String fineTuningJobId) {
@@ -484,11 +515,11 @@ public class OpenAiClient implements ApiClient {
 	}
 
 	public List<FineTuningJobEvent> listFineTuningEvents(@NonNull String fineTuningJobId, int limit) {
-		return callApi(api.fineTuningJobsEvents(fineTuningJobId, null, limit)).getData();
+		return callApi(api.fineTuningJobsEvents(fineTuningJobId, limit, null)).getData();
 	}
 
 	public List<FineTuningJobEvent> listFineTuningEvents(@NonNull String fineTuningJobId, String after, int limit) {
-		return callApi(api.fineTuningJobsEvents(fineTuningJobId, after, limit)).getData();
+		return callApi(api.fineTuningJobsEvents(fineTuningJobId, limit, after)).getData();
 	}
 
 	public FineTuningJob retrieveFineTuningJob(@NonNull String fineTuningJobId) {

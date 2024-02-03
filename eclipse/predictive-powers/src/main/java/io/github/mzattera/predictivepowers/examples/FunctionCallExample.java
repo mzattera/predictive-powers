@@ -29,7 +29,7 @@ import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCallResu
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiTextCompletion;
-import io.github.mzattera.predictivepowers.services.AgentService;
+import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolCall;
 import io.github.mzattera.predictivepowers.services.ToolCallResult;
@@ -74,7 +74,7 @@ public class FunctionCallExample {
 		}
 
 		@Override
-		public void init(@NonNull AgentService agent) {
+		public void init(@NonNull Agent agent) {
 			// Initialization goes here...
 		}
 

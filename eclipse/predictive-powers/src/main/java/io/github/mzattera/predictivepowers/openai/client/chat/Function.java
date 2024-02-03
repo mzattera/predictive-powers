@@ -63,7 +63,15 @@ public class Function {
 	 * be serialized as a JSON Schema object. Please notice that at the time being
 	 * OpenAI seems to support only parameters that are either native Java types,
 	 * String, and enumerations.
+	 * 
+	 * See examples {@linkplain https://platform.openai.com/docs/guides/text-generation/function-calling here}.
 	 */
+	
+	/**
+	 * Represents the configuration of an assistant.
+	 * You can use the List models API to see all of your available models, or see our Model overview .
+	 */
+	
 	@JsonSerialize(using = Tool.ParametersSerializer.class, as = Class.class)
 	@NonNull // OpenAi errors otherwise
 	Class<?> parameters;

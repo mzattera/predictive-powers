@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.services;
+package io.github.mzattera.predictivepowers.services.messages;
 
 import java.util.Map;
 
+import io.github.mzattera.predictivepowers.services.Agent;
+import io.github.mzattera.predictivepowers.services.Tool;
+
 /**
- * {@link Agent}s can invoke tools. This interface represents a single
- * tool invocation.
+ * {@link Agent}s can invoke tools. This interface represents a single tool
+ * invocation, as part of a message.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface ToolCall {
+public interface ToolCall extends MessagePart {
 
 	/**
 	 * Unique ID for this tool call.

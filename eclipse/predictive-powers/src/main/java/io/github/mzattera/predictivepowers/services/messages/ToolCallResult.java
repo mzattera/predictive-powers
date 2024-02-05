@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.services;
+package io.github.mzattera.predictivepowers.services.messages;
 
 /**
  * This holds the results of a {@link ToolCall}. It is used to pass results from
@@ -23,7 +23,7 @@ package io.github.mzattera.predictivepowers.services;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-public interface ToolCallResult {
+public interface ToolCallResult extends MessagePart {
 
 	/** Unique ID for corresponding tool invocation. */
 	String getToolCallId();

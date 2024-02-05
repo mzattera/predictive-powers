@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractModelService;
-import io.github.mzattera.predictivepowers.services.ChatMessage;
 import io.github.mzattera.predictivepowers.services.ModelService;
 import lombok.Builder;
 import lombok.Getter;
@@ -60,12 +59,6 @@ public class HuggingFaceModelService extends AbstractModelService {
 		@Override
 		public int count(@NonNull String text) {
 			return tokenizer.encode(text).getTokens().length;
-		}
-
-		// TODO probably each model does differently
-		// Check DJL what the tokenizer does
-		public int count(@NonNull ChatMessage msg) {
-			return count(msg.getContent());
 		}
 	}
 

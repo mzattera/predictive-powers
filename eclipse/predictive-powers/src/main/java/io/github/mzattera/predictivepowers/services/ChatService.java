@@ -18,6 +18,9 @@ package io.github.mzattera.predictivepowers.services;
 
 import java.util.List;
 
+import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
+
 /**
  * This is a service capable of holding conversations with the user. It is more
  * advanced than {#link CompletionService}, as it can both complete a text

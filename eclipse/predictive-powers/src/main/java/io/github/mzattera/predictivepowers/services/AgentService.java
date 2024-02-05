@@ -31,16 +31,10 @@ public interface AgentService extends ChatService {
 	// TODO define parameters e.g. tools & files?
 	Agent createAgent ();
 	
-	Agent getAgent(); // Returns default agent
+	Agent getAgent(); // Returns "default" agent
 
 	Agent getAgent(@NonNull String agentId);
-
-	// Possibly not needed and overcomplicated
-	Agent getAgentForUser(@NonNull String userName);
-
-	// Possibly not needed and overcomplicated
-	Agent getAgentForUser(@NonNull String userName, @NonNull String agentId);
 	
 	// Cascade delete conversations, files, etc.
-	void deleteAgtent(@NonNull String agentId);
+	void deleteAgent(@NonNull String agentId);
 }

@@ -40,8 +40,9 @@ import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpo
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceCompletionService;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
-import io.github.mzattera.predictivepowers.services.ChatMessage.Author;
-import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
+import io.github.mzattera.predictivepowers.services.messages.FinishReason;
+import io.github.mzattera.predictivepowers.services.messages.TextCompletion;
 
 /**
  * @author Massimiliano "Maxi" Zattera.
@@ -77,14 +78,14 @@ public class CompletionServiceTest {
 	void test01(AiEndpoint ep) {
 		CompletionService s = ep.getCompletionService();
 		TextCompletion resp = s.complete("Name a mammal.");
-		assertTrue(resp.getFinishReason() == FinishReason.COMPLETED);
+		assertTrue(resp.getStatus() == FinishReason.COMPLETED);
 
 		s.setMaxNewTokens(1);
 		resp = s.complete("Name a mammal.");
 		if (s instanceof OpenAiCompletionService) {
-			assertTrue(resp.getFinishReason() == FinishReason.TRUNCATED);
+			assertTrue(resp.getStatus() == FinishReason.TRUNCATED);
 		} else {
-			assertTrue(resp.getFinishReason() == FinishReason.COMPLETED);
+			assertTrue(resp.getStatus() == FinishReason.COMPLETED);
 		}
 	}
 
@@ -175,8 +176,8 @@ public class CompletionServiceTest {
 		s.setMaxNewTokens(40);
 		s.setEcho(true);
 		TextCompletion resp = s.complete("Name a mammal.");
-		assertTrue((resp.getFinishReason() == FinishReason.COMPLETED)
-				|| (resp.getFinishReason() == FinishReason.TRUNCATED));
+		assertTrue((resp.getStatus() == FinishReason.COMPLETED)
+				|| (resp.getStatus() == FinishReason.TRUNCATED));
 
 		s.setTopK(null);
 		s.setTopP(0.2);
@@ -184,8 +185,8 @@ public class CompletionServiceTest {
 		s.setMaxNewTokens(40);
 		s.setEcho(false);
 		resp = s.complete("Name a mammal.");
-		assertTrue((resp.getFinishReason() == FinishReason.COMPLETED)
-				|| (resp.getFinishReason() == FinishReason.TRUNCATED));
+		assertTrue((resp.getStatus() == FinishReason.COMPLETED)
+				|| (resp.getStatus() == FinishReason.TRUNCATED));
 
 		s.setTopK(null);
 		s.setTopP(null);
@@ -193,8 +194,8 @@ public class CompletionServiceTest {
 		s.setMaxNewTokens(40);
 		s.setEcho(true);
 		resp = s.complete("Name a mammal.");
-		assertTrue((resp.getFinishReason() == FinishReason.COMPLETED)
-				|| (resp.getFinishReason() == FinishReason.TRUNCATED));
+		assertTrue((resp.getStatus() == FinishReason.COMPLETED)
+				|| (resp.getStatus() == FinishReason.TRUNCATED));
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -216,7 +217,7 @@ public class CompletionServiceTest {
 		assertEquals("bot", CompletionService.fillSlots("{{C}}", params));
 		assertEquals(" a.b bot", CompletionService.fillSlots("{{A}} {{A.B}} {{C}}", params));
 		assertEquals(" a.b bot {{D}}", CompletionService.fillSlots("{{A}} {{A.B}} {{C}} {{D}}", params));
-		assertEquals(" a.b bot {{D}} a.b assistant {{D}}",
+		assertEquals(" a.b bot {{D}} a.b bot {{D}}",
 				CompletionService.fillSlots("{{A}} {{A.B}} {{C}} {{D}}{{A}} {{A.B}} {{C}} {{D}}", params));
 	}
 }

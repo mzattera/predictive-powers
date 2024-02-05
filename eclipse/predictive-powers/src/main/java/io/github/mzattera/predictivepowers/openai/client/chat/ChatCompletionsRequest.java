@@ -26,7 +26,6 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
-import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest.ResponseFormat.ResponseFormatSerializer;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -53,6 +52,32 @@ import lombok.ToString;
 public class ChatCompletionsRequest {
 
 	/**
+	 * Provides custom serialization.
+	 */
+	private final static class ResponseFormatSerializer extends StdSerializer<ResponseFormat> {
+	
+		private static final long serialVersionUID = -4506958348962250647L;
+	
+		@SuppressWarnings("unused")
+		public ResponseFormatSerializer() {
+			this(null);
+		}
+	
+		public ResponseFormatSerializer(Class<ResponseFormat> t) {
+			super(t);
+		}
+	
+		@Override
+		public void serialize(ResponseFormat value, JsonGenerator jgen, SerializerProvider provider)
+				throws IOException, JsonProcessingException {
+	
+			jgen.writeStartObject();
+			jgen.writeStringField("type", value.label);
+			jgen.writeEndObject();
+		}
+	}
+
+	/**
 	 * Format of the returned answer. Currently supports JSON and plain text.
 	 */
 	@JsonSerialize(using = ResponseFormatSerializer.class)
@@ -63,31 +88,6 @@ public class ChatCompletionsRequest {
 
 		ResponseFormat(String label) {
 			this.label = label;
-		}
-
-		/**
-		 * Provides custom serialization.
-		 */
-		static final class ResponseFormatSerializer extends StdSerializer<ResponseFormat> {
-
-			private static final long serialVersionUID = -4506958348962250647L;
-
-			public ResponseFormatSerializer() {
-				this(null);
-			}
-
-			public ResponseFormatSerializer(Class<ResponseFormat> t) {
-				super(t);
-			}
-
-			@Override
-			public void serialize(ResponseFormat value, JsonGenerator jgen, SerializerProvider provider)
-					throws IOException, JsonProcessingException {
-
-				jgen.writeStartObject();
-				jgen.writeStringField("type", value.label);
-				jgen.writeEndObject();
-			}
 		}
 	}
 

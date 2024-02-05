@@ -25,18 +25,21 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolChoice.ToolChoiceSerializer;
-import lombok.Builder;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.ToString;
 
 /**
- * Instruct model whether to produce parallel function calls (tool invocations) or not.
+ * Instruct model whether to produce parallel function calls (tool invocations)
+ * or not.
  */
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+//@RequiredArgsConstructor
 @Getter
 @Setter
-@Builder
 @ToString
 @JsonSerialize(using = ToolChoiceSerializer.class)
 public class ToolChoice {
@@ -101,15 +104,15 @@ public class ToolChoice {
 		}
 	}
 
-
 	/** How should the model handle function call options. */
 	@NonNull
-	final Mode mode;
+	private Mode mode;
 
-	final String function;
+	private String function;
 
 	/**
-	 * Use this to indicate tool_choice = {type: "function", {"name": "my_function"}".
+	 * Use this to indicate tool_choice = {type: "function", {"name":
+	 * "my_function"}".
 	 * 
 	 * @param name
 	 */

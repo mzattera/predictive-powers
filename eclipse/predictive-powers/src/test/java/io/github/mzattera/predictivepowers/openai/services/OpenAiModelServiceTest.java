@@ -86,7 +86,10 @@ class OpenAiModelServiceTest {
 				if (deprecated.remove(model))
 					continue; // Skip old models
 
-				assertTrue(actual.remove(model));
+				boolean found = actual.remove(model);
+				if (!found)
+					System.out.println("NEW model not listed: " + m);
+				assertTrue(found);
 
 				OpenAiModelMetaData md = modelSvc.get(model);
 				assertTrue(md != null);
@@ -155,7 +158,7 @@ class OpenAiModelServiceTest {
 			case TOOLS:
 				chatSvc.getDefaultReq().setFunctions(null);
 				chatSvc.getDefaultReq().setTools(TOOLS);
-				OpenAiTextCompletion result = chatSvc.chat("What is the temperature il London?");
+				OpenAiChatCompletion result = chatSvc.chat("What is the temperature il London?");
 				assertTrue(result.hasToolCalls());
 				break;
 			case FUNCTIONS:

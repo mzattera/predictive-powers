@@ -42,10 +42,10 @@ import io.github.mzattera.predictivepowers.openai.client.chat.ToolChoice;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
 import io.github.mzattera.predictivepowers.services.Agent;
-import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import io.github.mzattera.predictivepowers.services.Tool;
-import io.github.mzattera.predictivepowers.services.ToolCall;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.messages.FinishReason;
+import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import lombok.NonNull;
 
 /**
@@ -195,7 +195,8 @@ public class ToolCallTest {
 
 	/**
 	 * Tests Tool Calling.
-	 * @throws ToolInitializationException 
+	 * 
+	 * @throws ToolInitializationException
 	 */
 	@Test
 	public void test54() throws JsonProcessingException, ToolInitializationException {
@@ -208,7 +209,7 @@ public class ToolCallTest {
 			assertTrue((cs.getTools() != null) && (cs.getTools().size() == TOOLS.size()));
 
 			// Casual chat should not trigger any function call
-			OpenAiTextCompletion reply = cs.chat("Where is Dallas, TX?");
+			OpenAiChatCompletion reply = cs.chat("Where is Dallas, TX?");
 			assertFalse(reply.hasToolCalls());
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
 
@@ -238,7 +239,8 @@ public class ToolCallTest {
 
 	/**
 	 * Tests ToolChoice parameter.
-	 * @throws ToolInitializationException 
+	 * 
+	 * @throws ToolInitializationException
 	 */
 	@Test
 	public void test55() throws JsonProcessingException, ToolInitializationException {
@@ -249,7 +251,7 @@ public class ToolCallTest {
 			cs.setModel(MODEL);
 			cs.setTools(TOOLS);
 
-			OpenAiTextCompletion reply = null;
+			OpenAiChatCompletion reply = null;
 
 			// Casual chat should not trigger any function call
 			cs.clearConversation();
@@ -283,7 +285,8 @@ public class ToolCallTest {
 
 	/**
 	 * Tests get/setDefaultTools().
-	 * @throws ToolInitializationException 
+	 * 
+	 * @throws ToolInitializationException
 	 */
 	@Test
 	public void test56() throws JsonProcessingException, ToolInitializationException {
@@ -297,7 +300,7 @@ public class ToolCallTest {
 			cs.clearConversation();
 			cs.setTools(null);
 			assertEquals(0, cs.getTools().size());
-			OpenAiTextCompletion reply = cs.chat("How is the weather like in Dallas, TX?");
+			OpenAiChatCompletion reply = cs.chat("How is the weather like in Dallas, TX?");
 			assertFalse(reply.hasToolCalls());
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
 
@@ -316,7 +319,7 @@ public class ToolCallTest {
 	 * Tests parallel function calls.
 	 * 
 	 * @param args
-	 * @throws ToolInitializationException 
+	 * @throws ToolInitializationException
 	 */
 	@Test
 	public void test57() throws ToolInitializationException {
@@ -328,7 +331,7 @@ public class ToolCallTest {
 			cs.setTools(TOOLS);
 
 			// This should generate a single call for 2 tools
-			OpenAiTextCompletion reply = cs.chat("What is the temperature in London and Zurich?");
+			OpenAiChatCompletion reply = cs.chat("What is the temperature in London and Zurich?");
 			assertTrue(reply.hasToolCalls());
 			assertEquals(FinishReason.OTHER, reply.getFinishReason());
 			assertEquals(2, reply.getToolCalls().size());

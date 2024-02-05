@@ -33,8 +33,8 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.Op
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Tool;
-import io.github.mzattera.predictivepowers.services.ToolCall;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import lombok.NonNull;
 
 public class OpenAiTokenizerTest {

@@ -53,11 +53,11 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Rol
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiTokenizer;
-import io.github.mzattera.predictivepowers.services.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.EmbeddingService;
 import io.github.mzattera.predictivepowers.services.Link;
+import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.util.ExtractionUtil;
 import io.github.mzattera.util.FileUtil;
 import lombok.AllArgsConstructor;

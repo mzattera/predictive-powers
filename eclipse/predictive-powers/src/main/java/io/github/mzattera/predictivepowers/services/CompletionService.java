@@ -19,6 +19,8 @@ package io.github.mzattera.predictivepowers.services;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import io.github.mzattera.predictivepowers.services.messages.TextCompletion;
+
 /**
  * A completion service provides methods to complete/generate text (prompt
  * execution). This is more basic than a {@link ChatService} in that is meant to

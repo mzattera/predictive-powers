@@ -25,6 +25,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.kjetland.jackson.jsonSchema.JsonSchemaGenerator;
 
+import io.github.mzattera.predictivepowers.services.messages.ToolCall;
+import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -43,7 +45,7 @@ public interface Tool {
 	/**
 	 * Custom serializer to create JSON schema for function parameters.
 	 */
-	public static class ParametersSerializer extends JsonSerializer<Class<?>> {
+	public static final class ParametersSerializer extends JsonSerializer<Class<?>> {
 
 		@Override
 		public void serialize(Class<?> c, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)

@@ -91,7 +91,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 	 * Answer a question, using completion service.
 	 */
 	public QnAPair answer(String question) {
-		OpenAiTextCompletion resp = completionService.complete(question);
+		OpenAiChatCompletion resp = completionService.complete(question);
 		return QnAPair.builder().question(question).answer(resp.getText())
 				.explanation("Answer provided by OpenAI competions API (model knowledge).").build();
 	}
@@ -181,7 +181,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 		b.append("<question>").append(question).append("</question>");
 		userMsg.setContent(b.toString());
 
-		OpenAiTextCompletion answerJson = completionService.complete(instructions);
+		OpenAiChatCompletion answerJson = completionService.complete(instructions);
 		QnAPair result = null;
 		try {
 			result = mapper.readValue(answerJson.getText(), QnAPair.class);

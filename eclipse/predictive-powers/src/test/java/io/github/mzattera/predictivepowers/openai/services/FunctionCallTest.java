@@ -42,10 +42,10 @@ import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCallResu
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
 import io.github.mzattera.predictivepowers.services.Agent;
-import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import io.github.mzattera.predictivepowers.services.Tool;
-import io.github.mzattera.predictivepowers.services.ToolCall;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.messages.FinishReason;
+import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import lombok.NonNull;
 
 /**
@@ -203,7 +203,7 @@ public class FunctionCallTest {
 			assertTrue((cs.getTools() != null) && (cs.getTools().size() == TOOLS.size()));
 
 			// Casual chat should not trigger any function call
-			OpenAiTextCompletion reply = cs.chat("Where is Dallas TX?");
+			OpenAiChatCompletion reply = cs.chat("Where is Dallas TX?");
 			assertFalse(reply.hasToolCalls());
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
 
@@ -245,7 +245,7 @@ public class FunctionCallTest {
 			cs.setModel(MODEL);
 			cs.setTools(TOOLS);
 
-			OpenAiTextCompletion reply = null;
+			OpenAiChatCompletion reply = null;
 
 			// Casual chat should not trigger any function call
 			cs.clearConversation();
@@ -294,7 +294,7 @@ public class FunctionCallTest {
 			cs.clearConversation();
 			cs.setTools(null);
 			assertEquals(0, cs.getTools().size());
-			OpenAiTextCompletion reply = cs.chat("How is the weather like in Dallas, TX?");
+			OpenAiChatCompletion reply = cs.chat("How is the weather like in Dallas, TX?");
 			assertFalse(reply.hasToolCalls());
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
 

@@ -116,6 +116,8 @@ public class OpenAiModelService extends AbstractModelService {
 				new OpenAiModelMetaData("gpt-3.5-turbo-instruct", 4096, SupportedApi.COMPLETIONS));
 		MODEL_CONFIG.put("gpt-3.5-turbo-instruct-0914",
 				new OpenAiModelMetaData("gpt-3.5-turbo-instruct-0914", 4096, SupportedApi.COMPLETIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-0125",
+				new OpenAiModelMetaData("gpt-3.5-turbo-0125", 16385, 4096, SupportedCallType.TOOLS));
 		MODEL_CONFIG.put("gpt-3.5-turbo-1106",
 				new OpenAiModelMetaData("gpt-3.5-turbo-1106", 16385, 4096, SupportedCallType.TOOLS));
 		MODEL_CONFIG.put("gpt-3.5-turbo-0613",

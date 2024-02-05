@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.services;
+package io.github.mzattera.predictivepowers.services.messages;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import io.github.mzattera.predictivepowers.services.CompletionService;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 /**
@@ -33,49 +35,16 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-@Builder
-@NoArgsConstructor
-//@RequiredArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@RequiredArgsConstructor
+@Getter
+@Setter
 @ToString
 public class TextCompletion {
 
-	/** Reason why the language model finished responding. */
-	public enum FinishReason {
-
-		/**
-		 * API returned complete model output.
-		 */
-		COMPLETED,
-
-		/** Incomplete model output due to token length limit */
-		TRUNCATED,
-
-		/** Omitted content due to content filters */
-		INAPPROPRIATE,
-
-		/** All finish reasons that do not fit in any other value */
-		OTHER;
-
-		public static FinishReason fromGptApi(String reason) {
-			switch (reason) {
-			case "stop":
-				return FinishReason.COMPLETED;
-			case "length":
-				return FinishReason.TRUNCATED;
-			case "content_filter":
-				return FinishReason.INAPPROPRIATE;
-			default:
-				return FinishReason.OTHER;
-			}
-		}
-	}
-
-	@Getter
 	@NonNull
 	private String text;
 
-	@Getter
 	@NonNull
-	private FinishReason finishReason;
+	private FinishReason status;
 }

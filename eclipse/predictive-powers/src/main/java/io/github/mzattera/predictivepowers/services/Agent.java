@@ -35,25 +35,19 @@ import lombok.NonNull;
 public interface Agent extends ChatService {
 
 	// TODO URGENT: Add RemoteFile class and add files to agent
-	// TODO URGENT: Add methods to handle conversations (threads e.g. creating, continuing, deleting)
+	// TODO URGENT: Add methods to handle conversations (threads e.g. creating,
+	// continuing, deleting)
 
 	/**
-	 * Get unique agent ID.
-	 * Notice this ID is unique only inside one endpoint.
+	 * Get unique agent ID. Notice this ID is unique only inside one endpoint.
 	 */
 	String getId();
 
 	/**
-	 * Get user for which this agent was created, or null if the agent is not bound to a user.
-	 * Notice this ID is unique only inside one endpoint.
-	 */
-	String getUserId();
-
-	/**
 	 * Get tools available to the agent.
 	 * 
-	 * Notice this is an unmodifiable list; use other methods to populate tools list
-	 * properly.
+	 * Notice this is expected to be an unmodifiable list; use other methods to
+	 * populate tools list properly.
 	 */
 	List<? extends Tool> getTools();
 

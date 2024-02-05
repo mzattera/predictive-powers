@@ -18,9 +18,9 @@ package io.github.mzattera.predictivepowers.openai.client.chat;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-import io.github.mzattera.predictivepowers.services.ToolCall;
-import io.github.mzattera.predictivepowers.services.ToolCallResult;
-import lombok.Builder;
+import io.github.mzattera.predictivepowers.services.messages.ToolCall;
+import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -34,12 +34,10 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@RequiredArgsConstructor
 @Getter
 @Setter
-@Builder
-@NoArgsConstructor
-@RequiredArgsConstructor
-//@AllArgsConstructor
 @ToString
 public class OpenAiToolCallResult implements ToolCallResult {
 
@@ -62,7 +60,7 @@ public class OpenAiToolCallResult implements ToolCallResult {
 	@Override
 	public @NonNull String getToolId() {
 		return getName();
-		
+
 	}
 
 	/**
@@ -70,5 +68,10 @@ public class OpenAiToolCallResult implements ToolCallResult {
 	 */
 	public OpenAiToolCallResult(ToolCall call, String result) {
 		this(call.getId(), call.getTool().getId(), result);
+	}
+
+	@Override
+	public String getContent() {
+		return toString();
 	}
 }

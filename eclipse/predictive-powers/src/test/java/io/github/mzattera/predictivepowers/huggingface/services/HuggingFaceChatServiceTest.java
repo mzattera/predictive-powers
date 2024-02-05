@@ -24,10 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
-import io.github.mzattera.predictivepowers.services.ChatCompletion;
-import io.github.mzattera.predictivepowers.services.ChatMessage.Author;
-import io.github.mzattera.predictivepowers.services.TextCompletion;
-import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
+import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
+import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 
 /**
  * Test Hugging Face chat API & Service
@@ -53,7 +52,7 @@ public class HuggingFaceChatServiceTest {
 			// In completion, we do not consider history, but we consider personality.
 			String question = "How high is Mt.Everest?";
 			ChatCompletion resp = cs.complete(question);
-			assertEquals(TextCompletion.FinishReason.COMPLETED, resp.getFinishReason());
+			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
 			assertEquals(0, cs.getHistory().size());
 			assertEquals(0, cs.getDefaultReq().getInputs().getPastUserInputs().size());
 			assertEquals(0, cs.getDefaultReq().getInputs().getGeneratedResponses().size());
@@ -141,7 +140,7 @@ public class HuggingFaceChatServiceTest {
 			assertEquals(0, cs.getHistory().size());
 			resp = cs.complete(question);
 			assertEquals(0, cs.getHistory().size());
-			
+
 		} // Close endpoint
 	}
 

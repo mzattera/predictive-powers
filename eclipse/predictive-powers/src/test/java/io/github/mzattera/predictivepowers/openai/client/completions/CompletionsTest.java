@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
-import io.github.mzattera.predictivepowers.services.TextCompletion;
+import io.github.mzattera.predictivepowers.services.messages.TextCompletion;
 
 class CompletionsTest {
 

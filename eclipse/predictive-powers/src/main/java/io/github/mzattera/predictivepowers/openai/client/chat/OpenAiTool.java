@@ -21,9 +21,9 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Tool;
-import io.github.mzattera.predictivepowers.services.ToolCall;
-import io.github.mzattera.predictivepowers.services.ToolCallResult;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.messages.ToolCall;
+import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -35,15 +35,16 @@ import lombok.ToString;
  * This is a tool for OpenAI API. This is can be a function call for parallel
  * function calls in chat API, or a tool an OpenAI Assistant can use.
  * 
+ * Note this implements the {@link Tool} interface, to allow abstracting OpenAI
+ * APIs into sevices.
+ * 
  * @author Massimiliano "Maxi" Zattera.
  *
  */
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+//@RequiredArgsConstructor
 @Getter
 @Setter
-//@SuperBuilder
-@NoArgsConstructor
-//@RequiredArgsConstructor
-//@AllArgsConstructor
 @ToString
 public class OpenAiTool implements Tool {
 
@@ -70,13 +71,25 @@ public class OpenAiTool implements Tool {
 		}
 	}
 
-	Type type;
+	/**
+	 * For easier interoperability and abstraction, an OpenAiTool can be built as a
+	 * wrapper around any Tool instance. If this was the case, this is the wrapped
+	 * Tool.
+	 */
+	@JsonIgnore
+	@Getter(AccessLevel.PROTECTED)
+	@Setter(AccessLevel.NONE)
+	protected Tool wrappedTool;
 
-	Function function;
+	private Type type;
+
+	private Function function;
 
 	@Override
 	@JsonIgnore
 	public String getId() {
+		if (wrappedTool != null)
+			return wrappedTool.getId();
 		if (type == Type.FUNCTION)
 			return function.name;
 		return type.toString();
@@ -85,6 +98,8 @@ public class OpenAiTool implements Tool {
 	@JsonIgnore
 	@Override
 	public String getDescription() {
+		if (wrappedTool != null)
+			return wrappedTool.getDescription();
 		if (type == Type.FUNCTION)
 			return function.getDescription();
 		return ("This is the " + type + " tool available to OpenAI assistants.");
@@ -96,6 +111,8 @@ public class OpenAiTool implements Tool {
 	@JsonIgnore
 	@Override
 	public Class<?> getParameterSchema() {
+		if (wrappedTool != null)
+			return wrappedTool.getParameterSchema();
 		if (type == Type.FUNCTION)
 			return function.getParameters();
 		return NoParameters.class;
@@ -111,7 +128,11 @@ public class OpenAiTool implements Tool {
 	/**
 	 * Create a "function" from its description. Notice that if you use this
 	 * construction than {@ #invoke(Map)} will throw UnsoupportedMethodException
-	 * when called.
+	 * when called, unless overridden in a subclass.
+	 * 
+	 * Notice that an easier method to create OpenAiTools is to create a class that
+	 * implements the Tool interface, and wrap an OpenAiTool around it, so you get a
+	 * reusable Tool that can also be used with other APIs (hopefully).
 	 */
 	OpenAiTool(Function function) {
 		this.type = Type.FUNCTION;
@@ -119,13 +140,8 @@ public class OpenAiTool implements Tool {
 		this.wrappedTool = null;
 	}
 
-	@JsonIgnore
-	@Getter(AccessLevel.PROTECTED)
-	@Setter(AccessLevel.NONE)
-	protected Tool wrappedTool;
-
 	/**
-	 * Create an instance of this class as a wrapper around given tool. This will
+	 * Create an instance of this class as a wrapper around given Tool. This will
 	 * automatically invoke the tool when {@ #invoke(Map)} is called for this
 	 * instance.
 	 */

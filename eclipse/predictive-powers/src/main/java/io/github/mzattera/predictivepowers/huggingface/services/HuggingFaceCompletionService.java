@@ -23,8 +23,8 @@ import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGeneration
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationResponse;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.CompletionService;
-import io.github.mzattera.predictivepowers.services.TextCompletion;
-import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
+import io.github.mzattera.predictivepowers.services.messages.FinishReason;
+import io.github.mzattera.predictivepowers.services.messages.TextCompletion;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -158,7 +158,7 @@ public class HuggingFaceCompletionService implements CompletionService {
 		req.getInputs().add(CompletionService.fillSlots(prompt, parameters));
 
 		TextGenerationResponse resp = endpoint.getClient().textGeneration(model, req).get(0).get(0);
-		return TextCompletion.builder().text(resp.getGeneratedText()).finishReason(FinishReason.COMPLETED).build();
+		return new TextCompletion(resp.getGeneratedText(), FinishReason.COMPLETED);
 	}
 
 	@Override

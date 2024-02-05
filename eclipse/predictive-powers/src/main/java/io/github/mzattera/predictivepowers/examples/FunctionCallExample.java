@@ -28,12 +28,12 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCallResult;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiTextCompletion;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Tool;
-import io.github.mzattera.predictivepowers.services.ToolCall;
-import io.github.mzattera.predictivepowers.services.ToolCallResult;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
+import io.github.mzattera.predictivepowers.services.messages.ToolCall;
+import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.NonNull;
 
 public class FunctionCallExample {
@@ -113,7 +113,7 @@ public class FunctionCallExample {
 					System.out.print("User     > ");
 					String s = console.nextLine();
 
-					OpenAiTextCompletion reply = bot.chat(s);
+					ChatCompletion reply = bot.chat(s);
 
 					// Check if bot generated a function call
 					while (reply.hasToolCalls()) {

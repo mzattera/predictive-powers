@@ -34,6 +34,7 @@ public class OpenAiTokenizer implements Tokenizer {
 
 	// TODO Urgent add costs for the vision API see calculator on Model API
 	// https://learn.microsoft.com/en-us/azure/ai-services/openai/overview
+	// notice vision API has multiple parts and length might depend on those......
 	
 	@Getter
 	@NonNull

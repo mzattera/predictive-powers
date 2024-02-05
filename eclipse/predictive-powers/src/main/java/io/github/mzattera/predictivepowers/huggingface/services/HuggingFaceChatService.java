@@ -23,11 +23,11 @@ import io.github.mzattera.predictivepowers.huggingface.client.nlp.Conversational
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.ConversationalResponse;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractChatService;
-import io.github.mzattera.predictivepowers.services.ChatCompletion;
-import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.services.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
-import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
+import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
+import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -155,8 +155,8 @@ public class HuggingFaceChatService extends AbstractChatService {
 
 		// Make sure history is of desired length
 		// TODO Make it more efficient
-		int toTrim = userMsgHistory.size() - (getMaxHistoryLength()/2);
-		if (toTrim > 0){
+		int toTrim = userMsgHistory.size() - (getMaxHistoryLength() / 2);
+		if (toTrim > 0) {
 			userMsgHistory.subList(toTrim, userMsgHistory.size()).clear();
 			botMsgHistory.subList(toTrim, botMsgHistory.size()).clear();
 		}
@@ -193,6 +193,8 @@ public class HuggingFaceChatService extends AbstractChatService {
 		return chatCompletion(prompt, trimConversation(prompt, new ArrayList<>(), new ArrayList<>()), req);
 	}
 
+	// TODO throw error if any part is not text
+
 	@Override
 	public ChatCompletion complete(ChatMessage prompt) {
 		return complete(prompt.getContent(), defaultReq);
@@ -228,10 +230,7 @@ public class HuggingFaceChatService extends AbstractChatService {
 
 		ConversationalResponse resp = endpoint.getClient().conversational(getModel(), req);
 
-		return ChatCompletion.builder() //
-				.message(ChatMessage.builder().content(resp.getGeneratedText()).author(Author.BOT).build()) //
-				.finishReason(FinishReason.COMPLETED) //
-				.build();
+		return new ChatCompletion(FinishReason.COMPLETED, new ChatMessage(Author.BOT, resp.getGeneratedText()));
 	}
 
 	/**

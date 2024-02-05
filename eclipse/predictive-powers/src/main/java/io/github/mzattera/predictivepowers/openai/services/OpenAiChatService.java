@@ -37,34 +37,32 @@ import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.AbstractChatService;
 import io.github.mzattera.predictivepowers.services.Agent;
-import io.github.mzattera.predictivepowers.services.ChatMessage;
-import io.github.mzattera.predictivepowers.services.TextCompletion.FinishReason;
 import io.github.mzattera.predictivepowers.services.Tool;
-import io.github.mzattera.predictivepowers.services.ToolCallResult;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
+import io.github.mzattera.predictivepowers.services.messages.FinishReason;
+import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.Getter;
 import lombok.NonNull;
 
 /**
- * OpenAI based chat service.
+ * OpenAI chat service.
  * 
  * The service supports both function and tool calls transparently (it will
- * handle either, based on which model is used). The service has a list of
- * default tools that will be used in each interaction with the service.
+ * handle either, based on which model is used). As for agents, a list of tools
+ * that will be used in each interaction with the service can be provided.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
 public class OpenAiChatService extends AbstractChatService implements Agent {
 
-	// TODO : Add support for different users? Maybe not, as we are not persisting this agent.
-	// TODO URGENT Move agent methods that can be reused into AbstractAgentService
 	// TODO URGENT Add methods ot handle files in messages here (for vision as URL)
-	
-	private final static Logger LOG = LoggerFactory.getLogger(OpenAiChatService.class);
 
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
 	// values from a Map this is done partially
+
+	private final static Logger LOG = LoggerFactory.getLogger(OpenAiChatService.class);
 
 	public static final String DEFAULT_MODEL = "gpt-4";
 
@@ -78,7 +76,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 		modelService = endpoint.getModelService();
 		String model = defaultReq.getModel();
 
-		// With GPT you pay max tokens, even if they are not geneated, so we put a
+		// With GPT you pay max tokens, even if they are not generated, so we put a
 		// reasonable limit here
 		int maxReplyTk = Math.min(modelService.getContextSize(model) / 4, modelService.getMaxNewTokens(model));
 		setMaxConversationTokens(modelService.getContextSize(model) - maxReplyTk);
@@ -103,11 +101,6 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 		return "OpenAI-chat-API-model-" + getModel();
 	}
 
-	@Override
-	public String getUserId() {
-		return null;
-	}
-	
 	/**
 	 * This request, with its parameters, is used as default setting for each call.
 	 * 
@@ -127,7 +120,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 		return Collections.unmodifiableList(history);
 	}
 
-	/** Fore testing purposes only. This is not meant to be used. */
+	/** For testing purposes only. This is not meant to be used. */
 	List<OpenAiChatMessage> getModifiableHistory() {
 		return history;
 	}
@@ -141,12 +134,10 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 
 	private final Map<String, OpenAiTool> tools = new HashMap<>();
 
-	@Override
 	public List<OpenAiTool> getTools() {
 		return Collections.unmodifiableList(new ArrayList<>(tools.values()));
 	}
 
-	@Override
 	public void setTools(Collection<? extends Tool> list) throws ToolInitializationException {
 
 		tools.clear();
@@ -162,10 +153,9 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 		setDefaultTools();
 	}
 
-	@Override
 	public void addTool(@NonNull Tool tool) throws ToolInitializationException {
 
-		// TODO? Re-enable? it has been disable for easier tests 
+		// TODO? Re-enable? it has been disable for easier tests
 //		if (tools.containsKey(tool.getId()))
 //			throw new ToolInitializationException("Duplicated tool: " + tool.getId());
 
@@ -319,7 +309,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	}
 
 	@Override
-	public OpenAiTextCompletion chat(String msg) {
+	public OpenAiChatCompletion chat(String msg) {
 		return chat(msg, defaultReq);
 	}
 
@@ -328,12 +318,12 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 * 
 	 * The exchange is added to the conversation history.
 	 */
-	public OpenAiTextCompletion chat(String msg, ChatCompletionsRequest req) {
+	public OpenAiChatCompletion chat(String msg, ChatCompletionsRequest req) {
 		return chat(new OpenAiChatMessage(Role.USER, msg), req);
 	}
 
 	@Override
-	public OpenAiTextCompletion chat(ChatMessage msg) {
+	public OpenAiChatCompletion chat(ChatMessage msg) {
 		return chat(msg, defaultReq);
 	}
 
@@ -342,7 +332,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 * 
 	 * The exchange is added to the conversation history.
 	 */
-	public OpenAiTextCompletion chat(ChatMessage msg, ChatCompletionsRequest req) {
+	public OpenAiChatCompletion chat(ChatMessage msg, ChatCompletionsRequest req) {
 
 		OpenAiChatMessage m;
 		try {
@@ -355,10 +345,10 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 		conversation.add(m);
 		trimConversation(conversation);
 
-		OpenAiTextCompletion result = chatCompletion(conversation, req);
+		OpenAiChatCompletion result = chatCompletion(conversation, req);
 
 		history.add(m);
-		history.add(result.getMessage());
+		history.add((OpenAiChatMessage) result.getMessage());
 
 		// Make sure history is of desired length
 		int toTrim = history.size() - getMaxHistoryLength();
@@ -377,7 +367,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 * 
 	 * @param results the list of results from various call.
 	 */
-	public OpenAiTextCompletion chat(List<? extends ToolCallResult> results) {
+	public OpenAiChatCompletion chat(List<? extends ToolCallResult> results) {
 		return chat(results, defaultReq);
 	}
 
@@ -390,11 +380,11 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 * 
 	 * @param results the list of results from various call.
 	 */
-	public OpenAiTextCompletion chat(List<? extends ToolCallResult> results, ChatCompletionsRequest req) {
+	public OpenAiChatCompletion chat(List<? extends ToolCallResult> results, ChatCompletionsRequest req) {
 
 		List<OpenAiChatMessage> conversation = new ArrayList<>(history);
 
-		OpenAiTextCompletion completion;
+		OpenAiChatCompletion completion;
 
 		// Transparently handles function and tool calls
 		switch (((OpenAiModelService) modelService).getSupportedCall(req.getModel())) {
@@ -408,7 +398,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 			completion = chatCompletion(conversation, req);
 
 			history.add(msg);
-			history.add(completion.getMessage());
+			history.add((OpenAiChatMessage) completion.getMessage());
 
 			break;
 		case TOOLS:
@@ -422,7 +412,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 			completion = chatCompletion(conversation, req);
 
 			history.addAll(msgs);
-			history.add(completion.getMessage());
+			history.add((OpenAiChatMessage) completion.getMessage());
 
 			break;
 		default:
@@ -434,14 +424,11 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 		if (toTrim > 0)
 			history.subList(toTrim, history.size()).clear();
 
-		return OpenAiTextCompletion.builder() //
-				.message(completion.getMessage()) //
-				.finishReason(completion.getFinishReason()) //
-				.toolCalls(completion.getToolCalls()).build();
+		return completion;
 	}
 
 	@Override
-	public OpenAiTextCompletion complete(String prompt) {
+	public OpenAiChatCompletion complete(String prompt) {
 		return complete(prompt, defaultReq);
 	}
 
@@ -451,12 +438,12 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 * Notice this does not consider or affects chat history but agent personality
 	 * is used, if provided.
 	 */
-	public OpenAiTextCompletion complete(String prompt, ChatCompletionsRequest req) {
+	public OpenAiChatCompletion complete(String prompt, ChatCompletionsRequest req) {
 		return complete(new OpenAiChatMessage(Role.USER, prompt), req);
 	}
 
 	@Override
-	public OpenAiTextCompletion complete(ChatMessage prompt) {
+	public OpenAiChatCompletion complete(ChatMessage prompt) {
 		return complete(prompt, defaultReq);
 	}
 
@@ -466,7 +453,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 * Notice this does not consider or affects chat history but agent personality
 	 * is used, if provided.
 	 */
-	public OpenAiTextCompletion complete(ChatMessage prompt, ChatCompletionsRequest req) {
+	public OpenAiChatCompletion complete(ChatMessage prompt, ChatCompletionsRequest req) {
 		List<OpenAiChatMessage> msgs = new ArrayList<>();
 
 		OpenAiChatMessage m;
@@ -489,7 +476,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 * without modifications. This means bot personality is NOT added on top of the
 	 * list of messages, nor the list is checked or trimmed for excessive length.
 	 */
-	public OpenAiTextCompletion complete(List<OpenAiChatMessage> messages) {
+	public OpenAiChatCompletion complete(List<OpenAiChatMessage> messages) {
 		return complete(messages, defaultReq);
 	}
 
@@ -500,7 +487,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 * without modifications. This means bot personality is NOT added on top of the
 	 * list of messages, nor the list is checked or trimmed for excessive length.
 	 */
-	public OpenAiTextCompletion complete(List<OpenAiChatMessage> messages, ChatCompletionsRequest req) {
+	public OpenAiChatCompletion complete(List<OpenAiChatMessage> messages, ChatCompletionsRequest req) {
 		return chatCompletion(messages, req);
 	}
 
@@ -514,7 +501,9 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 * @param tools List of tools that can be called (this can be empty to prevent
 	 *              tool calls, or null to use the list of default tools).
 	 */
-	private OpenAiTextCompletion chatCompletion(List<OpenAiChatMessage> messages, ChatCompletionsRequest req) {
+	private OpenAiChatCompletion chatCompletion(List<OpenAiChatMessage> messages, ChatCompletionsRequest req) {
+
+		validate(messages);
 
 		String model = req.getModel();
 
@@ -566,10 +555,8 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 				OpenAiToolCall toolCall = new OpenAiToolCall(funCall);
 				toolCall.setTool(tools.get(funCall.getName()));
 				calls.add(toolCall);
-				return OpenAiTextCompletion.builder() //
-						.finishReason(FinishReason.fromGptApi(choice.getFinishReason())) //
-						.message(choice.getMessage()) //
-						.toolCalls(calls).build();
+				return new OpenAiChatCompletion(FinishReason.fromGptApi(choice.getFinishReason()), choice.getMessage(),
+						calls);
 			}
 			if (choice.getMessage().getToolCalls() != null) {
 
@@ -578,10 +565,8 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 					toolCall.setTool(tools.get(toolCall.getFunction().getName()));
 				}
 			}
-			return OpenAiTextCompletion.builder() //
-					.finishReason(FinishReason.fromGptApi(choice.getFinishReason())) //
-					.message(choice.getMessage()) //
-					.toolCalls(choice.getMessage().getToolCalls()).build();
+			return new OpenAiChatCompletion(FinishReason.fromGptApi(choice.getFinishReason()), choice.getMessage(),
+					choice.getMessage().getToolCalls());
 
 		} finally {
 
@@ -589,6 +574,16 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 			if (autofit)
 				req.setMaxTokens(null);
 		}
+	}
+
+	/**
+	 * Checks that
+	 * 
+	 * @param messages
+	 */
+	private void validate(List<OpenAiChatMessage> messages) {
+		// TODO Auto-generated method stub
+
 	}
 
 	/**

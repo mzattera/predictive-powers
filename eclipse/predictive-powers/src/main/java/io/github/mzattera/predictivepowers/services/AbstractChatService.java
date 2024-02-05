@@ -15,7 +15,9 @@
  */
 package io.github.mzattera.predictivepowers.services;
 
-import io.github.mzattera.predictivepowers.services.ChatMessage.Author;
+import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;

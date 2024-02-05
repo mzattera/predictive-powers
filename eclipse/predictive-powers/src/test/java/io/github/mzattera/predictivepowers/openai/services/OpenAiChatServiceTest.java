@@ -25,9 +25,9 @@ import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
-import io.github.mzattera.predictivepowers.services.ChatCompletion;
-import io.github.mzattera.predictivepowers.services.ChatMessage.Author;
-import io.github.mzattera.predictivepowers.services.TextCompletion;
+import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
+import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 
 /**
  * Test the OpenAI chat API & Service
@@ -47,14 +47,14 @@ public class OpenAiChatServiceTest {
 			assertEquals(0, cs.getHistory().size());
 
 			// Personality
-			String personality = "You are a smart and nice agent.";
+			String personality = "You are a smart and nice 	agent.";
 			cs.setPersonality(personality);
 			assertEquals(cs.getPersonality(), personality);
 
 			// In completion, we do not consider history, but we consider personality.
 			String question = "How high is Mt.Everest?";
 			ChatCompletion resp = cs.complete(question);
-			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
+			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(0, cs.getHistory().size());
 			assertEquals(cs.getDefaultReq().getMessages().size(), 2);
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getRole(), Role.SYSTEM);
@@ -92,7 +92,7 @@ public class OpenAiChatServiceTest {
 
 			String question = "How high is Mt.Everest?";
 			ChatCompletion resp = cs.chat(question);
-			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
+			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(3, cs.getHistory().size());
 			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
 			assertEquals(cs.getHistory().get(0).getContent(), "" + 9);
@@ -122,7 +122,7 @@ public class OpenAiChatServiceTest {
 			cs.setMaxNewTokens(100);
 
 			resp = cs.chat(question);
-			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
+			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 3);
 			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
 			assertEquals(cs.getHistory().get(0).getContent(), "" + 9);
@@ -151,7 +151,7 @@ public class OpenAiChatServiceTest {
 			cs.setMaxConversationTokens(12); // this should accomodate personality and question
 
 			resp = cs.chat(question);
-			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
+			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 3);
 			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
 			assertEquals(cs.getHistory().get(0).getContent(), "" + 9);
@@ -180,7 +180,7 @@ public class OpenAiChatServiceTest {
 			cs.setMaxConversationTokens(12);
 
 			resp = cs.chat(question);
-			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
+			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 3);
 			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
 			assertEquals(cs.getHistory().get(0).getContent(), "" + 9);
@@ -197,7 +197,7 @@ public class OpenAiChatServiceTest {
 			cs.setPersonality(null);
 			cs.setMaxNewTokens(null);
 			resp = cs.complete(question);
-			assertEquals(resp.getFinishReason(), TextCompletion.FinishReason.COMPLETED);
+			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(cs.getHistory().size(), 3);
 			assertEquals(1, cs.getDefaultReq().getMessages().size());
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getAuthor(), Author.USER);

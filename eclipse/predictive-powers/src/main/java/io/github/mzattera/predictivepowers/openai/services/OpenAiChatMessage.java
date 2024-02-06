@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
@@ -39,6 +38,7 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.services.messages.MessagePart;
 import io.github.mzattera.predictivepowers.services.messages.TextPart;
@@ -46,6 +46,8 @@ import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -59,9 +61,8 @@ import lombok.ToString;
 //@RequiredArgsConstructor
 @Getter
 @Setter
-@ToString(callSuper = true)
-@JsonIgnoreProperties(value = { "author" })
-public class OpenAiChatMessage extends ChatMessage {
+@ToString
+public class OpenAiChatMessage {
 
 	// TOOD URGENT handle parts
 
@@ -132,12 +133,11 @@ public class OpenAiChatMessage extends ChatMessage {
 			}
 			return parts;
 		}
-		
 
-	    @Override
-	    public List<MessagePart> getNullValue(DeserializationContext ctxt) {
-	        return new ArrayList<>(); // Return empty list on null
-	    }		
+		@Override
+		public List<MessagePart> getNullValue(DeserializationContext ctxt) {
+			return new ArrayList<>(); // Return empty list on null
+		}
 	}
 
 	/**
@@ -179,12 +179,6 @@ public class OpenAiChatMessage extends ChatMessage {
 		public String toString() { // Notice we rely on labels not to change
 			return label;
 		}
-	}
-
-	@Override
-	// Suppress serialization of this field
-	public Author getAuthor() {
-		return roleToAuthor(role);
 	}
 
 	private static Author roleToAuthor(Role role) {
@@ -229,45 +223,65 @@ public class OpenAiChatMessage extends ChatMessage {
 	 * 
 	 * Notice that, to support view models, this can be an array.
 	 * 
-	 * When the message is returned by the API, this is always a single string value
-	 * that can be accessed with this method. When calling the API, you can use
-	 * {@link setContent()} to set this field as a single string value, or use
-	 * {@link getParts()} to provide an array of strings and image URLs. Notice that
-	 * {@link getContent()} will return null if parts has more than one element or
-	 * the element is not a string.
+	 * When a message is returned by the API, this is always a single string value
+	 * that can be read with {@link getContent()}. When calling the API, you can use
+	 * {@link setContent()} to set this field to a single string value, or use
+	 * {@link getContentParts()} to provide an array of strings and image URLs (as
+	 * {@link FilePart}s). Notice that {@link getContent()} will return null if the
+	 * message is not a single-part message that contains only text. On the other
+	 * side, {@link getContentParts()} will always return a list of message parts,
+	 * eventually empty.
 	 */
 	@JsonIgnore
-	@Override
 	public String getContent() {
-		if ((getParts().size() == 1) && (getParts().get(0) instanceof TextPart))
-			return ((TextPart) getParts().get(0)).getContent();
+		if ((contentParts.size() == 1) && (contentParts.get(0) instanceof TextPart))
+			return ((TextPart) contentParts.get(0)).getContent();
 		return null;
 	}
 
 	/**
-	 * Message content, can be null if a function call is returned instead. Notice
-	 * that, to support view models, this can be an array.
+	 * Message content, can be null if a function call is returned instead.
 	 * 
-	 * When the message is returned by the API, this is always a single string vale
-	 * hat can be accessed with this method. When calling the API you can use
-	 * {@link setContent()} to set this field as a single string value, or use
-	 * {@link getParts()} to provide an array of strings and image URLs. Notice that
-	 * {@link getContent()} will return null if parts has more than one element or
-	 * the element is not a string.
+	 * Notice that, to support view models, this can be an array.
+	 * 
+	 * When a message is returned by the API, this is always a single string value
+	 * that can be read with {@link getContent()}. When calling the API, you can use
+	 * {@link setContent()} to set this field to a single string value, or use
+	 * {@link getContentParts()} to provide an array of strings and image URLs (as
+	 * {@link FilePart}s). Notice that {@link getContent()} will return null if the
+	 * message is not a single-part message that contains only text. On the other
+	 * side, {@link getContentParts()} will always return a list of message parts,
+	 * eventually empty.
 	 */
 	@JsonIgnore
 	public void setContent(String content) {
-		getParts().clear();
-		getParts().add(new TextPart(content));
+		contentParts.clear();
+		contentParts.add(new TextPart(content));
 	}
 
+	private List<MessagePart> contentParts = new ArrayList<>();
+
+	/**
+	 * Message content, eventually empty (e.g. if a function call is returned
+	 * instead).
+	 * 
+	 * This is meant to support view models.
+	 * 
+	 * When a message is returned by the API, this is always a single string value
+	 * that can be read with {@link getContent()}. When calling the API, you can use
+	 * {@link setContent()} to set "content" field to a single string value, or use
+	 * {@link getContentParts()} to provide an array of strings and image URLs (as
+	 * {@link FilePart}s). Notice that {@link getContent()} will return null if the
+	 * message is not a single-part message that contains only text. On the other
+	 * side, {@link getContentParts()} will always return a list of message parts,
+	 * eventually empty.
+	 */
 	@JsonProperty("content")
 	@JsonSerialize(using = MessagePartSerializer.class)
 	@JsonDeserialize(using = MessagePartDeserializer.class)
 	@JsonInclude(JsonInclude.Include.ALWAYS) // Needed to avoid errors with function calls
-	@Override
-	public List<MessagePart> getParts() {
-		return super.getParts();
+	public List<MessagePart> getContentParts() {
+		return contentParts;
 	}
 
 	/**
@@ -292,15 +306,6 @@ public class OpenAiChatMessage extends ChatMessage {
 
 	// TODO URGENT remove unused constructors
 
-	public OpenAiChatMessage(ChatMessage msg) {
-		super(msg.getAuthor(), msg.getParts());
-		if (msg instanceof OpenAiChatMessage) {
-			this.role = ((OpenAiChatMessage) msg).getRole();
-		} else {
-			this.role = authorToRole(msg.getAuthor());
-		}
-	}
-
 	public OpenAiChatMessage(Role role, String content) {
 		this(role, content, null, null);
 	}
@@ -311,15 +316,15 @@ public class OpenAiChatMessage extends ChatMessage {
 
 	// TODO URGENT name and content are optional for a function call message
 	public OpenAiChatMessage(Role role, String content, String name, FunctionCall functionCall) {
-		super(roleToAuthor(role), content);
 		this.role = role;
+		setContent(content);
 		this.name = name;
 		this.functionCall = functionCall;
 	}
 
 	public OpenAiChatMessage(Role role, ToolCallResult result) {
-		super(roleToAuthor(role), result.getResult().toString());
 
+		setContent(result.getResult().toString());
 		if (role == Role.FUNCTION) {
 			this.role = Role.FUNCTION;
 			this.name = result.getToolId();
@@ -328,7 +333,12 @@ public class OpenAiChatMessage extends ChatMessage {
 			this.name = result.getToolId();
 			this.toolCallId = result.getToolCallId();
 		} else {
-			throw new IllegalArgumentException("Wrong role: " + role);
+			throw new IllegalArgumentException("Unsupported role: " + role);
 		}
+	}
+
+	public OpenAiChatMessage(@NonNull Author author, @NonNull List<MessagePart> parts) {
+		this.role = authorToRole(author);
+		this.contentParts.addAll(parts);
 	}
 }

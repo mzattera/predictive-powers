@@ -28,6 +28,7 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Rol
 import io.github.mzattera.predictivepowers.services.AbstractQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
+import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import lombok.NonNull;
 
 /**
@@ -91,7 +92,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 	 * Answer a question, using completion service.
 	 */
 	public QnAPair answer(String question) {
-		OpenAiChatCompletion resp = completionService.complete(question);
+		ChatCompletion resp = completionService.complete(question);
 		return QnAPair.builder().question(question).answer(resp.getText())
 				.explanation("Answer provided by OpenAI competions API (model knowledge).").build();
 	}
@@ -181,7 +182,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 		b.append("<question>").append(question).append("</question>");
 		userMsg.setContent(b.toString());
 
-		OpenAiChatCompletion answerJson = completionService.complete(instructions);
+		ChatCompletion answerJson = completionService.complete(instructions);
 		QnAPair result = null;
 		try {
 			result = mapper.readValue(answerJson.getText(), QnAPair.class);

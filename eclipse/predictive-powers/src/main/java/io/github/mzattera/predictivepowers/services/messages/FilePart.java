@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 /**
  * This is a {@link MessagePart} that contains reference to a file.
@@ -25,7 +26,8 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera.
  */
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-// @RequiredArgsConstructor
+//@RequiredArgsConstructor
+@SuperBuilder
 @Getter
 @Setter
 @ToString

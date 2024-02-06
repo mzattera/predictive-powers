@@ -77,22 +77,136 @@ public class ChatMessage {
 	@NonNull
 	private List<MessagePart> parts = new ArrayList<>();
 
+	public ChatMessage(String content) {
+		this(Author.USER, content);
+	}
+
+	public ChatMessage(@NonNull MessagePart part) {
+		this(Author.USER, part);
+	}
+
+	public ChatMessage(@NonNull List<? extends MessagePart> parts) {
+		this(Author.USER, parts);
+	}
+
 	public ChatMessage(@NonNull Author author, String content) {
-		this(author);
+		this.author = author;
 		if (content != null)
 			parts.add(new TextPart(content));
 	}
 
+	public ChatMessage(@NonNull Author author, @NonNull MessagePart part) {
+		this.author = author;
+		this.parts.add(part);
+	}
+
 	public ChatMessage(@NonNull Author author, @NonNull List<? extends MessagePart> parts) {
-		this(author);
+		this.author = author;
 		this.parts.addAll(parts);
+	}
+
+	/**
+	 * 
+	 * @return True if and only if this message is pure text.
+	 */
+	public boolean isText() {
+		for (MessagePart part : parts)
+			if (!(part instanceof TextPart))
+				return false;
+		return true;
+	}
+
+	/**
+	 * 
+	 * @return True if this message contains at least one part which is text.
+	 */
+	public boolean hasText() {
+		for (MessagePart part : parts)
+			if (part instanceof TextPart)
+				return true;
+		return false;
+	}
+
+	/**
+	 * 
+	 * @return True if this message contains at least one part which is a file.
+	 */
+	public boolean hasFiles() {
+		for (MessagePart part : parts)
+			if (part instanceof FilePart)
+				return true;
+		return false;
+	}
+
+	/**
+	 * 
+	 * @return All files contained in this message.
+	 */
+	public List<? extends FilePart> getFiles() {
+		List<FilePart> files = new ArrayList<>();
+		for (MessagePart part : parts)
+			try {
+				files.add((FilePart) part);
+			} catch (ClassCastException e) {
+			}
+		return files;
+	}
+
+	/**
+	 * 
+	 * @return True if this message contains at least one invocation of a tool.
+	 */
+	public boolean hasToolCalls() {
+		for (MessagePart part : parts)
+			if (part instanceof ToolCall)
+				return true;
+		return false;
+	}
+
+	/**
+	 * 
+	 * @return All tool invocations contained in this message.
+	 */
+	public List<? extends ToolCall> getToolCalls() {
+		List<ToolCall> calls = new ArrayList<>();
+		for (MessagePart part : parts)
+			try {
+				calls.add((ToolCall) part);
+			} catch (ClassCastException e) {
+			}
+		return calls;
+	}
+
+	/**
+	 * 
+	 * @return True if this message contains at least one tool call response.
+	 */
+	public boolean hasToolCallResults() {
+		for (MessagePart part : parts)
+			if (part instanceof ToolCallResult)
+				return true;
+		return false;
+	}
+
+	/**
+	 * 
+	 * @return All tool invocations contained in this message.
+	 */
+	public List<? extends ToolCallResult> getToolCallResults() {
+		List<ToolCallResult> results = new ArrayList<>();
+		for (MessagePart part : parts)
+			try {
+				results.add((ToolCallResult) part);
+			} catch (ClassCastException e) {
+			}
+		return results;
 	}
 
 	/**
 	 * 
 	 * @return A string representation of the content of this message. Notice the
 	 *         message could contain parts which are not easily representable as
-	 *         text (e.g. a file).
+	 *         text (e.g. a file). See {@link #isText()}.
 	 */
 	public String getContent() {
 		StringBuilder result = new StringBuilder();

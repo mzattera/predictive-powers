@@ -26,7 +26,6 @@ import org.junit.jupiter.api.Test;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
-import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 
 /**
@@ -44,7 +43,7 @@ public class OpenAiChatServiceTest {
 	public void test01() {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			OpenAiChatService cs = ep.getChatService();
-			assertEquals(0, cs.getHistory().size());
+			assertEquals(0, cs.getModifiableHistory().size());
 
 			// Personality
 			String personality = "You are a smart and nice 	agent.";
@@ -55,7 +54,7 @@ public class OpenAiChatServiceTest {
 			String question = "How high is Mt.Everest?";
 			ChatCompletion resp = cs.complete(question);
 			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
-			assertEquals(0, cs.getHistory().size());
+			assertEquals(0, cs.getModifiableHistory().size());
 			assertEquals(cs.getDefaultReq().getMessages().size(), 2);
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getRole(), Role.SYSTEM);
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getContent(), personality);
@@ -93,13 +92,13 @@ public class OpenAiChatServiceTest {
 			String question = "How high is Mt.Everest?";
 			ChatCompletion resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
-			assertEquals(3, cs.getHistory().size());
-			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(0).getContent(), "" + 9);
-			assertEquals(cs.getHistory().get(1).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(1).getContent(), question);
-			assertEquals(cs.getHistory().get(2).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(2).getContent(), resp.getText());
+			assertEquals(3, cs.getModifiableHistory().size());
+			assertEquals(cs.getModifiableHistory().get(0).getRole(), Role.USER);
+			assertEquals(cs.getModifiableHistory().get(0).getContent(), "" + 9);
+			assertEquals(cs.getModifiableHistory().get(1).getRole(), Role.USER);
+			assertEquals(cs.getModifiableHistory().get(1).getContent(), question);
+			assertEquals(cs.getModifiableHistory().get(2).getRole(), Role.ASSISTANT);
+			assertEquals(cs.getModifiableHistory().get(2).getContent(), resp.getText());
 			assertEquals(3, cs.getDefaultReq().getMessages().size());
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getRole(), Role.SYSTEM);
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getContent(), personality);
@@ -114,7 +113,7 @@ public class OpenAiChatServiceTest {
 
 			// Fake history
 			cs.clearConversation();
-			assertEquals(cs.getHistory().size(), 0);
+			assertEquals(cs.getModifiableHistory().size(), 0);
 			for (int i = 0; i < 10; ++i) {
 				cs.getModifiableHistory().add(new OpenAiChatMessage(Role.USER, "" + i));
 			}
@@ -123,13 +122,13 @@ public class OpenAiChatServiceTest {
 
 			resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
-			assertEquals(cs.getHistory().size(), 3);
-			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(0).getContent(), "" + 9);
-			assertEquals(cs.getHistory().get(1).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(1).getContent(), question);
-			assertEquals(cs.getHistory().get(2).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(2).getContent(), resp.getText());
+			assertEquals(cs.getModifiableHistory().size(), 3);
+			assertEquals(cs.getModifiableHistory().get(0).getRole(), Role.USER);
+			assertEquals(cs.getModifiableHistory().get(0).getContent(), "" + 9);
+			assertEquals(cs.getModifiableHistory().get(1).getRole(), Role.USER);
+			assertEquals(cs.getModifiableHistory().get(1).getContent(), question);
+			assertEquals(cs.getModifiableHistory().get(2).getRole(), Role.ASSISTANT);
+			assertEquals(cs.getModifiableHistory().get(2).getContent(), resp.getText());
 			assertEquals(2, cs.getDefaultReq().getMessages().size());
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getRole(), Role.USER);
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getContent(), "" + 9);
@@ -152,13 +151,13 @@ public class OpenAiChatServiceTest {
 
 			resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
-			assertEquals(cs.getHistory().size(), 3);
-			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(0).getContent(), "" + 9);
-			assertEquals(cs.getHistory().get(1).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(1).getContent(), question);
-			assertEquals(cs.getHistory().get(2).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(2).getContent(), resp.getText());
+			assertEquals(cs.getModifiableHistory().size(), 3);
+			assertEquals(cs.getModifiableHistory().get(0).getRole(), Role.USER);
+			assertEquals(cs.getModifiableHistory().get(0).getContent(), "" + 9);
+			assertEquals(cs.getModifiableHistory().get(1).getRole(), Role.USER);
+			assertEquals(cs.getModifiableHistory().get(1).getContent(), question);
+			assertEquals(cs.getModifiableHistory().get(2).getRole(), Role.ASSISTANT);
+			assertEquals(cs.getModifiableHistory().get(2).getContent(), resp.getText());
 			assertEquals(2, cs.getDefaultReq().getMessages().size());
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getRole(), Role.SYSTEM);
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getContent(), personality);
@@ -181,15 +180,15 @@ public class OpenAiChatServiceTest {
 
 			resp = cs.chat(question);
 			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
-			assertEquals(cs.getHistory().size(), 3);
-			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(0).getContent(), "" + 9);
-			assertEquals(cs.getHistory().get(1).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(1).getContent(), question);
-			assertEquals(cs.getHistory().get(2).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(2).getContent(), resp.getText());
+			assertEquals(cs.getModifiableHistory().size(), 3);
+			assertEquals(cs.getModifiableHistory().get(0).getRole(), Role.USER);
+			assertEquals(cs.getModifiableHistory().get(0).getContent(), "" + 9);
+			assertEquals(cs.getModifiableHistory().get(1).getRole(), Role.USER);
+			assertEquals(cs.getModifiableHistory().get(1).getContent(), question);
+			assertEquals(cs.getModifiableHistory().get(2).getRole(), Role.ASSISTANT);
+			assertEquals(cs.getModifiableHistory().get(2).getContent(), resp.getText());
 			assertEquals(1, cs.getDefaultReq().getMessages().size());
-			assertEquals(cs.getDefaultReq().getMessages().get(0).getAuthor(), Author.USER);
+			assertEquals(cs.getDefaultReq().getMessages().get(0).getRole(), Role.USER);
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getContent(), question);
 			assertEquals(cs.getDefaultReq().getMaxTokens(), null);
 
@@ -198,9 +197,9 @@ public class OpenAiChatServiceTest {
 			cs.setMaxNewTokens(null);
 			resp = cs.complete(question);
 			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
-			assertEquals(cs.getHistory().size(), 3);
+			assertEquals(cs.getModifiableHistory().size(), 3);
 			assertEquals(1, cs.getDefaultReq().getMessages().size());
-			assertEquals(cs.getDefaultReq().getMessages().get(0).getAuthor(), Author.USER);
+			assertEquals(cs.getDefaultReq().getMessages().get(0).getRole(), Role.USER);
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getContent(), question);
 			assertEquals(cs.getDefaultReq().getMaxTokens(), null);
 
@@ -237,7 +236,7 @@ public class OpenAiChatServiceTest {
 			}
 
 			// If chat fails, history is not changed
-			assertEquals(10, cs.getHistory().size());
+			assertEquals(10, cs.getModifiableHistory().size());
 		} // Close endpoint
 	}
 

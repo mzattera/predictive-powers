@@ -23,7 +23,6 @@ import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool.Type;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
-import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCallResult;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
@@ -35,6 +34,7 @@ import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
+import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.NonNull;
 
 public class OpenAiTokenizerTest {
@@ -229,8 +229,8 @@ public class OpenAiTokenizerTest {
 
 				// Corresponding replies
 				for (int i = 0; i < calls.size(); ++i) {
-					messages.add(new OpenAiChatMessage(Role.TOOL, new OpenAiToolCallResult(calls.get(i).getId(),
-							calls.get(i).getFunction().getName(), "Result")));
+					messages.add(new OpenAiChatMessage(Role.TOOL,
+							new ToolCallResult(calls.get(i).getId(), calls.get(i).getFunction().getName(), "Result")));
 				}
 
 				ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).messages(messages).build();
@@ -311,10 +311,10 @@ public class OpenAiTokenizerTest {
 		}
 
 		@Override
-		public OpenAiToolCallResult invoke(@NonNull ToolCall call) throws Exception {
+		public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
 			// Function implementation goes here.
 			// In this example we simply return a random temperature.
-			return new OpenAiToolCallResult(call, "20°C");
+			return new ToolCallResult(call, "20°C");
 		}
 	}
 
@@ -330,7 +330,7 @@ public class OpenAiTokenizerTest {
 	 * Length of messages. Function descriptions.
 	 * 
 	 * @throws JsonProcessingException
-	 * @throws ToolInitializationException 
+	 * @throws ToolInitializationException
 	 */
 	@ParameterizedTest
 	@MethodSource("functionCallCompletionsModelsProvider")
@@ -359,7 +359,7 @@ public class OpenAiTokenizerTest {
 	 * Length of messages. Tool descriptions.
 	 * 
 	 * @throws JsonProcessingException
-	 * @throws ToolInitializationException 
+	 * @throws ToolInitializationException
 	 */
 	@ParameterizedTest
 	@MethodSource("toolCallCompletionsModelsProvider")
@@ -409,7 +409,7 @@ public class OpenAiTokenizerTest {
 
 		for (int i = 0; i < calls.size(); ++i) {
 			OTHER_MESSAGES.add(new OpenAiChatMessage(Role.TOOL,
-					new OpenAiToolCallResult(calls.get(i).getId(), calls.get(i).getFunction().getName(), "Result")));
+					new ToolCallResult(calls.get(i).getId(), calls.get(i).getFunction().getName(), "Result")));
 		}
 	}
 

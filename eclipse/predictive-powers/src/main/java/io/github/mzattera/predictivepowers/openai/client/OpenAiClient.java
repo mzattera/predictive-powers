@@ -55,11 +55,16 @@ import io.github.mzattera.util.ImageUtil;
 import io.reactivex.Single;
 import lombok.Getter;
 import lombok.NonNull;
+import okhttp3.Interceptor;
+import okhttp3.Interceptor.Chain;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 import okhttp3.ResponseBody;
+import okio.Buffer;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
@@ -156,28 +161,28 @@ public class OpenAiClient implements ApiClient {
 	 */
 	public OpenAiClient(OkHttpClient http) {
 
-		client = http;
+//		client = http;
 
 		// Debug code below
-//		client = http.newBuilder() //
+		client = http.newBuilder() //
 
 		// Debug code below, outputs the request
-//				.addInterceptor(new Interceptor() {
-//
-//					@Override
-//					public Response intercept(Chain chain) throws IOException {
-//						Request req = chain.request();
-//
-//						if (req.body() != null) {
-//							Buffer buffer = new Buffer();
-//							req.body().writeTo(buffer);
-//							String bodyContent = buffer.readUtf8();
-//							System.out.println("Request body: " + bodyContent);
-//						}
-//
-//						return chain.proceed(req);
-//					}
-//				}) //
+				.addInterceptor(new Interceptor() {
+
+					@Override
+					public Response intercept(Chain chain) throws IOException {
+						Request req = chain.request();
+
+						if (req.body() != null) {
+							Buffer buffer = new Buffer();
+							req.body().writeTo(buffer);
+							String bodyContent = buffer.readUtf8();
+							System.out.println("Request body: " + bodyContent);
+						}
+
+						return chain.proceed(req);
+					}
+				}) //
 
 				// Debug code below, outputs the response
 //				.addInterceptor(new Interceptor() {
@@ -201,7 +206,7 @@ public class OpenAiClient implements ApiClient {
 //					}
 //				}) //
 				
-//				.build();
+				.build();
 
 		Retrofit retrofit = new Retrofit.Builder().baseUrl(API_BASE_URL).client(client)
 				.addConverterFactory(JacksonConverterFactory.create(jsonMapper))

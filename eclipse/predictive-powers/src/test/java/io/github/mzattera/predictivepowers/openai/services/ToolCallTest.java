@@ -37,15 +37,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
-import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCallResult;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolChoice;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
+import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.NonNull;
 
 /**
@@ -62,7 +63,7 @@ public class ToolCallTest {
 	public static void check() {
 
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			assertEquals(SupportedCallType.TOOLS, ep.getModelService().getSupportedCall(MODEL));
+			assertEquals(SupportedCallType.TOOLS, ep.getModelService().getSupportedCallType(MODEL));
 		}
 	}
 
@@ -113,10 +114,10 @@ public class ToolCallTest {
 		}
 
 		@Override
-		public OpenAiToolCallResult invoke(@NonNull ToolCall call) throws Exception {
+		public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
 			// Function implementation goes here.
 			// In this example we simply return a random temperature.
-			return new OpenAiToolCallResult(call, "20°C");
+			return new ToolCallResult(call, "20°C");
 		}
 	}
 
@@ -209,7 +210,7 @@ public class ToolCallTest {
 			assertTrue((cs.getTools() != null) && (cs.getTools().size() == TOOLS.size()));
 
 			// Casual chat should not trigger any function call
-			OpenAiChatCompletion reply = cs.chat("Where is Dallas, TX?");
+			ChatCompletion reply = cs.chat("Where is Dallas, TX?");
 			assertFalse(reply.hasToolCalls());
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
 
@@ -251,7 +252,7 @@ public class ToolCallTest {
 			cs.setModel(MODEL);
 			cs.setTools(TOOLS);
 
-			OpenAiChatCompletion reply = null;
+			ChatCompletion reply = null;
 
 			// Casual chat should not trigger any function call
 			cs.clearConversation();
@@ -300,7 +301,7 @@ public class ToolCallTest {
 			cs.clearConversation();
 			cs.setTools(null);
 			assertEquals(0, cs.getTools().size());
-			OpenAiChatCompletion reply = cs.chat("How is the weather like in Dallas, TX?");
+			ChatCompletion reply = cs.chat("How is the weather like in Dallas, TX?");
 			assertFalse(reply.hasToolCalls());
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
 
@@ -331,15 +332,15 @@ public class ToolCallTest {
 			cs.setTools(TOOLS);
 
 			// This should generate a single call for 2 tools
-			OpenAiChatCompletion reply = cs.chat("What is the temperature in London and Zurich?");
+			ChatCompletion reply = cs.chat("What is the temperature in London and Zurich?");
 			assertTrue(reply.hasToolCalls());
 			assertEquals(FinishReason.OTHER, reply.getFinishReason());
 			assertEquals(2, reply.getToolCalls().size());
 
 			// Test responding to both
-			List<OpenAiToolCallResult> results = new ArrayList<>();
-			results.add(new OpenAiToolCallResult((OpenAiToolCall) reply.getToolCalls().get(0), "10°C"));
-			results.add(new OpenAiToolCallResult((OpenAiToolCall) reply.getToolCalls().get(1), "20°C"));
+			List<ToolCallResult> results = new ArrayList<>();
+			results.add(new ToolCallResult(reply.getToolCalls().get(0), "10°C"));
+			results.add(new ToolCallResult(reply.getToolCalls().get(1), "20°C"));
 			reply = cs.chat(results);
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
 			assertTrue(reply.getText().contains("10"));

@@ -124,7 +124,7 @@ public class OpenAiModelService extends AbstractModelService {
 				new OpenAiModelMetaData("gpt-3.5-turbo-0613", 4096, SupportedCallType.FUNCTIONS));
 		MODEL_CONFIG.put("gpt-3.5-turbo-16k-0613",
 				new OpenAiModelMetaData("gpt-3.5-turbo-16k-0613", 16384, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-3.5-turbo-0301", new OpenAiModelMetaData("gpt-3.5-turbo-0301", 4096, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-0301", new OpenAiModelMetaData("gpt-3.5-turbo-0301", 4096, SupportedCallType.NONE));
 		MODEL_CONFIG.put("gpt-3.5-turbo-1106",
 				new OpenAiModelMetaData("gpt-3.5-turbo-1106", 16385, 4096, SupportedCallType.TOOLS));
 
@@ -140,7 +140,7 @@ public class OpenAiModelService extends AbstractModelService {
 				new OpenAiModelMetaData("gpt-4-1106-preview", 128000, 4096, SupportedCallType.TOOLS));
 		MODEL_CONFIG.put("gpt-4-0125-preview",
 				new OpenAiModelMetaData("gpt-4-0125-preview", 128000, SupportedCallType.TOOLS));
-		MODEL_CONFIG.put("gpt-4-vision-preview", new OpenAiModelMetaData("gpt-4-vision-preview", 128000, 4096, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-vision-preview", new OpenAiModelMetaData("gpt-4-vision-preview", 128000, 4096, SupportedCallType.NONE));
 
 		MODEL_CONFIG.put("text-embedding-3-large",
 				new OpenAiModelMetaData("text-embedding-3-large", 8191, SupportedApi.EMBEDDINGS));
@@ -230,7 +230,7 @@ public class OpenAiModelService extends AbstractModelService {
 	 * @param model
 	 * @return The type of calls (function or tool) that the model supports.
 	 */
-	public SupportedCallType getSupportedCall(@NonNull String model) {
+	public SupportedCallType getSupportedCallType(@NonNull String model) {
 		OpenAiModelMetaData data = get(model);
 		if (data == null)
 			throw new IllegalArgumentException(

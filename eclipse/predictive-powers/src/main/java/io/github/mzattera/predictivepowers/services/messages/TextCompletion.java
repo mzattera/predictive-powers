@@ -24,6 +24,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 /**
  * This class encapsulates a response from a {@link CompletionService}.
@@ -37,6 +38,7 @@ import lombok.ToString;
  */
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @RequiredArgsConstructor
+@SuperBuilder
 @Getter
 @Setter
 @ToString

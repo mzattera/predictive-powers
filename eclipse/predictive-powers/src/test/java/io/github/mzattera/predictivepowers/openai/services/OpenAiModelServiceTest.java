@@ -15,8 +15,9 @@
  */
 package io.github.mzattera.predictivepowers.openai.services;
 
+import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
@@ -30,11 +31,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import io.github.mzattera.predictivepowers.openai.client.OpenAiException;
+import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
+import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.FunctionCallTest.GetCurrentWeatherTool;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
 
@@ -151,39 +156,39 @@ class OpenAiModelServiceTest {
 	@MethodSource("allChatModelsProvider")
 	void test03(OpenAiModelMetaData md) {
 		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
-			OpenAiChatService chatSvc = oai.getChatService();
+			ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(md.getModel()).build();
 
 			// Bypass setTools() to make sure we test the correct function call type
 			switch (md.getSupportedCallType()) {
 			case TOOLS:
-				chatSvc.getDefaultReq().setFunctions(null);
-				chatSvc.getDefaultReq().setTools(TOOLS);
-				OpenAiChatCompletion result = chatSvc.chat("What is the temperature il London?");
-				assertTrue(result.hasToolCalls());
+				req.setFunctions(null);
+				req.setTools(TOOLS);
+				req.getMessages().clear();
+				req.getMessages().add(new OpenAiChatMessage(Role.USER, "What is the temperature il London?"));
+				ChatCompletionsResponse result = oai.getClient().createChatCompletion(req);
+				assertTrue(result.getChoices().get(0).getMessage().getToolCalls().size() != 0);
+				assertNull(result.getChoices().get(0).getMessage().getFunctionCall());
 				break;
 			case FUNCTIONS:
-				chatSvc.getDefaultReq().setFunctions(FUNCTIONS);
-				chatSvc.getDefaultReq().setTools(null);
-				result = chatSvc.chat("What is the temperature il London?");
-				assertTrue(result.hasToolCalls());
+				req.setFunctions(FUNCTIONS);
+				req.setTools(null);
+				req.getMessages().clear();
+				req.getMessages().add(new OpenAiChatMessage(Role.USER, "What is the temperature il London?"));
+				result = oai.getClient().createChatCompletion(req);
+				assertNull(result.getChoices().get(0).getMessage().getToolCalls());
+				assertTrue(result.getChoices().get(0).getMessage().getFunctionCall() != null);
 				break;
 			case NONE:
-				chatSvc.getDefaultReq().setFunctions(FUNCTIONS);
-				chatSvc.getDefaultReq().setTools(null);
-				try {
-					result = chatSvc.chat("What is the temperature il London?");
-					assertFalse(result.hasToolCalls());
-				} catch (Exception e) {
-					// the model should error indeed
-				}
-				chatSvc.getDefaultReq().setFunctions(null);
-				chatSvc.getDefaultReq().setTools(TOOLS);
-				try {
-					result = chatSvc.chat("What is the temperature il London?");
-					assertFalse(result.hasToolCalls());
-				} catch (Exception e) {
-					// the model should error indeed
-				}
+				req.setFunctions(FUNCTIONS);
+				req.setTools(null);
+				req.getMessages().clear();
+				req.getMessages().add(new OpenAiChatMessage(Role.USER, "What is the temperature il London?"));
+				assertThrows(OpenAiException.class, () -> oai.getClient().createChatCompletion(req));
+				req.setFunctions(null);
+				req.setTools(TOOLS);
+				req.getMessages().clear();
+				req.getMessages().add(new OpenAiChatMessage(Role.USER, "What is the temperature il London?"));
+				assertThrows(OpenAiException.class, () -> oai.getClient().createChatCompletion(req));
 				break;
 			default:
 				throw new IllegalArgumentException(); // paranoid

@@ -16,10 +16,20 @@
 
 package io.github.mzattera.predictivepowers.services.messages;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Tool;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 /**
  * {@link Agent}s can invoke tools. This interface represents a single tool
@@ -28,20 +38,35 @@ import io.github.mzattera.predictivepowers.services.Tool;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface ToolCall extends MessagePart {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@RequiredArgsConstructor
+@SuperBuilder
+@Getter
+@Setter
+@ToString
+public class ToolCall implements MessagePart {
 
 	/**
 	 * Unique ID for this tool call.
 	 */
-	String getId();
+	@NonNull
+	private String id;
 
 	/**
 	 * The tool being called.
 	 */
-	Tool getTool();
+	@NonNull
+	private Tool tool;
 
 	/**
 	 * Arguments to use in the call, as name/value pairs.
 	 */
-	Map<String, Object> getArguments();
+	@NonNull
+	@Builder.Default
+	private Map<String, Object> arguments = new HashMap<>();
+
+	@Override
+	public String getContent() {
+		return toString();
+	}
 }

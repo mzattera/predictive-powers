@@ -81,8 +81,10 @@ public class OpenAiTool implements Tool {
 	@Setter(AccessLevel.NONE)
 	protected Tool wrappedTool;
 
+	@NonNull
 	private Type type;
 
+	@NonNull
 	private Function function;
 
 	@Override

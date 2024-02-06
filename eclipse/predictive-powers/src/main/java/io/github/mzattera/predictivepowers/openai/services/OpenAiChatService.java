@@ -21,7 +21,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,8 +42,12 @@ import io.github.mzattera.predictivepowers.services.AbstractChatService;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
+import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
+import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.Getter;
 import lombok.NonNull;
@@ -80,6 +87,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 		// reasonable limit here
 		int maxReplyTk = Math.min(modelService.getContextSize(model) / 4, modelService.getMaxNewTokens(model));
 		setMaxConversationTokens(modelService.getContextSize(model) - maxReplyTk);
+		defaultReq.setN(1); // paranoid
 	}
 
 	@Getter
@@ -116,8 +124,8 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	private final List<OpenAiChatMessage> history = new ArrayList<>();
 
 	@Override
-	public List<OpenAiChatMessage> getHistory() {
-		return Collections.unmodifiableList(history);
+	public List<? extends ChatMessage> getHistory() {
+		return history.stream().map(this::fromOpenAiMessage).collect(Collectors.toList());
 	}
 
 	/** For testing purposes only. This is not meant to be used. */
@@ -216,7 +224,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 			return;
 		}
 
-		switch (modelService.getSupportedCall(getModel())) {
+		switch (modelService.getSupportedCallType(getModel())) {
 		case FUNCTIONS:
 			List<Function> f = new ArrayList<>(tools.size());
 			for (OpenAiTool t : tools.values()) {
@@ -309,7 +317,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	}
 
 	@Override
-	public OpenAiChatCompletion chat(String msg) {
+	public ChatCompletion chat(String msg) {
 		return chat(msg, defaultReq);
 	}
 
@@ -318,12 +326,12 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 * 
 	 * The exchange is added to the conversation history.
 	 */
-	public OpenAiChatCompletion chat(String msg, ChatCompletionsRequest req) {
-		return chat(new OpenAiChatMessage(Role.USER, msg), req);
+	public ChatCompletion chat(String msg, ChatCompletionsRequest req) {
+		return chat(new ChatMessage(msg), req);
 	}
 
 	@Override
-	public OpenAiChatCompletion chat(ChatMessage msg) {
+	public ChatCompletion chat(ChatMessage msg) {
 		return chat(msg, defaultReq);
 	}
 
@@ -332,30 +340,25 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 * 
 	 * The exchange is added to the conversation history.
 	 */
-	public OpenAiChatCompletion chat(ChatMessage msg, ChatCompletionsRequest req) {
+	public ChatCompletion chat(ChatMessage msg, ChatCompletionsRequest req) {
 
-		OpenAiChatMessage m;
-		try {
-			m = (OpenAiChatMessage) msg;
-		} catch (ClassCastException e) { // Paranoid, in reality should never happen if used properly
-			m = new OpenAiChatMessage(msg);
-		}
+		List<OpenAiChatMessage> m = fromChatMessage(msg);
 
 		List<OpenAiChatMessage> conversation = new ArrayList<>(history);
-		conversation.add(m);
+		conversation.addAll(m);
 		trimConversation(conversation);
 
-		OpenAiChatCompletion result = chatCompletion(conversation, req);
+		Pair<FinishReason, OpenAiChatMessage> result = chatCompletion(conversation, req);
 
-		history.add(m);
-		history.add((OpenAiChatMessage) result.getMessage());
+		history.addAll(m);
+		history.add(result.getRight());
 
 		// Make sure history is of desired length
 		int toTrim = history.size() - getMaxHistoryLength();
 		if (toTrim > 0)
 			history.subList(0, toTrim).clear();
 
-		return result;
+		return new ChatCompletion(result.getLeft(), fromOpenAiMessage(result.getRight()));
 	}
 
 	/**
@@ -367,7 +370,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 * 
 	 * @param results the list of results from various call.
 	 */
-	public OpenAiChatCompletion chat(List<? extends ToolCallResult> results) {
+	public ChatCompletion chat(List<? extends ToolCallResult> results) {
 		return chat(results, defaultReq);
 	}
 
@@ -380,55 +383,13 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 * 
 	 * @param results the list of results from various call.
 	 */
-	public OpenAiChatCompletion chat(List<? extends ToolCallResult> results, ChatCompletionsRequest req) {
-
-		List<OpenAiChatMessage> conversation = new ArrayList<>(history);
-
-		OpenAiChatCompletion completion;
-
-		// Transparently handles function and tool calls
-		switch (((OpenAiModelService) modelService).getSupportedCall(req.getModel())) {
-		case FUNCTIONS:
-			if (results.size() != 1)
-				throw new IllegalArgumentException("Current model supports only single function calls.");
-
-			OpenAiChatMessage msg = new OpenAiChatMessage(Role.FUNCTION, results.get(0));
-			conversation.add(msg);
-			trimConversation(conversation);
-			completion = chatCompletion(conversation, req);
-
-			history.add(msg);
-			history.add((OpenAiChatMessage) completion.getMessage());
-
-			break;
-		case TOOLS:
-
-			List<OpenAiChatMessage> msgs = new ArrayList<>();
-			for (ToolCallResult result : results) {
-				msgs.add(new OpenAiChatMessage(Role.TOOL, result));
-			}
-			conversation.addAll(msgs);
-			trimConversation(conversation);
-			completion = chatCompletion(conversation, req);
-
-			history.addAll(msgs);
-			history.add((OpenAiChatMessage) completion.getMessage());
-
-			break;
-		default:
-			throw new IllegalArgumentException("Current model does not support function calling.");
-		}
-
-		// Make sure history is of desired length
-		int toTrim = history.size() - getMaxHistoryLength();
-		if (toTrim > 0)
-			history.subList(toTrim, history.size()).clear();
-
-		return completion;
+	public ChatCompletion chat(List<? extends ToolCallResult> results, ChatCompletionsRequest req) {
+		// Merges all results into a multi-part message
+		return chat(new ChatMessage(results), req);
 	}
 
 	@Override
-	public OpenAiChatCompletion complete(String prompt) {
+	public ChatCompletion complete(String prompt) {
 		return complete(prompt, defaultReq);
 	}
 
@@ -438,12 +399,12 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 * Notice this does not consider or affects chat history but agent personality
 	 * is used, if provided.
 	 */
-	public OpenAiChatCompletion complete(String prompt, ChatCompletionsRequest req) {
-		return complete(new OpenAiChatMessage(Role.USER, prompt), req);
+	public ChatCompletion complete(String prompt, ChatCompletionsRequest req) {
+		return complete(new ChatMessage(prompt), req);
 	}
 
 	@Override
-	public OpenAiChatCompletion complete(ChatMessage prompt) {
+	public ChatCompletion complete(ChatMessage prompt) {
 		return complete(prompt, defaultReq);
 	}
 
@@ -453,16 +414,9 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 * Notice this does not consider or affects chat history but agent personality
 	 * is used, if provided.
 	 */
-	public OpenAiChatCompletion complete(ChatMessage prompt, ChatCompletionsRequest req) {
+	public ChatCompletion complete(ChatMessage prompt, ChatCompletionsRequest req) {
 		List<OpenAiChatMessage> msgs = new ArrayList<>();
-
-		OpenAiChatMessage m;
-		try {
-			m = (OpenAiChatMessage) prompt;
-		} catch (ClassCastException e) { // Paranoid, in reality should never happen if used properly
-			m = new OpenAiChatMessage(prompt);
-		}
-		msgs.add(m);
+		msgs.addAll(fromChatMessage(prompt));
 		trimConversation(msgs);
 
 		return complete(msgs, req);
@@ -476,7 +430,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 * without modifications. This means bot personality is NOT added on top of the
 	 * list of messages, nor the list is checked or trimmed for excessive length.
 	 */
-	public OpenAiChatCompletion complete(List<OpenAiChatMessage> messages) {
+	public ChatCompletion complete(List<OpenAiChatMessage> messages) {
 		return complete(messages, defaultReq);
 	}
 
@@ -487,8 +441,9 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 * without modifications. This means bot personality is NOT added on top of the
 	 * list of messages, nor the list is checked or trimmed for excessive length.
 	 */
-	public OpenAiChatCompletion complete(List<OpenAiChatMessage> messages, ChatCompletionsRequest req) {
-		return chatCompletion(messages, req);
+	public ChatCompletion complete(List<OpenAiChatMessage> messages, ChatCompletionsRequest req) {
+		Pair<FinishReason, OpenAiChatMessage> result = chatCompletion(messages, req);
+		return new ChatCompletion(result.getLeft(), fromOpenAiMessage(result.getRight()));
 	}
 
 	/**
@@ -501,9 +456,8 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 * @param tools List of tools that can be called (this can be empty to prevent
 	 *              tool calls, or null to use the list of default tools).
 	 */
-	private OpenAiChatCompletion chatCompletion(List<OpenAiChatMessage> messages, ChatCompletionsRequest req) {
-
-		validate(messages);
+	private Pair<FinishReason, OpenAiChatMessage> chatCompletion(List<OpenAiChatMessage> messages,
+			ChatCompletionsRequest req) {
 
 		String model = req.getModel();
 
@@ -546,27 +500,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 			}
 
 			ChatCompletionsChoice choice = resp.getChoices().get(0);
-			if (choice.getMessage().getFunctionCall() != null) {
-
-				// If the model returned a function call, transparently translate it into a tool
-				// call
-				List<OpenAiToolCall> calls = new ArrayList<>();
-				FunctionCall funCall = choice.getMessage().getFunctionCall();
-				OpenAiToolCall toolCall = new OpenAiToolCall(funCall);
-				toolCall.setTool(tools.get(funCall.getName()));
-				calls.add(toolCall);
-				return new OpenAiChatCompletion(FinishReason.fromGptApi(choice.getFinishReason()), choice.getMessage(),
-						calls);
-			}
-			if (choice.getMessage().getToolCalls() != null) {
-
-				// Augment tool calls with corresponding OpenAITool
-				for (OpenAiToolCall toolCall : choice.getMessage().getToolCalls()) {
-					toolCall.setTool(tools.get(toolCall.getFunction().getName()));
-				}
-			}
-			return new OpenAiChatCompletion(FinishReason.fromGptApi(choice.getFinishReason()), choice.getMessage(),
-					choice.getMessage().getToolCalls());
+			return new ImmutablePair<>(FinishReason.fromGptApi(choice.getFinishReason()), choice.getMessage());
 
 		} finally {
 
@@ -574,16 +508,6 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 			if (autofit)
 				req.setMaxTokens(null);
 		}
-	}
-
-	/**
-	 * Checks that
-	 * 
-	 * @param messages
-	 */
-	private void validate(List<OpenAiChatMessage> messages) {
-		// TODO Auto-generated method stub
-
 	}
 
 	/**
@@ -641,4 +565,102 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 			// must add a system message on top with personality
 			messages.add(0, new OpenAiChatMessage(Role.SYSTEM, getPersonality()));
 	}
+
+	/**
+	 * Turns an OpenAiChatMessage into a ChatMessage.
+	 * 
+	 * @param msg
+	 * @return
+	 */
+	private ChatMessage fromOpenAiMessage(OpenAiChatMessage msg) {
+		if (msg.getFunctionCall() != null) {
+
+			// The model returned a function call, transparently translate it into a message
+			// with a single tool call
+			List<ToolCall> calls = new ArrayList<>();
+			FunctionCall funCall = msg.getFunctionCall();
+			ToolCall toolCall = ToolCall.builder() //
+					.id(funCall.getName()) //
+					.tool(tools.get(funCall.getName())) //
+					.arguments(funCall.getArguments()) //
+					.build();
+			calls.add(toolCall);
+			return new ChatMessage(Author.BOT, calls);
+		}
+		if (msg.getToolCalls() != null) {
+
+			// The model returned a set of tool calls, transparently translate that into a
+			// message with a multiple tool calls
+			List<ToolCall> calls = new ArrayList<>();
+			for (OpenAiToolCall call : msg.getToolCalls()) {
+				ToolCall toolCall = ToolCall.builder() //
+						.id(call.getId()) //
+						.tool(tools.get(call.getFunction().getName())) //
+						.arguments(call.getFunction().getArguments()) //
+						.build();
+				calls.add(toolCall);
+			}
+			return new ChatMessage(Author.BOT, calls);
+		}
+
+		// Normal (text) message
+		return new ChatMessage(Author.BOT, msg.getContent());
+	}
+
+	/**
+	 * This converts a generic ChatMessaege into an OpenAIChatMessage that is used
+	 * for the OpenAi API. This is meant for abstraction and easier interoperability
+	 * of agents.
+	 * 
+	 * @param md  Model metadata, this is needed since conversion depends on which
+	 *            features the model supports.
+	 * @param msg
+	 * @throws IllegalArgumentException if the message is not in a format supported
+	 *                                  directly by OpenAI API.
+	 */
+	private List<OpenAiChatMessage> fromChatMessage(ChatMessage msg) {
+
+		if (msg.hasToolCalls())
+			throw new IllegalArgumentException("Only API can generate tool/function calls.");
+
+		List<OpenAiChatMessage> result = new ArrayList<>();
+
+		if (msg.hasToolCallResults()) {
+
+			// Transparently handles function and tool calls
+
+			List<? extends ToolCallResult> results = msg.getToolCallResults();
+			if (results.size() != msg.getParts().size())
+				throw new IllegalArgumentException(
+						"Tool/function call results cannot contain other parts in teh message.");
+
+			switch (modelService.getSupportedCallType(getModel())) {
+			case FUNCTIONS:
+				if (results.size() != 1)
+					throw new IllegalArgumentException("Model supports only single function calls.");
+
+				result.add(new OpenAiChatMessage(Role.FUNCTION, results.get(0)));
+				break;
+			case TOOLS:
+				for (ToolCallResult r : results) {
+					result.add(new OpenAiChatMessage(Role.TOOL, r));
+				}
+				break;
+			default:
+				throw new IllegalArgumentException("Model does not support function calling.");
+			}
+			return result;
+		}
+
+		// Quickly checks only file URLs are provided, model call will fail if the model
+		// does not support them
+		for (FilePart f : msg.getFiles()) {
+			if (f.getUrl() == null)
+				throw new IllegalArgumentException("Only file URLs are supported (for images).");
+		}
+
+		result.add(new OpenAiChatMessage(msg.getAuthor(), msg.getParts()));
+		return result;
+	}
+
 }

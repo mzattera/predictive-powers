@@ -28,6 +28,7 @@ import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
+import io.github.mzattera.util.CharTokenizer;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -175,6 +176,9 @@ public class HuggingFaceChatService extends AbstractChatService {
 	 * The exchange is added to the conversation history.
 	 */
 	public ChatCompletion chat(ChatMessage msg, ConversationalRequest req) {
+		if (!msg.isText())
+			throw new IllegalArgumentException("This service supports only pure text messages.");
+		
 		return chat(msg.getContent(), req);
 	}
 
@@ -193,11 +197,9 @@ public class HuggingFaceChatService extends AbstractChatService {
 		return chatCompletion(prompt, trimConversation(prompt, new ArrayList<>(), new ArrayList<>()), req);
 	}
 
-	// TODO throw error if any part is not text
-
 	@Override
 	public ChatCompletion complete(ChatMessage prompt) {
-		return complete(prompt.getContent(), defaultReq);
+		return complete(prompt, defaultReq);
 	}
 
 	/**
@@ -207,6 +209,9 @@ public class HuggingFaceChatService extends AbstractChatService {
 	 * is used, if provided.
 	 */
 	public ChatCompletion complete(ChatMessage prompt, ConversationalRequest req) {
+		if (!prompt.isText())
+			throw new IllegalArgumentException("THis service supports only pure text messages.");
+		
 		return complete(prompt.getContent(), req);
 	}
 
@@ -252,7 +257,10 @@ public class HuggingFaceChatService extends AbstractChatService {
 	 *         limitations set in this instance.
 	 */
 	private List<String>[] trimConversation(String msg, List<String> userHistory, List<String> botHistory) {
-		Tokenizer counter = modelService.getTokenizer(model);
+		
+		// In some cases, we do not get the proper tokenizer, therefore we fall back to counting chars
+		Tokenizer counter = modelService.getTokenizer(model, CharTokenizer.getInstance());
+		
 		int tok = counter.count(msg);
 		if (tok > getMaxConversationTokens())
 			throw new IllegalArgumentException("Last message size is " + tok

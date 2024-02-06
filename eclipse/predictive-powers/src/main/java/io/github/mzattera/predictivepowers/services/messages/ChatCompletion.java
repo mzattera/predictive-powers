@@ -16,7 +16,6 @@
 
 package io.github.mzattera.predictivepowers.services.messages;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import lombok.AccessLevel;
@@ -26,6 +25,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 /**
  * This class encapsulates a {@link ChatMessage} response from a service.
@@ -38,6 +38,7 @@ import lombok.ToString;
  */
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @RequiredArgsConstructor
+@SuperBuilder
 @Getter
 @Setter
 @ToString
@@ -55,6 +56,7 @@ public class ChatCompletion {
 	 *         could contain parts which are not easily representable as text (e.g.
 	 *         a file).
 	 */
+	// TODO consider deprecation
 	public String getText() {
 		return message.getContent();
 	}
@@ -65,13 +67,9 @@ public class ChatCompletion {
 	 * 
 	 * @return List of tool calls in the contained message.
 	 */
+	// TODO consider deprecation
 	public List<? extends ToolCall> getToolCalls() {
-		List<ToolCall> result = new ArrayList<>();
-		for (MessagePart part : message.getParts()) {
-			if (part instanceof ToolCall)
-				result.add((ToolCall) part);
-		}
-		return result;
+		return message.getToolCalls();
 	}
 
 	/**
@@ -80,11 +78,8 @@ public class ChatCompletion {
 	 * 
 	 * @return True if last call generated any tool invocation.
 	 */
+	// TODO consider deprecation
 	public boolean hasToolCalls() {
-		for (MessagePart part : message.getParts()) {
-			if (part instanceof ToolCall)
-				return true;
-		}
-		return false;
+		return message.hasToolCalls();
 	}
 }

@@ -19,6 +19,7 @@ package io.github.mzattera.predictivepowers.openai.client.chat;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import io.github.mzattera.predictivepowers.services.Tool;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -35,12 +36,12 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @RequiredArgsConstructor
 @AllArgsConstructor
+@Builder
+@Getter
+@Setter
 @ToString
 public class Function {
 
@@ -64,14 +65,16 @@ public class Function {
 	 * OpenAI seems to support only parameters that are either native Java types,
 	 * String, and enumerations.
 	 * 
-	 * See examples {@linkplain https://platform.openai.com/docs/guides/text-generation/function-calling here}.
+	 * See examples
+	 * {@linkplain https://platform.openai.com/docs/guides/text-generation/function-calling
+	 * here}.
 	 */
-	
+
 	/**
-	 * Represents the configuration of an assistant.
-	 * You can use the List models API to see all of your available models, or see our Model overview .
+	 * Represents the configuration of an assistant. You can use the List models API
+	 * to see all of your available models, or see our Model overview .
 	 */
-	
+
 	@JsonSerialize(using = Tool.ParametersSerializer.class, as = Class.class)
 	@NonNull // OpenAi errors otherwise
 	Class<?> parameters;

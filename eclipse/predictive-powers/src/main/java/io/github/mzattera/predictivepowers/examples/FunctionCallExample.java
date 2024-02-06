@@ -25,13 +25,13 @@ import java.util.Scanner;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
-import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCallResult;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.NonNull;
@@ -79,10 +79,10 @@ public class FunctionCallExample {
 		}
 
 		@Override
-		public OpenAiToolCallResult invoke(@NonNull ToolCall call) throws Exception {
+		public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
 			// Function implementation goes here.
 			// In this example we simply return a random temperature.
-			return new OpenAiToolCallResult(call, (RND.nextInt(10) + 20) + "°C");
+			return new ToolCallResult(call, (RND.nextInt(10) + 20) + "°C");
 		}
 	}
 
@@ -129,14 +129,14 @@ public class FunctionCallExample {
 							try {
 								result = call.getTool().invoke(call);
 							} catch (Exception e) {
-								result = new OpenAiToolCallResult(call, "Error: " + e.getMessage());
+								result = new ToolCallResult(call, "Error: " + e.getMessage());
 							}
 							results.add(result);
 						}
 
 						// Pass results back to the bot
 						// Notice this can generate other tool calls, hence the loop
-						reply = bot.chat(results);
+						reply = bot.chat(new ChatMessage(results));
 					}
 
 					System.out.println("Assistant> " + reply.getText());

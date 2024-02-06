@@ -10,6 +10,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 /**
  * This is a {@link MessagePart} that contains only text.
@@ -18,6 +19,7 @@ import lombok.ToString;
  */
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @RequiredArgsConstructor
+@SuperBuilder
 @Getter
 @Setter
 @ToString

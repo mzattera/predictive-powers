@@ -21,7 +21,10 @@ import java.util.List;
 import java.util.Scanner;
 import java.util.Set;
 
+import io.github.mzattera.predictivepowers.openai.client.DataList;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
+import io.github.mzattera.predictivepowers.openai.client.SortOrder;
+import io.github.mzattera.predictivepowers.openai.client.assistants.Assistant;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
 import io.github.mzattera.predictivepowers.openai.client.finetuning.FineTuningJob;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
@@ -39,10 +42,12 @@ public class CleanupUtil {
 
 	public static void main(String[] args) {
 
+		// TODO URGENT delete agents, threads and runs
+
 		try (Scanner console = new Scanner(System.in)) {
 
 			System.out.print(
-					"*** You are going to delete all uploaded files, completed fine tunes and tuned models from your account !!! ***\n");
+					"*** You are going to delete *all* ASSISTANTS, uploaded FILES, cancel FINE TUNING JOBS, and FINE TUNED MODELS from your account !!! ***\n");
 			System.out.print("Type \"yes\" to continue: ");
 			if (!console.nextLine().equals("yes")) {
 				System.out.print("Aborted.");
@@ -55,16 +60,23 @@ public class CleanupUtil {
 
 			// Cancel tuning tasks
 			System.out.println("Cancelling FineTunes...");
-			List<FineTuningJob> tasks = cli.listFineTuningJobs();
-			for (FineTuningJob t : tasks) {
-				String status = t.getStatus();
-				if (status.equals("pending") || status.equals("running")) {
-					status = cli.cancelFineTuning(t.getId()).getStatus();
-					System.out.println("Cancelling task: " + t.getId() + " => " + status);
-				} else {
-					System.out.println("\tTask cannot be cancelled: " + t.getId() + " => " + status);
+			while (true) {
+				DataList<FineTuningJob> taskList = cli.listFineTuningJobs();
+				List<FineTuningJob> tasks = taskList.getData();
+
+				for (FineTuningJob task : tasks) {
+					String status = task.getStatus();
+					if (status.equals("pending") || status.equals("running")) {
+						status = cli.cancelFineTuning(task.getId()).getStatus();
+						System.out.println("Cancelling task: " + task.getId() + " => " + status);
+					} else {
+						System.out.println("\tTask cannot be cancelled: " + task.getId() + " => " + status);
+					}
 				}
-			}
+
+				if (!taskList.hasMore())
+					break;
+			} // until the list is complete
 
 			// Delete uploaded files
 			System.out.println("Deleting Files...");
@@ -79,15 +91,31 @@ public class CleanupUtil {
 			for (Model m : cli.listModels()) {
 				models.add(m.getId());
 			}
-			List<FineTuningJob> tunes = cli.listFineTuningJobs();
-			for (FineTuningJob t : tunes) {
-				if (t.getFineTunedModel() == null) // Fine tune did not create a model
-					continue;
+			while (true) {
+				DataList<FineTuningJob> taskList = cli.listFineTuningJobs();
+				List<FineTuningJob> tasks = taskList.getData();
+				for (FineTuningJob t : tasks) {
+					if (t.getFineTunedModel() == null) // Fine tune did not create a model
+						continue;
 
-				if (models.contains(t.getFineTunedModel())) { // Is the tuned model still there?
-					System.out.println("Deleting tuned model: " + t.getFineTunedModel() + " => "
-							+ cli.deleteFineTunedModel(t.getFineTunedModel()).isDeleted());
+					if (models.contains(t.getFineTunedModel())) { // Is the tuned model still there?
+						System.out.println("Deleting tuned model: " + t.getFineTunedModel() + " => "
+								+ cli.deleteFineTunedModel(t.getFineTunedModel()).isDeleted());
+					}
 				}
+
+				if (!taskList.hasMore())
+					break;
+			} // until the list is complete
+
+			// Delete assistants
+			while (true) {
+				DataList<Assistant> l = cli.listAssistants(SortOrder.ASCENDING, 50);
+				for (Assistant a : l.getData())
+					System.out.println("Deleting assistant: " + a.getId() + " => "
+							+ cli.deleteAssistant(a.getId()).isDeleted());
+				if (!l.hasMore())
+					break;
 			}
 		} catch (Exception e) {
 			e.printStackTrace(System.err);

@@ -16,12 +16,16 @@
 
 package io.github.mzattera.predictivepowers.openai.client.threads;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import io.github.mzattera.predictivepowers.openai.client.Metadata;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 /**
  * OpenAI Thread data, as returned by /files API.
@@ -29,20 +33,20 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@RequiredArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
 @Getter
 @Setter
 @ToString
-public class Thread {
+public class Thread extends Metadata {
 
-	String id;
-	String object;
-	long createdAt;
+	@NonNull
+	private String id;
 
-	/**
-	 * Set of 16 key-value pairs that can be attached to an object. This can be
-	 * useful for storing additional information about the object in a structured
-	 * format. Keys can be a maximum of 64 characters long and values can be a
-	 * maximum of 512 characters long.
-	 */
-	Map<String, String> metadata = new HashMap<>();
+	@NonNull
+	private String object;
+
+	private long createdAt;
 }

@@ -19,10 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
+import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
+import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest.ResponseFormat;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.AbstractQuestionAnsweringService;
@@ -47,21 +46,14 @@ import lombok.NonNull;
  */
 public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringService {
 
-	// De-searilize JSON answers
-	private final static ObjectMapper mapper;
-	static {
-		mapper = new ObjectMapper();
-		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
-	}
+	public static final String DEFAULT_MODEL = "gpt-4-turbo-preview";
 
 	public OpenAiQuestionAnsweringService(OpenAiEndpoint ep) {
 		completionService = ep.getChatService();
+		completionService.setModel(DEFAULT_MODEL);
 		completionService.setPersonality(null);
-		completionService.getDefaultReq().setTemperature(0.0); // TODO test best settings.
-
-		// TODO URGENT set a completion model that supports this
-//		completionService.getDefaultReq().setResponseFormat(ResponseFormat.JSON); // More robust replies
+		completionService.setTemperature(0.0); // TODO test best settings.
+		completionService.getDefaultReq().setResponseFormat(ResponseFormat.JSON);
 	}
 
 	@Override
@@ -185,7 +177,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 		ChatCompletion answerJson = completionService.complete(instructions);
 		QnAPair result = null;
 		try {
-			result = mapper.readValue(answerJson.getText(), QnAPair.class);
+			result = OpenAiClient.getJsonMapper().readValue(answerJson.getText(), QnAPair.class);
 			result.setQuestion(question);
 		} catch (JsonProcessingException e) {
 			// Sometimes API returns only the answer, not as a JSON

@@ -19,6 +19,8 @@ package io.github.mzattera.predictivepowers.services;
 import java.util.Collection;
 import java.util.List;
 
+import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import lombok.NonNull;
 
 /**
@@ -26,22 +28,77 @@ import lombok.NonNull;
  * is able to hold a conversation with the user.
  * 
  * It is more advanced than {#link ChatService}, as it can invoke {@link Tool}s
- * that an agent can invoke to complete its tasks and use files in chat messages
- * (see {@link AgentMessage}).
+ * to complete its tasks and use files in chat messages.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
 public interface Agent extends ChatService {
 
-	// TODO URGENT: Add RemoteFile class and add files to agent
+	// TODO URGENT: Add RemoteFile class and add files to agent -> fro OpenAI only
 	// TODO URGENT: Add methods to handle conversations (threads e.g. creating,
 	// continuing, deleting)
-
+	// TODO URGENT: OpenAI agent has the tools on its side, but they need to be bound again to tools on the client side. Describe this situation.
+	// Optionally we could always use an external Map, also for chat service, but it is less convenient....
+			
 	/**
 	 * Get unique agent ID. Notice this ID is unique only inside one endpoint.
 	 */
 	String getId();
+	
+	/**
+	 * The ID of the model used by the agent.
+	 */
+	String getModel();
+
+	/**
+	 * The display name of the assistant.
+	 */
+	String getName();
+
+	/**
+	 * The display name of the assistant.
+	 */
+	void setName(String name);
+
+	/**
+	 * The description of the assistant.
+	 */
+	String getDescription();
+
+	/**
+	 * The description of the assistant.
+	 */
+	void setDescription(String description);
+
+	/**
+	 * The personality for the agent (system instructions).
+	 */
+	String getPersonality();
+
+	/**
+	 * The personality for the agent (system instructions).
+	 */
+	void setPersonality(String personality);
+
+	/**
+	 * Starts a new chat, clearing current conversation.
+	 */
+	void clearConversation();
+
+	/**
+	 * Continues current chat, with the provided message.
+	 * 
+	 * The exchange is added to the conversation history.
+	 */
+	ChatCompletion chat(String msg);
+
+	/**
+	 * Continues current chat, with the provided message.
+	 * 
+	 * The exchange is added to the conversation history.
+	 */
+	ChatCompletion chat(ChatMessage msg);
 
 	/**
 	 * Get tools available to the agent.

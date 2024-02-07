@@ -53,9 +53,12 @@ public class ToolCall implements MessagePart {
 	private String id;
 
 	/**
-	 * The tool being called.
+	 * The tool being called. Notice it is not always guaranteed this to be set
+	 * correctly, as some services might not be able to retrieve the proper Tool
+	 * instance; this depends on the service generating the call. If this field is
+	 * null, developers need to map this call to the proper tool externally from the
+	 * service.
 	 */
-	@NonNull
 	private Tool tool;
 
 	/**

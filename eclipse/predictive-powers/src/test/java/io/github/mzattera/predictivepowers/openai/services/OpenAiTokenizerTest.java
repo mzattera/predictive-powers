@@ -133,29 +133,29 @@ public class OpenAiTokenizerTest {
 
 		Map<String, Object> params = new HashMap<>();
 		FunctionCall call = FunctionCall.builder().name("functionName").arguments(params).build();
-		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(Role.ASSISTANT, null, null, call));
+		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
 		params = new HashMap<>();
 		params.put("s", "Prague");
 		call = FunctionCall.builder().name("functionName").arguments(params).build();
-		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(Role.ASSISTANT, null, null, call));
+		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
 		params = new HashMap<>();
 		params.put("s", "Prague");
 		params.put("i", 3);
 		call = FunctionCall.builder().name("functionName").arguments(params).build();
-		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(Role.ASSISTANT, null, null, call));
+		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
 		params = new HashMap<>();
 		params.put("s", "Prague");
 		params.put("i", 3);
 		params.put("d", 3.0d);
 		call = FunctionCall.builder().name("functionName").arguments(params).build();
-		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(Role.ASSISTANT, null, null, call));
+		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
 		params = new HashMap<>();
 		params.put("s", "Prague");
 		params.put("i", 3);
 		params.put("d", 3.0d);
 		params.put("b", ENUM.BANANE);
 		call = FunctionCall.builder().name("functionName").arguments(params).build();
-		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(Role.ASSISTANT, null, null, call));
+		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
 
 		List<OpenAiChatMessage> replies = new ArrayList<>();
 		for (OpenAiChatMessage msg : FUNCTION_CALL_MESSAGES) {

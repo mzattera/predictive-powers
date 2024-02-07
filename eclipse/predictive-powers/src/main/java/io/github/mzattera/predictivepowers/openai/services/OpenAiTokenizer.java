@@ -32,7 +32,7 @@ import lombok.ToString;
 @ToString
 public class OpenAiTokenizer implements Tokenizer {
 
-	// TODO Urgent add costs for the vision API see calculator on Model API
+	// TODO Urgent add length for the vision API see calculator on Model API
 	// https://learn.microsoft.com/en-us/azure/ai-services/openai/overview
 	// notice vision API has multiple parts and length might depend on those......
 	

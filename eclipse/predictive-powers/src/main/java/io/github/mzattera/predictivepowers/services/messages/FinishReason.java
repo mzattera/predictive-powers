@@ -37,7 +37,6 @@ public enum FinishReason {
 	/** All finish reasons that do not fit in any other value */
 	OTHER;
 
-	// TODO URGENT move into some OpenAI class
 	public static FinishReason fromGptApi(String reason) {
 		// TODO URGENT handle agents partial responses
 		switch (reason) {

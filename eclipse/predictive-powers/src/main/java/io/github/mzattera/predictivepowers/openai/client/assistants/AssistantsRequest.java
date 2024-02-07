@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,12 +21,12 @@ import lombok.ToString;
  * 
  * @author GPT-4
  */
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @RequiredArgsConstructor
 @AllArgsConstructor
+@Builder
+@Getter
+@Setter
 @ToString
 public class AssistantsRequest {
 

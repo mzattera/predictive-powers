@@ -106,10 +106,10 @@ class FineTunesTest {
 		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			OpenAiClient c = oai.getClient();
 
-			List<FineTuningJob> fineTunes = c.listFineTuningJobs();
+			List<FineTuningJob> fineTunes = c.listFineTuningJobs().getData();
 			assertTrue(fineTunes.size() > 0);
 
-			List<FineTuningJobEvent> events = c.listFineTuningEvents(fineTunes.get(0).getId());
+			List<FineTuningJobEvent> events = c.listFineTuningEvents(fineTunes.get(0).getId()).getData();
 			assertTrue(events.size() > 0);
 			assertEquals("fine_tuning.job.event", events.get(0).getObject());
 

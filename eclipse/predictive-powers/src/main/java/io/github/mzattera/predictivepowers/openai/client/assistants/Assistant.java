@@ -1,15 +1,18 @@
 package io.github.mzattera.predictivepowers.openai.client.assistants;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -18,11 +21,12 @@ import lombok.ToString;
  * 
  * @author GPT-4
  */
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@RequiredArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 @ToString
 public class Assistant {
 
@@ -91,5 +95,6 @@ public class Assistant {
 	 * structured format. Keys can be a maximum of 64 characters long and values can
 	 * be a maximum of 512 characters long.
 	 */
-	private Map<String, String> metadata;
+	@Builder.Default
+	private Map<String, String> metadata = new HashMap<>();
 }

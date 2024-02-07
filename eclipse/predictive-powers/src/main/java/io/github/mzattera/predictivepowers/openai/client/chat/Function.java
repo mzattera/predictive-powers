@@ -16,6 +16,7 @@
 
 package io.github.mzattera.predictivepowers.openai.client.chat;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import io.github.mzattera.predictivepowers.services.Tool;
@@ -50,12 +51,12 @@ public class Function {
 	 * underscores and dashes, with a maximum length of 64.
 	 */
 	@NonNull
-	String name;
+	private String name;
 
 	/**
 	 * The description of what the function does.
 	 */
-	String description;
+	private String description;
 
 	/**
 	 * The parameters the functions accepts.
@@ -69,13 +70,9 @@ public class Function {
 	 * {@linkplain https://platform.openai.com/docs/guides/text-generation/function-calling
 	 * here}.
 	 */
-
-	/**
-	 * Represents the configuration of an assistant. You can use the List models API
-	 * to see all of your available models, or see our Model overview .
-	 */
-
-	@JsonSerialize(using = Tool.ParametersSerializer.class, as = Class.class)
 	@NonNull // OpenAi errors otherwise
-	Class<?> parameters;
+	@JsonSerialize(using = Tool.ParametersSerializer.class, as = Class.class)
+	@JsonProperty(access = JsonProperty.Access.READ_ONLY) // Impossible to deserialize from schema, hopefully not needed
+															// as we know our tools
+	private Class<?> parameters;
 }

@@ -47,7 +47,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -143,7 +142,7 @@ public class OpenAiChatMessage {
 	/**
 	 * The originator of the message.
 	 */
-	public enum Role {
+	public static enum Role {
 
 		/** Marks messages coming from the user */
 		USER("user"),
@@ -178,20 +177,6 @@ public class OpenAiChatMessage {
 		@JsonValue
 		public String toString() { // Notice we rely on labels not to change
 			return label;
-		}
-	}
-
-	private static Author roleToAuthor(Role role) {
-		switch (role) {
-		case USER:
-		case SYSTEM:
-			return Author.USER;
-		case ASSISTANT:
-		case FUNCTION:
-		case TOOL:
-			return Author.BOT;
-		default:
-			throw new IllegalArgumentException(); // Guard
 		}
 	}
 
@@ -304,21 +289,18 @@ public class OpenAiChatMessage {
 	 */
 	private FunctionCall functionCall;
 
-	// TODO URGENT remove unused constructors
-
 	public OpenAiChatMessage(Role role, String content) {
-		this(role, content, null, null);
+		this(role, content, null);
 	}
 
 	public OpenAiChatMessage(Role role, String content, String name) {
-		this(role, content, name, null);
-	}
-
-	// TODO URGENT name and content are optional for a function call message
-	public OpenAiChatMessage(Role role, String content, String name, FunctionCall functionCall) {
 		this.role = role;
 		setContent(content);
 		this.name = name;
+	}
+
+	public OpenAiChatMessage(FunctionCall functionCall) {
+		this.role = Role.ASSISTANT;
 		this.functionCall = functionCall;
 	}
 

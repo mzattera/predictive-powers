@@ -16,6 +16,8 @@
 
 package io.github.mzattera.predictivepowers.openai.client;
 
+import java.util.Map;
+
 import io.github.mzattera.predictivepowers.openai.client.assistants.Assistant;
 import io.github.mzattera.predictivepowers.openai.client.assistants.AssistantsRequest;
 import io.github.mzattera.predictivepowers.openai.client.audio.AudioResponse;
@@ -35,6 +37,7 @@ import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsRequest;
 import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsResponse;
+import io.github.mzattera.predictivepowers.openai.client.threads.ThreadsRequest;
 import io.reactivex.Single;
 import lombok.NonNull;
 import okhttp3.RequestBody;
@@ -58,55 +61,55 @@ public interface OpenAiApi {
 	Single<DataList<Model>> models();
 
 	@GET("models/{model}")
-	Single<Model> models(@Path("model") String modelId);
+	Single<Model> models(@Path("model") @NonNull String modelId);
 
 	@DELETE("models/{model}")
 	Single<DeleteResponse> modelsDelete(@Path("model") @NonNull String model);
 
 	@POST("completions")
-	Single<CompletionsResponse> completions(@Body CompletionsRequest req);
+	Single<CompletionsResponse> completions(@Body @NonNull CompletionsRequest req);
 
 	@POST("chat/completions")
-	Single<ChatCompletionsResponse> chatCompletions(@Body ChatCompletionsRequest req);
+	Single<ChatCompletionsResponse> chatCompletions(@Body @NonNull ChatCompletionsRequest req);
 
 	@POST("images/generations")
-	Single<DataList<Image>> imagesGenerations(@Body ImagesRequest req);
+	Single<DataList<Image>> imagesGenerations(@Body @NonNull ImagesRequest req);
 
 	@POST("images/edits")
-	Single<DataList<Image>> imagesEdits(@Body RequestBody req);
+	Single<DataList<Image>> imagesEdits(@Body @NonNull RequestBody req);
 
 	@POST("images/variations")
-	Single<DataList<Image>> imagesVariations(@Body RequestBody req);
+	Single<DataList<Image>> imagesVariations(@Body @NonNull RequestBody req);
 
 	@POST("embeddings")
-	Single<EmbeddingsResponse> embeddings(@Body EmbeddingsRequest req);
+	Single<EmbeddingsResponse> embeddings(@Body @NonNull EmbeddingsRequest req);
 
 	@POST("audio/speech")
-	Single<ResponseBody> audioSpeech(@Body AudioSpeechRequest req);
+	Single<ResponseBody> audioSpeech(@Body @NonNull AudioSpeechRequest req);
 
 	@POST("audio/transcriptions")
-	Single<AudioResponse> audioTranscriptions(@Body RequestBody req);
+	Single<AudioResponse> audioTranscriptions(@Body @NonNull RequestBody req);
 
 	@POST("audio/translations")
-	Single<AudioResponse> audioTranslations(@Body RequestBody req);
+	Single<AudioResponse> audioTranslations(@Body @NonNull RequestBody req);
 
 	@GET("files")
 	Single<DataList<File>> files();
 
 	@POST("files")
-	Single<File> files(@Body RequestBody file);
+	Single<File> files(@Body @NonNull RequestBody file);
 
 	@DELETE("files/{file_id}")
-	Single<DeleteResponse> filesDelete(@Path("file_id") String fileId);
+	Single<DeleteResponse> filesDelete(@Path("file_id") @NonNull String fileId);
 
 	@GET("files/{file_id}")
-	Single<File> files(@Path("file_id") String fileId);
+	Single<File> files(@Path("file_id") @NonNull String fileId);
 
 	@GET("files/{file_id}/content")
-	Single<ResponseBody> filesContent(@Path("file_id") String fileId);
+	Single<ResponseBody> filesContent(@Path("file_id") @NonNull String fileId);
 
 	@POST("fine_tuning/jobs")
-	Single<FineTuningJob> fineTuningJobsCreate(@Body FineTuningRequest req);
+	Single<FineTuningJob> fineTuningJobsCreate(@Body @NonNull FineTuningRequest req);
 
 	@GET("fine_tuning/jobs")
 	Single<DataList<FineTuningJob>> fineTuningJobs(@Query("limit") Integer limit, @Query("after") String after);
@@ -123,13 +126,13 @@ public interface OpenAiApi {
 	Single<FineTuningJob> fineTuningJobsCancel(@Path("fine_tuning_job_id") @NonNull String fineTuningJobId);
 
 	@POST("moderations")
-	Single<ModerationsResponse> moderations(@Body ModerationsRequest req);
+	Single<ModerationsResponse> moderations(@Body @NonNull ModerationsRequest req);
 
 	@POST("assistants")
-	Single<Assistant> assistantsCreate(@Body AssistantsRequest req);
+	Single<Assistant> assistantsCreate(@Body @NonNull AssistantsRequest req);
 
-	@POST("assistants/{assistant_id}/files")
-	Single<File> assistantsFiles(@Path("assistant_id") @NonNull String assistantId, @Body File req);
+    @POST("assistants/{assistant_id}/files")
+    Single<File> assistantsFiles(@Path("assistant_id") @NonNull String assistantId, @Body @NonNull Map<String, String> body);
 
 	@GET("assistants")
 	Single<DataList<Assistant>> assistants(@Query("limit") Integer limit, @Query("order") String order,
@@ -148,7 +151,7 @@ public interface OpenAiApi {
 			@Path("file_id") @NonNull String fileId);
 
 	@POST("assistants/{assistant_id}")
-	Single<Assistant> assistantsModify(@Path("assistant_id") @NonNull String assistantId, @Body AssistantsRequest req);
+	Single<Assistant> assistantsModify(@Path("assistant_id") @NonNull String assistantId, @Body @NonNull AssistantsRequest req);
 
 	@DELETE("assistants/{assistant_id}")
 	Single<DeleteResponse> assistantsDelete(@Path("assistant_id") @NonNull String assistantId);
@@ -156,4 +159,16 @@ public interface OpenAiApi {
 	@DELETE("assistants/{assistant_id}/files/{file_id}")
 	Single<DeleteResponse> assistantsFilesDelete(@Path("assistant_id") @NonNull String assistantId,
 			@Path("file_id") @NonNull String fileId);
+	
+	@POST("threads")
+	Single<Thread> threads(@Body @NonNull ThreadsRequest req);
+	
+	@GET("threads/{thread_id}")
+	Single<Thread> threadsGet(@Path("thread_id") @NonNull String threadId);
+	
+	@POST("threads/{thread_id}")
+	Single<Thread> threadsModify(@Path("thread_id") @NonNull String threadId, @Body @NonNull Metadata metadata);
+
+	@DELETE("threads/{thread_id}")
+	Single<DeleteResponse> threadsDelete(@Path("thread_id") @NonNull String threadId);	
 }

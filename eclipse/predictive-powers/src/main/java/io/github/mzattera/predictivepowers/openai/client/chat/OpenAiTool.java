@@ -52,7 +52,7 @@ public class OpenAiTool implements Tool {
 	public final static OpenAiTool CODE_INTERPRETER = new OpenAiTool(Type.CODE_INTERPRETER);
 
 	/** The retrieval tool, for Assistants. */
-	public final static OpenAiTool RETRIEVAL = new OpenAiTool(Type.CODE_INTERPRETER);
+	public final static OpenAiTool RETRIEVAL = new OpenAiTool(Type.RETRIEVAL);
 
 	public enum Type {
 
@@ -93,7 +93,7 @@ public class OpenAiTool implements Tool {
 		if (wrappedTool != null)
 			return wrappedTool.getId();
 		if (type == Type.FUNCTION)
-			return function.name;
+			return function.getName();
 		return type.toString();
 	}
 
@@ -107,9 +107,6 @@ public class OpenAiTool implements Tool {
 		return ("This is the " + type + " tool available to OpenAI assistants.");
 	}
 
-	private final static class NoParameters {
-	}
-
 	@JsonIgnore
 	@Override
 	public Class<?> getParameterSchema() {
@@ -117,7 +114,7 @@ public class OpenAiTool implements Tool {
 			return wrappedTool.getParameterSchema();
 		if (type == Type.FUNCTION)
 			return function.getParameters();
-		return NoParameters.class;
+		return Tool.NoParameters.class;
 	}
 
 	private OpenAiTool(Type type) {

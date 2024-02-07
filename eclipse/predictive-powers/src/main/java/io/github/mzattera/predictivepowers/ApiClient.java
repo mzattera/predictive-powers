@@ -89,7 +89,10 @@ public interface ApiClient extends Closeable {
 				@Override
 				public Response intercept(Chain chain) throws IOException {
 					return chain
-							.proceed(chain.request().newBuilder().header("Authorization", "Bearer " + apiKey).build());
+							.proceed(chain.request().newBuilder() //
+									.header("Authorization", "Bearer " + apiKey) //
+									.header("OpenAI-Beta", "assistants=v1") //
+									.build());
 				}
 			});
 

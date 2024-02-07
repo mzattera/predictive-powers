@@ -39,8 +39,15 @@ import lombok.NonNull;
 public interface Tool {
 
 	/** Used for JSON (de)serialization of function parameters as schema */
+	// TODO is this needed?
 	@Getter
 	public final static JsonSchemaGenerator schemaGenerator = new JsonSchemaGenerator(new ObjectMapper());
+
+	/**
+	 * Convenience class for a tool with no parameters.
+	 */
+	public final static class NoParameters {
+	}
 
 	/**
 	 * Custom serializer to create JSON schema for function parameters.

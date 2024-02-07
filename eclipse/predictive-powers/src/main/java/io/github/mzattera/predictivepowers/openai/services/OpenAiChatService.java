@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -51,6 +52,7 @@ import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
  * OpenAI chat service.
@@ -63,8 +65,6 @@ import lombok.NonNull;
  *
  */
 public class OpenAiChatService extends AbstractChatService implements Agent {
-
-	// TODO URGENT Add methods ot handle files in messages here (for vision as URL)
 
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
 	// values from a Map this is done partially
@@ -104,11 +104,6 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 		defaultReq.setModel(model);
 	}
 
-	@Override
-	public String getId() {
-		return "OpenAI-chat-API-model-" + getModel();
-	}
-
 	/**
 	 * This request, with its parameters, is used as default setting for each call.
 	 * 
@@ -137,10 +132,20 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	public void clearConversation() {
 		history.clear();
 	}
+	@Getter
+	private final String id = UUID.randomUUID().toString();
 
-	// TODO URGENT add tests to check all the methods to manipulate tools
+	@Getter
+	@Setter
+	private String name = "OpenAI Chat API Assistant";
+
+	@Getter
+	@Setter
+	private String description = "";
 
 	private final Map<String, OpenAiTool> tools = new HashMap<>();
+
+	// TODO URGENT add tests to check all the methods to manipulate tools
 
 	public List<OpenAiTool> getTools() {
 		return Collections.unmodifiableList(new ArrayList<>(tools.values()));
@@ -662,5 +667,4 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 		result.add(new OpenAiChatMessage(msg.getAuthor(), msg.getParts()));
 		return result;
 	}
-
 }

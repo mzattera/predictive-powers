@@ -22,7 +22,9 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +35,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import io.github.mzattera.predictivepowers.ApiClient;
+import io.github.mzattera.predictivepowers.openai.client.assistants.Assistant;
+import io.github.mzattera.predictivepowers.openai.client.assistants.AssistantsRequest;
 import io.github.mzattera.predictivepowers.openai.client.audio.AudioRequest;
 import io.github.mzattera.predictivepowers.openai.client.audio.AudioSpeechRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
@@ -50,21 +54,17 @@ import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsRequest;
 import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsResponse;
+import io.github.mzattera.predictivepowers.openai.client.threads.ThreadsRequest;
 import io.github.mzattera.util.FileUtil;
 import io.github.mzattera.util.ImageUtil;
 import io.reactivex.Single;
 import lombok.Getter;
 import lombok.NonNull;
-import okhttp3.Interceptor;
-import okhttp3.Interceptor.Chain;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
 import okhttp3.RequestBody;
-import okhttp3.Response;
 import okhttp3.ResponseBody;
-import okio.Buffer;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
@@ -161,30 +161,30 @@ public class OpenAiClient implements ApiClient {
 	 */
 	public OpenAiClient(OkHttpClient http) {
 
-//		client = http;
+		client = http;
 
 		// Debug code below
-		client = http.newBuilder() //
+//		client = http.newBuilder() //
 
 		// Debug code below, outputs the request
-				.addInterceptor(new Interceptor() {
+//				.addInterceptor(new Interceptor() {
+//
+//					@Override
+//					public Response intercept(Chain chain) throws IOException {
+//						Request req = chain.request();
+//
+//						if (req.body() != null) {
+//							Buffer buffer = new Buffer();
+//							req.body().writeTo(buffer);
+//							String bodyContent = buffer.readUtf8();
+//							System.out.println("Request body: " + bodyContent);
+//						}
+//
+//						return chain.proceed(req);
+//					}
+//				}) //
 
-					@Override
-					public Response intercept(Chain chain) throws IOException {
-						Request req = chain.request();
-
-						if (req.body() != null) {
-							Buffer buffer = new Buffer();
-							req.body().writeTo(buffer);
-							String bodyContent = buffer.readUtf8();
-							System.out.println("Request body: " + bodyContent);
-						}
-
-						return chain.proceed(req);
-					}
-				}) //
-
-				// Debug code below, outputs the response
+		// Debug code below, outputs the response
 //				.addInterceptor(new Interceptor() {
 //
 //					@Override
@@ -205,8 +205,8 @@ public class OpenAiClient implements ApiClient {
 //						return response; // Return the original response unaltered
 //					}
 //				}) //
-				
-				.build();
+
+//				.build();
 
 		Retrofit retrofit = new Retrofit.Builder().baseUrl(API_BASE_URL).client(client)
 				.addConverterFactory(JacksonConverterFactory.create(jsonMapper))
@@ -229,26 +229,26 @@ public class OpenAiClient implements ApiClient {
 	//////// API METHODS MAPPED INTO JAVA CALLS ////////////////////////////////////
 
 	public List<Model> listModels() {
-		return callApi(api.models()).getData();
+		return callApi(api.models()).getData(); 
 	}
 
-	public Model retrieveModel(String modelId) {
+	public Model retrieveModel(@NonNull String modelId) {
 		return callApi(api.models(modelId));
 	}
 
-	public CompletionsResponse createCompletion(CompletionsRequest req) {
+	public CompletionsResponse createCompletion(@NonNull CompletionsRequest req) {
 		return callApi(api.completions(req));
 	}
 
-	public ChatCompletionsResponse createChatCompletion(ChatCompletionsRequest req) {
+	public ChatCompletionsResponse createChatCompletion(@NonNull ChatCompletionsRequest req) {
 		return callApi(api.chatCompletions(req));
 	}
 
-	public List<Image> createImage(ImagesRequest req) {
+	public List<Image> createImage(@NonNull ImagesRequest req) {
 		return callApi(api.imagesGenerations(req)).getData();
 	}
 
-	public List<Image> createImageEdit(@NonNull BufferedImage image, ImagesRequest req, BufferedImage mask)
+	public List<Image> createImageEdit(@NonNull BufferedImage image, @NonNull ImagesRequest req, BufferedImage mask)
 			throws IOException {
 
 		MultipartBody.Builder builder = new MultipartBody.Builder().setType(MediaType.get("multipart/form-data"))
@@ -278,7 +278,8 @@ public class OpenAiClient implements ApiClient {
 		return callApi(api.imagesEdits(builder.build())).getData();
 	}
 
-	public List<Image> createImageVariation(@NonNull BufferedImage image, ImagesRequest req) throws IOException {
+	public List<Image> createImageVariation(@NonNull BufferedImage image, @NonNull ImagesRequest req)
+			throws IOException {
 
 		MultipartBody.Builder builder = new MultipartBody.Builder().setType(MediaType.get("multipart/form-data"))
 				.addFormDataPart("image", "image", ImageUtil.toRequestBody("png", image));
@@ -299,7 +300,7 @@ public class OpenAiClient implements ApiClient {
 		return callApi(api.imagesVariations(builder.build())).getData();
 	}
 
-	public EmbeddingsResponse createEmbeddings(EmbeddingsRequest req) {
+	public EmbeddingsResponse createEmbeddings(@NonNull EmbeddingsRequest req) {
 		return callApi(api.embeddings(req));
 	}
 
@@ -311,7 +312,7 @@ public class OpenAiClient implements ApiClient {
 	 * The output file content is stored in memory, this might cause OutOfMemory
 	 * errors if the file is too big.
 	 */
-	public byte[] createSpeech(AudioSpeechRequest req) throws IOException {
+	public byte[] createSpeech(@NonNull AudioSpeechRequest req) throws IOException {
 		return callApi(api.audioSpeech(req)).bytes();
 	}
 
@@ -323,18 +324,18 @@ public class OpenAiClient implements ApiClient {
 	 * @throws IOException
 	 * @throws FileNotFoundException
 	 */
-	public void createSpeech(AudioSpeechRequest req, java.io.File downloadedFile)
+	public void createSpeech(AudioSpeechRequest req, @NonNull java.io.File downloadedFile)
 			throws FileNotFoundException, IOException {
 		download(callApi(api.audioSpeech(req)), downloadedFile);
 	}
 
-	public String createTranscription(@NonNull java.io.File audio, AudioRequest req) throws IOException {
+	public String createTranscription(@NonNull java.io.File audio, @NonNull AudioRequest req) throws IOException {
 		try (InputStream is = new FileInputStream(audio)) {
 			return createTranscription(is, FileUtil.getExtension(audio), req);
 		}
 	}
 
-	public String createTranscription(@NonNull String fileName, AudioRequest req) throws IOException {
+	public String createTranscription(@NonNull String fileName, @NonNull AudioRequest req) throws IOException {
 		try (InputStream is = new FileInputStream(fileName)) {
 			return createTranscription(is, FileUtil.getExtension(fileName), req);
 		}
@@ -349,7 +350,8 @@ public class OpenAiClient implements ApiClient {
 	 * 
 	 * @return A transcription of given stream.
 	 */
-	public String createTranscription(@NonNull InputStream audio, String format, AudioRequest req) throws IOException {
+	public String createTranscription(@NonNull InputStream audio, @NonNull String format, @NonNull AudioRequest req)
+			throws IOException {
 		return createTranscription(audio.readAllBytes(), format, req);
 	}
 
@@ -362,7 +364,7 @@ public class OpenAiClient implements ApiClient {
 	 * 
 	 * @return A transcription of given stream.
 	 */
-	public String createTranscription(@NonNull byte[] audio, String format, AudioRequest req) {
+	public String createTranscription(@NonNull byte[] audio, @NonNull String format, @NonNull AudioRequest req) {
 
 		MultipartBody.Builder builder = new MultipartBody.Builder().setType(MediaType.get("multipart/form-data"))
 				.addFormDataPart("model", req.getModel())
@@ -384,13 +386,13 @@ public class OpenAiClient implements ApiClient {
 		return callApi(api.audioTranscriptions(builder.build())).getText();
 	}
 
-	public String createTranslation(@NonNull java.io.File audio, AudioRequest req) throws IOException {
+	public String createTranslation(@NonNull java.io.File audio, @NonNull AudioRequest req) throws IOException {
 		try (InputStream is = new FileInputStream(audio)) {
 			return createTranslation(is, FileUtil.getExtension(audio), req);
 		}
 	}
 
-	public String createTranslation(@NonNull String fileName, AudioRequest req) throws IOException {
+	public String createTranslation(@NonNull String fileName, @NonNull AudioRequest req) throws IOException {
 		try (InputStream is = new FileInputStream(fileName)) {
 			return createTranslation(is, FileUtil.getExtension(fileName), req);
 		}
@@ -405,11 +407,12 @@ public class OpenAiClient implements ApiClient {
 	 * 
 	 * @return A translation of given stream.
 	 */
-	public String createTranslation(@NonNull InputStream audio, String format, AudioRequest req) throws IOException {
+	public String createTranslation(@NonNull InputStream audio, @NonNull String format, @NonNull AudioRequest req)
+			throws IOException {
 		return createTranslation(audio.readAllBytes(), format, req);
 	}
 
-	public String createTranslation(@NonNull byte[] audio, String format, AudioRequest req) {
+	public String createTranslation(@NonNull byte[] audio, @NonNull String format, @NonNull AudioRequest req) {
 
 		MultipartBody.Builder builder = new MultipartBody.Builder().setType(MediaType.get("multipart/form-data"))
 				.addFormDataPart("model", req.getModel())
@@ -477,7 +480,7 @@ public class OpenAiClient implements ApiClient {
 	 * @param fileId Id of file to retrieve.
 	 * @throws IOException
 	 */
-	public byte[] retrieveFileContent(String fileId) throws IOException {
+	public byte[] retrieveFileContent(@NonNull String fileId) throws IOException {
 		return callApi(api.filesContent(fileId)).bytes();
 	}
 
@@ -490,37 +493,37 @@ public class OpenAiClient implements ApiClient {
 	 * @throws IOException
 	 * @throws FileNotFoundException
 	 */
-	public void retrieveFileContent(String fileId, java.io.File downloadedFile)
+	public void retrieveFileContent(String fileId, @NonNull java.io.File downloadedFile)
 			throws FileNotFoundException, IOException {
 		download(callApi(api.filesContent(fileId)), downloadedFile);
 	}
 
-	public FineTuningJob createFineTuningJob(FineTuningRequest req) {
+	public FineTuningJob createFineTuningJob(@NonNull FineTuningRequest req) {
 		return callApi(api.fineTuningJobsCreate(req));
 	}
 
-	public List<FineTuningJob> listFineTuningJobs() {
-		return callApi(api.fineTuningJobs(null, null)).getData();
+	public DataList<FineTuningJob> listFineTuningJobs() {
+		return callApi(api.fineTuningJobs(null, null));
 	}
 
-	public List<FineTuningJob> listFineTuningJobs(int limit) {
-		return callApi(api.fineTuningJobs(limit, null)).getData();
+	public DataList<FineTuningJob> listFineTuningJobs(int limit) {
+		return callApi(api.fineTuningJobs(limit, null));
 	}
 
-	public List<FineTuningJob> listFineTuningJobs(String after, int limit) {
-		return callApi(api.fineTuningJobs(limit, after)).getData();
+	public DataList<FineTuningJob> listFineTuningJobs(int limit, String after) {
+		return callApi(api.fineTuningJobs(limit, after));
 	}
 
-	public List<FineTuningJobEvent> listFineTuningEvents(@NonNull String fineTuningJobId) {
-		return callApi(api.fineTuningJobsEvents(fineTuningJobId, null, null)).getData();
+	public DataList<FineTuningJobEvent> listFineTuningEvents(@NonNull String fineTuningJobId) {
+		return callApi(api.fineTuningJobsEvents(fineTuningJobId, null, null));
 	}
 
-	public List<FineTuningJobEvent> listFineTuningEvents(@NonNull String fineTuningJobId, int limit) {
-		return callApi(api.fineTuningJobsEvents(fineTuningJobId, limit, null)).getData();
+	public DataList<FineTuningJobEvent> listFineTuningEvents(@NonNull String fineTuningJobId, int limit) {
+		return callApi(api.fineTuningJobsEvents(fineTuningJobId, limit, null));
 	}
 
-	public List<FineTuningJobEvent> listFineTuningEvents(@NonNull String fineTuningJobId, String after, int limit) {
-		return callApi(api.fineTuningJobsEvents(fineTuningJobId, limit, after)).getData();
+	public DataList<FineTuningJobEvent> listFineTuningEvents(@NonNull String fineTuningJobId, int limit, String after) {
+		return callApi(api.fineTuningJobsEvents(fineTuningJobId, limit, after));
 	}
 
 	public FineTuningJob retrieveFineTuningJob(@NonNull String fineTuningJobId) {
@@ -535,8 +538,85 @@ public class OpenAiClient implements ApiClient {
 		return callApi(api.modelsDelete(model));
 	}
 
-	public ModerationsResponse createModeration(ModerationsRequest req) {
+	public ModerationsResponse createModeration(@NonNull ModerationsRequest req) {
 		return callApi(api.moderations(req));
+	}
+
+	public Assistant createAssistant(@NonNull AssistantsRequest req) {
+		return callApi(api.assistantsCreate(req));
+	}
+
+	public File createAssistantFile(@NonNull String assistantId, @NonNull String fileId) {
+		Map<String, String> body = new HashMap<>();
+		body.put("file_id", fileId);
+		return callApi(api.assistantsFiles(assistantId, body));
+	}
+
+	public DataList<Assistant> listAssistants() {
+		return callApi(api.assistants(null, null, null, null));
+	}
+
+	public DataList<Assistant> listAssistants(SortOrder sort, int limit) {
+		return callApi(api.assistants(limit, sort.toString(), null, null));
+	}
+
+	public DataList<Assistant> listAssistants(SortOrder sort, int limit, String before, String after) {
+		return callApi(api.assistants(limit, sort.toString(), after, before));
+	}
+
+	public DataList<File> listAssistantFiles(@NonNull String assistantId) {
+		return callApi(api.assistantsFiles(assistantId, null, null, null, null));
+	}
+
+	public DataList<File> listAssistantFiles(@NonNull String assistantId, SortOrder sort, int limit) {
+		return callApi(api.assistantsFiles(assistantId, limit, sort.toString(), null, null));
+	}
+
+	public DataList<File> listAssistantFiles(@NonNull String assistantId, SortOrder sort, int limit, String before,
+			String after) {
+		if ((before != null) && (after != null))
+			throw new IllegalArgumentException("Only one of the pagination arguments can be not null.");
+		return callApi(api.assistantsFiles(assistantId, limit, sort.toString(), after, before));
+	}
+
+	public Assistant retrieveAssistant(@NonNull String assistantId) {
+		return callApi(api.assistantsGet(assistantId));
+	}
+
+	public File retrieveAssistantFile(@NonNull String assistantId, @NonNull String fileId) {
+		return callApi(api.assistantsFilesGet(assistantId, fileId));
+	}
+
+	public Assistant modifyAssistant(@NonNull String assistantId, @NonNull AssistantsRequest req) {
+		return callApi(api.assistantsModify(assistantId, req));
+	}
+
+	public DeleteResponse deleteAssistant(@NonNull String assistantId) {
+		return callApi(api.assistantsDelete(assistantId));
+	}
+
+	public DeleteResponse deteAssistantFile(@NonNull String assistantId, @NonNull String fileId) {
+		return callApi(api.assistantsFilesDelete(assistantId, fileId));
+	}
+
+	public Thread createThread(@NonNull ThreadsRequest req) {
+		return callApi(api.threads(req));
+	}
+
+	public Thread retrieveThread(@NonNull String threadId) {
+		return callApi(api.threadsGet(threadId));
+	}
+
+	public Thread modifyThread(@NonNull String threadId, @NonNull Metadata metadata) {
+		return callApi(api.threadsModify(threadId, metadata));
+	}
+
+	public Thread modifyThread(@NonNull String threadId, @NonNull Map<String, String> metadata) {
+		return callApi(api.threadsModify(threadId, new Metadata(metadata)));
+	}
+
+	public DeleteResponse deleteThread(@NonNull String threadId) {
+		return callApi(api.threadsDelete(threadId));
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////

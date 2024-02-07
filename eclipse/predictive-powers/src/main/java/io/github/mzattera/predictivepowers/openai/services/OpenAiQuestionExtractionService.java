@@ -24,10 +24,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
+import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.QnAPair;
@@ -46,13 +44,8 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiQuestionExtractionService.class);
 
-	// De-serialize extracted questions.
-	private final static ObjectMapper mapper;
-	static {
-		mapper = new ObjectMapper();
-		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		mapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
-	}
+//	public static final String DEFAULT_MODEL = "gpt-4-1106-preview";
+	public static final String DEFAULT_MODEL = "gpt-4-turbo-preview";
 
 	/**
 	 * This underlying service is used for executing required prompts.
@@ -77,11 +70,10 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 
 	public OpenAiQuestionExtractionService(OpenAiEndpoint ep) {
 		completionService = ep.getChatService();
-		completionService.setPersonality(null); // personality will be in instructions
-		completionService.getDefaultReq().setTemperature(0.0); // TODO test best settings.
-
-		// TODO URGENT set a completion model that supports this
-//		completionService.getDefaultReq().setResponseFormat(ResponseFormat.JSON); // More robust replies
+		completionService.setModel(DEFAULT_MODEL);
+		completionService.setPersonality(null);
+		completionService.setTemperature(0.0); // TODO test best settings.
+//		completionService.getDefaultReq().setResponseFormat(ResponseFormat.JSON); // Adding this produces less results
 	}
 
 	/**
@@ -95,7 +87,10 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"You are a teacher and you are preparing an assessment from some text materials.", null));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
-				"Given a context, extract a set of questions and corresponding answers, then format them as a JSON array. Some examples are provided below.",
+				"Given a context, extract a set of questions and corresponding answers."
+						+ " Extract as many question/answering pairs as you can."
+						+ " Format question/answer pairs as a JSON array, importantly always return an array, even if you extract a single pair."
+						+ " Some examples are provided below.",
 				"example_user"));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM, "Context:\n'''\n" //
 				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China–Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1⁄2 in) was most recently established in 2020 by the Chinese and Nepali authorities.\n" //
@@ -130,12 +125,15 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"You are a teacher and you are preparing an assessment from some text materials.", null));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
-				"Given a context, extract a set of true/false exercise and corresponding answers; make sure some questions require a 'true' answer and  some require a 'false' answer, then format them as a JSON array. Some examples are provided below.",
-				"example_user", null));
+				"Given a context, extract a set of true/false exercises and corresponding answers; make sure some questions require a 'true' answer and  some require a 'false' answer. "
+						+ " Extract as many exercises as you can."
+						+ " Format exercises as a JSON array, importantly always return an array, even if you extract a single exercise."
+						+ " Some examples are provided below.",
+				"example_user"));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM, "Context:\n'''\n" //
 				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China–Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1⁄2 in) was most recently established in 2020 by the Chinese and Nepali authorities.\n" //
 				+ "Mount Everest attracts many climbers, including highly experienced mountaineers. There are two main climbing routes, one approaching the summit from the southeast in Nepal (known as the 'standard route') and the other from the north in Tibet. While not posing substantial technical climbing challenges on the standard route, Everest presents dangers such as altitude sickness, weather, and wind, as well as hazards from avalanches and the Khumbu Icefall. As of 2019, over 300 people have died on Everest, many of whose bodies remain on the mountain.\n" //
-				+ "'''", "example_user", null));
+				+ "'''", "example_user"));
 		instructions.add(new OpenAiChatMessage(Role.ASSISTANT, "[\n" //
 				+ "   {\n" //
 				+ "      \"question\":\"Mount Everest is the highest mountain on Earth.\",\n" //
@@ -149,7 +147,7 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 				+ "      \"question\":\"As of 2019, less than 300 people have died on Everest.\",\n" //
 				+ "      \"answer\":\"false\"\n" //
 				+ "   }\n" //
-				+ "]", "example_assistant", null));
+				+ "]", "example_assistant"));
 
 		List<QnAPair> result = getQuestions(instructions, text);
 		Iterator<QnAPair> it = result.iterator();
@@ -175,7 +173,11 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"You are a teacher and you are preparing an assessment from some text materials.", null));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
-				"Create 'fill the blank' exercises with corresponding fill words from the given context, and format them as a JSON array. Make sure to generate questions where a missing word is replaced with a blank, denoted as '______', and provide the missing word as the answer.",
+				"Create 'fill the blank' exercises with corresponding fill words from the given context."
+						+ " Make sure to generate questions where a missing word is replaced with a blank, denoted as '______', and provide the missing word as the answer."
+						+ " Generate as many exercises as you can."
+						+ " Format exercises as a JSON array, importantly always return an array, even if you extract a single result."
+						+ " Some examples are provided below.",
 				"example_user"));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM, "Context:\r\n" + "'''\r\n"
 				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China\u2013Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1\u20442 in) was most recently established in 2020 by the Chinese and Nepali authorities.\r\n"
@@ -185,13 +187,13 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 						+ "      \"answer\":\"Mount Everest\"\r\n" + "   }\r\n" + "]",
 				"example_assistant"));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
-				"This is wrong, this is not a  'fill the blank' exercises. Try again.", "example_user", null));
+				"This is wrong, this is not a  'fill the blank' exercises. Try again.", "example_user"));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"[\r\n" + "   {\r\n"
 						+ "      \"question\":\"Mount ______ is Earth's highest mountain above sea level.\",\r\n"
 						+ "      \"answer\":\"Everest\"\r\n" + "   }\r\n" + "]",
 				"example_assistant"));
-		instructions.add(new OpenAiChatMessage(Role.SYSTEM, "This is correct.", "example_user", null));
+		instructions.add(new OpenAiChatMessage(Role.SYSTEM, "This is correct.", "example_user"));
 
 		List<QnAPair> result = getQuestions(instructions, text);
 		Iterator<QnAPair> it = result.iterator();
@@ -234,7 +236,11 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
 				"You are a teacher and you are preparing an assessment from some text materials.", null));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
-				"Given a context, extract a set of multiple-choice questions, corresponding answers, and a list of options for each question, then format them as a JSON array. Make sure the options for one question are all different. Some examples are provided below.",
+				"Given a context, extract a set of multiple-choice questions, corresponding answers, and a list of options for each question"
+						+ " Make sure the options for one question are all different."
+						+ " Extract as many question/answering pairs as you can."
+						+ " Format question/answer pairs as a JSON array, importantly always return an array, even if you extract a single pair."
+						+ " Some examples are provided below.",
 				"example_user"));
 		instructions.add(new OpenAiChatMessage(Role.SYSTEM, "Context:\n'''\n" //
 				+ "Mount Everest  is Earth's highest mountain above sea level, located in the Mahalangur Himal sub-range of the Himalayas. The China–Nepal border runs across its summit point. Its elevation (snow height) of 8,848.86 m (29,031 ft 8+1⁄2 in) was most recently established in 2020 by the Chinese and Nepali authorities.\n" //
@@ -274,7 +280,7 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 				+ "      ],\n" //
 				+ "      \"answer\":\"3\"\n" //
 				+ "   }\n" //
-				+ "]", "example_assistant", null));
+				+ "]", "example_assistant"));
 
 		List<QnAPair> result = getQuestions(instructions, text);
 		Iterator<QnAPair> it = result.iterator();
@@ -362,11 +368,16 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 				+ "\n'''"));
 
 		String json = completionService.complete(prompt).getText();
-		QnAPair[] result = null;
+		QnAPair[] result = new QnAPair[0];
 		try {
-			result = mapper.readValue(json, QnAPair[].class);
+			result = OpenAiClient.getJsonMapper().readValue(json, QnAPair[].class);
 		} catch (JsonProcessingException e) {
-			LOG.warn("Malformed JSON when parsing QnAPair[]", e);
+			// Sometimes we have a single value
+			try {
+				result = new QnAPair[] { OpenAiClient.getJsonMapper().readValue(json, QnAPair.class) };
+			} catch (JsonProcessingException e1) {
+				LOG.warn("Malformed JSON when parsing QnAPair[]", e);
+			}
 		}
 		for (QnAPair r : result) {
 			r.getContext().add(shortText);

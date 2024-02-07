@@ -28,14 +28,31 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@Getter
-@Setter
 @ToString
 public class DataList<T> {
 
-	String object;
-	List<T> data;
-	Boolean hasMore;
-	String firstId;
-	String lastId;
+	@Getter
+	@Setter
+	private String object;
+	
+	@Getter
+	@Setter
+	private List<T> data;
+
+	@Setter
+	private Boolean hasMore;
+
+	public boolean hasMore() {
+		if (hasMore == null)
+			return false;
+		return hasMore.booleanValue();
+	}
+
+	@Getter
+	@Setter
+	private String firstId;
+	
+	@Getter
+	@Setter
+	private String lastId;
 }

@@ -17,7 +17,6 @@
 package io.github.mzattera.predictivepowers.openai.client.chat;
 
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -40,9 +39,6 @@ import lombok.ToString;
 @Setter
 @ToString
 public class OpenAiToolCall {
-
-	// TODO URGENT Expand with types supported by the Runs endpoint, and their
-	// parameters.
 
 	/**
 	 * The ID of the tool call.

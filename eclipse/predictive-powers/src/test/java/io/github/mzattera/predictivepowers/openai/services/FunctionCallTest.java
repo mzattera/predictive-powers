@@ -41,8 +41,10 @@ import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
 import io.github.mzattera.predictivepowers.services.Agent;
+import io.github.mzattera.predictivepowers.services.SimpleToolProvider;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.ToolProvider;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
@@ -110,14 +112,15 @@ public class FunctionCallTest {
 
 		@Override
 		public void init(@NonNull Agent agent) {
-			// Initialization goes here...
 		}
 
 		@Override
 		public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
-			// Function implementation goes here.
-			// In this example we simply return a random temperature.
 			return new ToolCallResult(call, "20°C");
+		}
+
+		@Override
+		public void close() throws Exception {
 		}
 	}
 
@@ -125,6 +128,7 @@ public class FunctionCallTest {
 	static {
 		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool()));
 	}
+	private final static ToolProvider PROVIDER = new SimpleToolProvider(TOOLS);
 
 	/**
 	 * Tests FunctionChoice serialization.
@@ -200,7 +204,8 @@ public class FunctionCallTest {
 
 			OpenAiChatService cs = ep.getChatService("You are an agent supporting user with weather forecasts");
 			cs.setModel(MODEL);
-			cs.setTools(TOOLS);
+			cs.setToolProvider(PROVIDER);
+			cs.setTools(PROVIDER.getToolIds());
 			assertTrue((cs.getTools() != null) && (cs.getTools().size() == TOOLS.size()));
 
 			// Casual chat should not trigger any function call
@@ -244,7 +249,8 @@ public class FunctionCallTest {
 
 			OpenAiChatService cs = ep.getChatService("You are an agent supporting user with weather forecasts");
 			cs.setModel(MODEL);
-			cs.setTools(TOOLS);
+			cs.setToolProvider(PROVIDER);
+			cs.setTools(PROVIDER.getToolIds());
 
 			ChatCompletion reply = null;
 

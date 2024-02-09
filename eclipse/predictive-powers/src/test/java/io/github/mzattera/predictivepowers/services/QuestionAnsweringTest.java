@@ -45,7 +45,7 @@ public class QuestionAnsweringTest {
 
 	// TODO If possible, for OpenAI, add a test to check if context was built and
 	// trimmed properly
-	
+
 	private static AiEndpoint[] a;
 
 	@BeforeAll
@@ -58,7 +58,7 @@ public class QuestionAnsweringTest {
 		for (AiEndpoint ep : a)
 			try {
 				ep.close();
-			} catch (IOException e) {
+			} catch (Exception e) {
 			}
 	}
 

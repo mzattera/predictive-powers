@@ -28,8 +28,10 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.services.Agent;
+import io.github.mzattera.predictivepowers.services.SimpleToolProvider;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.ToolProvider;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
@@ -40,8 +42,9 @@ public class FunctionCallExample {
 
 	static Random RND = new Random();
 
-	// This is a function that will be accessible to the agent.
-	private static class GetCurrentWeatherTool implements Tool {
+	// This is a function that will be accessible to the agent (notice it must be
+	// public).
+	public static class GetCurrentWeatherTool implements Tool {
 
 		// This is a schema describing the function parameters
 		private static class GetCurrentWeatherParameters {
@@ -84,6 +87,11 @@ public class FunctionCallExample {
 			// In this example we simply return a random temperature.
 			return new ToolCallResult(call, (RND.nextInt(10) + 20) + "°C");
 		}
+
+		@Override
+		public void close() {
+			// Code to dispose the tool...
+		}
 	}
 
 	// List of functions available to the bot (for now it is only 1).
@@ -91,6 +99,10 @@ public class FunctionCallExample {
 	static {
 		TOOLS.add(new GetCurrentWeatherTool());
 	}
+
+	// A provider to give tool instances to the bot
+	// TODO URGENT REVERT BACK TO PRIVATE
+	public final static ToolProvider PROVIDER = new SimpleToolProvider(TOOLS);
 
 	public static void main(String[] args) throws ToolInitializationException {
 
@@ -100,12 +112,14 @@ public class FunctionCallExample {
 			OpenAiChatService bot = endpoint.getChatService();
 			bot.setPersonality("You are an helpful assistant.");
 
-			// Tells the model which tools are available,
-			// Notice that the service works with both function
-			// and tool calls in the same way.
+			// Notice the service works with both function and tool calls in the same way.
 //			bot.setModel("gpt-3.5-turbo-0613"); // This uses simple function calls
 			bot.setModel("gpt-4-1106-preview"); // This uses parallel function calls (tools)
-			bot.setTools(TOOLS);
+
+			// Tells the model which tools it can use, make them available through the
+			// provider
+			bot.setToolProvider(PROVIDER);
+			bot.setTools(PROVIDER.getToolIds());
 
 			// Conversation loop
 			try (Scanner console = new Scanner(System.in)) {

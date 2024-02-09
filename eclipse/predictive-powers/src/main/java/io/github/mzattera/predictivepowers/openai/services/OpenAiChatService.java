@@ -43,6 +43,7 @@ import io.github.mzattera.predictivepowers.services.AbstractChatService;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.ToolProvider;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
@@ -53,6 +54,7 @@ import io.github.mzattera.predictivepowers.services.messages.MessagePart;
 import io.github.mzattera.predictivepowers.services.messages.TextPart;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -147,71 +149,93 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	@Setter
 	private String description = "";
 
-	private final Map<String, OpenAiTool> tools = new HashMap<>();
+	@Setter
+	@Getter(AccessLevel.PROTECTED)
+	private ToolProvider toolProvider;
+
+	// Cached tools
+	@Getter(AccessLevel.PROTECTED)
+	private Map<String, OpenAiTool> toolMap = new HashMap<>();
 
 	// TODO URGENT add tests to check all the methods to manipulate tools
 
-	public List<OpenAiTool> getTools() {
-		return Collections.unmodifiableList(new ArrayList<>(tools.values()));
+	@Override
+	public List<String> getTools() {
+		return Collections.unmodifiableList(new ArrayList<>(toolMap.keySet()));
 	}
 
-	public void setTools(Collection<? extends Tool> list) throws ToolInitializationException {
+	@Override
+	public void setTools(@NonNull Collection<String> list) throws ToolInitializationException {
 
-		tools.clear();
-		if (list != null) {
+		clearTools();
+		try {
+			addTools(list);
+		} catch (ToolInitializationException e) {
+			clearTools();
+			throw e;
+		} finally {
+			setDefaultTools();
+		}
+	}
+
+	@Override
+	public void addTool(@NonNull String toolId) throws ToolInitializationException {
+
+		if (toolProvider == null)
+			throw new ToolInitializationException("A tool provider for the agent must be provided before adding tools.");
+		
+		Tool tool = toolProvider.getTool(toolId);
+		if (tool == null)
+			throw new ToolInitializationException("Missing tool: " + toolId);
+		tool.init(this);
+
+		OpenAiTool old = toolMap.remove(tool.getId());
+		if (old != null) {
 			try {
-				addTools(list);
-			} catch (ToolInitializationException e) {
-				tools.clear();
-				throw e;
+				old.close();
+			} catch (Exception e) {
+				LOG.warn("Error closing tool: {1}", e.getMessage());
 			}
 		}
 
-		setDefaultTools();
-	}
-
-	public void addTool(@NonNull Tool tool) throws ToolInitializationException {
-
-		// TODO? Re-enable? it has been disable for easier tests
-//		if (tools.containsKey(tool.getId()))
-//			throw new ToolInitializationException("Duplicated tool: " + tool.getId());
-
-		tool.init(this);
 		try {
-			tools.put(tool.getId(), (OpenAiTool) tool);
+			toolMap.put(tool.getId(), (OpenAiTool) tool);
 		} catch (ClassCastException e) {
 			// Wrap the Tool into an OpenAiTool, so we can use any tool with function calls
-			tools.put(tool.getId(), new OpenAiTool(tool));
+			toolMap.put(tool.getId(), new OpenAiTool(tool));
 		}
 		setDefaultTools();
 	}
 
 	@Override
-	public void addTools(Collection<? extends Tool> tools) throws ToolInitializationException {
-
-		if (tools == null)
-			return;
-		for (Tool tool : tools)
-			addTool(tool);
+	public void addTools(@NonNull Collection<String> tools) throws ToolInitializationException {
+		for (String id : tools)
+			addTool(id);
 	}
 
 	@Override
-	public OpenAiTool removeTool(@NonNull String id) {
-
-		OpenAiTool result = tools.remove(id);
-		if (result != null)
+	public void removeTool(@NonNull String id) {
+		OpenAiTool old = toolMap.remove(id);
+		if (old != null) {
+			try {
+				old.close();
+			} catch (Exception e) {
+				LOG.warn("Error closing tool: {1}", e.getMessage());
+			}
 			setDefaultTools();
-		return result;
-	}
-
-	@Override
-	public OpenAiTool removeTool(Tool tool) {
-		return removeTool(tool.getId());
+		}
 	}
 
 	@Override
 	public void clearTools() {
-		tools.clear();
+		for (OpenAiTool old : toolMap.values()) {
+			try {
+				old.close();
+			} catch (Exception e) {
+				LOG.warn("Error closing tool: {1}", e.getMessage());
+			}
+		}
+		toolMap.clear();
 		setDefaultTools();
 	}
 
@@ -227,7 +251,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 */
 	private void setDefaultTools() {
 
-		if (tools.size() == 0) { // No tools / functions used
+		if (toolMap.size() == 0) { // No tools / functions used
 			defaultReq.setTools(null);
 			defaultReq.setFunctions(null);
 			return;
@@ -235,8 +259,8 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 
 		switch (modelService.getSupportedCallType(getModel())) {
 		case FUNCTIONS:
-			List<Function> f = new ArrayList<>(tools.size());
-			for (OpenAiTool t : tools.values()) {
+			List<Function> f = new ArrayList<>(toolMap.size());
+			for (OpenAiTool t : toolMap.values()) {
 				if (t.getType() != OpenAiTool.Type.FUNCTION) // paranoid, but will support future tools
 					throw new UnsupportedOperationException("Current model supports only old funtion calling API.");
 				f.add(t.getFunction());
@@ -245,7 +269,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 			defaultReq.setTools(null);
 			break;
 		case TOOLS:
-			defaultReq.setTools(new ArrayList<>(tools.values()));
+			defaultReq.setTools(new ArrayList<>(toolMap.values()));
 			defaultReq.setFunctions(null);
 			break;
 		default:
@@ -462,8 +486,8 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 * personality is NOT considered, but can be injected as first message in the
 	 * list.
 	 * 
-	 * @param tools List of tools that can be called (this can be empty to prevent
-	 *              tool calls, or null to use the list of default tools).
+	 * @param toolMap List of tools that can be called (this can be empty to prevent
+	 *                tool calls, or null to use the list of default tools).
 	 */
 	private Pair<FinishReason, OpenAiChatMessage> chatCompletion(List<OpenAiChatMessage> messages,
 			ChatCompletionsRequest req) {
@@ -590,7 +614,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 			FunctionCall funCall = msg.getFunctionCall();
 			ToolCall toolCall = ToolCall.builder() //
 					.id(funCall.getName()) //
-					.tool(tools.get(funCall.getName())) //
+					.tool(toolMap.get(funCall.getName())) //
 					.arguments(funCall.getArguments()) //
 					.build();
 			calls.add(toolCall);
@@ -604,7 +628,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 			for (OpenAiToolCall call : msg.getToolCalls()) {
 				ToolCall toolCall = ToolCall.builder() //
 						.id(call.getId()) //
-						.tool(tools.get(call.getFunction().getName())) //
+						.tool(toolMap.get(call.getFunction().getName())) //
 						.arguments(call.getFunction().getArguments()) //
 						.build();
 				calls.add(toolCall);

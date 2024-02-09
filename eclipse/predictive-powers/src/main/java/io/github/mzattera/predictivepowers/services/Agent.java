@@ -38,14 +38,16 @@ public interface Agent extends AiService {
 	// TODO URGENT: Add RemoteFile class and add files to agent -> fro OpenAI only
 	// TODO URGENT: Add methods to handle conversations (threads e.g. creating,
 	// continuing, deleting)
-	// TODO URGENT: OpenAI agent has the tools on its side, but they need to be bound again to tools on the client side. Describe this situation.
-	// Optionally we could always use an external Map, also for chat service, but it is less convenient....
-			
+	// TODO URGENT: OpenAI agent has the tools on its side, but they need to be
+	// bound again to tools on the client side. Describe this situation.
+	// Optionally we could always use an external Map, also for chat service, but it
+	// is less convenient....
+
 	/**
 	 * Get unique agent ID. Notice this ID is unique only inside one endpoint.
 	 */
 	String getId();
-	
+
 	/**
 	 * The ID of the model used by the agent.
 	 */
@@ -82,6 +84,56 @@ public interface Agent extends AiService {
 	void setPersonality(String personality);
 
 	/**
+	 * Sets the {@link ToolProvider} used by this agent to retrieve its tools, when
+	 * it needs to invoke them.
+	 */
+	void setToolProvider(ToolProvider provider);
+
+	/**
+	 * Get tools available to the agent.
+	 * 
+	 * Notice this is expected to be an unmodifiable list; use other methods to
+	 * populate tools list properly.
+	 */
+	List<String> getTools();
+
+	/**
+	 * Set the list of tools available to the agent.
+	 * 
+	 * @throws ToolInitializationException if an error happens while initializing
+	 *                                     any of the tools.
+	 */
+	void setTools(@NonNull Collection<String> toolIds) throws ToolInitializationException;
+
+	/**
+	 * Add one tool to the list of tools available to the agent.
+	 * 
+	 * @throws ToolInitializationException if an error happens while initializing
+	 *                                     the tool.
+	 */
+	void addTool(@NonNull String toolId) throws ToolInitializationException;
+
+	/**
+	 * Add given tools to the list of tools available to the agent.
+	 * 
+	 * @throws ToolInitializationException if an error happens while initializing
+	 *                                     any of the tools.
+	 */
+	void addTools(@NonNull Collection<String> toolId) throws ToolInitializationException;
+
+	/**
+	 * Remove one tool from list of tools available to the agent.
+	 * 
+	 * @param id The unique ID for the tool.
+	 */
+	void removeTool(@NonNull String toolId);
+
+	/**
+	 * Remove all tools available to the agent.
+	 */
+	void clearTools();
+
+	/**
 	 * Starts a new chat, clearing current conversation.
 	 */
 	void clearConversation();
@@ -99,64 +151,4 @@ public interface Agent extends AiService {
 	 * The exchange is added to the conversation history.
 	 */
 	ChatCompletion chat(ChatMessage msg);
-
-	/**
-	 * Get tools available to the agent.
-	 * 
-	 * Notice this is expected to be an unmodifiable list; use other methods to
-	 * populate tools list properly.
-	 */
-	List<? extends Tool> getTools();
-
-	/**
-	 * Set the list of tools available to the agent to the given one. Notice a tool
-	 * must be initialized calling its {@link Tool#init(AgentService)} method before
-	 * the agent can invoke it.
-	 * 
-	 * @throws ToolInitializationException if an error happens while initializing
-	 *                                     any of the tools.
-	 */
-	void setTools(@NonNull Collection<? extends Tool> tools) throws ToolInitializationException;
-
-	/**
-	 * Add one tool to the list of tools available to the agent. Notice a tool must
-	 * be initialized calling its {@link Tool#init(AgentService)} method before the
-	 * agent can invoke it.
-	 * 
-	 * 
-	 * @throws ToolInitializationException if an error happens while initializing
-	 *                                     the tool.
-	 */
-	void addTool(@NonNull Tool tool) throws ToolInitializationException;
-
-	/**
-	 * Add given tools to the list of tools available to the agent. Notice a tool
-	 * must be initialized calling its {@link Tool#init(AgentService)} method before
-	 * the agent can invoke it.
-	 * 
-	 * 
-	 * @throws ToolInitializationException if an error happens while initializing
-	 *                                     any of the tools.
-	 */
-	void addTools(@NonNull Collection<? extends Tool> tools) throws ToolInitializationException;
-
-	/**
-	 * Remove one tool from list of tools available to the agent.
-	 * 
-	 * @param id The unique ID for the tool.
-	 * @return Removed tool, or null if no such tool existed..
-	 */
-	Tool removeTool(@NonNull String id);
-
-	/**
-	 * Remove one tool from list of tools available to the agent.
-	 * 
-	 * @return Removed tool, or null if no such tool existed..
-	 */
-	Tool removeTool(@NonNull Tool tool);
-
-	/**
-	 * Remove all tools available to the agent.
-	 */
-	void clearTools();
 }

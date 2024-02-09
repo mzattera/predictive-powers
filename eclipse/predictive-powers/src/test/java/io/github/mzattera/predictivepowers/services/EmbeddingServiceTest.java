@@ -70,7 +70,7 @@ public class EmbeddingServiceTest {
 		for (AiEndpoint ep : a)
 			try {
 				ep.close();
-			} catch (IOException e) {
+			} catch (Exception e) {
 			}
 	}
 
@@ -154,7 +154,7 @@ public class EmbeddingServiceTest {
 	public void test02(AiEndpoint ep) {
 		EmbeddingService es = ep.getEmbeddingService();
 		if (es instanceof HuggingFaceEmbeddingService)
-			return; // TODO  it seems the tokenizer always returns 128, regardless input size; this
+			return; // TODO it seems the tokenizer always returns 128, regardless input size; this
 					// might affect other aspects, to be investigated
 
 		Tokenizer counter = es.getEndpoint().getModelService().getTokenizer(es.getModel());

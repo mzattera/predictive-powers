@@ -16,6 +16,7 @@
 
 package io.github.mzattera.predictivepowers.services;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -36,7 +37,7 @@ import lombok.NonNull;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-public interface Tool {
+public interface Tool extends AutoCloseable {
 
 	/** Used for JSON (de)serialization of function parameters as schema */
 	// TODO is this needed?

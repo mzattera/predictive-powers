@@ -31,8 +31,10 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.Op
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
 import io.github.mzattera.predictivepowers.services.Agent;
+import io.github.mzattera.predictivepowers.services.SimpleToolProvider;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.ToolProvider;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.NonNull;
@@ -307,7 +309,6 @@ public class OpenAiTokenizerTest {
 
 		@Override
 		public void init(@NonNull Agent agent) {
-			// Initialization goes here...
 		}
 
 		@Override
@@ -315,6 +316,10 @@ public class OpenAiTokenizerTest {
 			// Function implementation goes here.
 			// In this example we simply return a random temperature.
 			return new ToolCallResult(call, "20°C");
+		}
+
+		@Override
+		public void close() {
 		}
 	}
 
@@ -325,6 +330,8 @@ public class OpenAiTokenizerTest {
 		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool()));
 		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool()));
 	}
+	
+	private final static ToolProvider PROVIDER = new SimpleToolProvider(TOOLS);
 
 	/**
 	 * Length of messages. Function descriptions.
@@ -343,7 +350,8 @@ public class OpenAiTokenizerTest {
 		OpenAiChatService bot = endpoint.getChatService();
 		bot.setPersonality("You are an helpful assistant.");
 		bot.setModel(model); // This uses simple function calls
-		bot.setTools(TOOLS);
+		bot.setToolProvider(PROVIDER);
+		bot.setTools(PROVIDER.getToolIds());
 
 		ChatCompletionsRequest req = bot.getDefaultReq();
 		req.getMessages().add(new OpenAiChatMessage(Role.USER, "Hi"));
@@ -372,7 +380,8 @@ public class OpenAiTokenizerTest {
 		OpenAiChatService bot = endpoint.getChatService();
 		bot.setPersonality("You are an helpful assistant.");
 		bot.setModel(model); // This uses simple tool (parallel functions) calls
-		bot.setTools(TOOLS);
+		bot.setToolProvider(PROVIDER);
+		bot.setTools(PROVIDER.getToolIds());
 
 		ChatCompletionsRequest req = bot.getDefaultReq();
 		req.getMessages().add(new OpenAiChatMessage(Role.USER, "Hi"));

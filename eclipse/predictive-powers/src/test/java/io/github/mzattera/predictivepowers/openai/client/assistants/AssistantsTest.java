@@ -118,6 +118,10 @@ public class AssistantsTest {
 			public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
 				return null;
 			}
+
+			@Override
+			public void close() throws Exception {
+			}
 		}));
 
 		Map<String, String> meta = new HashMap<>();

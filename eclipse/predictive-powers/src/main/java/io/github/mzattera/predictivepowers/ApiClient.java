@@ -19,7 +19,6 @@
  */
 package io.github.mzattera.predictivepowers;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -40,7 +39,7 @@ import okhttp3.Response;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface ApiClient extends Closeable {
+public interface ApiClient extends AutoCloseable {
 
 	final static Logger LOG = LoggerFactory.getLogger(ApiClient.class);
 
@@ -54,8 +53,8 @@ public interface ApiClient extends Closeable {
 	 * to build an Endpoint.
 	 * 
 	 * This client automatically retries calls if the API is unavailable or rate
-	 * limits (e.g. requests per minute) are reached (HTTP errors 429, 500, and 503). see maxRetries parameter if
-	 * you want to disable this feature.
+	 * limits (e.g. requests per minute) are reached (HTTP errors 429, 500, and
+	 * 503). see maxRetries parameter if you want to disable this feature.
 	 * 
 	 * @param apiKey             API key for underlying API calls. If this is not
 	 *                           null an "Authorization" header is added
@@ -88,11 +87,10 @@ public interface ApiClient extends Closeable {
 			builder.addInterceptor(new Interceptor() { // Add API key in authorization header
 				@Override
 				public Response intercept(Chain chain) throws IOException {
-					return chain
-							.proceed(chain.request().newBuilder() //
-									.header("Authorization", "Bearer " + apiKey) //
-									.header("OpenAI-Beta", "assistants=v1") //
-									.build());
+					return chain.proceed(chain.request().newBuilder() //
+							.header("Authorization", "Bearer " + apiKey) //
+							.header("OpenAI-Beta", "assistants=v1") //
+							.build());
 				}
 			});
 
@@ -105,7 +103,8 @@ public interface ApiClient extends Closeable {
 
 				int retries = 0;
 				int delayMillis = BASE_DELAY_MILLIS;
-				while ((retries < maxRetries) && ((response.code() == 429) || (response.code() == 500) || (response.code() == 503))) {
+				while ((retries < maxRetries)
+						&& ((response.code() == 429) || (response.code() == 500) || (response.code() == 503))) {
 
 					// Waits and retries in case server is temporarily unavailable
 

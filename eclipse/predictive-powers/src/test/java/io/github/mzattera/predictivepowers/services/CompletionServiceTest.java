@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -61,7 +60,7 @@ public class CompletionServiceTest {
 		for (AiEndpoint ep : a)
 			try {
 				ep.close();
-			} catch (IOException e) {
+			} catch (Exception e) {
 			}
 	}
 
@@ -176,8 +175,7 @@ public class CompletionServiceTest {
 		s.setMaxNewTokens(40);
 		s.setEcho(true);
 		TextCompletion resp = s.complete("Name a mammal.");
-		assertTrue((resp.getStatus() == FinishReason.COMPLETED)
-				|| (resp.getStatus() == FinishReason.TRUNCATED));
+		assertTrue((resp.getStatus() == FinishReason.COMPLETED) || (resp.getStatus() == FinishReason.TRUNCATED));
 
 		s.setTopK(null);
 		s.setTopP(0.2);
@@ -185,8 +183,7 @@ public class CompletionServiceTest {
 		s.setMaxNewTokens(40);
 		s.setEcho(false);
 		resp = s.complete("Name a mammal.");
-		assertTrue((resp.getStatus() == FinishReason.COMPLETED)
-				|| (resp.getStatus() == FinishReason.TRUNCATED));
+		assertTrue((resp.getStatus() == FinishReason.COMPLETED) || (resp.getStatus() == FinishReason.TRUNCATED));
 
 		s.setTopK(null);
 		s.setTopP(null);
@@ -194,8 +191,7 @@ public class CompletionServiceTest {
 		s.setMaxNewTokens(40);
 		s.setEcho(true);
 		resp = s.complete("Name a mammal.");
-		assertTrue((resp.getStatus() == FinishReason.COMPLETED)
-				|| (resp.getStatus() == FinishReason.TRUNCATED));
+		assertTrue((resp.getStatus() == FinishReason.COMPLETED) || (resp.getStatus() == FinishReason.TRUNCATED));
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

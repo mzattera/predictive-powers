@@ -18,7 +18,6 @@ package io.github.mzattera.predictivepowers.examples;
 
 import java.io.IOException;
 
-import io.github.mzattera.predictivepowers.SearchEndpoint;
 import io.github.mzattera.predictivepowers.google.endpoint.GoogleEndpoint;
 import io.github.mzattera.predictivepowers.services.Link;
 import io.github.mzattera.predictivepowers.services.SearchService;
@@ -29,13 +28,13 @@ public class GoogleSearchExample {
 
 		// Creates a search endpoint by reading engine ID and
 		// API key from system environment variables
-		try (SearchEndpoint endpoint = new GoogleEndpoint()) {
-			
+		try (GoogleEndpoint endpoint = new GoogleEndpoint()) {
+
 			// Creates search service
 			SearchService service = endpoint.getSearchService();
-			
+
 			// Performs search and shows results.
-			for (Link result: service.search("Massimliano Zattera")) {
+			for (Link result : service.search("Massimliano Zattera")) {
 				System.out.println(result.getTitle() + ": " + result.getUrl());
 			}
 		}

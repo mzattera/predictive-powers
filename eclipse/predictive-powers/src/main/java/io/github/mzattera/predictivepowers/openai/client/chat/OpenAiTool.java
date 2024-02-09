@@ -183,4 +183,10 @@ public class OpenAiTool implements Tool {
 			return wrappedTool.invoke(call);
 		throw new UnsupportedOperationException();
 	}
+
+	@Override
+	public void close() throws Exception {
+		if (wrappedTool != null)
+			wrappedTool.close();
+	}
 }

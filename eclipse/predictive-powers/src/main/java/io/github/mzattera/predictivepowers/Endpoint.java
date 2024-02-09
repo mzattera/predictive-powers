@@ -16,15 +16,13 @@
 
 package io.github.mzattera.predictivepowers;
 
-import java.io.Closeable;
-
 /**
  * This interface represents the most generic possible endpoint.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface Endpoint extends Closeable {
+public interface Endpoint extends AutoCloseable {
 
 	/**
 	 * 

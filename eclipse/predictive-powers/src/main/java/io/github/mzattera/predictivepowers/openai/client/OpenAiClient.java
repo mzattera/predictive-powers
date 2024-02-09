@@ -576,6 +576,17 @@ public class OpenAiClient implements ApiClient {
 		return callApi(api.assistantsFiles(assistantId, limit, sort.toString(), after, before));
 	}
 
+	/**
+	 * Retrieves an assistant from OpenAI.
+	 * 
+	 * Notice that tool parameters for any tool attached to the agent are not
+	 * properly de-serialized, so they will always be empty.
+	 * 
+	 * Unfortunately, there is no easy workaround as it is not easy to de-serialize a JSON schema.
+	 * 
+	 * @param assistantId
+	 * @return
+	 */
 	public Assistant retrieveAssistant(@NonNull String assistantId) {
 		return callApi(api.assistantsGet(assistantId));
 	}

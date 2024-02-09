@@ -41,8 +41,10 @@ import io.github.mzattera.predictivepowers.openai.client.chat.ToolChoice;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
 import io.github.mzattera.predictivepowers.services.Agent;
+import io.github.mzattera.predictivepowers.services.SimpleToolProvider;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.ToolProvider;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
@@ -110,7 +112,6 @@ public class ToolCallTest {
 
 		@Override
 		public void init(@NonNull Agent agent) {
-			// Initialization goes here...
 		}
 
 		@Override
@@ -119,12 +120,17 @@ public class ToolCallTest {
 			// In this example we simply return a random temperature.
 			return new ToolCallResult(call, "20°C");
 		}
+
+		@Override
+		public void close() {
+		}
 	}
 
 	private final static List<OpenAiTool> TOOLS = new ArrayList<>();
 	static {
 		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool()));
 	}
+	private final static ToolProvider PROVIDER = new SimpleToolProvider(TOOLS);
 
 	/**
 	 * Tests ToolChoice serialization.
@@ -206,7 +212,8 @@ public class ToolCallTest {
 
 			OpenAiChatService cs = ep.getChatService("You are an agent supporting user with weather forecasts");
 			cs.setModel(MODEL);
-			cs.setTools(TOOLS);
+			cs.setToolProvider(PROVIDER);
+			cs.setTools(PROVIDER.getToolIds());
 			assertTrue((cs.getTools() != null) && (cs.getTools().size() == TOOLS.size()));
 
 			// Casual chat should not trigger any function call
@@ -250,7 +257,8 @@ public class ToolCallTest {
 
 			OpenAiChatService cs = ep.getChatService("You are an agent supporting user with weather forecasts");
 			cs.setModel(MODEL);
-			cs.setTools(TOOLS);
+			cs.setToolProvider(PROVIDER);
+			cs.setTools(PROVIDER.getToolIds());
 
 			ChatCompletion reply = null;
 
@@ -329,7 +337,8 @@ public class ToolCallTest {
 
 			OpenAiChatService cs = endpoint.getChatService("You are an helpful assistant.");
 			cs.setModel(MODEL);
-			cs.setTools(TOOLS);
+			cs.setToolProvider(PROVIDER);
+			cs.setTools(PROVIDER.getToolIds());
 
 			// This should generate a single call for 2 tools
 			ChatCompletion reply = cs.chat("What is the temperature in London and Zurich?");

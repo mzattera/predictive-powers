@@ -16,8 +16,6 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
-import java.io.IOException;
-
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
@@ -25,7 +23,7 @@ import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 public class TokenizerExample {
 
 	@SuppressWarnings("unused")
-	public static void main(String args[]) throws IOException {
+	public static void main(String args[]) throws Exception {
 		
 		// Notice same code will work using HuggingFaceEndpoint
 		try (AiEndpoint endpoint = new OpenAiEndpoint()) {

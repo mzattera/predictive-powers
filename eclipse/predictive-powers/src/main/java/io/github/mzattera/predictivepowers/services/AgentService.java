@@ -27,14 +27,21 @@ import lombok.NonNull;
 public interface AgentService extends ChatService {
 
 	// TODO URGENT: Implement
+	
+	// TODO URGENT: Must somehow handle sessions between agents and users, as the
+	// agent is one, but interaction with many users at once.
+
+	// Probably the agent we return has both a link to the OpenAI Assistant and a
+	// User object to which permissions to modify the agent and conversations are
+	// restricted
 
 	// TODO define parameters e.g. tools & files?
-	Agent createAgent ();
-	
+	Agent createAgent();
+
 	Agent getAgent(); // Returns "default" agent
 
 	Agent getAgent(@NonNull String agentId);
-	
+
 	// Cascade delete conversations, files, etc.
 	void deleteAgent(@NonNull String agentId);
 }

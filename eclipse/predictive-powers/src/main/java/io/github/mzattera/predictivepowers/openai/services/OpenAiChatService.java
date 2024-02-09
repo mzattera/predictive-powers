@@ -47,7 +47,10 @@ import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
+import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
+import io.github.mzattera.predictivepowers.services.messages.MessagePart;
+import io.github.mzattera.predictivepowers.services.messages.TextPart;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.Getter;
@@ -132,6 +135,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	public void clearConversation() {
 		history.clear();
 	}
+
 	@Getter
 	private final String id = UUID.randomUUID().toString();
 
@@ -625,6 +629,8 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	 */
 	private List<OpenAiChatMessage> fromChatMessage(ChatMessage msg) {
 
+		// TODO add test to check this
+
 		if (msg.hasToolCalls())
 			throw new IllegalArgumentException("Only API can generate tool/function calls.");
 
@@ -637,7 +643,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 			List<? extends ToolCallResult> results = msg.getToolCallResults();
 			if (results.size() != msg.getParts().size())
 				throw new IllegalArgumentException(
-						"Tool/function call results cannot contain other parts in teh message.");
+						"Tool/function call results cannot contain other parts in the message.");
 
 			switch (modelService.getSupportedCallType(getModel())) {
 			case FUNCTIONS:
@@ -657,11 +663,19 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 			return result;
 		}
 
-		// Quickly checks only file URLs are provided, model call will fail if the model
-		// does not support them
-		for (FilePart f : msg.getFiles()) {
-			if (f.getUrl() == null)
-				throw new IllegalArgumentException("Only file URLs are supported (for images).");
+		// Quickly checks only remaining parts are image URLS or text.
+		// API will fail if the model does not support them eventually.
+		for (MessagePart part : msg.getParts()) {
+			if (part instanceof TextPart)
+				continue;
+			if (part instanceof FilePart) {
+				FilePart img = (FilePart) part;
+				if ((img.getContentType() != ContentType.IMAGE) || (img.getUrl() == null))
+					throw new IllegalArgumentException("Only image URLs are supported.");
+				else
+					continue;
+			}
+			throw new IllegalArgumentException("Unsupported part in message: " + part);
 		}
 
 		result.add(new OpenAiChatMessage(msg.getAuthor(), msg.getParts()));

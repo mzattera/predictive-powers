@@ -2,8 +2,8 @@ package io.github.mzattera.predictivepowers.openai.client.assistants;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
+import io.github.mzattera.predictivepowers.openai.client.Metadata;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -14,6 +14,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 /**
  * Represents the configuration of an assistant, including details such as name,
@@ -24,11 +25,26 @@ import lombok.ToString;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @RequiredArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @Getter
 @Setter
 @ToString
-public class AssistantsRequest {
+public class AssistantsRequest extends Metadata {
+
+	/**
+	 * Create a request taking data from given assistant.
+	 */
+	public static AssistantsRequest getInstance(Assistant agent) {
+		return AssistantsRequest.builder() //
+				.description(agent.getDescription()) //
+				.fileIds(agent.getFileIds()) //
+				.instructions(agent.getInstructions()) //
+				.metadata(agent.getMetadata()) //
+				.model(agent.getModel()) //
+				.name(agent.getName()) //
+				.tools(agent.getTools()) //
+				.build();
+	}
 
 	/**
 	 * The ID of the model to use. This is a required field. You can use the List
@@ -71,11 +87,4 @@ public class AssistantsRequest {
 	 */
 	@Builder.Default
 	private List<String> fileIds = new ArrayList<>();
-
-	/**
-	 * A map of metadata, consisting of key-value pairs, that can be attached to the
-	 * assistant. This is an optional field. Keys can be a maximum of 64 characters
-	 * long, and values can be a maximum of 512 characters long.
-	 */
-	private Map<String, String> metadata;
 }

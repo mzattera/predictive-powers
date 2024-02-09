@@ -1,10 +1,9 @@
 package io.github.mzattera.predictivepowers.openai.client.assistants;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+import io.github.mzattera.predictivepowers.openai.client.Metadata;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -15,6 +14,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 /**
  * Represents an assistant that can call the model and use tools.
@@ -24,11 +24,11 @@ import lombok.ToString;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @RequiredArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @Getter
 @Setter
 @ToString
-public class Assistant {
+public class Assistant extends Metadata {
 
 	/**
 	 * The identifier, which can be referenced in API endpoints.
@@ -88,13 +88,4 @@ public class Assistant {
 	@NonNull
 	@Builder.Default
 	private List<String> fileIds = new ArrayList<>();
-
-	/**
-	 * Set of 16 key-value pairs that can be attached to an object. Optional. This
-	 * can be useful for storing additional information about the object in a
-	 * structured format. Keys can be a maximum of 64 characters long and values can
-	 * be a maximum of 512 characters long.
-	 */
-	@Builder.Default
-	private Map<String, String> metadata = new HashMap<>();
 }

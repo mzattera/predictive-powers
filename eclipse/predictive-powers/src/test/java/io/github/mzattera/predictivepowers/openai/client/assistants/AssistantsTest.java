@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,12 +22,14 @@ import io.github.mzattera.predictivepowers.openai.client.DataList;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.SortOrder;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
+import io.github.mzattera.predictivepowers.openai.client.files.File;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
+import io.github.mzattera.util.ResourceUtil;
 import lombok.NonNull;
 
 /**
@@ -40,33 +43,43 @@ public class AssistantsTest {
 	 * Tests creating agents.
 	 */
 	@Test
-	public void testCreateAssistant() {
+	void testCreateAssistant() {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 
+			// Test creation
 			AssistantsRequest original = createAssistantRequest("uno");
 			Assistant copy = ep.getClient().createAssistant(original);
 
 			// Verify field by field that the two instances match
-			assertNotNull(copy.getId());
-			assertEquals("assistant", copy.getObject());
-			assertNotNull(copy.getCreatedAt());
-			assertEquals(original.getModel(), copy.getModel());
-			assertEquals(original.getName(), copy.getName());
-			assertEquals(original.getDescription(), copy.getDescription());
-			assertEquals(original.getInstructions(), copy.getInstructions());
-			assertNotNull(copy.getTools());
-			assertEquals(original.getTools().size(), copy.getTools().size());
-			for (int i = 0; i < original.getTools().size(); ++i)
-				assertEquals(original.getTools().get(i).getId(), copy.getTools().get(i).getId());
-			assertNotNull(copy.getFileIds());
-			assertEquals(original.getFileIds().size(), copy.getFileIds().size());
-			for (int i = 0; i < original.getFileIds().size(); ++i)
-				assertEquals(original.getFileIds().get(i), copy.getFileIds().get(i));
-			assertNotNull(copy.getMetadata());
-			assertEquals(original.getMetadata().size(), copy.getMetadata().size());
-			for (Entry<String, String> e : original.getMetadata().entrySet())
-				assertEquals(e.getValue(), copy.getMetadata().get(e.getKey()));
+			testAgentMatch(original, copy);
+			
+			// test modify and retrieve
+			original = createAssistantRequest("two");
+			copy = ep.getClient().createAssistant(original);
+			testAgentMatch(original, ep.getClient().retrieveAssistant(copy.getId()));			
 		}
+	}
+
+	private void testAgentMatch(AssistantsRequest original, Assistant copy) {
+		assertNotNull(copy.getId());
+		assertEquals("assistant", copy.getObject());
+		assertNotNull(copy.getCreatedAt());
+		assertEquals(original.getModel(), copy.getModel());
+		assertEquals(original.getName(), copy.getName());
+		assertEquals(original.getDescription(), copy.getDescription());
+		assertEquals(original.getInstructions(), copy.getInstructions());
+		assertNotNull(copy.getTools());
+		assertEquals(original.getTools().size(), copy.getTools().size());
+		for (int i = 0; i < original.getTools().size(); ++i)
+			assertEquals(original.getTools().get(i).getId(), copy.getTools().get(i).getId());
+		assertNotNull(copy.getFileIds());
+		assertEquals(original.getFileIds().size(), copy.getFileIds().size());
+		for (int i = 0; i < original.getFileIds().size(); ++i)
+			assertEquals(original.getFileIds().get(i), copy.getFileIds().get(i));
+		assertNotNull(copy.getMetadata());
+		assertEquals(original.getMetadata().size(), copy.getMetadata().size());
+		for (Entry<String, String> e : original.getMetadata().entrySet())
+			assertEquals(e.getValue(), copy.getMetadata().get(e.getKey()));
 	}
 
 	/**
@@ -134,7 +147,7 @@ public class AssistantsTest {
 
 			// Get ID of last agent we created until now
 			String last = null;
-			list = cli.listAssistants(SortOrder.DESCENDING, 1);
+			list = cli.listAssistants(SortOrder.DESCENDING, 1, null, null);
 			assertNotNull(list);
 			agents = list.getData();
 			assertNotNull(agents);
@@ -195,7 +208,7 @@ public class AssistantsTest {
 			for (String id : agentIds) {
 				assertTrue(cli.deleteAssistant(id).isDeleted());
 			}
-			list = cli.listAssistants(SortOrder.DESCENDING, 1);
+			list = cli.listAssistants(SortOrder.DESCENDING, 1, null, null);
 			assertNotNull(list);
 			agents = list.getData();
 			assertNotNull(agents);
@@ -251,6 +264,34 @@ public class AssistantsTest {
 		for (int i = 0; i < l.size(); ++i) {
 			Assistant a = l.get(i);
 			System.out.println(i + "\t" + a.getId() + "\t" + a.getName() + "\t" + a.getCreatedAt());
+		}
+	}
+	
+	@Test
+	void testFiles() throws IOException {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
+			OpenAiClient cli = ep.getClient();
+			
+			File f = cli.uploadFile(ResourceUtil.getResourceFile("banana.txt"), "assistants");
+			Assistant agent = ep.getClient().createAssistant(createAssistantRequest("file-test"));
+			File af = cli.createAssistantFile(agent.getId(), f.getId());
+			assertNotNull(af);
+			assertEquals(f.getId(), af.getId());
+			
+			// TODO add pagination tests
+			
+			List<File> files = cli.listAssistantFiles(agent.getId()).getData();
+			assertNotNull(files);
+			assertEquals(1,files.size());
+			
+			af = cli.retrieveAssistantFile(agent.getId(), f.getId());
+			assertNotNull(af);
+			assertEquals(f.getId(), af.getId());
+
+			cli.deteAssistantFile(agent.getId(), f.getId());
+			files = cli.listAssistantFiles(agent.getId()).getData();
+			assertNotNull(files);
+			assertEquals(0,files.size());
 		}
 	}
 }

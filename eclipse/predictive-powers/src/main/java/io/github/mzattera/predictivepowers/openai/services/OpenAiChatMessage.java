@@ -40,6 +40,7 @@ import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
+import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
 import io.github.mzattera.predictivepowers.services.messages.MessagePart;
 import io.github.mzattera.predictivepowers.services.messages.TextPart;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
@@ -99,15 +100,17 @@ public class OpenAiChatMessage {
 						gen.writeStringField("type", "text");
 						gen.writeStringField("text", ((TextPart) part).getContent());
 					} else if (part instanceof FilePart) {
+						if (((FilePart) part).getContentType() != ContentType.IMAGE)
+							throw new IllegalArgumentException("Only image URL are supported.");
 						URL url = ((FilePart) part).getUrl();
 						if (url == null)
-							throw new IllegalArgumentException("File URL cannot be null");
+							throw new IllegalArgumentException("Image URL cannot be null.");
 						gen.writeStringField("type", "image_url");
 						gen.writeObjectFieldStart("image_url");
 						gen.writeStringField("url", url.toString());
 						gen.writeEndObject();
 					} else {
-						throw new IllegalArgumentException("Unsupported part type: " + part.getContent());
+						throw new IllegalArgumentException("Unsupported part type: " + part);
 					}
 					gen.writeEndObject();
 				}
@@ -180,7 +183,7 @@ public class OpenAiChatMessage {
 		}
 	}
 
-	private static Role authorToRole(Author author) {
+	static Role authorToRole(Author author) {
 		switch (author) {
 		case USER:
 			return Role.USER;

@@ -17,11 +17,13 @@ package io.github.mzattera.predictivepowers.services.messages;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.ChatService;
+import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -46,6 +48,8 @@ import lombok.ToString;
 @Setter
 @ToString
 public class ChatMessage {
+
+	// TODO Add parts to support citations/annotations
 
 	/**
 	 * The author (originator) of the message.
@@ -130,6 +134,7 @@ public class ChatMessage {
 	/**
 	 * 
 	 * @return True if this message contains at least one part which is a file.
+	 *         Notice files can be of different types (e.g. {@link IMagePart}.
 	 */
 	public boolean hasFiles() {
 		for (MessagePart part : parts)
@@ -140,16 +145,38 @@ public class ChatMessage {
 
 	/**
 	 * 
-	 * @return All files contained in this message.
+	 * @return All files contained in this message. Notice files can be of different
+	 *         types (e.g. {@link IMagePart}.
 	 */
 	public List<? extends FilePart> getFiles() {
-		List<FilePart> files = new ArrayList<>();
+		return parts.stream() //
+				.filter(FilePart.class::isInstance) //
+				.map(FilePart.class::cast) //
+				.collect(Collectors.toList());
+	}
+
+	/**
+	 * 
+	 * @return True if this message contains at least one part which is an image
+	 *         file.
+	 */
+	public boolean hasImages() {
 		for (MessagePart part : parts)
-			try {
-				files.add((FilePart) part);
-			} catch (ClassCastException e) {
-			}
-		return files;
+			if ((part instanceof FilePart) && ((FilePart) part).getContentType() == ContentType.IMAGE)
+				return true;
+		return false;
+	}
+
+	/**
+	 * 
+	 * @return All image files contained in this message.
+	 */
+	public List<? extends FilePart> getImages() {
+		return parts.stream() //
+				.filter(FilePart.class::isInstance) //
+				.map(FilePart.class::cast) //
+				.filter(e -> (e.getContentType() == ContentType.IMAGE)) //
+				.collect(Collectors.toList());
 	}
 
 	/**
@@ -168,13 +195,10 @@ public class ChatMessage {
 	 * @return All tool invocations contained in this message.
 	 */
 	public List<? extends ToolCall> getToolCalls() {
-		List<ToolCall> calls = new ArrayList<>();
-		for (MessagePart part : parts)
-			try {
-				calls.add((ToolCall) part);
-			} catch (ClassCastException e) {
-			}
-		return calls;
+		return parts.stream() //
+				.filter(ToolCall.class::isInstance) //
+				.map(ToolCall.class::cast) //
+				.collect(Collectors.toList());
 	}
 
 	/**
@@ -193,13 +217,10 @@ public class ChatMessage {
 	 * @return All tool invocations contained in this message.
 	 */
 	public List<? extends ToolCallResult> getToolCallResults() {
-		List<ToolCallResult> results = new ArrayList<>();
-		for (MessagePart part : parts)
-			try {
-				results.add((ToolCallResult) part);
-			} catch (ClassCastException e) {
-			}
-		return results;
+		return parts.stream() //
+				.filter(ToolCallResult.class::isInstance) //
+				.map(ToolCallResult.class::cast) //
+				.collect(Collectors.toList());
 	}
 
 	/**

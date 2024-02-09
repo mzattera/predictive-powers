@@ -54,17 +54,31 @@ import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsRequest;
 import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsResponse;
+import io.github.mzattera.predictivepowers.openai.client.threads.Message;
+import io.github.mzattera.predictivepowers.openai.client.threads.MessageFile;
+import io.github.mzattera.predictivepowers.openai.client.threads.MessagesRequest;
+import io.github.mzattera.predictivepowers.openai.client.threads.OpenAiThread;
+import io.github.mzattera.predictivepowers.openai.client.threads.Run;
+import io.github.mzattera.predictivepowers.openai.client.threads.RunStep;
+import io.github.mzattera.predictivepowers.openai.client.threads.RunsRequest;
+import io.github.mzattera.predictivepowers.openai.client.threads.ThreadAndRunRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.ThreadsRequest;
+import io.github.mzattera.predictivepowers.openai.client.threads.ToolOutputsRequest;
 import io.github.mzattera.util.FileUtil;
 import io.github.mzattera.util.ImageUtil;
 import io.reactivex.Single;
 import lombok.Getter;
 import lombok.NonNull;
+import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 import okhttp3.ResponseBody;
+import okio.Buffer;
+import okio.BufferedSource;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
@@ -161,52 +175,52 @@ public class OpenAiClient implements ApiClient {
 	 */
 	public OpenAiClient(OkHttpClient http) {
 
-		client = http;
+//		client = http;
 
 		// Debug code below
-//		client = http.newBuilder() //
+		client = http.newBuilder() //
 
-		// Debug code below, outputs the request
-//				.addInterceptor(new Interceptor() {
-//
-//					@Override
-//					public Response intercept(Chain chain) throws IOException {
-//						Request req = chain.request();
-//
-//						if (req.body() != null) {
-//							Buffer buffer = new Buffer();
-//							req.body().writeTo(buffer);
-//							String bodyContent = buffer.readUtf8();
-//							System.out.println("Request body: " + bodyContent);
-//						}
-//
-//						return chain.proceed(req);
-//					}
-//				}) //
+				// Debug code below, outputs the request
+				.addInterceptor(new Interceptor() {
 
-		// Debug code below, outputs the response
-//				.addInterceptor(new Interceptor() {
-//
-//					@Override
-//					public Response intercept(Chain chain) throws IOException {
-//
-//						Response response = chain.proceed(chain.request());
-//						if (response.body() != null) {
-//							BufferedSource source = response.body().source();
-//							source.request(Long.MAX_VALUE);
-//
-//							@SuppressWarnings("deprecation")
-//							Buffer buffer = source.buffer();
-//
-//							Buffer clone = buffer.clone();
-//							System.out.println("Response body: " + clone.readUtf8());
-//						}
-//
-//						return response; // Return the original response unaltered
-//					}
-//				}) //
+					@Override
+					public Response intercept(Chain chain) throws IOException {
+						Request req = chain.request();
 
-//				.build();
+						if (req.body() != null) {
+							Buffer buffer = new Buffer();
+							req.body().writeTo(buffer);
+							String bodyContent = buffer.readUtf8();
+							System.out.println("Request body: " + bodyContent);
+						}
+
+						return chain.proceed(req);
+					}
+				}) //
+
+				// Debug code below, outputs the response
+				.addInterceptor(new Interceptor() {
+
+					@Override
+					public Response intercept(Chain chain) throws IOException {
+
+						Response response = chain.proceed(chain.request());
+						if (response.body() != null) {
+							BufferedSource source = response.body().source();
+							source.request(Long.MAX_VALUE);
+
+							@SuppressWarnings("deprecation")
+							Buffer buffer = source.buffer();
+
+							Buffer clone = buffer.clone();
+							System.out.println("Response body: " + clone.readUtf8());
+						}
+
+						return response; // Return the original response unaltered
+					}
+				}) //
+
+				.build();
 
 		Retrofit retrofit = new Retrofit.Builder().baseUrl(API_BASE_URL).client(client)
 				.addConverterFactory(JacksonConverterFactory.create(jsonMapper))
@@ -229,7 +243,7 @@ public class OpenAiClient implements ApiClient {
 	//////// API METHODS MAPPED INTO JAVA CALLS ////////////////////////////////////
 
 	public List<Model> listModels() {
-		return callApi(api.models()).getData(); 
+		return callApi(api.models()).getData();
 	}
 
 	public Model retrieveModel(@NonNull String modelId) {
@@ -442,22 +456,22 @@ public class OpenAiClient implements ApiClient {
 		return uploadFile(new java.io.File(fileName), purpose);
 	}
 
-	public File uploadFile(@NonNull java.io.File jsonl, @NonNull String purpose) throws IOException {
-		try (InputStream is = new FileInputStream(jsonl)) {
-			return uploadFile(is, jsonl.getName(), purpose);
+	public File uploadFile(@NonNull java.io.File file, @NonNull String purpose) throws IOException {
+		try (InputStream is = new FileInputStream(file)) {
+			return uploadFile(is, file.getName(), purpose);
 		}
 	}
 
-	public File uploadFile(@NonNull InputStream jsonl, @NonNull String fileName, @NonNull String purpose)
+	public File uploadFile(@NonNull InputStream file, @NonNull String fileName, @NonNull String purpose)
 			throws IOException {
 
-		return uploadFile(jsonl.readAllBytes(), fileName, purpose);
+		return uploadFile(file.readAllBytes(), fileName, purpose);
 	}
 
-	public File uploadFile(@NonNull byte[] jsonl, @NonNull String fileName, @NonNull String purpose) {
+	public File uploadFile(@NonNull byte[] file, @NonNull String fileName, @NonNull String purpose) {
 
 		MultipartBody.Builder builder = new MultipartBody.Builder().setType(MediaType.get("multipart/form-data"))
-				.addFormDataPart("file", fileName, RequestBody.create(MediaType.parse("text/jsonl"), jsonl))
+				.addFormDataPart("file", fileName, RequestBody.create(MediaType.parse("text/file"), file))
 				.addFormDataPart("purpose", purpose);
 
 		return callApi(api.files(builder.build()));
@@ -506,11 +520,7 @@ public class OpenAiClient implements ApiClient {
 		return callApi(api.fineTuningJobs(null, null));
 	}
 
-	public DataList<FineTuningJob> listFineTuningJobs(int limit) {
-		return callApi(api.fineTuningJobs(limit, null));
-	}
-
-	public DataList<FineTuningJob> listFineTuningJobs(int limit, String after) {
+	public DataList<FineTuningJob> listFineTuningJobs(Integer limit, String after) {
 		return callApi(api.fineTuningJobs(limit, after));
 	}
 
@@ -518,11 +528,8 @@ public class OpenAiClient implements ApiClient {
 		return callApi(api.fineTuningJobsEvents(fineTuningJobId, null, null));
 	}
 
-	public DataList<FineTuningJobEvent> listFineTuningEvents(@NonNull String fineTuningJobId, int limit) {
-		return callApi(api.fineTuningJobsEvents(fineTuningJobId, limit, null));
-	}
-
-	public DataList<FineTuningJobEvent> listFineTuningEvents(@NonNull String fineTuningJobId, int limit, String after) {
+	public DataList<FineTuningJobEvent> listFineTuningEvents(@NonNull String fineTuningJobId, Integer limit,
+			String after) {
 		return callApi(api.fineTuningJobsEvents(fineTuningJobId, limit, after));
 	}
 
@@ -556,11 +563,7 @@ public class OpenAiClient implements ApiClient {
 		return callApi(api.assistants(null, null, null, null));
 	}
 
-	public DataList<Assistant> listAssistants(SortOrder sort, int limit) {
-		return callApi(api.assistants(limit, sort.toString(), null, null));
-	}
-
-	public DataList<Assistant> listAssistants(SortOrder sort, int limit, String before, String after) {
+	public DataList<Assistant> listAssistants(SortOrder sort, Integer limit, String before, String after) {
 		return callApi(api.assistants(limit, sort.toString(), after, before));
 	}
 
@@ -568,14 +571,8 @@ public class OpenAiClient implements ApiClient {
 		return callApi(api.assistantsFiles(assistantId, null, null, null, null));
 	}
 
-	public DataList<File> listAssistantFiles(@NonNull String assistantId, SortOrder sort, int limit) {
-		return callApi(api.assistantsFiles(assistantId, limit, sort.toString(), null, null));
-	}
-
-	public DataList<File> listAssistantFiles(@NonNull String assistantId, SortOrder sort, int limit, String before,
+	public DataList<File> listAssistantFiles(@NonNull String assistantId, SortOrder sort, Integer limit, String before,
 			String after) {
-		if ((before != null) && (after != null))
-			throw new IllegalArgumentException("Only one of the pagination arguments can be not null.");
 		return callApi(api.assistantsFiles(assistantId, limit, sort.toString(), after, before));
 	}
 
@@ -599,24 +596,97 @@ public class OpenAiClient implements ApiClient {
 		return callApi(api.assistantsFilesDelete(assistantId, fileId));
 	}
 
-	public Thread createThread(@NonNull ThreadsRequest req) {
+	public OpenAiThread createThread(@NonNull ThreadsRequest req) {
 		return callApi(api.threads(req));
 	}
 
-	public Thread retrieveThread(@NonNull String threadId) {
+	public OpenAiThread retrieveThread(@NonNull String threadId) {
 		return callApi(api.threadsGet(threadId));
 	}
 
-	public Thread modifyThread(@NonNull String threadId, @NonNull Metadata metadata) {
+	public OpenAiThread modifyThread(@NonNull String threadId, @NonNull Metadata metadata) {
 		return callApi(api.threadsModify(threadId, metadata));
 	}
 
-	public Thread modifyThread(@NonNull String threadId, @NonNull Map<String, String> metadata) {
+	public OpenAiThread modifyThread(@NonNull String threadId, @NonNull Map<String, String> metadata) {
 		return callApi(api.threadsModify(threadId, new Metadata(metadata)));
 	}
 
 	public DeleteResponse deleteThread(@NonNull String threadId) {
 		return callApi(api.threadsDelete(threadId));
+	}
+
+	public Message createMessage(@NonNull String threadId, @NonNull MessagesRequest req) {
+		return callApi(api.threadsMessagesCreate(threadId, req));
+	}
+
+	public DataList<Message> listMessages(@NonNull String threadId) {
+		return callApi(api.threadsMessages(threadId, null, null, null, null));
+	}
+
+	public DataList<Message> listMessages(@NonNull String threadId, SortOrder order, Integer limit, String after,
+			String before) {
+		return callApi(api.threadsMessages(threadId, limit, order.toString(), after, before));
+	}
+
+	public DataList<MessageFile> listMessageFiles(@NonNull String threadId, @NonNull String messageId) {
+		return callApi(api.threadsMessagesFiles(threadId, messageId, null, null, null, null));
+	}
+
+	public DataList<MessageFile> listMessageFiles(@NonNull String threadId, @NonNull String messageId, SortOrder order,
+			Integer limit, String after, String before) {
+		return callApi(api.threadsMessagesFiles(threadId, messageId, limit, order.toString(), after, before));
+	}
+
+	public Message retrieveMessage(@NonNull String threadId, @NonNull String messageId) {
+		return callApi(api.threadsMessagesGet(threadId, messageId));
+	}
+
+	public MessageFile retrieveMessageFile(@NonNull String threadId, @NonNull String messageId,
+			@NonNull String fileId) {
+		return callApi(api.threadsMessagesFiles(threadId, messageId, fileId));
+	}
+
+	public Message modifyMessage(@NonNull String threadId, @NonNull String messageId, @NonNull Metadata metadata) {
+		return callApi(api.threadsMessagesModify(threadId, messageId, metadata));
+	}
+
+	public Run createRun(@NonNull String threadId, @NonNull RunsRequest req) {
+		return callApi(api.threadsRunsCreate(threadId, req));
+	}
+
+	public Run createThreadAndRun(@NonNull ThreadAndRunRequest req) {
+		return callApi(api.threadsRunsCreate(req));
+	}
+
+	public DataList<Run> listRuns(@NonNull String threadId, Integer limit, String order, String after, String before) {
+		return callApi(api.threadsRuns(threadId, limit, order, after, before));
+	}
+
+	public DataList<RunStep> listRunSteps(@NonNull String threadId, @NonNull String runId, Integer limit, String order,
+			String after, String before) {
+		return callApi(api.threadsRunsSteps(threadId, runId, limit, order, after, before));
+	}
+
+	public Run retrieveRun(@NonNull String threadId, @NonNull String runId) {
+		return callApi(api.threadsRunsGet(threadId, runId));
+	}
+
+	public RunStep retrieveRunStep(@NonNull String threadId, @NonNull String runId, @NonNull String stepId) {
+		return callApi(api.threadsRunsStepsGet(threadId, runId, stepId));
+	}
+
+	public Run modifyRun(@NonNull String threadId, @NonNull String runId, @NonNull Metadata metadata) {
+		return callApi(api.threadsRunsModify(threadId, runId, metadata));
+	}
+
+	public Run submitToolOutputsToRun(@NonNull String threadId, @NonNull String runId,
+			@NonNull ToolOutputsRequest req) {
+		return callApi(api.threadsRunsSubmitToolOutputs(threadId, runId, req));
+	}
+
+	public Run cancelRun(@NonNull String threadId, @NonNull String runId) {
+		return callApi(api.threadsRunsCancel(threadId, runId));
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////

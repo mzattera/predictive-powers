@@ -37,7 +37,16 @@ import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsRequest;
 import io.github.mzattera.predictivepowers.openai.client.moderations.ModerationsResponse;
+import io.github.mzattera.predictivepowers.openai.client.threads.Message;
+import io.github.mzattera.predictivepowers.openai.client.threads.MessageFile;
+import io.github.mzattera.predictivepowers.openai.client.threads.MessagesRequest;
+import io.github.mzattera.predictivepowers.openai.client.threads.OpenAiThread;
+import io.github.mzattera.predictivepowers.openai.client.threads.Run;
+import io.github.mzattera.predictivepowers.openai.client.threads.RunStep;
+import io.github.mzattera.predictivepowers.openai.client.threads.RunsRequest;
+import io.github.mzattera.predictivepowers.openai.client.threads.ThreadAndRunRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.ThreadsRequest;
+import io.github.mzattera.predictivepowers.openai.client.threads.ToolOutputsRequest;
 import io.reactivex.Single;
 import lombok.NonNull;
 import okhttp3.RequestBody;
@@ -131,8 +140,9 @@ public interface OpenAiApi {
 	@POST("assistants")
 	Single<Assistant> assistantsCreate(@Body @NonNull AssistantsRequest req);
 
-    @POST("assistants/{assistant_id}/files")
-    Single<File> assistantsFiles(@Path("assistant_id") @NonNull String assistantId, @Body @NonNull Map<String, String> body);
+	@POST("assistants/{assistant_id}/files")
+	Single<File> assistantsFiles(@Path("assistant_id") @NonNull String assistantId,
+			@Body @NonNull Map<String, String> body);
 
 	@GET("assistants")
 	Single<DataList<Assistant>> assistants(@Query("limit") Integer limit, @Query("order") String order,
@@ -151,7 +161,8 @@ public interface OpenAiApi {
 			@Path("file_id") @NonNull String fileId);
 
 	@POST("assistants/{assistant_id}")
-	Single<Assistant> assistantsModify(@Path("assistant_id") @NonNull String assistantId, @Body @NonNull AssistantsRequest req);
+	Single<Assistant> assistantsModify(@Path("assistant_id") @NonNull String assistantId,
+			@Body @NonNull AssistantsRequest req);
 
 	@DELETE("assistants/{assistant_id}")
 	Single<DeleteResponse> assistantsDelete(@Path("assistant_id") @NonNull String assistantId);
@@ -159,16 +170,75 @@ public interface OpenAiApi {
 	@DELETE("assistants/{assistant_id}/files/{file_id}")
 	Single<DeleteResponse> assistantsFilesDelete(@Path("assistant_id") @NonNull String assistantId,
 			@Path("file_id") @NonNull String fileId);
-	
+
 	@POST("threads")
-	Single<Thread> threads(@Body @NonNull ThreadsRequest req);
-	
+	Single<OpenAiThread> threads(@Body @NonNull ThreadsRequest req);
+
 	@GET("threads/{thread_id}")
-	Single<Thread> threadsGet(@Path("thread_id") @NonNull String threadId);
-	
+	Single<OpenAiThread> threadsGet(@Path("thread_id") @NonNull String threadId);
+
 	@POST("threads/{thread_id}")
-	Single<Thread> threadsModify(@Path("thread_id") @NonNull String threadId, @Body @NonNull Metadata metadata);
+	Single<OpenAiThread> threadsModify(@Path("thread_id") @NonNull String threadId, @Body @NonNull Metadata metadata);
 
 	@DELETE("threads/{thread_id}")
-	Single<DeleteResponse> threadsDelete(@Path("thread_id") @NonNull String threadId);	
+	Single<DeleteResponse> threadsDelete(@Path("thread_id") @NonNull String threadId);
+
+	@POST("threads/{thread_id}/messages")
+	Single<Message> threadsMessagesCreate(@Path("thread_id") @NonNull String threadId,
+			@Body @NonNull MessagesRequest req);
+
+	@GET("threads/{thread_id}/messages")
+	Single<DataList<Message>> threadsMessages(@Path("thread_id") @NonNull String threadId,
+			@Query("limit") Integer limit, @Query("order") String order, @Query("after") String after,
+			@Query("before") String before);
+
+	@GET("threads/{thread_id}/messages/{message_id}/files")
+	Single<DataList<MessageFile>> threadsMessagesFiles(@Path("thread_id") @NonNull String threadId,
+			@Path("message_id") @NonNull String messageId, @Query("limit") Integer limit, @Query("order") String order,
+			@Query("after") String after, @Query("before") String before);
+
+	@GET("threads/{thread_id}/messages/{message_id}")
+	Single<Message> threadsMessagesGet(@Path("thread_id") @NonNull String threadId,
+			@Path("message_id") @NonNull String messageId);
+
+	@GET("threads/{thread_id}/messages/{message_id}/files/{file_id}")
+	Single<MessageFile> threadsMessagesFiles(@Path("thread_id") @NonNull String threadId,
+			@Path("message_id") @NonNull String messageId, @Path("file_id") @NonNull String fileId);
+
+	@POST("threads/{thread_id}/messages/{message_id}")
+	Single<Message> threadsMessagesModify(@Path("thread_id") @NonNull String threadId,
+			@Path("message_id") @NonNull String messageId, @Body @NonNull Metadata metadata);
+
+	@POST("threads/{thread_id}/runs")
+	Single<Run> threadsRunsCreate(@Path("thread_id") @NonNull String threadId, @Body @NonNull RunsRequest req);
+
+	@POST("threads/runs")
+	Single<Run> threadsRunsCreate(@Body @NonNull ThreadAndRunRequest req);
+
+	@GET("threads/{thread_id}/runs")
+	Single<DataList<Run>> threadsRuns(@Path("thread_id") @NonNull String threadId, @Query("limit") Integer limit,
+			@Query("order") String order, @Query("after") String after, @Query("before") String before);
+
+	@GET("threads/{thread_id}/runs/{run_id}/steps")
+	Single<DataList<RunStep>> threadsRunsSteps(@Path("thread_id") @NonNull String threadId,
+			@Path("run_id") @NonNull String runId, @Query("limit") Integer limit, @Query("order") String order,
+			@Query("after") String after, @Query("before") String before);
+
+	@GET("threads/{thread_id}/runs/{run_id}")
+	Single<Run> threadsRunsGet(@Path("thread_id") @NonNull String threadId, @Path("run_id") @NonNull String runId);
+
+	@GET("threads/{thread_id}/runs/{run_id}/steps/{step_id}")
+	Single<RunStep> threadsRunsStepsGet(@Path("thread_id") @NonNull String threadId,
+			@Path("run_id") @NonNull String runId, @Path("step_id") @NonNull String stepId);
+
+	@GET("threads/{thread_id}/runs/{run_id}")
+	Single<Run> threadsRunsModify(@Path("thread_id") @NonNull String threadId, @Path("run_id") @NonNull String runId,
+			@Body @NonNull Metadata metadata);
+
+	@POST("threads/{thread_id}/runs/{run_id}/submit_tool_outputs")
+	Single<Run> threadsRunsSubmitToolOutputs(@Path("thread_id") @NonNull String threadId,
+			@Path("run_id") @NonNull String runId, @Body @NonNull ToolOutputsRequest req);
+
+	@POST("threads/{thread_id}/runs/{run_id}/cancel")
+	Single<Run> threadsRunsCancel(@Path("thread_id") @NonNull String threadId, @Path("run_id") @NonNull String runId);
 }

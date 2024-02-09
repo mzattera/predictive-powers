@@ -23,7 +23,6 @@ import java.util.Set;
 
 import io.github.mzattera.predictivepowers.openai.client.DataList;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
-import io.github.mzattera.predictivepowers.openai.client.SortOrder;
 import io.github.mzattera.predictivepowers.openai.client.assistants.Assistant;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
 import io.github.mzattera.predictivepowers.openai.client.finetuning.FineTuningJob;
@@ -110,10 +109,10 @@ public class CleanupUtil {
 
 			// Delete assistants
 			while (true) {
-				DataList<Assistant> l = cli.listAssistants(SortOrder.ASCENDING, 50);
+				DataList<Assistant> l = cli.listAssistants();
 				for (Assistant a : l.getData())
-					System.out.println("Deleting assistant: " + a.getId() + " => "
-							+ cli.deleteAssistant(a.getId()).isDeleted());
+					System.out.println(
+							"Deleting assistant: " + a.getId() + " => " + cli.deleteAssistant(a.getId()).isDeleted());
 				if (!l.hasMore())
 					break;
 			}

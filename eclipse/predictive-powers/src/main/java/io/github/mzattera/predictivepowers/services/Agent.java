@@ -33,7 +33,7 @@ import lombok.NonNull;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface Agent extends ChatService {
+public interface Agent extends AiService {
 
 	// TODO URGENT: Add RemoteFile class and add files to agent -> fro OpenAI only
 	// TODO URGENT: Add methods to handle conversations (threads e.g. creating,

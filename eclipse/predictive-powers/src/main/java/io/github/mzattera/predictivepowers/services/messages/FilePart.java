@@ -33,6 +33,12 @@ import lombok.experimental.SuperBuilder;
 @ToString
 public class FilePart implements MessagePart {
 
+	public static enum ContentType {
+		GENERIC, IMAGE, AUDIO 
+	}
+	
+	private ContentType contentType;
+	
 	/**
 	 * If this is a local file, this points to the file itself.
 	 */
@@ -43,43 +49,53 @@ public class FilePart implements MessagePart {
 	 */
 	private URL url;
 
-	@Override
-	public String getContent() {
-		if (isLocalFile()) {
-			try {
-				return "[File (local): " + file.getCanonicalPath() + "]";
-			} catch (Exception e) {
-				return "[File (remote): " + file.getName() + "]";
-			}
-		}
-		return "[File: " + url.toString() + "]";
+	public FilePart(@NonNull File file) {
+		this(file, ContentType.GENERIC);
+	}
+
+	public FilePart(@NonNull File file, ContentType contentType) {
+		if (!file.isFile() || !file.canRead())
+			throw new IllegalArgumentException("File must be a readable normal file: " + file.getName());
+		this.contentType=contentType;
+		this.file = file;
+		this.url = null;
+	}
+
+	public FilePart(@NonNull URL url) {
+		this(url, ContentType.GENERIC);
+	}
+
+	public FilePart(@NonNull URL url, ContentType contentType) {
+		this.contentType=contentType;
+		this.url = url;
+		this.file = null;
 	}
 
 	/**
+	 * @return Display name for the file.
+	 */
+	public String getName() {
+		if (file != null)
+			return file.getName();
+		if (url != null)
+			return url.toString();
+		return null;
+	}
+	
+	/**
 	 * 
-	 * @return True if the file is a local file that is accessible as a
-	 *         {@link File}.
+	 * @return True if the file is a web file that is accessible through {@link #getFile()}.
 	 */
 	public boolean isLocalFile() {
 		return (file != null);
 	}
 
 	/**
-	 * Deletes the file.
 	 * 
-	 * @return True if the file was deleted successfully.
-	 * 
-	 * @throws IOException
+	 * @return True if the file is a web file that is accessible through {@link #getUrl()}.
 	 */
-	public boolean deleteFile() throws IOException {
-		if (isLocalFile()) {
-			try {
-				return file.delete();
-			} catch (Exception e) {
-				throw new IOException(e);
-			}
-		} else
-			return false;
+	public boolean isWebFile() {
+		return (url != null);
 	}
 
 	/**
@@ -94,16 +110,16 @@ public class FilePart implements MessagePart {
 		else
 			return url.openStream();
 	}
-
-	public FilePart(@NonNull File file) {
-		if (!file.isFile() || !file.canRead())
-			throw new IllegalArgumentException("File must be a readable normal file: " + file.getName());
-		this.file = file;
-		this.url = null;
-	}
-
-	public FilePart(@NonNull URL url) {
-		this.url = url;
-		this.file = null;
+	
+	@Override
+	public String getContent() {
+		if (isLocalFile()) {
+			try {
+				return "[File (local) " + file.getCanonicalPath() + ", Content: "+ contentType + "]";
+			} catch (IOException e) {
+				return "[File (local): " + file.getName() + ", Content: "+ contentType + "]";
+			}
+		}
+		return "[File (online): " + url.toString() + ", Content: "+ contentType + "]";
 	}
 }

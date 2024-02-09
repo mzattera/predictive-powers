@@ -23,7 +23,7 @@ public enum FinishReason {
 	COMPLETED,
 
 	/**
-	 * Text generation is finished, but the ext was truncated, probably for
+	 * Text generation is finished, but the text was truncated, probably for
 	 * limitations in model output length.
 	 */
 	TRUNCATED,

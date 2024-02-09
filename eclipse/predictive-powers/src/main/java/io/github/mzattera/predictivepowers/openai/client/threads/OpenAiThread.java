@@ -40,7 +40,7 @@ import lombok.experimental.SuperBuilder;
 @Getter
 @Setter
 @ToString
-public class Thread extends Metadata {
+public class OpenAiThread extends Metadata {
 
 	@NonNull
 	private String id;

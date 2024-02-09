@@ -25,12 +25,14 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.github.mzattera.predictivepowers.openai.client.DataList;
 import io.github.mzattera.predictivepowers.openai.client.SortOrder;
 import io.github.mzattera.predictivepowers.openai.client.assistants.Assistant;
 import io.github.mzattera.predictivepowers.openai.client.assistants.AssistantsRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.Content;
 import io.github.mzattera.predictivepowers.openai.client.threads.Content.Text.Annotation;
 import io.github.mzattera.predictivepowers.openai.client.threads.Message;
+import io.github.mzattera.predictivepowers.openai.client.threads.Message.Role;
 import io.github.mzattera.predictivepowers.openai.client.threads.MessagesRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.OpenAiThread;
 import io.github.mzattera.predictivepowers.openai.client.threads.Run;
@@ -193,20 +195,18 @@ public class OpenAiAssistant implements Agent {
 	 * @return All messages added to a thread after last one.
 	 */
 	private List<Message> retrieveNewMessages(OpenAiThread thread, Message last) {
-		return endpoint.getClient().listMessages(thread.getId(), SortOrder.ASCENDING, null, null, null).getData();
+		List<Message> result = new ArrayList<>();
 
-//		List<Message> result = new ArrayList<>();
-//
-//		while (true) {
-//			DataList<Message> msgs = endpoint.getClient().listMessages(thread.getId(), SortOrder.ASCENDING, null, null,
-//					last.getId());
-//			result.addAll(msgs.getData());
-//			if (!msgs.hasMore())
-//				break;
-//			last = result.get(result.size() - 1);
-//		}
-//
-//		return result;
+		while (true) {
+			DataList<Message> msgs = endpoint.getClient().listMessages(thread.getId(), SortOrder.ASCENDING, null,
+					last.getId(), null);
+			result.addAll(msgs.getData());
+			if (!msgs.hasMore())
+				break;
+			last = result.get(result.size() - 1);
+		}
+
+		return result;
 	}
 
 	@Override
@@ -307,9 +307,8 @@ public class OpenAiAssistant implements Agent {
 		List<MessagePart> parts = new ArrayList<>();
 
 		for (Message msg : messages) {
-			// TODO add back
-//			if (msg.getRole() != Role.ASSISTANT)
-//				throw new IllegalArgumentException();
+			if (msg.getRole() != Role.ASSISTANT)
+				throw new IllegalArgumentException();
 
 			for (Content content : msg.getContent()) {
 				switch (content.getType()) {

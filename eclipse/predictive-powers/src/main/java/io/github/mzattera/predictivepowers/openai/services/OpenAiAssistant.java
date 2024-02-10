@@ -34,12 +34,14 @@ import io.github.mzattera.predictivepowers.openai.client.SortOrder;
 import io.github.mzattera.predictivepowers.openai.client.assistants.Assistant;
 import io.github.mzattera.predictivepowers.openai.client.assistants.AssistantsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
+import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
 import io.github.mzattera.predictivepowers.openai.client.threads.Content;
 import io.github.mzattera.predictivepowers.openai.client.threads.Content.Text.Annotation;
 import io.github.mzattera.predictivepowers.openai.client.threads.Message;
 import io.github.mzattera.predictivepowers.openai.client.threads.Message.Role;
 import io.github.mzattera.predictivepowers.openai.client.threads.MessagesRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.OpenAiThread;
+import io.github.mzattera.predictivepowers.openai.client.threads.RequiredAction;
 import io.github.mzattera.predictivepowers.openai.client.threads.Run;
 import io.github.mzattera.predictivepowers.openai.client.threads.Run.Status;
 import io.github.mzattera.predictivepowers.openai.client.threads.RunsRequest;
@@ -180,7 +182,17 @@ public class OpenAiAssistant implements Agent {
 		}
 
 		switch (run.getStatus()) {
-		case REQUIRES_ACTION: // TODO URGENT Add support for this
+		case REQUIRES_ACTION: 
+			RequiredAction action = run.getRequiredAction();
+			switch (action.getType()) {
+			case SUBMIT_TOOL_OUTPUTS: // Assistant generated tool calls
+				ChatMessage message = fromMessages(retrieveNewMessages(thread, usrMsg));
+				message.getParts().addAll(fromToolCalls(action.getSubmitToolOutputs().getToolCalls()));
+				return new ChatCompletion(FinishReason.COMPLETED, message);
+			default:
+				throw new IllegalArgumentException("Unsupported action type.");
+			}
+
 		case COMPLETED:
 			return new ChatCompletion(FinishReason.COMPLETED, fromMessages(retrieveNewMessages(thread, usrMsg)));
 
@@ -194,7 +206,7 @@ public class OpenAiAssistant implements Agent {
 			throw new RuntimeException("An error happened while generating the message.");
 
 		default:
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException("Unsupported run type");
 		}
 	}
 
@@ -481,6 +493,22 @@ public class OpenAiAssistant implements Agent {
 		}
 
 		return new ChatMessage(Author.BOT, parts);
+	}
+
+	/**
+	 * Translates a list of tool calls inot message parts.
+	 */
+	private List<ToolCall> fromToolCalls(@NonNull List<OpenAiToolCall> toolCalls) {
+		List<ToolCall> calls = new ArrayList<>();
+		for (OpenAiToolCall call : toolCalls) {
+			ToolCall toolCall = ToolCall.builder() //
+					.id(call.getId()) //
+					.tool(toolMap.get(call.getFunction().getName())) //
+					.arguments(call.getFunction().getArguments()) //
+					.build();
+			calls.add(toolCall);
+		}
+		return calls;
 	}
 
 	public static void main(String[] args) throws ToolInitializationException {

@@ -16,6 +16,7 @@
 
 package io.github.mzattera.predictivepowers.openai.client.threads;
 
+import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -41,4 +42,8 @@ public class ToolOutput {
 	private String toolCallId;
 
 	private String output;
+
+	public ToolOutput(ToolCallResult result) {
+		this(result.getToolCallId(), result.getResult().toString());
+	}
 }

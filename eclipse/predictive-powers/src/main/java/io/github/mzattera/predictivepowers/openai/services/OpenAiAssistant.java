@@ -46,6 +46,8 @@ import io.github.mzattera.predictivepowers.openai.client.threads.Run;
 import io.github.mzattera.predictivepowers.openai.client.threads.Run.Status;
 import io.github.mzattera.predictivepowers.openai.client.threads.RunsRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.ThreadsRequest;
+import io.github.mzattera.predictivepowers.openai.client.threads.ToolOutput;
+import io.github.mzattera.predictivepowers.openai.client.threads.ToolOutputsRequest;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Tool;
@@ -87,7 +89,18 @@ public class OpenAiAssistant implements Agent {
 	 */
 	private Assistant openAiAssistant;
 
+	// Current conversation thread
+	@Getter(AccessLevel.PROTECTED)
 	private OpenAiThread thread;
+
+	// Current conversation run, this is used to return tool call results
+	@Getter(AccessLevel.PROTECTED)
+	private Run run;
+
+	// Last message in current conversation run, this is used to return tool call
+	// results
+	@Getter(AccessLevel.PROTECTED)
+	private Message usrMsg;
 
 	@Override
 	public String getModel() {
@@ -156,19 +169,33 @@ public class OpenAiAssistant implements Agent {
 		if (thread == null)
 			thread = endpoint.getClient().createThread(ThreadsRequest.builder().build());
 
-		// TODO URGENT if the message has tool call results, handle them here
+		if ((run != null) && (run.getStatus() == Status.REQUIRES_ACTION)) {
 
-		// Add message to thread
-		Message usrMsg = null;
-		try {
-			usrMsg = endpoint.getClient().createMessage(thread.getId(), MessagesRequest.getInstance(msg, endpoint));
-		} catch (IOException e) {
-			// TODO URGENT fix
-			e.printStackTrace();
+			// Current run is waiting for tool call results, we must providing them
+			if (!msg.hasToolCallResults())
+				throw new IllegalArgumentException("Agent is waiting for tool call results");
+
+			List<? extends ToolCallResult> results = msg.getToolCallResults();
+			if (results.size() != msg.getParts().size())
+				throw new IllegalArgumentException("Tool call results cannot contain other parts in the message.");
+
+			ToolOutputsRequest req = new ToolOutputsRequest();
+			for (ToolCallResult result : results)
+				req.getToolOutputs().add(new ToolOutput(result));
+
+			run = endpoint.getClient().submitToolOutputsToRun(thread.getId(), run.getId(), req);
+		} else {
+
+			// Add message to thread
+			try {
+				usrMsg = endpoint.getClient().createMessage(thread.getId(), MessagesRequest.getInstance(msg, endpoint));
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+
+			// Create new run for the message
+			run = endpoint.getClient().createRun(thread.getId(), new RunsRequest(openAiAssistant.getId()));
 		}
-
-		// Create run
-		Run run = endpoint.getClient().createRun(thread.getId(), new RunsRequest(openAiAssistant.getId()));
 
 		// Wait for completion
 		while (run.getStatus() == Status.QUEUED || run.getStatus() == Status.IN_PROGRESS) {
@@ -182,7 +209,7 @@ public class OpenAiAssistant implements Agent {
 		}
 
 		switch (run.getStatus()) {
-		case REQUIRES_ACTION: 
+		case REQUIRES_ACTION:
 			RequiredAction action = run.getRequiredAction();
 			switch (action.getType()) {
 			case SUBMIT_TOOL_OUTPUTS: // Assistant generated tool calls

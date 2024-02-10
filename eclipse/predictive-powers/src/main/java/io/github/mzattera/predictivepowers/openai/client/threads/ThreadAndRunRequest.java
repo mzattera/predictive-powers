@@ -53,6 +53,6 @@ public class ThreadAndRunRequest extends Metadata {
 	 * Override the tools the assistant can use for this run. Optional. This is
 	 * useful for modifying the behavior on a per-run basis.
 	 */
-	@Builder.Default
-	private List<OpenAiTool> tools = new ArrayList<>();
+	// Note this is an OVERRIDE, so it must be null to use default tools avilable to the agent
+	private List<OpenAiTool> tools;
 }

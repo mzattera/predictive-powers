@@ -16,7 +16,7 @@ import lombok.ToString;
 /**
  * @author Massimiliano "Maxi" Zattera
  */
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 //@RequiredArgsConstructor
 @AllArgsConstructor
 @Getter

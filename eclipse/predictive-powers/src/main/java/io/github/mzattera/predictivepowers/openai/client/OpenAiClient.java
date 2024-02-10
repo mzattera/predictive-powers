@@ -190,7 +190,8 @@ public class OpenAiClient implements ApiClient {
 						if (req.body() != null) {
 							Buffer buffer = new Buffer();
 							req.body().writeTo(buffer);
-							String bodyContent = buffer.readUtf8();
+							String bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
+									.writeValueAsString(jsonMapper.readTree(buffer.readUtf8()));
 							System.out.println("Request body: " + bodyContent);
 						}
 
@@ -213,7 +214,9 @@ public class OpenAiClient implements ApiClient {
 							Buffer buffer = source.buffer();
 
 							Buffer clone = buffer.clone();
-							System.out.println("Response body: " + clone.readUtf8());
+							String bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
+									.writeValueAsString(jsonMapper.readTree(clone.readUtf8()));
+							System.out.println("Response body: " + bodyContent);
 						}
 
 						return response; // Return the original response unaltered
@@ -582,7 +585,8 @@ public class OpenAiClient implements ApiClient {
 	 * Notice that tool parameters for any tool attached to the agent are not
 	 * properly de-serialized, so they will always be empty.
 	 * 
-	 * Unfortunately, there is no easy workaround as it is not easy to de-serialize a JSON schema.
+	 * Unfortunately, there is no easy workaround as it is not easy to de-serialize
+	 * a JSON schema.
 	 * 
 	 * @param assistantId
 	 * @return

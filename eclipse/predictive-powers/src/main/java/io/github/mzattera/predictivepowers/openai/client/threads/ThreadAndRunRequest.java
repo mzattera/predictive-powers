@@ -1,13 +1,11 @@
 package io.github.mzattera.predictivepowers.openai.client.threads;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import io.github.mzattera.predictivepowers.openai.client.Metadata;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -53,6 +51,7 @@ public class ThreadAndRunRequest extends Metadata {
 	 * Override the tools the assistant can use for this run. Optional. This is
 	 * useful for modifying the behavior on a per-run basis.
 	 */
-	// Note this is an OVERRIDE, so it must be null to use default tools avilable to the agent
+	// Note this is an OVERRIDE, so it must be null to use default tools avilable to
+	// the agent
 	private List<OpenAiTool> tools;
 }

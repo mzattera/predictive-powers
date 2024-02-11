@@ -16,7 +16,6 @@
 
 package io.github.mzattera.predictivepowers.services;
 
-import java.util.Collection;
 import java.util.List;
 
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
@@ -84,54 +83,32 @@ public interface Agent extends AiService {
 	void setPersonality(String personality);
 
 	/**
-	 * Sets the {@link ToolProvider} used by this agent to retrieve its tools, when
-	 * it needs to invoke them.
-	 */
-	void setToolProvider(ToolProvider provider);
-
-	/**
-	 * Get tools available to the agent.
+	 * Get capabilities available to the agent.
 	 * 
 	 * Notice this is expected to be an unmodifiable list; use other methods to
 	 * populate tools list properly.
 	 */
-	List<String> getTools();
+	List<String> getCapabilities();
 
 	/**
-	 * Set the list of tools available to the agent.
+	 * Add one capability to the list of capabilities available to the agent.
 	 * 
 	 * @throws ToolInitializationException if an error happens while initializing
-	 *                                     any of the tools.
+	 *                                     the capability.
 	 */
-	void setTools(@NonNull Collection<String> toolIds) throws ToolInitializationException;
+	void addCapability(@NonNull Capability capability) throws ToolInitializationException;
 
 	/**
-	 * Add one tool to the list of tools available to the agent.
+	 * Remove one capability from list of capabilities available to the agent.
 	 * 
-	 * @throws ToolInitializationException if an error happens while initializing
-	 *                                     the tool.
+	 * @param id The unique ID for the capability.
 	 */
-	void addTool(@NonNull String toolId) throws ToolInitializationException;
+	void removeCapability(@NonNull String capabilityId);
 
 	/**
-	 * Add given tools to the list of tools available to the agent.
-	 * 
-	 * @throws ToolInitializationException if an error happens while initializing
-	 *                                     any of the tools.
+	 * Remove all capabilities available to the agent.
 	 */
-	void addTools(@NonNull Collection<String> toolId) throws ToolInitializationException;
-
-	/**
-	 * Remove one tool from list of tools available to the agent.
-	 * 
-	 * @param id The unique ID for the tool.
-	 */
-	void removeTool(@NonNull String toolId);
-
-	/**
-	 * Remove all tools available to the agent.
-	 */
-	void clearTools();
+	void clearCapabilities();
 
 	/**
 	 * Starts a new chat, clearing current conversation.

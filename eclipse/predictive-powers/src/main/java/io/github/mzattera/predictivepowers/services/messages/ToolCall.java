@@ -66,7 +66,7 @@ public class ToolCall implements MessagePart {
 	 */
 	@NonNull
 	@Builder.Default
-	private Map<String, Object> arguments = new HashMap<>();
+	private Map<String, ? extends Object> arguments = new HashMap<>();
 
 	@Override
 	public String getContent() {

@@ -27,11 +27,12 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
+import io.github.mzattera.predictivepowers.services.AbstractTool;
 import io.github.mzattera.predictivepowers.services.Agent;
-import io.github.mzattera.predictivepowers.services.SimpleToolProvider;
+import io.github.mzattera.predictivepowers.services.Capability;
+import io.github.mzattera.predictivepowers.services.SimpleCapability;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
-import io.github.mzattera.predictivepowers.services.ToolProvider;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
@@ -44,7 +45,7 @@ public class FunctionCallExample {
 
 	// This is a function that will be accessible to the agent (notice it must be
 	// public).
-	public static class GetCurrentWeatherTool implements Tool {
+	public static class GetCurrentWeatherTool extends AbstractTool {
 
 		// This is a schema describing the function parameters
 		private static class GetCurrentWeatherParameters {
@@ -61,30 +62,25 @@ public class FunctionCallExample {
 			public TemperatureUnits unit;
 		}
 
-		@Override
-		public String getId() {
-			return "getCurrentWeather";
-		}
-
-		@Override
-		public String getDescription() {
-			return "Get the current weather in a given location.";
-		}
-
-		@Override
-		public Class<?> getParameterSchema() {
-			return GetCurrentWeatherParameters.class;
+		public GetCurrentWeatherTool() {
+			super("getCurrentWeather", //
+					"Get the current weather in a given location.", //
+					GetCurrentWeatherParameters.class);
 		}
 
 		@Override
 		public void init(@NonNull Agent agent) {
-			// Initialization goes here...
+			if (isInitialized())
+				throw new IllegalStateException();
+			setInitialized(true);
 		}
 
 		@Override
 		public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
 			// Function implementation goes here.
 			// In this example we simply return a random temperature.
+			if (!isInitialized())
+				throw new IllegalStateException();
 			return new ToolCallResult(call, (RND.nextInt(10) + 20) + "°C");
 		}
 
@@ -102,7 +98,7 @@ public class FunctionCallExample {
 
 	// A provider to give tool instances to the bot
 	// TODO URGENT REVERT BACK TO PRIVATE
-	public final static ToolProvider PROVIDER = new SimpleToolProvider(TOOLS);
+	public final static Capability DEFAULT_CAPABILITY = new SimpleCapability(TOOLS);
 
 	public static void main(String[] args) throws ToolInitializationException {
 
@@ -116,10 +112,8 @@ public class FunctionCallExample {
 //			bot.setModel("gpt-3.5-turbo-0613"); // This uses simple function calls
 			bot.setModel("gpt-4-1106-preview"); // This uses parallel function calls (tools)
 
-			// Tells the model which tools it can use, make them available through the
-			// provider
-			bot.setToolProvider(PROVIDER);
-			bot.setTools(PROVIDER.getToolIds());
+			// Tells the model which tools it can use, by providign a capability
+			bot.addCapability(DEFAULT_CAPABILITY);
 
 			// Conversation loop
 			try (Scanner console = new Scanner(System.in)) {

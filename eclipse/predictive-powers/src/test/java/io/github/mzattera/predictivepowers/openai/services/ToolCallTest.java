@@ -40,11 +40,11 @@ import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolChoice;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
+import io.github.mzattera.predictivepowers.services.AbstractTool;
 import io.github.mzattera.predictivepowers.services.Agent;
-import io.github.mzattera.predictivepowers.services.SimpleToolProvider;
-import io.github.mzattera.predictivepowers.services.Tool;
+import io.github.mzattera.predictivepowers.services.Capability;
+import io.github.mzattera.predictivepowers.services.SimpleCapability;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
-import io.github.mzattera.predictivepowers.services.ToolProvider;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
@@ -72,14 +72,14 @@ public class ToolCallTest {
 	private final static ObjectMapper mapper = new ObjectMapper();
 
 	// This is a function that will be accessible to the agent.
-	private static class GetCurrentWeatherTool implements Tool {
+	public static class GetCurrentWeatherTool extends AbstractTool {
 
 		// This is a schema describing the function parameters
 		public enum TemperatureUnits {
 			CELSIUS, FARENHEIT
 		};
 
-		public static class GetCurrentWeatherParameters {
+		private static class GetCurrentWeatherParameters {
 
 			@JsonProperty(required = true)
 			@JsonPropertyDescription("The city and state, e.g. San Francisco, CA")
@@ -95,23 +95,15 @@ public class ToolCallTest {
 			public int code;
 		}
 
-		@Override
-		public String getId() {
-			return "get_current_weather";
-		}
-
-		@Override
-		public String getDescription() {
-			return "Get the current weather in a given location.";
-		}
-
-		@Override
-		public Class<?> getParameterSchema() {
-			return GetCurrentWeatherParameters.class;
+		public GetCurrentWeatherTool() {
+			super("get_current_weather", //
+					"Get the current weather in a given location.", //
+					GetCurrentWeatherParameters.class);
 		}
 
 		@Override
 		public void init(@NonNull Agent agent) {
+			setInitialized(true);
 		}
 
 		@Override
@@ -120,17 +112,13 @@ public class ToolCallTest {
 			// In this example we simply return a random temperature.
 			return new ToolCallResult(call, "20°C");
 		}
-
-		@Override
-		public void close() {
-		}
 	}
 
 	private final static List<OpenAiTool> TOOLS = new ArrayList<>();
 	static {
 		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool()));
 	}
-	private final static ToolProvider PROVIDER = new SimpleToolProvider(TOOLS);
+	private final static Capability DEFAULT_CAPABILITY = new SimpleCapability(TOOLS);
 
 	/**
 	 * Tests ToolChoice serialization.
@@ -212,9 +200,7 @@ public class ToolCallTest {
 
 			OpenAiChatService cs = ep.getChatService("You are an agent supporting user with weather forecasts");
 			cs.setModel(MODEL);
-			cs.setToolProvider(PROVIDER);
-			cs.setTools(PROVIDER.getToolIds());
-			assertTrue((cs.getTools() != null) && (cs.getTools().size() == TOOLS.size()));
+			cs.addCapability(DEFAULT_CAPABILITY);
 
 			// Casual chat should not trigger any function call
 			ChatCompletion reply = cs.chat("Where is Dallas, TX?");
@@ -257,8 +243,7 @@ public class ToolCallTest {
 
 			OpenAiChatService cs = ep.getChatService("You are an agent supporting user with weather forecasts");
 			cs.setModel(MODEL);
-			cs.setToolProvider(PROVIDER);
-			cs.setTools(PROVIDER.getToolIds());
+			cs.addCapability(DEFAULT_CAPABILITY);
 
 			ChatCompletion reply = null;
 
@@ -307,18 +292,8 @@ public class ToolCallTest {
 
 			// No function calls here, as there is none
 			cs.clearConversation();
-			cs.setTools(null);
-			assertEquals(0, cs.getTools().size());
+			cs.clearCapabilities();
 			ChatCompletion reply = cs.chat("How is the weather like in Dallas, TX?");
-			assertFalse(reply.hasToolCalls());
-			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
-
-			// No function calls here, as there is none
-			cs.clearConversation();
-			cs.setTools(new ArrayList<>());
-			cs.getDefaultReq().setFunctionCall(null);
-			assertEquals(0, cs.getTools().size());
-			reply = cs.chat("How is the weather like in Dallas, TX?");
 			assertFalse(reply.hasToolCalls());
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
 		}
@@ -337,8 +312,7 @@ public class ToolCallTest {
 
 			OpenAiChatService cs = endpoint.getChatService("You are an helpful assistant.");
 			cs.setModel(MODEL);
-			cs.setToolProvider(PROVIDER);
-			cs.setTools(PROVIDER.getToolIds());
+			cs.addCapability(DEFAULT_CAPABILITY);
 
 			// This should generate a single call for 2 tools
 			ChatCompletion reply = cs.chat("What is the temperature in London and Zurich?");
@@ -358,11 +332,11 @@ public class ToolCallTest {
 		}
 	}
 
-	private static void sameArguments(Map<String, Object> reference, Map<String, Object> actual) {
-		assertTrue(reference.size() <= actual.size()); // Sometimes, it does send optional parameters
+	private static void sameArguments(Map<String, Object> reference, @NonNull Map<String, ? extends Object> map) {
+		assertTrue(reference.size() <= map.size()); // Sometimes, it does send optional parameters
 
 		for (Entry<String, Object> e : reference.entrySet())
-			assertEquals(e.getValue(), actual.get(e.getKey()));
+			assertEquals(e.getValue(), map.get(e.getKey()));
 	}
 
 }

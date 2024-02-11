@@ -16,20 +16,19 @@
 
 package io.github.mzattera.predictivepowers.services;
 
-import java.io.Closeable;
-import java.io.IOException;
+import java.util.List;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonSerializer;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.kjetland.jackson.jsonSchema.JsonSchemaGenerator;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
  * This is a tool that an {@link Agent} can invoke to perform a task.
@@ -39,27 +38,48 @@ import lombok.NonNull;
  */
 public interface Tool extends AutoCloseable {
 
-	/** Used for JSON (de)serialization of function parameters as schema */
-	// TODO is this needed?
+	/**
+	 * Describes one tool parameter.
+	 */
+	@NoArgsConstructor
+	@RequiredArgsConstructor
+	@AllArgsConstructor
 	@Getter
-	public final static JsonSchemaGenerator schemaGenerator = new JsonSchemaGenerator(new ObjectMapper());
+	@Setter
+	@ToString
+	public static class ToolParameter {
 
-	/**
-	 * Convenience class for a tool with no parameters.
-	 */
-	public final static class NoParameters {
-	}
+		public static enum Type {
+			INTEGER("integer"), DOUBLE("number"), BOOLEAN("boolean"), ENUMERATION("string"), STRING("string");
 
-	/**
-	 * Custom serializer to create JSON schema for function parameters.
-	 */
-	public static final class ParametersSerializer extends JsonSerializer<Class<?>> {
+			private final String label;
 
-		@Override
-		public void serialize(Class<?> c, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
-				throws IOException, JsonProcessingException {
-			jsonGenerator.writeTree(schemaGenerator.generateJsonSchema(c));
+			private Type(String label) {
+				this.label = label;
+			}
+
+			@Override
+			@JsonValue
+			public String toString() { // Notice we rely on labels not to change
+				return label;
+			}
 		}
+
+		/** Field name */
+		@NonNull
+		public String name;
+
+		/** Field type */
+		public Type type;
+
+		/** If field type is ENUM, this lists allowed values */
+		public List<String> emum;
+
+		/** A description of the field */
+		public String description;
+
+		/** True if this is a required field */
+		public boolean required;
 	}
 
 	/**
@@ -78,29 +98,46 @@ public interface Tool extends AutoCloseable {
 
 	/**
 	 * 
-	 * @return A class which JSON Schema Object will be used to describe the
-	 *         parameters of the tool.
-	 * 
-	 *         See
-	 *         {@link io.github.mzattera.predictivepowers.examples.FunctionCallExample}
-	 *         or
-	 *         {@linkplain https://platform.openai.com/docs/guides/text-generation/function-calling
-	 *         here}. for examples.
+	 * @return A List with a description of each parameter needed when the tool is
+	 *         invoked.
 	 */
-	Class<?> getParameterSchema();
+	List<? extends ToolParameter> getParameters();
 
 	/**
-	 * This must be called by the agent before any invocation to this tool.
+	 * Sets the capability to which this tool belongs.
 	 * 
-	 * @return True if the tool was successfully initialized and can now be invoked,
-	 *         false otherwise.
+	 * This is called once after a tool is instantiated and before
+	 * {@link #init(Agent)} is called.
+	 * 
+	 * @param capability
+	 */
+	void setCapability(Capability capability);
+
+	/**
+	 * 
+	 * @return The capability to which the agent belongs.
+	 */
+	Capability getCapability();
+
+	/**
+	 * 
+	 * @return True if the tool was already initialized.
+	 */
+	boolean isInitialized();
+
+	/**
+	 * This must be called by the agent once and only once before any invocation to
+	 * this tool.
+	 * 
+	 * @param agent The agent that will then invoke this tool, eventually.
 	 */
 	void init(@NonNull Agent agent) throws ToolInitializationException;
 
 	/**
-	 * Invokes (executes) the tool.
+	 * Invokes (executes) the tool. This can be called several times.
 	 * 
-	 * @param arguments Parameters to pass to the tool for this invocation.
+	 * @param call The call to the tool, created by the calling agent.
+	 * 
 	 * @return The result of calling the tool.
 	 */
 	ToolCallResult invoke(@NonNull ToolCall call) throws Exception;

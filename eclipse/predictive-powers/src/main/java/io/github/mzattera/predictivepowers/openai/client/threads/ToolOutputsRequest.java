@@ -6,7 +6,6 @@ package io.github.mzattera.predictivepowers.openai.client.threads;
 import java.util.ArrayList;
 import java.util.List;
 
-import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

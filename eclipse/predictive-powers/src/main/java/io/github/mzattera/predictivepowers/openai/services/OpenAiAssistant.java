@@ -17,7 +17,6 @@ package io.github.mzattera.predictivepowers.openai.services;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -50,9 +49,9 @@ import io.github.mzattera.predictivepowers.openai.client.threads.ToolOutput;
 import io.github.mzattera.predictivepowers.openai.client.threads.ToolOutputsRequest;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.Agent;
+import io.github.mzattera.predictivepowers.services.Capability;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
-import io.github.mzattera.predictivepowers.services.ToolProvider;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
@@ -65,7 +64,6 @@ import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 
 /**
  * OpenAI Assistant.
@@ -110,6 +108,7 @@ public class OpenAiAssistant implements Agent {
 
 	@Override
 	public void setModel(@NonNull String model) {
+		synch();
 		openAiAssistant.setModel(model);
 		update();
 	}
@@ -120,33 +119,39 @@ public class OpenAiAssistant implements Agent {
 
 	@Override
 	public String getName() {
+		synch();
 		return openAiAssistant.getName();
 	}
 
 	@Override
 	public void setName(String name) {
+		synch();
 		openAiAssistant.setName(name);
 		update();
 	}
 
 	@Override
 	public String getDescription() {
+		synch();
 		return openAiAssistant.getDescription();
 	}
 
 	@Override
 	public void setDescription(String description) {
+		synch();
 		openAiAssistant.setDescription(description);
 		update();
 	}
 
 	@Override
 	public String getPersonality() {
+		synch();
 		return openAiAssistant.getInstructions();
 	}
 
 	@Override
 	public void setPersonality(String personality) {
+		synch();
 		openAiAssistant.setInstructions(personality);
 		update();
 	}
@@ -162,6 +167,9 @@ public class OpenAiAssistant implements Agent {
 		return chat(new ChatMessage(msg));
 	}
 
+	// TODO Runs give you option to override tools: maybe add a method that take a
+	// list of tools as well
+
 	@Override
 	public ChatCompletion chat(ChatMessage msg) {
 
@@ -171,7 +179,7 @@ public class OpenAiAssistant implements Agent {
 
 		if ((run != null) && (run.getStatus() == Status.REQUIRES_ACTION)) {
 
-			// Current run is waiting for tool call results, we must providing them
+			// Current run is waiting for tool call results, we must provide them
 			if (!msg.hasToolCallResults())
 				throw new IllegalArgumentException("Agent is waiting for tool call results");
 
@@ -199,6 +207,13 @@ public class OpenAiAssistant implements Agent {
 
 		// Wait for completion
 		while (run.getStatus() == Status.QUEUED || run.getStatus() == Status.IN_PROGRESS) {
+
+			// TODO URGENT Asynch method that returns at each run step?
+			// maybe return run steps as results, instead of messages, so the results can be
+			// progressed easiliy and caller always looks at ChatMessage?
+			// Or have a onRunProgress() that returns the list of new run steps and
+			// onMessageCompleted() that return a ChatCompletion
+
 			try { // wait a bit
 				Thread.sleep(SLEEP_TIME_MILLIS);
 			} catch (InterruptedException e) {
@@ -209,10 +224,12 @@ public class OpenAiAssistant implements Agent {
 		}
 
 		switch (run.getStatus()) {
+
 		case REQUIRES_ACTION:
 			RequiredAction action = run.getRequiredAction();
 			switch (action.getType()) {
-			case SUBMIT_TOOL_OUTPUTS: // Assistant generated tool calls
+			case SUBMIT_TOOL_OUTPUTS:
+				// Assistant generated tool calls
 				ChatMessage message = fromMessages(retrieveNewMessages(thread, usrMsg));
 				message.getParts().addAll(fromToolCalls(action.getSubmitToolOutputs().getToolCalls()));
 				return new ChatCompletion(FinishReason.COMPLETED, message);
@@ -227,10 +244,11 @@ public class OpenAiAssistant implements Agent {
 		case CANCELLED:
 			return new ChatCompletion(FinishReason.TRUNCATED, fromMessages(retrieveNewMessages(thread, usrMsg)));
 
+		// TODO URGENT throw better exceptions and declare one which is not runtime?
 		case FAILED:
+			throw new RuntimeException(run.getLastError().getMessage());
 		case EXPIRED:
-			// TODO URGENT throw better exceptions and declare one which is not runtime?
-			throw new RuntimeException("An error happened while generating the message.");
+			throw new RuntimeException("Run expired");
 
 		default:
 			throw new IllegalArgumentException("Unsupported run type");
@@ -241,7 +259,7 @@ public class OpenAiAssistant implements Agent {
 	 * 
 	 * @param thread
 	 * @param last
-	 * @return All messages added to a thread after last one.
+	 * @return All messages added to the thread after last one.
 	 */
 	private List<Message> retrieveNewMessages(OpenAiThread thread, Message last) {
 		List<Message> result = new ArrayList<>();
@@ -259,41 +277,91 @@ public class OpenAiAssistant implements Agent {
 		return result;
 	}
 
-	@Setter
-	@Getter(AccessLevel.PROTECTED)
-	private ToolProvider toolProvider;
-
 	// Cached tools
 	@Getter(AccessLevel.PROTECTED)
 	private Map<String, OpenAiTool> toolMap = new HashMap<>();
 
+	@Getter(AccessLevel.PROTECTED)
+	private Map<String, Capability> capabilityMap = new HashMap<>();
+
+	// TODO URGENT add tests to check all the methods to manipulate tools
+
 	@Override
-	public List<String> getTools() {
-		return Collections.unmodifiableList(new ArrayList<>(toolMap.keySet()));
+	public List<String> getCapabilities() {
+		return Collections.unmodifiableList(new ArrayList<>(capabilityMap.keySet()));
 	}
 
 	@Override
-	public void setTools(@NonNull Collection<String> list) throws ToolInitializationException {
+	public void addCapability(@NonNull Capability capability) throws ToolInitializationException {
 
 		synch();
-		for (String id : new ArrayList<>(toolMap.keySet()))
-			removeTool(id, false);
-		for (String id : list)
-			addTool(id, false);
+
+		// Dispose any existing version of the capability
+		Capability old = capabilityMap.get(capability.getId());
+		if (old != null)
+			removeCapability(old.getId());
+		capability.init(this);
+		
+		for (String toolId : capability.getToolIds()) {
+			putTool(capability.getNewToolInstance(toolId));
+		}
+
+		capabilityMap.put(capability.getId(), capability);
+
 		update();
 	}
 
 	@Override
-	public void addTool(@NonNull String toolId) throws ToolInitializationException {
-		addTool(toolId, true);
+	public void removeCapability(@NonNull String capabilityId) {
+		synch();
+		removeCapability(capabilityMap.get(capabilityId));
+		update();
 	}
 
-	public void addTool(@NonNull String toolId, boolean synch) throws ToolInitializationException {
+	private void removeCapability(Capability capability) {
+		if (capability == null)
+			return;
 
-		if (synch)
-			synch();
-		OpenAiTool tool = newToolInstance(toolId);
+		for (String toolId : capability.getToolIds())
+			removeTool(toolId);
+		try {
+			capability.close();
+		} catch (Exception e) {
+		}
 
+		capabilityMap.remove(capability.getId());
+	}
+
+	@Override
+	public void clearCapabilities() {
+		for (Capability capability : capabilityMap.values())
+			removeCapability(capability);
+		capabilityMap.clear();
+	}
+
+	private void putTool(@NonNull Tool tool) throws ToolInitializationException {
+
+		tool.init(this);
+
+		// Closes older version of this tool, if any
+		OpenAiTool old = toolMap.remove(tool.getId());
+		if (old != null) {
+			try {
+				old.close();
+			} catch (Exception e) {
+				LOG.warn("Error closing tool: {1}", e.getMessage());
+			}
+		}
+
+		try {
+			toolMap.put(tool.getId(), (OpenAiTool) tool);
+		} catch (ClassCastException e) {
+			// Wrap the Tool into an OpenAiTool, so we can use any tool with function calls
+			toolMap.put(tool.getId(), new OpenAiTool(tool));
+		}
+	}
+
+	private void removeTool(@NonNull String toolId) {
 		OpenAiTool old = toolMap.remove(toolId);
 		if (old != null) {
 			try {
@@ -302,111 +370,36 @@ public class OpenAiAssistant implements Agent {
 				LOG.warn("Error closing tool: {1}", e.getMessage());
 			}
 		}
-
-		toolMap.put(tool.getId(), tool);
-		if (synch)
-			update();
-	}
-
-	@Override
-	public void addTools(@NonNull Collection<String> tools) throws ToolInitializationException {
-		synch();
-		for (String id : tools)
-			addTool(id, false);
-		update();
-	}
-
-	@Override
-	public void removeTool(@NonNull String id) {
-		removeTool(id, true);
-	}
-
-	public void removeTool(@NonNull String id, boolean synch) {
-		if (synch)
-			synch();
-
-		OpenAiTool old = toolMap.remove(id);
-		if (old != null) {
-			try {
-				old.close();
-			} catch (Exception e) {
-				LOG.warn("Error closing tool: {1}", e.getMessage());
-			}
-
-			if (synch)
-				update();
-		}
-	}
-
-	@Override
-	public void clearTools() {
-		synch();
-		for (String id : new ArrayList<>(toolMap.keySet()))
-			removeTool(id, false);
-		update();
-	}
-
-	/**
-	 * Gets a new, initialized, instance of a tool from the tool provider.
-	 * 
-	 * @throws ToolInitializationException
-	 */
-	private OpenAiTool newToolInstance(String id) throws ToolInitializationException {
-		if (toolProvider == null)
-			throw new ToolInitializationException("A tool provider for the agent must be provided.");
-
-		Tool tool = toolProvider.getTool(id);
-		if (tool == null)
-			throw new ToolInitializationException("Missing tool: " + id);
-
-		OpenAiTool result;
-		try {
-			result = (OpenAiTool) tool;
-		} catch (ClassCastException e) {
-			result = new OpenAiTool(tool); // wrapper around another tool
-		}
-
-		result.init(this);
-		return result;
 	}
 
 	/**
 	 * Creates a new Assistant, on the OpenAi server side.
-	 * 
-	 * @throws ToolInitializationException
 	 */
-	public static OpenAiAssistant createAssistant(@NonNull OpenAiEndpoint endpoint, ToolProvider provider)
-			throws ToolInitializationException {
+	public static OpenAiAssistant createAssistant(@NonNull OpenAiEndpoint endpoint) {
 		return createAssistant(endpoint, //
 				AssistantsRequest.builder() //
 						.description("\"Default\" OpenAI Assistant") //
 						.model("gpt-4-turbo-preview") //
 						.name(UUID.randomUUID().toString()) //
-						.build(), //
-				provider);
+						.instructions("You are an helpful assistant") //
+						.build());
 	}
 
 	/**
 	 * Creates a new Assistant, on the OpenAi server side.
-	 * 
-	 * @throws ToolInitializationException
 	 */
-	public static OpenAiAssistant createAssistant(@NonNull OpenAiEndpoint endpoint, @NonNull AssistantsRequest req,
-			ToolProvider provider) throws ToolInitializationException {
-		return new OpenAiAssistant(endpoint, endpoint.getClient().createAssistant(req).getId(), provider);
+	public static OpenAiAssistant createAssistant(@NonNull OpenAiEndpoint endpoint, @NonNull AssistantsRequest req) {
+		return new OpenAiAssistant(endpoint, endpoint.getClient().createAssistant(req).getId());
 	}
 
-	OpenAiAssistant(@NonNull OpenAiEndpoint endpoint, @NonNull String assistantId, ToolProvider provider)
-			throws ToolInitializationException {
+	OpenAiAssistant(@NonNull OpenAiEndpoint endpoint, @NonNull String assistantId) {
 		this.endpoint = endpoint;
-		this.toolProvider = provider;
 		this.id = assistantId;
 		synch();
 	}
 
-	OpenAiAssistant(@NonNull OpenAiEndpoint endpoint, @NonNull String agentId, @NonNull String threadId,
-			ToolProvider provider) throws ToolInitializationException {
-		this(endpoint, agentId, provider);
+	OpenAiAssistant(@NonNull OpenAiEndpoint endpoint, @NonNull String agentId, @NonNull String threadId) {
+		this(endpoint, agentId);
 		this.thread = endpoint.getClient().retrieveThread(threadId);
 	}
 
@@ -425,20 +418,14 @@ public class OpenAiAssistant implements Agent {
 		for (OpenAiTool tool : openAiAssistant.getTools()) {
 			String id = tool.getId();
 			OpenAiTool newTool = toolMap.get(id);
-			if (newTool == null) // New tool added by some other user, must get an instance
-				try {
-					newTool = newToolInstance(id);
-				} catch (ToolInitializationException e) {
-					// Use existing proxy, even if it cannot be executed
-					LOG.error("Error initializing tool " + id + ": " + e.getMessage());
-					newTool = tool;
-				}
-			newTools.put(id, tool);
+			if (newTool == null) // New tool added by some other user, for now use a proxy
+				newTool = tool;
+			newTools.put(id, newTool);
 		}
 
 		// Disposes tools that are no longer needed
 		for (OpenAiTool oldTool : toolMap.values()) {
-			if (!newTools.containsKey(oldTool.getId())) // tool no longer needed
+			if (!newTools.containsKey(oldTool.getId())) // tool removed by some other user
 				try {
 					oldTool.close();
 				} catch (Exception e) {
@@ -523,7 +510,7 @@ public class OpenAiAssistant implements Agent {
 	}
 
 	/**
-	 * Translates a list of tool calls inot message parts.
+	 * Translates a list of tool calls into message parts.
 	 */
 	private List<ToolCall> fromToolCalls(@NonNull List<OpenAiToolCall> toolCalls) {
 		List<ToolCall> calls = new ArrayList<>();
@@ -541,10 +528,8 @@ public class OpenAiAssistant implements Agent {
 	public static void main(String[] args) throws ToolInitializationException {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 
-			OpenAiAssistant bot = OpenAiAssistant.createAssistant(ep, FunctionCallExample.PROVIDER);
-			bot.addTools(FunctionCallExample.PROVIDER.getToolIds());
-
-			bot.setPersonality("You are a helpful assistant that knows how to use function calls.");
+			OpenAiAssistant bot = OpenAiAssistant.createAssistant(ep);
+			bot.addCapability(FunctionCallExample.DEFAULT_CAPABILITY);
 
 			// Conversation loop
 			try (Scanner console = new Scanner(System.in)) {

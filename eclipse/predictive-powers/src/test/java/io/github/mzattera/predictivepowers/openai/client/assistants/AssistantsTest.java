@@ -25,11 +25,12 @@ import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.Agent;
+import io.github.mzattera.predictivepowers.services.Capability;
 import io.github.mzattera.predictivepowers.services.Tool;
-import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import io.github.mzattera.util.ResourceUtil;
+import lombok.Getter;
 import lombok.NonNull;
 
 /**
@@ -52,11 +53,11 @@ public class AssistantsTest {
 
 			// Verify field by field that the two instances match
 			testAgentMatch(original, copy);
-			
+
 			// test modify and retrieve
 			original = createAssistantRequest("two");
 			copy = ep.getClient().createAssistant(original);
-			testAgentMatch(original, ep.getClient().retrieveAssistant(copy.getId()));			
+			testAgentMatch(original, ep.getClient().retrieveAssistant(copy.getId()));
 		}
 	}
 
@@ -105,22 +106,36 @@ public class AssistantsTest {
 				return "Tool Description";
 			}
 
-			@Override
-			public Class<?> getParameterSchema() {
-				return Tool.NoParameters.class;
-			}
+			@Getter
+			private boolean initialized = false;
 
 			@Override
-			public void init(@NonNull Agent agent) throws ToolInitializationException {
+			public void init(@NonNull Agent agent) {
+				initialized = true;
 			}
 
 			@Override
 			public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
+				if (!initialized)
+					throw new IllegalStateException();
 				return null;
 			}
 
 			@Override
-			public void close() throws Exception {
+			public void close() {
+			}
+
+			@Getter
+			private List<? extends ToolParameter> parameters = new ArrayList<>();
+
+			@Override
+			public void setCapability(Capability capability) {
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public Capability getCapability() {
+				throw new UnsupportedOperationException();
 			}
 		}));
 
@@ -270,24 +285,24 @@ public class AssistantsTest {
 			System.out.println(i + "\t" + a.getId() + "\t" + a.getName() + "\t" + a.getCreatedAt());
 		}
 	}
-	
+
 	@Test
 	void testFiles() throws IOException {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			OpenAiClient cli = ep.getClient();
-			
+
 			File f = cli.uploadFile(ResourceUtil.getResourceFile("banana.txt"), "assistants");
 			Assistant agent = ep.getClient().createAssistant(createAssistantRequest("file-test"));
 			File af = cli.createAssistantFile(agent.getId(), f.getId());
 			assertNotNull(af);
 			assertEquals(f.getId(), af.getId());
-			
+
 			// TODO add pagination tests
-			
+
 			List<File> files = cli.listAssistantFiles(agent.getId()).getData();
 			assertNotNull(files);
-			assertEquals(1,files.size());
-			
+			assertEquals(1, files.size());
+
 			af = cli.retrieveAssistantFile(agent.getId(), f.getId());
 			assertNotNull(af);
 			assertEquals(f.getId(), af.getId());
@@ -295,7 +310,7 @@ public class AssistantsTest {
 			cli.deteAssistantFile(agent.getId(), f.getId());
 			files = cli.listAssistantFiles(agent.getId()).getData();
 			assertNotNull(files);
-			assertEquals(0,files.size());
+			assertEquals(0, files.size());
 		}
 	}
 }

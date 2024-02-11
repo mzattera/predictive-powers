@@ -175,55 +175,55 @@ public class OpenAiClient implements ApiClient {
 	 */
 	public OpenAiClient(OkHttpClient http) {
 
-//		client = http;
+		client = http;
 
 		// Debug code below
-		client = http.newBuilder() //
+//		client = http.newBuilder() //
 
 				// Debug code below, outputs the request
-				.addInterceptor(new Interceptor() {
-
-					@Override
-					public Response intercept(Chain chain) throws IOException {
-						Request req = chain.request();
-
-						if (req.body() != null) {
-							Buffer buffer = new Buffer();
-							req.body().writeTo(buffer);
-							String bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
-									.writeValueAsString(jsonMapper.readTree(buffer.readUtf8()));
-							System.out.println("Request body: " + bodyContent);
-						}
-
-						return chain.proceed(req);
-					}
-				}) //
+//				.addInterceptor(new Interceptor() {
+//
+//					@Override
+//					public Response intercept(Chain chain) throws IOException {
+//						Request req = chain.request();
+//
+//						if (req.body() != null) {
+//							Buffer buffer = new Buffer();
+//							req.body().writeTo(buffer);
+//							String bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
+//									.writeValueAsString(jsonMapper.readTree(buffer.readUtf8()));
+//							System.out.println("Request body: " + bodyContent);
+//						}
+//
+//						return chain.proceed(req);
+//					}
+//				}) //
 
 				// Debug code below, outputs the response
-				.addInterceptor(new Interceptor() {
+//				.addInterceptor(new Interceptor() {
+//
+//					@Override
+//					public Response intercept(Chain chain) throws IOException {
+//
+//						Response response = chain.proceed(chain.request());
+//						if (response.body() != null) {
+//							BufferedSource source = response.body().source();
+//							source.request(Long.MAX_VALUE);
+//
+//							@SuppressWarnings("deprecation")
+//							Buffer buffer = source.buffer();
+//
+//							Buffer clone = buffer.clone();
+//							String bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
+//									.writeValueAsString(jsonMapper.readTree(clone.readUtf8()));
+//							System.out.println("Response body: " + bodyContent);
+//						}
+//
+//						return response; // Return the original response unaltered
+//					}
+//				}) //
 
-					@Override
-					public Response intercept(Chain chain) throws IOException {
-
-						Response response = chain.proceed(chain.request());
-						if (response.body() != null) {
-							BufferedSource source = response.body().source();
-							source.request(Long.MAX_VALUE);
-
-							@SuppressWarnings("deprecation")
-							Buffer buffer = source.buffer();
-
-							Buffer clone = buffer.clone();
-							String bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
-									.writeValueAsString(jsonMapper.readTree(clone.readUtf8()));
-							System.out.println("Response body: " + bodyContent);
-						}
-
-						return response; // Return the original response unaltered
-					}
-				}) //
-
-				.build();
+//				.build();
 
 		Retrofit retrofit = new Retrofit.Builder().baseUrl(API_BASE_URL).client(client)
 				.addConverterFactory(JacksonConverterFactory.create(jsonMapper))

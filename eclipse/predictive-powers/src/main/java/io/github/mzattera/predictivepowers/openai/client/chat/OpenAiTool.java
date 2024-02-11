@@ -16,10 +16,14 @@
 
 package io.github.mzattera.predictivepowers.openai.client.chat;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 import io.github.mzattera.predictivepowers.services.Agent;
+import io.github.mzattera.predictivepowers.services.Capability;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
@@ -46,7 +50,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class OpenAiTool implements Tool {
+public final class OpenAiTool implements Tool {
 
 	/** The code interpreter tool, for Assistants. */
 	public final static OpenAiTool CODE_INTERPRETER = new OpenAiTool(Type.CODE_INTERPRETER);
@@ -77,9 +81,7 @@ public class OpenAiTool implements Tool {
 	 * Tool.
 	 */
 	@JsonIgnore
-	@Getter(AccessLevel.PROTECTED)
-	@Setter(AccessLevel.NONE)
-	protected Tool wrappedTool;
+	private Tool wrappedTool;
 
 	@NonNull
 	private Type type;
@@ -105,16 +107,6 @@ public class OpenAiTool implements Tool {
 		if (type == Type.FUNCTION)
 			return function.getDescription();
 		return ("This is the " + type + " tool available to OpenAI assistants.");
-	}
-
-	@JsonIgnore
-	@Override
-	public Class<?> getParameterSchema() {
-		if (wrappedTool != null)
-			return wrappedTool.getParameterSchema();
-		if (type == Type.FUNCTION)
-			return function.getParameters();
-		return Tool.NoParameters.class;
 	}
 
 	private OpenAiTool(Type type) {
@@ -146,10 +138,7 @@ public class OpenAiTool implements Tool {
 	 */
 	public OpenAiTool(Tool tool) {
 		this.type = Type.FUNCTION;
-		this.function = Function.builder() //
-				.name(tool.getId()) //
-				.description(tool.getDescription()) //
-				.parameters(tool.getParameterSchema()).build();
+		this.function = new Function(tool);
 		this.wrappedTool = tool;
 	}
 
@@ -164,11 +153,44 @@ public class OpenAiTool implements Tool {
 	public int hashCode() {
 		return this.getId().hashCode();
 	}
+	
+	///////// Below methods implement the Tool interface
+	/////////////////////////////////////////////////////////////////////////////////////
+	
+	@JsonIgnore
+	private Capability capability;
+
+	@Override
+	public void setCapability(Capability capability) {
+		if (wrappedTool != null)
+			wrappedTool.setCapability(capability);
+		else
+			this.capability = capability;
+	
+	}
+
+	@Override
+	public Capability getCapability() {
+		if (wrappedTool != null)
+			return wrappedTool.getCapability();
+		return this.capability;
+	}
+
+	@JsonIgnore
+	private boolean initialized = false;
+
+	@Override
+	public boolean isInitialized() {
+		if (wrappedTool != null)
+			return wrappedTool.isInitialized();
+		return initialized;
+	}
 
 	@Override
 	public void init(@NonNull Agent agent) throws ToolInitializationException {
 		if (wrappedTool != null)
 			wrappedTool.init(agent);
+		initialized = true;
 	}
 
 	/**
@@ -188,5 +210,15 @@ public class OpenAiTool implements Tool {
 	public void close() throws Exception {
 		if (wrappedTool != null)
 			wrappedTool.close();
+	}
+
+	@Override
+	public List<? extends ToolParameter> getParameters() {
+		if (wrappedTool != null)
+			return wrappedTool.getParameters();
+		if (type == Type.FUNCTION)
+			return function.getParameters().properties;
+		else
+			return new ArrayList<>();
 	}
 }

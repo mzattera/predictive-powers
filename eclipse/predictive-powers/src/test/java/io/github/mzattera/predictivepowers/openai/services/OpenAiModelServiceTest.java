@@ -53,11 +53,9 @@ class OpenAiModelServiceTest {
 		// Not needed any longer, left here in case the problem re-appears
 	}
 
-	private final static Function FUNCTION = Function.builder() //
-			.name("get_current_weather") //
-			.description("Get the current weather in a given location.") //
-			.parameters(GetCurrentWeatherTool.GetCurrentWeatherParameters.class).build() //
-	;
+	private final static Function FUNCTION = new Function("get_current_weather", //
+			"Get the current weather in a given location.", //
+			GetCurrentWeatherTool.GetCurrentWeatherParameters.class);
 	private final static List<Function> FUNCTIONS = new ArrayList<>();
 	static {
 		FUNCTIONS.add(FUNCTION);

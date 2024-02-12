@@ -244,7 +244,8 @@ public class OpenAiChatMessage {
 	@JsonIgnore
 	public void setContent(String content) {
 		contentParts.clear();
-		contentParts.add(new TextPart(content));
+		if (content != null)
+			contentParts.add(new TextPart(content));
 	}
 
 	private List<MessagePart> contentParts = new ArrayList<>();

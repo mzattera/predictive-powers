@@ -14,10 +14,11 @@ import lombok.NonNull;
 import lombok.Setter;
 
 /**
- * Basic implementation of {@link Capability}; a collection of tools backed by a
- * Map.
+ * Basic implementation of a {@link Capability}
+ * 
+ * This is a collection of unrelated tools, backed by a Map.
  */
-public class SimpleCapability implements Capability {
+public class Toolset implements Capability {
 
 	public static final String DEFAULT_ID = "tools";
 
@@ -36,55 +37,49 @@ public class SimpleCapability implements Capability {
 	/**
 	 * Creates an empty capability with default ID.
 	 */
-	public SimpleCapability() {
+	public Toolset() {
 		this(DEFAULT_ID);
 	}
 
 	/**
 	 * Creates an empty capability.
 	 */
-	public SimpleCapability(@NonNull String id) {
+	public Toolset(@NonNull String id) {
 		this(id, "Capability: " + id);
 	}
 
 	/**
 	 * Creates an empty capability.
 	 */
-	public SimpleCapability(@NonNull String id, @NonNull String description) {
+	public Toolset(@NonNull String id, @NonNull String description) {
 		this(id, description, null);
 	}
 
 	/**
 	 * Creates a capability with default ID containing all of the given tools.
 	 */
-	public SimpleCapability(@NonNull Collection<? extends Tool> tools) {
+	public Toolset(@NonNull Collection<Class<?>> tools) {
 		this(DEFAULT_ID, tools);
 	}
 
 	/**
 	 * Creates a capability containing all of the given tools.
 	 */
-	public SimpleCapability(@NonNull String id, @NonNull Collection<? extends Tool> tools) {
+	public Toolset(@NonNull String id, @NonNull Collection<Class<?>> tools) {
 		this(DEFAULT_ID, "Capability: " + id, tools);
 	}
 
 	/**
 	 * Creates a capability containing all of the given tools.
 	 */
-	public SimpleCapability(@NonNull String id, @NonNull String description, Collection<? extends Tool> tools) {
+	public Toolset(@NonNull String id, @NonNull String description, Collection<Class<?>> tools) {
 
 		this.id = id;
 		this.description = description;
 
 		if (tools != null) {
-			for (Tool tool : tools)
-				putTool(tool.getId(), () -> {
-					try {
-						return (Tool) tool.getClass().getDeclaredConstructor().newInstance();
-					} catch (Exception e) {
-						throw new RuntimeException("Error instanciating tool: " + tool.getId(), e);
-					}
-				});
+			for (Class<?> c : tools)
+				putTool(id, c);
 		}
 	}
 
@@ -110,6 +105,17 @@ public class SimpleCapability implements Capability {
 	@Override
 	public void putTool(@NonNull String toolId, @NonNull Supplier<? extends Tool> supplier) {
 		suppliers.put(toolId, supplier);
+	}
+
+	public void putTool(@NonNull String toolId, @NonNull Class<?> tool) {
+		suppliers.put(id, () -> {
+			try {
+				return (Tool) tool.getConstructor().newInstance();
+			} catch (Exception e) {
+				e.printStackTrace(System.err);
+				return null;
+			}
+		});
 	}
 
 	@Override

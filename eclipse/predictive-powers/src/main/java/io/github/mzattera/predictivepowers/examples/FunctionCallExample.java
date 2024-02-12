@@ -28,11 +28,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.services.AbstractTool;
-import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Capability;
-import io.github.mzattera.predictivepowers.services.SimpleCapability;
-import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.Toolset;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
@@ -69,36 +67,24 @@ public class FunctionCallExample {
 		}
 
 		@Override
-		public void init(@NonNull Agent agent) {
-			if (isInitialized())
-				throw new IllegalStateException();
-			setInitialized(true);
-		}
-
-		@Override
 		public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
 			// Function implementation goes here.
 			// In this example we simply return a random temperature.
 			if (!isInitialized())
-				throw new IllegalStateException();
+				throw new IllegalStateException("Tool must be initialized.");
 			return new ToolCallResult(call, (RND.nextInt(10) + 20) + "°C");
-		}
-
-		@Override
-		public void close() {
-			// Code to dispose the tool...
 		}
 	}
 
 	// List of functions available to the bot (for now it is only 1).
-	private final static Collection<Tool> TOOLS = new ArrayList<>();
+	private final static Collection<Class<?>> TOOLS = new ArrayList<>();
 	static {
-		TOOLS.add(new GetCurrentWeatherTool());
+		TOOLS.add(GetCurrentWeatherTool.class);
 	}
 
 	// A provider to give tool instances to the bot
 	// TODO URGENT REVERT BACK TO PRIVATE
-	public final static Capability DEFAULT_CAPABILITY = new SimpleCapability(TOOLS);
+	public final static Capability DEFAULT_CAPABILITY = new Toolset(TOOLS);
 
 	public static void main(String[] args) throws ToolInitializationException {
 

@@ -130,8 +130,9 @@ public interface Tool extends AutoCloseable {
 	 * this tool.
 	 * 
 	 * @param agent The agent that will then invoke this tool, eventually.
+	 * @param IllegalStateException if the tool was already initialized.
 	 */
-	void init(@NonNull Agent agent) throws ToolInitializationException;
+	void init(@NonNull Agent agent) throws ToolInitializationException, IllegalStateException;
 
 	/**
 	 * Invokes (executes) the tool. This can be called several times.
@@ -139,6 +140,8 @@ public interface Tool extends AutoCloseable {
 	 * @param call The call to the tool, created by the calling agent.
 	 * 
 	 * @return The result of calling the tool.
+	 * 
+	 * @param IllegalStateException if the tool was not yet initialized.
 	 */
 	ToolCallResult invoke(@NonNull ToolCall call) throws Exception;
 }

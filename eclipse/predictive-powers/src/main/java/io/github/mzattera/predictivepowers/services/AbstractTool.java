@@ -12,6 +12,7 @@ import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
@@ -25,7 +26,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @SuperBuilder
 public abstract class AbstractTool implements Tool {
-
+	
 	@Getter
 	private final String id;
 
@@ -34,6 +35,7 @@ public abstract class AbstractTool implements Tool {
 	private String description = "";
 
 	@Getter
+	@NonNull 
 	private List<? extends ToolParameter> parameters = new ArrayList<>();
 
 	protected void setParameters(List<? extends ToolParameter> parameters) {
@@ -60,21 +62,33 @@ public abstract class AbstractTool implements Tool {
 	@Setter
 	private Capability capability;
 
+	@Getter (AccessLevel.PROTECTED)
+	@Setter (AccessLevel.PROTECTED)
+	private Agent agent;
+
 	@Getter
 	@Setter(AccessLevel.PROTECTED)
 	private boolean initialized = false;
 
-	protected AbstractTool(String id, String description) {
+	@Override
+	public void init(@NonNull Agent agent) {
+		if (initialized)
+			throw new IllegalStateException("Tool not yet initialized");
+		this.agent=agent;
+		initialized=true;
+	}
+
+	protected AbstractTool(@NonNull String id, String description) {
 		this(id, description, new ArrayList<>());
 	}
 
-	protected AbstractTool(String id, String description, List<ToolParameter> parameters) {
+	protected AbstractTool(@NonNull String id, String description, @NonNull List<ToolParameter> parameters) {
 		this.id = id;
 		this.description = description;
 		this.parameters = parameters;
 	}
 
-	protected AbstractTool(String id, String description, Class<?> schema) {
+	protected AbstractTool(@NonNull String id, String description, @NonNull Class<?> schema) {
 		this.id = id;
 		this.description = description;
 		this.parameters = Function.getParametersFromSchema(schema);

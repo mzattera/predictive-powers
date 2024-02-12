@@ -278,18 +278,13 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 
 	private void putTool(@NonNull Tool tool) throws ToolInitializationException {
 
+		// Try init first
 		tool.init(this);
 
 		// Closes older version of this tool, if any
-		OpenAiTool old = toolMap.remove(tool.getId());
-		if (old != null) {
-			try {
-				old.close();
-			} catch (Exception e) {
-				LOG.warn("Error closing tool: {1}", e.getMessage());
-			}
-		}
+		removeTool(tool.getId());
 
+		// Adds new one
 		try {
 			toolMap.put(tool.getId(), (OpenAiTool) tool);
 		} catch (ClassCastException e) {

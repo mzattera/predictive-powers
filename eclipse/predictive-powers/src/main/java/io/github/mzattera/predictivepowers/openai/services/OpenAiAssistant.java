@@ -341,18 +341,13 @@ public class OpenAiAssistant implements Agent {
 
 	private void putTool(@NonNull Tool tool) throws ToolInitializationException {
 
+		// Tries if init goes
 		tool.init(this);
 
 		// Closes older version of this tool, if any
-		OpenAiTool old = toolMap.remove(tool.getId());
-		if (old != null) {
-			try {
-				old.close();
-			} catch (Exception e) {
-				LOG.warn("Error closing tool: {1}", e.getMessage());
-			}
-		}
+		removeTool(tool.getId());
 
+		// Adds new one
 		try {
 			toolMap.put(tool.getId(), (OpenAiTool) tool);
 		} catch (ClassCastException e) {

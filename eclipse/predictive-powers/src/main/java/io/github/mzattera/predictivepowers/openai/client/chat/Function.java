@@ -117,6 +117,8 @@ public class Function {
 			super(JsonSchema.class, false);
 		}
 
+		// TODO URGENT Test deserailization as well
+
 		@Override
 		public void serialize(JsonSchema schema, JsonGenerator gen, SerializerProvider provider) throws IOException {
 			gen.writeStartObject();
@@ -138,15 +140,15 @@ public class Function {
 				for (ToolParameter prop : schema.properties) {
 					gen.writeObjectFieldStart(prop.name);
 					gen.writeStringField("type", prop.type.toString());
-					if (prop.description != null) {
-						gen.writeStringField("description", prop.description);
-					}
 					if (prop.emum != null && !prop.emum.isEmpty()) {
 						gen.writeArrayFieldStart("enum");
 						for (String enumValue : prop.emum) {
 							gen.writeString(enumValue);
 						}
 						gen.writeEndArray();
+					}
+					if (prop.description != null) {
+						gen.writeStringField("description", prop.description);
 					}
 					gen.writeEndObject();
 				}
@@ -198,7 +200,8 @@ public class Function {
 				Map.Entry<String, JsonNode> entry = fields.next();
 				ToolParameter parameter = new ToolParameter();
 				parameter.name = entry.getKey();
-				parameter.description = entry.getValue().path("description").asText();
+				JsonNode description = entry.getValue().get("description");
+				parameter.description = (description == null) ? null : description.asText();
 
 				String typeStr = entry.getValue().path("type").asText();
 				switch (typeStr) {

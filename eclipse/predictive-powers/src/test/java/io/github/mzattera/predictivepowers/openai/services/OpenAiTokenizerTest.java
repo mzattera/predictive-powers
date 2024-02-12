@@ -31,11 +31,9 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.Op
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
 import io.github.mzattera.predictivepowers.services.AbstractTool;
-import io.github.mzattera.predictivepowers.services.Agent;
-import io.github.mzattera.predictivepowers.services.Capability;
-import io.github.mzattera.predictivepowers.services.SimpleCapability;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.Toolset;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.NonNull;
@@ -292,27 +290,19 @@ public class OpenAiTokenizerTest {
 			@JsonProperty(required = true)
 			public TemperatureUnits unit3;
 
-			// TODO URGENT Remove or redo tests
+			// TODO URGENT Remove or redo tests			
+			@SuppressWarnings("unused")
 			public boolean bull;
 		}
 
-		public GetCurrentWeatherTool(int i) {
-			super("getCurrentWeather" + i, //
+		public GetCurrentWeatherTool() {
+			super("getCurrentWeather", //
 					"Get the current weather in a given location.", //
 					GetCurrentWeatherParameters.class);
 		}
 
 		@Override
-		public void init(@NonNull Agent agent) {
-			if (isInitialized())
-				throw new IllegalStateException();
-			setInitialized(true);
-		}
-
-		@Override
 		public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
-			// Function implementation goes here.
-			// In this example we simply return a random temperature.
 			if (!isInitialized())
 				throw new IllegalStateException();
 			return new ToolCallResult(call, "20°C");
@@ -326,12 +316,17 @@ public class OpenAiTokenizerTest {
 	// List of functions available to the bot (for now it is only 1).
 	private final static List<Tool> TOOLS = new ArrayList<>();
 	static {
-		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool(1)));
-		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool(2)));
-		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool(3)));
+		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool()));
+		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool()));
+		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool()));
 	}
 
-	private final static Capability DEFAULT_CAPABILITY = new SimpleCapability(TOOLS);
+	private final static Toolset TOOLSET = new Toolset();
+	static {
+		for (int i=0;i<3;++i) {
+			TOOLSET.putTool("getCurrentWeather" + i, GetCurrentWeatherTool.class);
+		}
+	}
 
 	/**
 	 * Length of messages. Function descriptions.
@@ -350,7 +345,7 @@ public class OpenAiTokenizerTest {
 		OpenAiChatService bot = endpoint.getChatService();
 		bot.setPersonality("You are an helpful assistant.");
 		bot.setModel(model); // This uses simple function calls
-		bot.addCapability(DEFAULT_CAPABILITY);
+		bot.addCapability(TOOLSET);
 
 		ChatCompletionsRequest req = bot.getDefaultReq();
 		req.getMessages().add(new OpenAiChatMessage(Role.USER, "Hi"));
@@ -379,7 +374,7 @@ public class OpenAiTokenizerTest {
 		OpenAiChatService bot = endpoint.getChatService();
 		bot.setPersonality("You are an helpful assistant.");
 		bot.setModel(model); // This uses simple tool (parallel functions) calls
-		bot.addCapability(DEFAULT_CAPABILITY);
+		bot.addCapability(TOOLSET);
 
 		ChatCompletionsRequest req = bot.getDefaultReq();
 		req.getMessages().add(new OpenAiChatMessage(Role.USER, "Hi"));

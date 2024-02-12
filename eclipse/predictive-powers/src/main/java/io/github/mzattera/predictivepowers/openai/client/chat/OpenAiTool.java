@@ -212,6 +212,7 @@ public final class OpenAiTool implements Tool {
 			wrappedTool.close();
 	}
 
+	@JsonIgnore
 	@Override
 	public List<? extends ToolParameter> getParameters() {
 		if (wrappedTool != null)

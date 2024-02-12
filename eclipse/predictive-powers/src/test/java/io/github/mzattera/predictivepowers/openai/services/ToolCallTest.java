@@ -41,10 +41,9 @@ import io.github.mzattera.predictivepowers.openai.client.chat.ToolChoice;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
 import io.github.mzattera.predictivepowers.services.AbstractTool;
-import io.github.mzattera.predictivepowers.services.Agent;
-import io.github.mzattera.predictivepowers.services.Capability;
-import io.github.mzattera.predictivepowers.services.SimpleCapability;
+import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.Toolset;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
@@ -60,6 +59,21 @@ import lombok.NonNull;
 public class ToolCallTest {
 
 	private final static String MODEL = "gpt-4-turbo-preview";
+
+	private final static List<Tool> TOOLS = new ArrayList<>();
+	static {
+		TOOLS.add(new GetCurrentWeatherTool());
+	}
+	private final static List<Class<?>> TOOL_CLASSES = new ArrayList<>();
+	static {
+		for (Tool t : TOOLS)
+			TOOL_CLASSES.add(t.getClass());
+	}
+	private final static List<OpenAiTool> WRAPPED = new ArrayList<>();
+	static {
+		for (Tool t : TOOLS)
+			WRAPPED.add(new OpenAiTool(t));
+	}
 
 	@BeforeAll
 	public static void check() {
@@ -102,23 +116,12 @@ public class ToolCallTest {
 		}
 
 		@Override
-		public void init(@NonNull Agent agent) {
-			setInitialized(true);
-		}
-
-		@Override
 		public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
-			// Function implementation goes here.
-			// In this example we simply return a random temperature.
+			if (!isInitialized())
+				throw new IllegalStateException();
 			return new ToolCallResult(call, "20°C");
 		}
 	}
-
-	private final static List<OpenAiTool> TOOLS = new ArrayList<>();
-	static {
-		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool()));
-	}
-	private final static Capability DEFAULT_CAPABILITY = new SimpleCapability(TOOLS);
 
 	/**
 	 * Tests ToolChoice serialization.
@@ -132,7 +135,7 @@ public class ToolCallTest {
 		json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(ToolChoice.AUTO);
 		assertEquals("\"auto\"", json);
 
-		json = mapper.writeValueAsString(new ToolChoice(TOOLS.get(0).getFunction()));
+		json = mapper.writeValueAsString(new ToolChoice(WRAPPED.get(0).getFunction()));
 		assertEquals("{\"type\":\"function\",\"function\":{\"name\":\"get_current_weather\"}}", json);
 	}
 
@@ -143,25 +146,25 @@ public class ToolCallTest {
 	 */
 	@Test
 	public void test52() throws JsonProcessingException {
-		OpenAiTool t = TOOLS.get(0);
+		OpenAiTool t = WRAPPED.get(0);
 
 		String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(t);
-		assertEquals("{\r\n" + "  \"type\" : \"function\",\r\n" + "  \"function\" : {\r\n"
-				+ "    \"name\" : \"get_current_weather\",\r\n"
-				+ "    \"description\" : \"Get the current weather in a given location.\",\r\n"
-				+ "    \"parameters\" : {\r\n" + "      \"$schema\" : \"http://json-schema.org/draft-04/schema#\",\r\n"
-				+ "      \"title\" : \"Get Current Weather Parameters\",\r\n" + "      \"type\" : \"object\",\r\n"
-				+ "      \"additionalProperties\" : false,\r\n" + "      \"properties\" : {\r\n"
-				+ "        \"location\" : {\r\n" + "          \"type\" : \"string\",\r\n"
-				+ "          \"description\" : \"The city and state, e.g. San Francisco, CA\"\r\n" + "        },\r\n"
-				+ "        \"unit\" : {\r\n" + "          \"type\" : \"string\",\r\n"
-				+ "          \"enum\" : [ \"CELSIUS\", \"FARENHEIT\" ],\r\n"
-				+ "          \"description\" : \"Temperature unit (Celsius or Farenheit). This is optional.\"\r\n"
-				+ "        },\r\n" + "        \"fooParameter\" : {\r\n" + "          \"type\" : \"integer\"\r\n"
-				+ "        },\r\n" + "        \"code\" : {\r\n" + "          \"type\" : \"integer\",\r\n"
-				+ "          \"description\" : \"Unique API code, this is an integer which must be passed and it is always equal to 6.\"\r\n"
-				+ "        }\r\n" + "      },\r\n" + "      \"required\" : [ \"location\", \"code\" ]\r\n" + "    }\r\n"
-				+ "  }\r\n" + "}", json);
+		assertEquals("{\n" + "  \"type\" : \"function\",\n" + "  \"function\" : {\n"
+				+ "    \"name\" : \"get_current_weather\",\n"
+				+ "    \"description\" : \"Get the current weather in a given location.\",\n"
+				+ "    \"parameters\" : {\n" + "      \"$schema\" : \"http://json-schema.org/draft-04/schema#\",\n"
+				+ "      \"title\" : \"Function Parameters\",\n" + "      \"type\" : \"object\",\n"
+				+ "      \"additionalProperties\" : false,\n" + "      \"properties\" : {\n"
+				+ "        \"location\" : {\n" + "          \"type\" : \"string\",\n"
+				+ "          \"description\" : \"The city and state, e.g. San Francisco, CA\"\n" + "        },\n"
+				+ "        \"unit\" : {\n" + "          \"type\" : \"string\",\n"
+				+ "          \"enum\" : [ \"CELSIUS\", \"FARENHEIT\" ],\n"
+				+ "          \"description\" : \"Temperature unit (Celsius or Farenheit). This is optional.\"\n"
+				+ "        },\n" + "        \"fooParameter\" : {\n" + "          \"type\" : \"integer\"\n"
+				+ "        },\n" + "        \"code\" : {\n" + "          \"type\" : \"integer\",\n"
+				+ "          \"description\" : \"Unique API code, this is an integer which must be passed and it is always equal to 6.\"\n"
+				+ "        }\n" + "      },\n" + "      \"required\" : [ \"location\", \"code\" ]\n" + "    }\n"
+				+ "  }\n" + "}", json);
 	}
 
 	/**
@@ -184,7 +187,7 @@ public class ToolCallTest {
 
 		String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(tc);
 		assertEquals(
-				"{\r\n  \"type\" : \"function\",\r\n  \"function\" : {\r\n    \"name\" : \"testCall\",\r\n    \"arguments\" : \"{\\r\\n  \\\"name\\\" : \\\"pippo\\\",\\r\\n  \\\"value\\\" : 6\\r\\n}\"\r\n  },\r\n  \"id\" : \"test_id\"\r\n}",
+				"{\n  \"type\" : \"function\",\n  \"function\" : {\n    \"name\" : \"testCall\",\n    \"arguments\" : \"{\\r\\n  \\\"name\\\" : \\\"pippo\\\",\\r\\n  \\\"value\\\" : 6\\r\\n}\"\n  },\n  \"id\" : \"test_id\"\n}",
 				json);
 	}
 
@@ -200,7 +203,7 @@ public class ToolCallTest {
 
 			OpenAiChatService cs = ep.getChatService("You are an agent supporting user with weather forecasts");
 			cs.setModel(MODEL);
-			cs.addCapability(DEFAULT_CAPABILITY);
+			cs.addCapability(new Toolset(TOOL_CLASSES));
 
 			// Casual chat should not trigger any function call
 			ChatCompletion reply = cs.chat("Where is Dallas, TX?");
@@ -213,7 +216,7 @@ public class ToolCallTest {
 			assertTrue(reply.hasToolCalls());
 			assertEquals(FinishReason.OTHER, reply.getFinishReason());
 			assertEquals(1, reply.getToolCalls().size());
-			assertEquals(TOOLS.get(0).getFunction().getName(), reply.getToolCalls().get(0).getTool().getId());
+			assertEquals(WRAPPED.get(0).getFunction().getName(), reply.getToolCalls().get(0).getTool().getId());
 			Map<String, Object> actual = new HashMap<>();
 			actual.put("location", "Dallas, TX");
 			actual.put("code", 6);
@@ -225,7 +228,7 @@ public class ToolCallTest {
 			assertTrue(reply.hasToolCalls());
 			assertEquals(FinishReason.OTHER, reply.getFinishReason());
 			assertEquals(1, reply.getToolCalls().size());
-			assertEquals(TOOLS.get(0).getFunction().getName(), reply.getToolCalls().get(0).getTool().getId());
+			assertEquals(WRAPPED.get(0).getFunction().getName(), reply.getToolCalls().get(0).getTool().getId());
 			actual.put("unit", "FARENHEIT");
 			sameArguments(actual, reply.getToolCalls().get(0).getArguments());
 		}
@@ -243,7 +246,7 @@ public class ToolCallTest {
 
 			OpenAiChatService cs = ep.getChatService("You are an agent supporting user with weather forecasts");
 			cs.setModel(MODEL);
-			cs.addCapability(DEFAULT_CAPABILITY);
+			cs.addCapability(new Toolset(TOOL_CLASSES));
 
 			ChatCompletion reply = null;
 
@@ -270,7 +273,7 @@ public class ToolCallTest {
 
 			// This should force call
 			cs.clearConversation();
-			cs.getDefaultReq().setToolChoice(new ToolChoice(TOOLS.get(0).getFunction()));
+			cs.getDefaultReq().setToolChoice(new ToolChoice(WRAPPED.get(0).getFunction()));
 			reply = cs.chat("Where is Dallas, TX?");
 			assertTrue(reply.hasToolCalls());
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
@@ -312,7 +315,7 @@ public class ToolCallTest {
 
 			OpenAiChatService cs = endpoint.getChatService("You are an helpful assistant.");
 			cs.setModel(MODEL);
-			cs.addCapability(DEFAULT_CAPABILITY);
+			cs.addCapability(new Toolset(TOOL_CLASSES));
 
 			// This should generate a single call for 2 tools
 			ChatCompletion reply = cs.chat("What is the temperature in London and Zurich?");

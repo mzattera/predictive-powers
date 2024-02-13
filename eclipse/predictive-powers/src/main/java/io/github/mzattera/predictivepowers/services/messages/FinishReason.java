@@ -38,7 +38,6 @@ public enum FinishReason {
 	OTHER;
 
 	public static FinishReason fromGptApi(String reason) {
-		// TODO URGENT handle agents partial responses
 		switch (reason) {
 		case "stop":
 			return FinishReason.COMPLETED;

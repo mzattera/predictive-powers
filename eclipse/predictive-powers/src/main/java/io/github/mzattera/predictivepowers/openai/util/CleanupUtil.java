@@ -41,8 +41,6 @@ public class CleanupUtil {
 
 	public static void main(String[] args) {
 
-		// TODO URGENT delete agents, threads and runs
-
 		try (Scanner console = new Scanner(System.in)) {
 
 			System.out.print(
@@ -107,7 +105,9 @@ public class CleanupUtil {
 					break;
 			} // until the list is complete
 
+			// TODO URGENT cascade delete threads, runs & files
 			// Delete assistants
+			System.out.println("Deleting Models...");
 			while (true) {
 				DataList<Assistant> l = cli.listAssistants();
 				for (Assistant a : l.getData())

@@ -52,6 +52,7 @@ import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Capability;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.Toolset;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
@@ -156,10 +157,19 @@ public class OpenAiAssistant implements Agent {
 		update();
 	}
 
+	// Conversation history for the current thread
+	@Getter
+	List<ChatMessage> history = new ArrayList<>();
+
 	@Override
 	public void clearConversation() {
-		// TODO URGENT implement
-		throw new UnsupportedOperationException();
+		if (thread != null) {
+			endpoint.getClient().deleteThread(thread.getId());
+			thread = null;
+			run = null;
+			usrMsg = null;
+			history.clear();
+		}
 	}
 
 	@Override
@@ -174,8 +184,10 @@ public class OpenAiAssistant implements Agent {
 	public ChatCompletion chat(ChatMessage msg) {
 
 		// Get current conversation thread
-		if (thread == null)
+		if (thread == null) {
 			thread = endpoint.getClient().createThread(ThreadsRequest.builder().build());
+			history.clear();
+		}
 
 		if ((run != null) && (run.getStatus() == Status.REQUIRES_ACTION)) {
 
@@ -192,11 +204,13 @@ public class OpenAiAssistant implements Agent {
 				req.getToolOutputs().add(new ToolOutput(result));
 
 			run = endpoint.getClient().submitToolOutputsToRun(thread.getId(), run.getId(), req);
+			history.add(msg);
 		} else {
 
 			// Add message to thread
 			try {
 				usrMsg = endpoint.getClient().createMessage(thread.getId(), MessagesRequest.getInstance(msg, endpoint));
+				history.add(msg);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
@@ -232,17 +246,22 @@ public class OpenAiAssistant implements Agent {
 				// Assistant generated tool calls
 				ChatMessage message = fromMessages(retrieveNewMessages(thread, usrMsg));
 				message.getParts().addAll(fromToolCalls(action.getSubmitToolOutputs().getToolCalls()));
+				history.add(message);
 				return new ChatCompletion(FinishReason.COMPLETED, message);
 			default:
 				throw new IllegalArgumentException("Unsupported action type.");
 			}
 
 		case COMPLETED:
-			return new ChatCompletion(FinishReason.COMPLETED, fromMessages(retrieveNewMessages(thread, usrMsg)));
+			ChatMessage message = fromMessages(retrieveNewMessages(thread, usrMsg));
+			history.add(message);
+			return new ChatCompletion(FinishReason.COMPLETED, message);
 
 		case CANCELLING:
 		case CANCELLED:
-			return new ChatCompletion(FinishReason.TRUNCATED, fromMessages(retrieveNewMessages(thread, usrMsg)));
+			message = fromMessages(retrieveNewMessages(thread, usrMsg));
+			history.add(message);
+			return new ChatCompletion(FinishReason.TRUNCATED, message);
 
 		// TODO URGENT throw better exceptions and declare one which is not runtime?
 		case FAILED:
@@ -258,13 +277,14 @@ public class OpenAiAssistant implements Agent {
 	/**
 	 * 
 	 * @param thread
-	 * @param last
+	 * @param last   Last message, this can be null to get all messages in the
+	 *               thread.
 	 * @return All messages added to the thread after last one.
 	 */
 	private List<Message> retrieveNewMessages(OpenAiThread thread, Message last) {
 		List<Message> result = new ArrayList<>();
 
-		String lastId = last.getId();
+		String lastId = (last == null) ? null : last.getId();
 		while (true) {
 			DataList<Message> msgs = endpoint.getClient().listMessages(thread.getId(), SortOrder.ASCENDING, null,
 					lastId, null);
@@ -301,7 +321,7 @@ public class OpenAiAssistant implements Agent {
 		if (old != null)
 			removeCapability(old.getId());
 		capability.init(this);
-		
+
 		for (String toolId : capability.getToolIds()) {
 			putTool(capability.getNewToolInstance(toolId));
 		}
@@ -524,7 +544,9 @@ public class OpenAiAssistant implements Agent {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 
 			OpenAiAssistant bot = OpenAiAssistant.createAssistant(ep);
-			bot.addCapability(FunctionCallExample.DEFAULT_CAPABILITY);
+			Toolset tools = new Toolset();
+			tools.putTool("getCurrentWeather", FunctionCallExample.GetCurrentWeatherTool.class);
+			bot.addCapability(tools);
 
 			// Conversation loop
 			try (Scanner console = new Scanner(System.in)) {
@@ -532,6 +554,12 @@ public class OpenAiAssistant implements Agent {
 					System.out.print("User     > ");
 					String s = console.nextLine();
 
+					if ("history".equals(s)) {
+						for (ChatMessage msg:bot.getHistory())
+							System.out.println("HISTORY " + " > " + msg.getAuthor() + ": " +msg.getContent());
+						continue;
+					}
+					
 					ChatCompletion reply = bot.chat(s);
 
 					// Check if bot generated a function call

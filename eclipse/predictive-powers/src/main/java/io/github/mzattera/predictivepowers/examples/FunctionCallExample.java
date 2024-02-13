@@ -83,8 +83,7 @@ public class FunctionCallExample {
 	}
 
 	// A provider to give tool instances to the bot
-	// TODO URGENT REVERT BACK TO PRIVATE
-	public final static Capability DEFAULT_CAPABILITY = new Toolset(TOOLS);
+	private final static Capability DEFAULT_CAPABILITY = new Toolset(TOOLS);
 
 	public static void main(String[] args) throws ToolInitializationException {
 

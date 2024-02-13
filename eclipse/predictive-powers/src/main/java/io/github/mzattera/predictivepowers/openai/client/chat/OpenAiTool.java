@@ -203,7 +203,7 @@ public final class OpenAiTool implements Tool {
 	public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
 		if (wrappedTool != null)
 			return wrappedTool.invoke(call);
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException("Method not implemented.");
 	}
 
 	@Override

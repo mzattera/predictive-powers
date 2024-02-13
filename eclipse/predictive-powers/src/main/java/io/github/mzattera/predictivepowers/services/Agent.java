@@ -37,10 +37,6 @@ public interface Agent extends AiService {
 	// TODO URGENT: Add RemoteFile class and add files to agent -> fro OpenAI only
 	// TODO URGENT: Add methods to handle conversations (threads e.g. creating,
 	// continuing, deleting)
-	// TODO URGENT: OpenAI agent has the tools on its side, but they need to be
-	// bound again to tools on the client side. Describe this situation.
-	// Optionally we could always use an external Map, also for chat service, but it
-	// is less convenient....
 
 	/**
 	 * Get unique agent ID. Notice this ID is unique only inside one endpoint.
@@ -110,6 +106,17 @@ public interface Agent extends AiService {
 	 */
 	void clearCapabilities();
 
+	// TODO add methods to limit conversation history length?
+	
+	/**
+	 * These are the messages exchanged in the current conversation. Implementations
+	 * of this interface are supposed to keep history updated by adding each user
+	 * utterance and the corresponding agent reply.
+	 * 
+	 * Notice is this not expected to be manipulated.
+	 */
+	List<? extends ChatMessage> getHistory();
+
 	/**
 	 * Starts a new chat, clearing current conversation.
 	 */
@@ -117,15 +124,11 @@ public interface Agent extends AiService {
 
 	/**
 	 * Continues current chat, with the provided message.
-	 * 
-	 * The exchange is added to the conversation history.
 	 */
 	ChatCompletion chat(String msg);
 
 	/**
 	 * Continues current chat, with the provided message.
-	 * 
-	 * The exchange is added to the conversation history.
 	 */
 	ChatCompletion chat(ChatMessage msg);
 }

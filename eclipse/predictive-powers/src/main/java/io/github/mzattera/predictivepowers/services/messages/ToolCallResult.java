@@ -62,6 +62,6 @@ public class ToolCallResult implements MessagePart {
 
 	@Override
 	public String getContent() {
-		return (result == null ? "" : result.toString());
+		return ("ToolCallResult(" + (result == null ? "" : result.toString()) + ")");
 	}
 }

@@ -108,4 +108,14 @@ public class OpenAiException extends HttpException {
 			}
 		}
 	}
+	
+	@Override 
+	public String getMessage() {
+		return "HTTP " + ((HttpException)getCause()).code() + ": " + error.getError().getMessage();
+	}
+	
+	@Override 
+	public String getLocalizedMessage() {
+		return getMessage();
+	}
 }

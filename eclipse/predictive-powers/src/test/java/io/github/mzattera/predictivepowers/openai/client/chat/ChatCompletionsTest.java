@@ -72,4 +72,5 @@ class ChatCompletionsTest {
 					|| resp.getChoices().get(0).getMessage().getContent().contains("029 "));
 		} // Close endpoint
 	}
+			
 }

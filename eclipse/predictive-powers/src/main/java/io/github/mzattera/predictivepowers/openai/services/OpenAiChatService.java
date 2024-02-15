@@ -687,14 +687,10 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 		for (MessagePart part : msg.getParts()) {
 			if (part instanceof TextPart)
 				continue;
-			if (part instanceof FilePart) {
-				FilePart img = (FilePart) part;
-				if ((img.getContentType() != ContentType.IMAGE) || (img.getUrl() == null))
-					throw new IllegalArgumentException("Only image URLs are supported.");
-				else
-					continue;
-			}
-			throw new IllegalArgumentException("Unsupported part in message: " + part);
+			if ((part instanceof FilePart) && (((FilePart) part).getContentType() == ContentType.IMAGE))
+				continue;
+			throw new IllegalArgumentException(
+					"Unsupported part in message (only text and images are supported): " + part);
 		}
 
 		result.add(new OpenAiChatMessage(msg.getAuthor(), msg.getParts()));

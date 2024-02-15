@@ -106,12 +106,10 @@ public interface Agent extends AiService {
 	 */
 	void clearCapabilities();
 
-	// TODO add methods to limit conversation history length?
+	// We do not add methods to trim history length, as we suppose the agent maintains it autonomously
 	
 	/**
-	 * These are the messages exchanged in the current conversation. Implementations
-	 * of this interface are supposed to keep history updated by adding each user
-	 * utterance and the corresponding agent reply.
+	 * These are the messages exchanged in the current conversation.
 	 * 
 	 * Notice is this not expected to be manipulated.
 	 */

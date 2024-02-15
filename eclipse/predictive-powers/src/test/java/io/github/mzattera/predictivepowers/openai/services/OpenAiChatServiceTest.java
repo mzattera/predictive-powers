@@ -20,13 +20,22 @@ import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
+import io.github.mzattera.predictivepowers.services.messages.FilePart;
+import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
+import io.github.mzattera.util.ResourceUtil;
 
 /**
  * Test the OpenAI chat API & Service
@@ -276,4 +285,50 @@ public class OpenAiChatServiceTest {
 			s.setMaxNewTokens(15);
 		}
 	}
+
+	/**
+	 * Test image URLs in messages.
+	 * 
+	 * @throws URISyntaxException
+	 * @throws MalformedURLException
+	 */
+	@Test
+	void testImgUrls() throws MalformedURLException, URISyntaxException {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+			OpenAiChatService svc = endpoint.getChatService();
+			svc.setModel("gpt-4-vision-preview");
+
+			ChatMessage msg = new ChatMessage(Author.USER, "Is there any grass in this image?");
+			msg.getParts().add(FilePart.fromUrl(
+					"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+					ContentType.IMAGE));
+			ChatCompletion resp = svc.chat(msg);
+			System.out.println(resp.getText());
+			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
+			assertTrue(resp.getText().toUpperCase().contains("YES"));
+		} // Close endpoint
+	}
+
+	/**
+	 * Test image URLs in messages.
+	 * 
+	 * @throws URISyntaxException
+	 * @throws MalformedURLException
+	 */
+	@Test
+	void testImgFile() throws MalformedURLException, URISyntaxException {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+			OpenAiChatService svc = endpoint.getChatService();
+			svc.setModel("gpt-4-vision-preview");
+
+			ChatMessage msg = new ChatMessage(Author.USER, "Is there any grass in this image?");
+			msg.getParts().add(new FilePart(
+					ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk.jpg"), ContentType.IMAGE));
+			ChatCompletion resp = svc.chat(msg);
+			System.out.println(resp.getText());
+			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
+			assertTrue(resp.getText().toUpperCase().contains("YES"));
+		} // Close endpoint
+	}
+
 }

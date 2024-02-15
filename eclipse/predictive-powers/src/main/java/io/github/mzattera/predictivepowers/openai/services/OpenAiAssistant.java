@@ -165,11 +165,11 @@ public class OpenAiAssistant implements Agent {
 	public void clearConversation() {
 		if (thread != null) {
 			endpoint.getClient().deleteThread(thread.getId());
-			thread = null;
-			run = null;
-			usrMsg = null;
-			history.clear();
 		}
+		thread = null;
+		run = null;
+		usrMsg = null;
+		history.clear();
 	}
 
 	@Override
@@ -204,13 +204,11 @@ public class OpenAiAssistant implements Agent {
 				req.getToolOutputs().add(new ToolOutput(result));
 
 			run = endpoint.getClient().submitToolOutputsToRun(thread.getId(), run.getId(), req);
-			history.add(msg);
 		} else {
 
 			// Add message to thread
 			try {
 				usrMsg = endpoint.getClient().createMessage(thread.getId(), MessagesRequest.getInstance(msg, endpoint));
-				history.add(msg);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
@@ -218,6 +216,8 @@ public class OpenAiAssistant implements Agent {
 			// Create new run for the message
 			run = endpoint.getClient().createRun(thread.getId(), new RunsRequest(openAiAssistant.getId()));
 		}
+		
+		history.add(msg);
 
 		// Wait for completion
 		while (run.getStatus() == Status.QUEUED || run.getStatus() == Status.IN_PROGRESS) {
@@ -347,6 +347,7 @@ public class OpenAiAssistant implements Agent {
 		try {
 			capability.close();
 		} catch (Exception e) {
+			LOG.warn("Error closing capability: {1}", e.getMessage());
 		}
 
 		capabilityMap.remove(capability.getId());
@@ -390,7 +391,7 @@ public class OpenAiAssistant implements Agent {
 	/**
 	 * Creates a new Assistant, on the OpenAi server side.
 	 */
-	public static OpenAiAssistant createAssistant(@NonNull OpenAiEndpoint endpoint) {
+	static OpenAiAssistant createAssistant(@NonNull OpenAiEndpoint endpoint) {
 		return createAssistant(endpoint, //
 				AssistantsRequest.builder() //
 						.description("\"Default\" OpenAI Assistant") //
@@ -403,7 +404,7 @@ public class OpenAiAssistant implements Agent {
 	/**
 	 * Creates a new Assistant, on the OpenAi server side.
 	 */
-	public static OpenAiAssistant createAssistant(@NonNull OpenAiEndpoint endpoint, @NonNull AssistantsRequest req) {
+	static OpenAiAssistant createAssistant(@NonNull OpenAiEndpoint endpoint, @NonNull AssistantsRequest req) {
 		return new OpenAiAssistant(endpoint, endpoint.getClient().createAssistant(req).getId());
 	}
 
@@ -540,6 +541,7 @@ public class OpenAiAssistant implements Agent {
 		return calls;
 	}
 
+	// TODO URGENT remove and replace with tests
 	public static void main(String[] args) throws ToolInitializationException {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 
@@ -555,11 +557,11 @@ public class OpenAiAssistant implements Agent {
 					String s = console.nextLine();
 
 					if ("history".equals(s)) {
-						for (ChatMessage msg:bot.getHistory())
-							System.out.println("HISTORY " + " > " + msg.getAuthor() + ": " +msg.getContent());
+						for (ChatMessage msg : bot.getHistory())
+							System.out.println("HISTORY " + " > " + msg.getAuthor() + ": " + msg.getContent());
 						continue;
 					}
-					
+
 					ChatCompletion reply = bot.chat(s);
 
 					// Check if bot generated a function call

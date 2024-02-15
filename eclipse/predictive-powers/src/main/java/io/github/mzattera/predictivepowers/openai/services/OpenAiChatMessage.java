@@ -16,8 +16,8 @@
 package io.github.mzattera.predictivepowers.openai.services;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -100,14 +100,15 @@ public class OpenAiChatMessage {
 						gen.writeStringField("type", "text");
 						gen.writeStringField("text", ((TextPart) part).getContent());
 					} else if (part instanceof FilePart) {
-						if (((FilePart) part).getContentType() != ContentType.IMAGE)
-							throw new IllegalArgumentException("Only image URL are supported.");
-						URL url = ((FilePart) part).getUrl();
-						if (url == null)
-							throw new IllegalArgumentException("Image URL cannot be null.");
+						FilePart file = (FilePart)part;
+						if (file.getContentType() != ContentType.IMAGE)
+							throw new IllegalArgumentException("Only files with content type = IMAGE are supported.");
 						gen.writeStringField("type", "image_url");
 						gen.writeObjectFieldStart("image_url");
-						gen.writeStringField("url", url.toString());
+						if (file.getUrl() != null)
+							gen.writeStringField("url", file.getUrl().toString());
+						else // base64 encode
+							gen.writeStringField("url", Base64.getEncoder().encodeToString(file.getInputStream().readAllBytes()));
 						gen.writeEndObject();
 					} else {
 						throw new IllegalArgumentException("Unsupported part type: " + part);
@@ -131,7 +132,7 @@ public class OpenAiChatMessage {
 			if (node.isTextual()) {
 				parts.add(new TextPart(node.asText()));
 			} else {
-				throw new IllegalArgumentException(); // API should always return a null or a single String
+				throw new IllegalArgumentException(); // API should always return null or a single String
 			}
 			return parts;
 		}
@@ -214,7 +215,7 @@ public class OpenAiChatMessage {
 	 * When a message is returned by the API, this is always a single string value
 	 * that can be read with {@link getContent()}. When calling the API, you can use
 	 * {@link setContent()} to set this field to a single string value, or use
-	 * {@link getContentParts()} to provide an array of strings and image URLs (as
+	 * {@link getContentParts()} to provide an array of strings and images (as
 	 * {@link FilePart}s). Notice that {@link getContent()} will return null if the
 	 * message is not a single-part message that contains only text. On the other
 	 * side, {@link getContentParts()} will always return a list of message parts,
@@ -235,7 +236,7 @@ public class OpenAiChatMessage {
 	 * When a message is returned by the API, this is always a single string value
 	 * that can be read with {@link getContent()}. When calling the API, you can use
 	 * {@link setContent()} to set this field to a single string value, or use
-	 * {@link getContentParts()} to provide an array of strings and image URLs (as
+	 * {@link getContentParts()} to provide an array of strings and images (as
 	 * {@link FilePart}s). Notice that {@link getContent()} will return null if the
 	 * message is not a single-part message that contains only text. On the other
 	 * side, {@link getContentParts()} will always return a list of message parts,
@@ -259,7 +260,7 @@ public class OpenAiChatMessage {
 	 * When a message is returned by the API, this is always a single string value
 	 * that can be read with {@link getContent()}. When calling the API, you can use
 	 * {@link setContent()} to set "content" field to a single string value, or use
-	 * {@link getContentParts()} to provide an array of strings and image URLs (as
+	 * {@link getContentParts()} to provide an array of strings and images (as
 	 * {@link FilePart}s). Notice that {@link getContent()} will return null if the
 	 * message is not a single-part message that contains only text. On the other
 	 * side, {@link getContentParts()} will always return a list of message parts,

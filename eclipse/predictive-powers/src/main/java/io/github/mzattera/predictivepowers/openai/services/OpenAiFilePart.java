@@ -31,29 +31,46 @@ import lombok.experimental.SuperBuilder;
 @Setter
 @ToString
 public class OpenAiFilePart extends FilePart {
-	
+
 	private ContentType contentType;
 
 	@NonNull
 	private String fileId;
 
+	/**
+	 * If this instance was built from a {@link File}, this is a reference to it.
+	 */
+	private File openAiFile;
+
 	private OpenAiEndpoint endpoint;
 
+	public OpenAiFilePart(ContentType contentType, @NonNull String fileId) {
+		this(contentType, fileId, null, null);
+	}
+
+	public OpenAiFilePart(@NonNull String fileId, OpenAiEndpoint endpoint) {
+		this(ContentType.GENERIC, fileId, null, endpoint);
+	}
+
+	public OpenAiFilePart(ContentType contentType, @NonNull String fileId, OpenAiEndpoint endpoint) {
+		this(contentType, fileId, null, endpoint);
+	}
+
 	public OpenAiFilePart(ContentType contentType, @NonNull File file) {
-		this(contentType, file.getId(), null);
+		this(contentType, file.getId(), file, null);
 	}
 
 	public OpenAiFilePart(@NonNull File file, OpenAiEndpoint endpoint) {
-		this(ContentType.GENERIC, file.getId(), endpoint);
+		this(ContentType.GENERIC, file.getId(), file, endpoint);
 	}
 
 	public OpenAiFilePart(ContentType contentType, @NonNull File file, OpenAiEndpoint endpoint) {
-		this(contentType, file.getId(), endpoint);
+		this(contentType, file.getId(), file, endpoint);
 	}
 
 	@Override
 	public String getContent() {
-		return "[OpenAI File: " + fileId + ", Content: "+ contentType + "]";
+		return "[OpenAI File: " + fileId + ", Content: " + contentType + "]";
 	}
 
 	@Override
@@ -66,6 +83,13 @@ public class OpenAiFilePart extends FilePart {
 		return false;
 	}
 
+	@Override
+	public String getName() {
+		if (openAiFile != null)
+			return (openAiFile.getFilename() == null) ? fileId : openAiFile.getFilename();
+		return fileId;
+	}
+
 	/**
 	 * 
 	 * @return An stream to read content of the file.
@@ -76,7 +100,7 @@ public class OpenAiFilePart extends FilePart {
 	public InputStream getInputStream() throws IOException {
 		try {
 			if (endpoint == null)
-				throw new IOException("To use this method, a valind endpoint must be provided in constructor.");
+				throw new IOException("To use this method, a valid endpoint must be provided in constructor.");
 			java.io.File tmp = java.io.File.createTempFile("OpenAI_file_", ".dnload");
 			endpoint.getClient().retrieveFileContent(fileId, tmp);
 			return new FileInputStream(tmp);

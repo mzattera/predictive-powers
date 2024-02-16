@@ -64,6 +64,7 @@ import io.github.mzattera.predictivepowers.openai.client.threads.RunsRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.ThreadAndRunRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.ThreadsRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.ToolOutputsRequest;
+import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.util.FileUtil;
 import io.github.mzattera.util.ImageUtil;
 import io.reactivex.Single;
@@ -190,8 +191,15 @@ public class OpenAiClient implements ApiClient {
 						if (req.body() != null) {
 							Buffer buffer = new Buffer();
 							req.body().writeTo(buffer);
-							String bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
-									.writeValueAsString(jsonMapper.readTree(buffer.readUtf8()));
+							String in = buffer.readUtf8();
+							String bodyContent = "";
+							try {
+								// In case body is not JSON
+								bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
+										.writeValueAsString(jsonMapper.readTree(in));
+							} catch (Exception e) {
+								bodyContent = in;
+							}
 							System.out.println("Request body: " + bodyContent);
 						}
 
@@ -213,9 +221,15 @@ public class OpenAiClient implements ApiClient {
 							@SuppressWarnings("deprecation")
 							Buffer buffer = source.buffer();
 
-							Buffer clone = buffer.clone();
-							String bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
-									.writeValueAsString(jsonMapper.readTree(clone.readUtf8()));
+							String in = buffer.clone().readUtf8();
+							String bodyContent = "";
+							try {
+								// In case body is not JSON
+								bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
+										.writeValueAsString(jsonMapper.readTree(in));
+							} catch (Exception e) {
+								bodyContent = in;
+							}
 							System.out.println("Response body: " + bodyContent);
 						}
 
@@ -463,6 +477,12 @@ public class OpenAiClient implements ApiClient {
 		try (InputStream is = new FileInputStream(file)) {
 			return uploadFile(is, file.getName(), purpose);
 		}
+	}
+
+	public File uploadFile(@NonNull FilePart file, @NonNull String purpose)
+			throws IOException {
+
+		return uploadFile(file.getInputStream(), file.getName(), purpose);
 	}
 
 	public File uploadFile(@NonNull InputStream file, @NonNull String fileName, @NonNull String purpose)

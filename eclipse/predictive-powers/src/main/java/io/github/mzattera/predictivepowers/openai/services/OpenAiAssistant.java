@@ -34,6 +34,7 @@ import io.github.mzattera.predictivepowers.openai.client.assistants.Assistant;
 import io.github.mzattera.predictivepowers.openai.client.assistants.AssistantsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
+import io.github.mzattera.predictivepowers.openai.client.files.File;
 import io.github.mzattera.predictivepowers.openai.client.threads.Content;
 import io.github.mzattera.predictivepowers.openai.client.threads.Content.Text.Annotation;
 import io.github.mzattera.predictivepowers.openai.client.threads.Message;
@@ -56,6 +57,7 @@ import io.github.mzattera.predictivepowers.services.Toolset;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
+import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.MessagePart;
@@ -216,7 +218,7 @@ public class OpenAiAssistant implements Agent {
 			// Create new run for the message
 			run = endpoint.getClient().createRun(thread.getId(), new RunsRequest(openAiAssistant.getId()));
 		}
-		
+
 		history.add(msg);
 
 		// Wait for completion
@@ -386,6 +388,76 @@ public class OpenAiAssistant implements Agent {
 				LOG.warn("Error closing tool: {1}", e.getMessage());
 			}
 		}
+	}
+
+	/**
+	 * 
+	 * @return List of files attached to this agent.
+	 */
+	public List<? extends FilePart> listFiles() {
+
+		List<OpenAiFilePart> result = new ArrayList<>();
+		String last = null;
+		while (true) {
+			DataList<File> search = endpoint.getClient().listAssistantFiles(id, SortOrder.ASCENDING, null, null, last);
+			for (File f : search.getData())
+				result.add(new OpenAiFilePart(f.getId()));
+
+			if (!search.hasMore())
+				break;
+			last = search.getLastId();
+		}
+		return result;
+	}
+
+	/**
+	 * Uploads a file and attach it to this agent, to make it available to tools
+	 * like retrieval.
+	 * 
+	 * @param file File to attach to the agent. If it is not an
+	 *             {@link OpenAiFilePart} already, the file is uploaded to OpenAI
+	 *             first.
+	 * 
+	 * @return A representation of the uploaded file.
+	 * @throws IOException If an error occurs reading the file.
+	 */
+	public FilePart addFile(FilePart file) throws IOException {
+
+		File oaiFile = null;
+		if (file instanceof OpenAiFilePart) {
+			oaiFile = endpoint.getClient().createAssistantFile(id, ((OpenAiFilePart) file).getFileId());
+		} else {
+			oaiFile = endpoint.getClient().uploadFile(file, "assistants");
+			oaiFile = endpoint.getClient().createAssistantFile(id, oaiFile.getId());
+		}
+
+		return new OpenAiFilePart(file.getContentType(), oaiFile);
+	}
+
+	/**
+	 * Removes a file that was attached to the agent.
+	 * 
+	 * @param file File to remove.
+	 * @return True if the file was successfully removed, false otherwise.
+	 */
+	public boolean removeFile(FilePart file) throws IOException {
+
+		if (file instanceof OpenAiFilePart) {
+			return removeFile(((OpenAiFilePart) file).getFileId());
+		} else {
+			return false;
+		}
+	}
+
+	/**
+	 * Removes a file that was attached to the agent.
+	 * 
+	 * @param fileId ID of the file to remove.
+	 * @return True if the file was successfully removed, false otherwise.
+	 */
+	public boolean removeFile(String fileId) throws IOException {
+
+		return endpoint.getClient().deteAssistantFile(id, fileId).isDeleted();
 	}
 
 	/**

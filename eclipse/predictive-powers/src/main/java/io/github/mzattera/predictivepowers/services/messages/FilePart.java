@@ -51,7 +51,7 @@ public class FilePart implements MessagePart {
 	 * If this is a remote file, this is its URL.
 	 */
 	private URL url;
-
+	
 	public FilePart(@NonNull File file) {
 		this(file, ContentType.GENERIC);
 	}

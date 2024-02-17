@@ -697,4 +697,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 		return result;
 	}
 
+	@Override
+	public void close() {
+	}
 }

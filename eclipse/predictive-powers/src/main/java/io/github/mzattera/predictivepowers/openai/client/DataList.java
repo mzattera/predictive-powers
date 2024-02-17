@@ -16,6 +16,7 @@
 
 package io.github.mzattera.predictivepowers.openai.client;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import lombok.Getter;
@@ -34,7 +35,7 @@ public class DataList<T> {
 	@Getter
 	@Setter
 	private String object;
-	
+
 	@Getter
 	@Setter
 	private List<T> data;
@@ -51,8 +52,36 @@ public class DataList<T> {
 	@Getter
 	@Setter
 	private String firstId;
-	
+
 	@Getter
 	@Setter
 	private String lastId;
+
+	/**
+	 * This functional interface supports retrieving all items of a given type when
+	 * search returns only a page.
+	 */
+	@FunctionalInterface
+	public interface Searcher<T> {
+		/**
+		 * Performs a search to get a list of items. These items are a partial result
+		 * for the search. Items must be sorted in in ascending order.
+		 * 
+		 * @param after Only returns items after this one.
+		 */
+		DataList<T> search(String lastId);
+	}
+
+	public static <T> List<T> getCompleteList(Searcher<T> search) {
+		List<T> result = new ArrayList<>();
+		String lastId = null;
+		DataList<T> data;
+		do {
+			data = search.search(lastId);
+			result.addAll(data.getData());
+			lastId = data.getLastId();
+		} while (data.hasMore());
+
+		return result;
+	}
 }

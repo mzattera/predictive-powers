@@ -26,8 +26,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.services.AbstractTool;
+import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Capability;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.Toolset;
@@ -90,14 +90,13 @@ public class FunctionCallExample {
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
 			// Get chat service, set bot personality and tools used
-			OpenAiChatService bot = endpoint.getChatService();
+//			Agent bot = endpoint.getChatService("gpt-4-1106-preview"); // This uses chat API with parallel function calls (tools)
+//			Agent bot = endpoint.getChatService("gpt-3.5-turbo-0613"); // This uses chat API with single function calls (tools)
+			Agent bot = endpoint.getAgentService().getAgent(); // This uses assistants API
+
 			bot.setPersonality("You are an helpful assistant.");
 
-			// Notice the service works with both function and tool calls in the same way.
-//			bot.setModel("gpt-3.5-turbo-0613"); // This uses simple function calls
-			bot.setModel("gpt-4-1106-preview"); // This uses parallel function calls (tools)
-
-			// Tells the model which tools it can use, by providign a capability
+			// Tells the model which tools it can use, by providing a capability
 			bot.addCapability(DEFAULT_CAPABILITY);
 
 			// Conversation loop

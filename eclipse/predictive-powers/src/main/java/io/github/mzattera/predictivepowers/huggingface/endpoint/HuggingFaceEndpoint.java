@@ -28,6 +28,7 @@ import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceEmbed
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceImageGenerationService;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceModelService;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceQuestionAnsweringService;
+import io.github.mzattera.predictivepowers.services.AgentService;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 import lombok.Getter;
 import lombok.NonNull;
@@ -76,13 +77,34 @@ public class HuggingFaceEndpoint implements AiEndpoint {
 	}
 
 	@Override
+	public HuggingFaceCompletionService getCompletionService(@NonNull String model) {
+		HuggingFaceCompletionService svc = getCompletionService();
+		svc.setModel(model);
+		return svc;
+	}
+
+	@Override
 	public HuggingFaceEmbeddingService getEmbeddingService() {
 		return new HuggingFaceEmbeddingService(this);
 	}
 
 	@Override
+	public HuggingFaceEmbeddingService getEmbeddingService(@NonNull String model) {
+		HuggingFaceEmbeddingService svc = getEmbeddingService();
+		svc.setModel(model);
+		return svc;
+	}
+
+	@Override
 	public HuggingFaceChatService getChatService() {
 		return new HuggingFaceChatService(this);
+	}
+
+	@Override
+	public HuggingFaceChatService getChatService(@NonNull String model, String personality) {
+		HuggingFaceChatService svc = getChatService();
+		svc.setModel(model);
+		return svc;
 	}
 
 	@Override
@@ -93,7 +115,22 @@ public class HuggingFaceEndpoint implements AiEndpoint {
 	}
 
 	@Override
+	public AgentService getAgentService() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public AgentService getAgentService(@NonNull String model) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
 	public QuestionExtractionService getQuestionExtractionService() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public QuestionExtractionService getQuestionExtractionService(@NonNull String model) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -103,8 +140,22 @@ public class HuggingFaceEndpoint implements AiEndpoint {
 	}
 
 	@Override
+	public HuggingFaceQuestionAnsweringService getQuestionAnsweringService(@NonNull String model) {
+		HuggingFaceQuestionAnsweringService svc = getQuestionAnsweringService();
+		svc.setModel(model);
+		return svc;
+	}
+
+	@Override
 	public HuggingFaceImageGenerationService getImageGenerationService() {
 		return new HuggingFaceImageGenerationService(this);
+	}
+
+	@Override
+	public HuggingFaceImageGenerationService getImageGenerationService(@NonNull String model) {
+		HuggingFaceImageGenerationService svc = getImageGenerationService();
+		svc.setModel(model);
+		return svc;
 	}
 
 	@Override

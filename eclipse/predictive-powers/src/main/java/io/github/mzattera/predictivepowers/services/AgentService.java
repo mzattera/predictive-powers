@@ -16,32 +16,73 @@
 
 package io.github.mzattera.predictivepowers.services;
 
+import java.util.List;
+
 import lombok.NonNull;
 
 /**
- * This service provides {@link Agent}s to the user.
+ * This interface describes a service that provides {@link Agent}s to the user.
+ * 
+ * The interface assumes agents are persisted and shared among users. However,
+ * it does not provide methods to deal with specific users; for example, it does
+ * not provide methods to handle user permissions to create, modify or use
+ * agents. As these features will heavily depend on the solution being
+ * implemented, they are delegated to actual implementations of this interface.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface AgentService extends ChatService {
+public interface AgentService extends AiService {
 
-	// TODO URGENT: Implement
+	/**
+	 * 
+	 * @return All exisitng agents that this service can provide.
+	 */
+	List<? extends Agent> listAgents();
 	
-	// TODO URGENT: Must somehow handle sessions between agents and users, as the
-	// agent is one, but interaction with many users at once.
+	/**
+	 * Creates a new agent.
+	 * 
+	 * @param name        Agent name.
+	 * @param description Optional description for the agent.
+	 * @param personality Agent personality (instructions).
+	 * 
+	 * @return Newly created agent.
+	 */
+	Agent createAgent(@NonNull String name, String description, String personality);
 
-	// Probably the agent we return has both a link to the OpenAI Assistant and a
-	// User object to which permissions to modify the agent and conversations are
-	// restricted
+	/**
+	 * Gets the "default" agent. The purpose if this method is return an agent any
+	 * user can use, avoiding the creation of a new user each time. THis in the
+	 * assumption agents are persisted and can be shared between users.
+	 * 
+	 * @return An implementation of an agent ready to use; depending on the
+	 *         implementation a new agent might be created, or an existing one
+	 *         reused.
+	 */
+	Agent getAgent();
 
-	// TODO define parameters e.g. tools & files?
-	Agent createAgent();
-
-	Agent getAgent(); // Returns "default" agent
-
+	/**
+	 * 
+	 * @param agentId
+	 * @return An agent from its unique ID.
+	 */
 	Agent getAgent(@NonNull String agentId);
 
-	// Cascade delete conversations, files, etc.
-	void deleteAgent(@NonNull String agentId);
+	/**
+	 * 
+	 * @param name
+	 * @return An agent by its name; notice name might not be unique. It is up to
+	 *         the implementation to return any agent or throw an exception if there
+	 *         is a name conflict.
+	 */
+	Agent getAgentByName(@NonNull String name);
+
+	/**
+	 * Deletes an agent.
+	 * 
+	 * @param agentId
+	 * @return True if and only if agent was successfully deleted.
+	 */
+	boolean deleteAgent(@NonNull String agentId);
 }

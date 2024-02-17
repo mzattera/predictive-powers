@@ -24,6 +24,7 @@ import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiAgentService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
@@ -74,6 +75,14 @@ public class OpenAiEndpoint implements AiEndpoint {
 		return new OpenAiCompletionService(this);
 	}
 
+	@Override
+	public OpenAiCompletionService getCompletionService(@NonNull String model) {
+
+		OpenAiCompletionService svc = getCompletionService();
+		svc.setModel(model);
+		return svc;
+	}
+
 	public OpenAiCompletionService getCompletionService(CompletionsRequest defaultReq) {
 		return new OpenAiCompletionService(this, defaultReq);
 	}
@@ -81,6 +90,14 @@ public class OpenAiEndpoint implements AiEndpoint {
 	@Override
 	public OpenAiEmbeddingService getEmbeddingService() {
 		return new OpenAiEmbeddingService(this);
+	}
+
+	@Override
+	public OpenAiEmbeddingService getEmbeddingService(@NonNull String model) {
+
+		OpenAiEmbeddingService svc = getEmbeddingService();
+		svc.setModel(model);
+		return svc;
 	}
 
 	public OpenAiEmbeddingService getEmbeddingService(@NonNull EmbeddingsRequest defaultReq) {
@@ -99,6 +116,14 @@ public class OpenAiEndpoint implements AiEndpoint {
 		return s;
 	}
 
+	@Override
+	public OpenAiChatService getChatService(@NonNull String model, String personality) {
+
+		OpenAiChatService svc = getChatService(personality);
+		svc.setModel(model);
+		return svc;
+	}
+
 	public OpenAiChatService getChatService(ChatCompletionsRequest defaultReq) {
 		return new OpenAiChatService(this, defaultReq);
 	}
@@ -115,13 +140,47 @@ public class OpenAiEndpoint implements AiEndpoint {
 	}
 
 	@Override
+	public OpenAiQuestionExtractionService getQuestionExtractionService(@NonNull String model) {
+		OpenAiQuestionExtractionService svc = getQuestionExtractionService();
+		svc.setModel(model);
+		return svc;
+	}
+
+	@Override
 	public OpenAiQuestionAnsweringService getQuestionAnsweringService() {
 		return new OpenAiQuestionAnsweringService(this);
 	}
 
 	@Override
+	public OpenAiQuestionAnsweringService getQuestionAnsweringService(@NonNull String model) {
+		OpenAiQuestionAnsweringService svc = getQuestionAnsweringService();
+		svc.setModel(model);
+		return svc;
+	}
+
+	@Override
 	public OpenAiImageGenerationService getImageGenerationService() {
 		return new OpenAiImageGenerationService(this);
+	}
+
+	@Override
+	public OpenAiImageGenerationService getImageGenerationService(@NonNull String model) {
+		OpenAiImageGenerationService svc = getImageGenerationService();
+		svc.setModel(model);
+		return svc;
+	}
+
+	@Override
+	public OpenAiAgentService getAgentService() {
+		return new OpenAiAgentService(this);
+	}
+
+	@Override
+	public OpenAiAgentService getAgentService(@NonNull String model) {
+
+		OpenAiAgentService svc = getAgentService();
+		svc.setModel(model);
+		return svc;
 	}
 
 	@Override

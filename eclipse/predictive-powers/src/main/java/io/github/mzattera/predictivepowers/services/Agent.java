@@ -29,14 +29,13 @@ import lombok.NonNull;
  * It is more advanced than {#link ChatService}, as it can invoke {@link Tool}s
  * to complete its tasks and use files in chat messages.
  * 
+ * At the moment, the interface does not expose methods to retrieve and managed
+ * stored conversations.
+ * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface Agent extends AiService {
-
-	// TODO URGENT: Add RemoteFile class and add files to agent -> fro OpenAI only
-	// TODO URGENT: Add methods to handle conversations (threads e.g. creating,
-	// continuing, deleting)
+public interface Agent extends AutoCloseable {
 
 	/**
 	 * Get unique agent ID. Notice this ID is unique only inside one endpoint.
@@ -106,8 +105,9 @@ public interface Agent extends AiService {
 	 */
 	void clearCapabilities();
 
-	// We do not add methods to trim history length, as we suppose the agent maintains it autonomously
-	
+	// We do not add methods to trim history length, as we suppose the agent
+	// maintains it autonomously
+
 	/**
 	 * These are the messages exchanged in the current conversation.
 	 * 
@@ -123,10 +123,10 @@ public interface Agent extends AiService {
 	/**
 	 * Continues current chat, with the provided message.
 	 */
-	ChatCompletion chat(String msg);
+	ChatCompletion chat(String message);
 
 	/**
 	 * Continues current chat, with the provided message.
 	 */
-	ChatCompletion chat(ChatMessage msg);
+	ChatCompletion chat(ChatMessage message);
 }

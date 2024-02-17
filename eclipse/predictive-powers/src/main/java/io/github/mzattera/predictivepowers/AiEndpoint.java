@@ -16,6 +16,7 @@
 
 package io.github.mzattera.predictivepowers;
 
+import io.github.mzattera.predictivepowers.services.AgentService;
 import io.github.mzattera.predictivepowers.services.ChatService;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 import io.github.mzattera.predictivepowers.services.EmbeddingService;
@@ -23,6 +24,7 @@ import io.github.mzattera.predictivepowers.services.ImageGenerationService;
 import io.github.mzattera.predictivepowers.services.ModelService;
 import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
+import lombok.NonNull;
 
 /**
  * This interface represents an endpoint providing GenAI capabilities in form of
@@ -42,15 +44,31 @@ public interface AiEndpoint extends Endpoint {
 
 	CompletionService getCompletionService();
 
+	CompletionService getCompletionService(@NonNull String model);
+
 	EmbeddingService getEmbeddingService();
+
+	EmbeddingService getEmbeddingService(@NonNull String model);
 
 	ChatService getChatService();
 
 	ChatService getChatService(String personality);
 
+	ChatService getChatService(@NonNull String model, String personality);
+
+	AgentService getAgentService();
+
+	AgentService getAgentService(@NonNull String model);
+
 	QuestionExtractionService getQuestionExtractionService();
+
+	QuestionExtractionService getQuestionExtractionService(@NonNull String model);
 
 	QuestionAnsweringService getQuestionAnsweringService();
 
+	QuestionAnsweringService getQuestionAnsweringService(@NonNull String model);
+
 	ImageGenerationService getImageGenerationService();
+
+	ImageGenerationService getImageGenerationService(@NonNull String model);
 }

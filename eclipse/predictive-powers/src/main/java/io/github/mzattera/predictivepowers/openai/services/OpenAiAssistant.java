@@ -21,14 +21,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
-import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.mzattera.predictivepowers.examples.FunctionCallExample;
 import io.github.mzattera.predictivepowers.openai.client.DataList;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.SortOrder;
 import io.github.mzattera.predictivepowers.openai.client.assistants.Assistant;
 import io.github.mzattera.predictivepowers.openai.client.assistants.AssistantsRequest;
@@ -53,7 +51,6 @@ import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Capability;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
-import io.github.mzattera.predictivepowers.services.Toolset;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
@@ -78,12 +75,22 @@ import lombok.NonNull;
  */
 public class OpenAiAssistant implements Agent {
 
+	// TODO URGENT add methods to retreive past threads and resume them
+
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiAssistant.class);
 
 	private static final int SLEEP_TIME_MILLIS = 1000;
 
 	@Getter
-	private final OpenAiEndpoint endpoint;
+	private final OpenAiAgentService service;
+
+	protected OpenAiEndpoint getEndpoint() {
+		return service.getEndpoint();
+	}
+
+	protected OpenAiClient getClient() {
+		return service.getEndpoint().getClient();
+	}
 
 	/**
 	 * Assistant data on OpenAI servers.
@@ -109,7 +116,6 @@ public class OpenAiAssistant implements Agent {
 		return openAiAssistant.getModel();
 	}
 
-	@Override
 	public void setModel(@NonNull String model) {
 		synch();
 		openAiAssistant.setModel(model);
@@ -159,14 +165,33 @@ public class OpenAiAssistant implements Agent {
 		update();
 	}
 
+	public Map<String, String> getMetadata() {
+		synch();
+		return openAiAssistant.getMetadata();
+	}
+
+	public void setMetadata(Map<String, String> metadata) {
+		synch();
+		openAiAssistant.setMetadata(metadata);
+		update();
+	}
+
 	// Conversation history for the current thread
 	@Getter
 	List<ChatMessage> history = new ArrayList<>();
 
 	@Override
 	public void clearConversation() {
+
 		if (thread != null) {
-			endpoint.getClient().deleteThread(thread.getId());
+			// Currently, there is no way to cleanup threads when an agent is deleted. Since
+			// we are not managing conversations at this stage, we simply delete the old
+			// thread.
+			try {
+				getClient().deleteThread(thread.getId());
+			} catch (Exception e) {
+				LOG.warn("Error deleting conversation thread", e);
+			}
 		}
 		thread = null;
 		run = null;
@@ -187,7 +212,7 @@ public class OpenAiAssistant implements Agent {
 
 		// Get current conversation thread
 		if (thread == null) {
-			thread = endpoint.getClient().createThread(ThreadsRequest.builder().build());
+			thread = getClient().createThread(ThreadsRequest.builder().build());
 			history.clear();
 		}
 
@@ -205,18 +230,18 @@ public class OpenAiAssistant implements Agent {
 			for (ToolCallResult result : results)
 				req.getToolOutputs().add(new ToolOutput(result));
 
-			run = endpoint.getClient().submitToolOutputsToRun(thread.getId(), run.getId(), req);
+			run = getClient().submitToolOutputsToRun(thread.getId(), run.getId(), req);
 		} else {
 
 			// Add message to thread
 			try {
-				usrMsg = endpoint.getClient().createMessage(thread.getId(), MessagesRequest.getInstance(msg, endpoint));
+				usrMsg = getClient().createMessage(thread.getId(), MessagesRequest.getInstance(msg, getEndpoint()));
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
 
 			// Create new run for the message
-			run = endpoint.getClient().createRun(thread.getId(), new RunsRequest(openAiAssistant.getId()));
+			run = getClient().createRun(thread.getId(), new RunsRequest(openAiAssistant.getId()));
 		}
 
 		history.add(msg);
@@ -236,7 +261,7 @@ public class OpenAiAssistant implements Agent {
 			}
 
 			// poll run status
-			run = endpoint.getClient().retrieveRun(thread.getId(), run.getId());
+			run = getClient().retrieveRun(thread.getId(), run.getId());
 		}
 
 		switch (run.getStatus()) {
@@ -288,8 +313,7 @@ public class OpenAiAssistant implements Agent {
 
 		String lastId = (last == null) ? null : last.getId();
 		while (true) {
-			DataList<Message> msgs = endpoint.getClient().listMessages(thread.getId(), SortOrder.ASCENDING, null,
-					lastId, null);
+			DataList<Message> msgs = getClient().listMessages(thread.getId(), SortOrder.ASCENDING, null, lastId, null);
 			result.addAll(msgs.getData());
 			if (!msgs.hasMore())
 				break;
@@ -399,7 +423,7 @@ public class OpenAiAssistant implements Agent {
 		List<OpenAiFilePart> result = new ArrayList<>();
 		String last = null;
 		while (true) {
-			DataList<File> search = endpoint.getClient().listAssistantFiles(id, SortOrder.ASCENDING, null, null, last);
+			DataList<File> search = getClient().listAssistantFiles(id, SortOrder.ASCENDING, null, null, last);
 			for (File f : search.getData())
 				result.add(new OpenAiFilePart(f.getId()));
 
@@ -425,10 +449,10 @@ public class OpenAiAssistant implements Agent {
 
 		File oaiFile = null;
 		if (file instanceof OpenAiFilePart) {
-			oaiFile = endpoint.getClient().createAssistantFile(id, ((OpenAiFilePart) file).getFileId());
+			oaiFile = getClient().createAssistantFile(id, ((OpenAiFilePart) file).getFileId());
 		} else {
-			oaiFile = endpoint.getClient().uploadFile(file, "assistants");
-			oaiFile = endpoint.getClient().createAssistantFile(id, oaiFile.getId());
+			oaiFile = getClient().uploadFile(file, "assistants");
+			oaiFile = getClient().createAssistantFile(id, oaiFile.getId());
 		}
 
 		return new OpenAiFilePart(file.getContentType(), oaiFile);
@@ -457,38 +481,31 @@ public class OpenAiAssistant implements Agent {
 	 */
 	public boolean removeFile(String fileId) throws IOException {
 
-		return endpoint.getClient().deteAssistantFile(id, fileId).isDeleted();
+		return getClient().deteAssistantFile(id, fileId).isDeleted();
 	}
 
-	/**
-	 * Creates a new Assistant, on the OpenAi server side.
-	 */
-	static OpenAiAssistant createAssistant(@NonNull OpenAiEndpoint endpoint) {
-		return createAssistant(endpoint, //
-				AssistantsRequest.builder() //
-						.description("\"Default\" OpenAI Assistant") //
-						.model("gpt-4-turbo-preview") //
-						.name(UUID.randomUUID().toString()) //
-						.instructions("You are an helpful assistant") //
-						.build());
+	@Override
+	public void close() {
+		if (thread != null) {
+			// Currently, there is no way to cleanup threads when an agent is deleted. Since
+			// we are not managing conversations at this stage, we simply delete the old
+			// thread.
+			try {
+				getClient().deleteThread(thread.getId());
+			} catch (Exception e) {
+				LOG.warn("Error deleting conversation thread", e);
+			}
+		}
 	}
 
-	/**
-	 * Creates a new Assistant, on the OpenAi server side.
-	 */
-	static OpenAiAssistant createAssistant(@NonNull OpenAiEndpoint endpoint, @NonNull AssistantsRequest req) {
-		return new OpenAiAssistant(endpoint, endpoint.getClient().createAssistant(req).getId());
+	OpenAiAssistant(@NonNull OpenAiAgentService service, @NonNull Assistant assistant) {
+		this(service, assistant.getId());
 	}
 
-	OpenAiAssistant(@NonNull OpenAiEndpoint endpoint, @NonNull String assistantId) {
-		this.endpoint = endpoint;
+	OpenAiAssistant(@NonNull OpenAiAgentService service, @NonNull String assistantId) {
+		this.service = service;
 		this.id = assistantId;
 		synch();
-	}
-
-	OpenAiAssistant(@NonNull OpenAiEndpoint endpoint, @NonNull String agentId, @NonNull String threadId) {
-		this(endpoint, agentId);
-		this.thread = endpoint.getClient().retrieveThread(threadId);
 	}
 
 	/**
@@ -499,7 +516,7 @@ public class OpenAiAssistant implements Agent {
 	private void synch() {
 
 		// Get agent from server
-		openAiAssistant = endpoint.getClient().retrieveAssistant(id);
+		openAiAssistant = getClient().retrieveAssistant(id);
 
 		// Updated list of tools, in synch with agent
 		Map<String, OpenAiTool> newTools = new HashMap<>();
@@ -534,7 +551,7 @@ public class OpenAiAssistant implements Agent {
 		// de-serialize tools properly
 		openAiAssistant.setTools(new ArrayList<>(toolMap.values()));
 
-		openAiAssistant = endpoint.getClient().modifyAssistant( //
+		openAiAssistant = getClient().modifyAssistant( //
 				openAiAssistant.getId(), //
 				AssistantsRequest.getInstance(openAiAssistant));
 	}
@@ -557,7 +574,8 @@ public class OpenAiAssistant implements Agent {
 
 				switch (content.getType()) {
 				case IMAGE_FILE:
-					parts.add(new OpenAiFilePart(ContentType.IMAGE, content.getImageFile().get("file_id"), endpoint));
+					parts.add(new OpenAiFilePart(ContentType.IMAGE, content.getImageFile().get("file_id"),
+							getEndpoint()));
 					break;
 				case TEXT:
 					StringBuilder sb = new StringBuilder(content.getText().getValue());
@@ -575,11 +593,12 @@ public class OpenAiAssistant implements Agent {
 							if (a.getFileCitation() != null)
 								sb.append(" - File: [").append(a.getFileCitation().getFileId()).append("]");
 							sb.append("\n\n").append(a.getFileCitation().getQuote());
-							files.add(new OpenAiFilePart(ContentType.GENERIC, a.getFilePath().getFileId(), endpoint));
+							files.add(new OpenAiFilePart(ContentType.GENERIC, a.getFilePath().getFileId(),
+									getEndpoint()));
 							if (a.getFilePath() != null) {
 								sb.append(" - File: [").append(a.getFilePath().getFileId()).append("]");
-								files.add(
-										new OpenAiFilePart(ContentType.GENERIC, a.getFilePath().getFileId(), endpoint));
+								files.add(new OpenAiFilePart(ContentType.GENERIC, a.getFilePath().getFileId(),
+										getEndpoint()));
 							}
 							sb.append("\n\n------------");
 						}
@@ -611,58 +630,5 @@ public class OpenAiAssistant implements Agent {
 			calls.add(toolCall);
 		}
 		return calls;
-	}
-
-	// TODO URGENT remove and replace with tests
-	public static void main(String[] args) throws ToolInitializationException {
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-
-			OpenAiAssistant bot = OpenAiAssistant.createAssistant(ep);
-			Toolset tools = new Toolset();
-			tools.putTool("getCurrentWeather", FunctionCallExample.GetCurrentWeatherTool.class);
-			bot.addCapability(tools);
-
-			// Conversation loop
-			try (Scanner console = new Scanner(System.in)) {
-				while (true) {
-					System.out.print("User     > ");
-					String s = console.nextLine();
-
-					if ("history".equals(s)) {
-						for (ChatMessage msg : bot.getHistory())
-							System.out.println("HISTORY " + " > " + msg.getAuthor() + ": " + msg.getContent());
-						continue;
-					}
-
-					ChatCompletion reply = bot.chat(s);
-
-					// Check if bot generated a function call
-					while (reply.hasToolCalls()) {
-
-						List<ToolCallResult> results = new ArrayList<>();
-
-						for (ToolCall call : reply.getToolCalls()) {
-							// The bot generated tool calls, print them
-							System.out.println("CALL " + " > " + call);
-
-							// Execute calls and handle errors nicely
-							ToolCallResult result;
-							try {
-								result = call.getTool().invoke(call);
-							} catch (Exception e) {
-								result = new ToolCallResult(call, "Error: " + e.getMessage());
-							}
-							results.add(result);
-						}
-
-						// Pass results back to the bot
-						// Notice this can generate other tool calls, hence the loop
-						reply = bot.chat(new ChatMessage(results));
-					}
-
-					System.out.println("Assistant> " + reply.getText());
-				}
-			}
-		}
 	}
 }

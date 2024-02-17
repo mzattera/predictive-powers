@@ -23,5 +23,5 @@ package io.github.mzattera.predictivepowers.services;
  *
  */
 public interface Service {
-
+	// TODO URGENT make it extend AutoCloseable
 }

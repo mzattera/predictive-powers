@@ -75,8 +75,6 @@ import lombok.NonNull;
  */
 public class OpenAiAssistant implements Agent {
 
-	// TODO URGENT add methods to retreive past threads and resume them
-
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiAssistant.class);
 
 	private static final int SLEEP_TIME_MILLIS = 1000;
@@ -214,6 +212,8 @@ public class OpenAiAssistant implements Agent {
 		if (thread == null) {
 			thread = getClient().createThread(ThreadsRequest.builder().build());
 			history.clear();
+			run = null;
+			usrMsg = null;
 		}
 
 		if ((run != null) && (run.getStatus() == Status.REQUIRES_ACTION)) {
@@ -249,9 +249,9 @@ public class OpenAiAssistant implements Agent {
 		// Wait for completion
 		while (run.getStatus() == Status.QUEUED || run.getStatus() == Status.IN_PROGRESS) {
 
-			// TODO URGENT Asynch method that returns at each run step?
+			// TODO Add asynch method that returns at each run step?
 			// maybe return run steps as results, instead of messages, so the results can be
-			// progressed easiliy and caller always looks at ChatMessage?
+			// progressed easily and caller always looks at ChatMessage?
 			// Or have a onRunProgress() that returns the list of new run steps and
 			// onMessageCompleted() that return a ChatCompletion
 
@@ -270,7 +270,7 @@ public class OpenAiAssistant implements Agent {
 			RequiredAction action = run.getRequiredAction();
 			switch (action.getType()) {
 			case SUBMIT_TOOL_OUTPUTS:
-				// Assistant generated tool calls
+				// The assistant generated tool calls
 				ChatMessage message = fromMessages(retrieveNewMessages(thread, usrMsg));
 				message.getParts().addAll(fromToolCalls(action.getSubmitToolOutputs().getToolCalls()));
 				history.add(message);
@@ -290,7 +290,6 @@ public class OpenAiAssistant implements Agent {
 			history.add(message);
 			return new ChatCompletion(FinishReason.TRUNCATED, message);
 
-		// TODO URGENT throw better exceptions and declare one which is not runtime?
 		case FAILED:
 			throw new RuntimeException(run.getLastError().getMessage());
 		case EXPIRED:
@@ -329,8 +328,6 @@ public class OpenAiAssistant implements Agent {
 
 	@Getter(AccessLevel.PROTECTED)
 	private Map<String, Capability> capabilityMap = new HashMap<>();
-
-	// TODO URGENT add tests to check all the methods to manipulate tools
 
 	@Override
 	public List<String> getCapabilities() {

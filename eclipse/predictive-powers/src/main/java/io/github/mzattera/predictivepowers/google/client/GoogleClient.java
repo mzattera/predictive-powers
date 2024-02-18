@@ -180,7 +180,7 @@ public class GoogleClient implements ApiClient {
 
 	//////// API METHODS MAPPED INTO JAVA CALLS ////////////////////////////////////
 
-	// TODO URGENT add a method that uses Query or all parameters
+	// TODO add a method that uses Query or all parameters
 
 	public Search list(String query, int n) {
 		return callApi(api.list(engineId, apiKey, query, n));

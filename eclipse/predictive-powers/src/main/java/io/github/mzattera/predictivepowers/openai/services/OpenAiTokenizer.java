@@ -1,5 +1,6 @@
 package io.github.mzattera.predictivepowers.openai.services;
 
+import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -19,6 +20,10 @@ import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
+import io.github.mzattera.predictivepowers.services.messages.FilePart;
+import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
+import io.github.mzattera.predictivepowers.services.messages.MessagePart;
+import io.github.mzattera.util.ImageUtil;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
@@ -32,10 +37,6 @@ import lombok.ToString;
 @ToString
 public class OpenAiTokenizer implements Tokenizer {
 
-	// TODO Urgent add length for the vision API see calculator on Model API
-	// https://learn.microsoft.com/en-us/azure/ai-services/openai/overview
-	// notice vision API has multiple parts and length might depend on those......
-	
 	@Getter
 	@NonNull
 	private final String model;
@@ -250,6 +251,40 @@ public class OpenAiTokenizer implements Tokenizer {
 						--sum;
 				}
 			} // if we have tool calls
+
+			// If we use image model, calculate image tokens.
+			// See https://platform.openai.com/docs/guides/vision
+			for (MessagePart part : msg.getContentParts()) {
+				if (!(part instanceof FilePart))
+					continue;
+				FilePart file = (FilePart) part;
+				if (file.getContentType() != ContentType.IMAGE)
+					continue;
+				try {
+					BufferedImage img = ImageUtil.fromBytes(file.getInputStream());
+					int w = img.getWidth();
+					int h = img.getHeight();
+					if ((w <= 512) && (h <= 512)) {
+						// As we support only detail=auto, we assume model will use low detail
+						sum += 65;
+					} else {
+						double scaleW = 2048d / w;
+						double scaleH = 2048d / h;
+						w *= Math.min(scaleW, scaleH);
+						h *= Math.min(scaleW, scaleH);
+						scaleW = 768d / w;
+						scaleH = 768d / h;
+						w *= Math.max(scaleW, scaleH);
+						h *= Math.max(scaleW, scaleH);
+						int wt = w / 512 + ((w % 512) > 0 ? 1 : 0);
+						int ht = h / 512 + ((h % 512) > 0 ? 1 : 0);
+
+						sum += 170 * wt * ht + 85;
+					}
+				} catch (Exception e) {
+					sum += 65; // should not happen, but if we cannot read the image put something in
+				}
+			}
 		} // for each message
 
 		return sum;

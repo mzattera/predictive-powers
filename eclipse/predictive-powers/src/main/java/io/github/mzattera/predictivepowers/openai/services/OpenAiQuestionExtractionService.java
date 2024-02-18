@@ -385,4 +385,8 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 
 		return Arrays.asList(result);
 	}
+
+	@Override
+	public void close() {
+	}
 }

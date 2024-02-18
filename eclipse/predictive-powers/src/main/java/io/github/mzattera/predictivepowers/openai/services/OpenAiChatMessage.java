@@ -100,7 +100,7 @@ public class OpenAiChatMessage {
 						gen.writeStringField("type", "text");
 						gen.writeStringField("text", ((TextPart) part).getContent());
 					} else if (part instanceof FilePart) {
-						FilePart file = (FilePart)part;
+						FilePart file = (FilePart) part;
 						if (file.getContentType() != ContentType.IMAGE)
 							throw new IllegalArgumentException("Only files with content type = IMAGE are supported.");
 						gen.writeStringField("type", "image_url");
@@ -108,7 +108,8 @@ public class OpenAiChatMessage {
 						if (file.getUrl() != null)
 							gen.writeStringField("url", file.getUrl().toString());
 						else // base64 encode
-							gen.writeStringField("url", Base64.getEncoder().encodeToString(file.getInputStream().readAllBytes()));
+							gen.writeStringField("url", "data:image/jpeg;base64,"
+									+ Base64.getEncoder().encodeToString(file.getInputStream().readAllBytes()));
 						gen.writeEndObject();
 					} else {
 						throw new IllegalArgumentException("Unsupported part type: " + part);

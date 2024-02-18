@@ -146,4 +146,8 @@ public class OpenAiImageGenerationService implements ImageGenerationService {
 		else
 			return ImageSize._1024x1792;
 	}
+
+	@Override
+	public void close() {
+	}
 }

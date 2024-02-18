@@ -29,12 +29,17 @@ import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
+import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.Toolset;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
+import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import io.github.mzattera.util.ResourceUtil;
 
 /**
@@ -44,6 +49,8 @@ import io.github.mzattera.util.ResourceUtil;
  *
  */
 public class OpenAiChatServiceTest {
+
+	// TODO add tests to check all the methods to manipulate tools
 
 	/**
 	 * Check completions not affecting history.
@@ -331,4 +338,55 @@ public class OpenAiChatServiceTest {
 		} // Close endpoint
 	}
 
+	/**
+	 * Test removal of tool call results at beginning of conversations without
+	 * corresponding calls, which causes errors.
+	 * 
+	 * @throws ToolInitializationException
+	 */
+	@Test
+	void testCallResultsOnTop() throws ToolInitializationException {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+			OpenAiModelService modelSvc = endpoint.getModelService();
+
+			OpenAiChatService svc = endpoint.getChatService();
+			Toolset tools = new Toolset();
+			tools.putTool("aTool", FunctionCallTest.GetCurrentWeatherTool.class);
+			svc.addCapability(tools);
+
+			// Tests with functions
+			String model = null;
+			for (String modelId : modelSvc.listModels())
+				if ((modelSvc.getSupportedCallType(modelId) == SupportedCallType.FUNCTIONS)
+						&& (modelSvc.getSupportedApi(modelId) == SupportedApi.CHAT)) {
+					model = modelId;
+					break;
+				}
+			svc.setModel(model);
+			svc.clearConversation();
+			svc.getModifiableHistory()
+					.add(new OpenAiChatMessage(Role.FUNCTION, new ToolCallResult("callID", "aTool", "result")));
+			svc.getModifiableHistory().add(new OpenAiChatMessage(Role.USER, "Hi!"));
+
+			ChatCompletion resp = svc.chat("Hi");
+			assertEquals(FinishReason.COMPLETED, resp);
+
+			// Tests with tools
+			model = null;
+			for (String modelId : modelSvc.listModels())
+				if ((modelSvc.getSupportedCallType(modelId) == SupportedCallType.TOOLS)
+						&& (modelSvc.getSupportedApi(modelId) == SupportedApi.CHAT)) {
+					model = modelId;
+					break;
+				}
+			svc.setModel(model);
+			svc.clearConversation();
+			svc.getModifiableHistory()
+					.add(new OpenAiChatMessage(Role.TOOL, new ToolCallResult("callID", "aTool", "result")));
+			svc.getModifiableHistory().add(new OpenAiChatMessage(Role.USER, "Hi!"));
+
+			resp = svc.chat("Hi");
+			assertEquals(FinishReason.COMPLETED, resp);
+		} // Close endpoint
+	}
 }

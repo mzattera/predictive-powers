@@ -23,9 +23,8 @@ public class DefaultConfigurationExample {
 
 	public static void main(String[] args) {
 
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
-
-			OpenAiCompletionService cs = endpoint.getCompletionService();
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
+				OpenAiCompletionService cs = endpoint.getCompletionService();) {
 
 			// Set "best_of" parameter in default request, this will affect all further calls
 			cs.getDefaultReq().setBestOf(3);
@@ -33,6 +32,6 @@ public class DefaultConfigurationExample {
 			// this call (and subsequent ones) now uses best_of = 3
 			System.out.println(cs.complete("Alan Turing was").getText());
 			
-		} // closes endpoint
+		} // closes resources
 	}
 }

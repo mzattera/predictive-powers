@@ -44,6 +44,8 @@ import io.github.mzattera.util.ResourceUtil;
 public class OpenAiAssistantTest {
 
 	// ** IMPORTANT ** Make sure agents you create for test are not marked with _isPermanent=true in metadata
+
+	// TODO add tests to check all the methods to manipulate tools
 	
 	/**
 	 * Tests assistants files and retrieval tool.

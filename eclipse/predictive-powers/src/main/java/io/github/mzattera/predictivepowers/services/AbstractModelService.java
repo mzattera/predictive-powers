@@ -115,4 +115,8 @@ public abstract class AbstractModelService implements ModelService {
 			return def;
 		return data.getMaxNewTokens();
 	}
+
+	@Override
+	public void close() {
+	}
 }

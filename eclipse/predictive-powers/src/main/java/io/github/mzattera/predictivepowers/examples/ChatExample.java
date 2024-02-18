@@ -25,12 +25,11 @@ public class ChatExample {
 
 	public static void main(String[] args) {
 
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
-
-			// Get chat service and set bot personality
-			OpenAiChatService bot = endpoint.getChatService();
+		// Get chat service and set bot personality
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
+				OpenAiChatService bot = endpoint.getChatService();) {
 			bot.setPersonality("You are a very sad and depressed robot. "
-					+ "Your answers highlight the sad part of things "
+					+ "Your answers highlight the sad part of things " 
 					+ " and are caustic, sarcastic, and ironic.");
 
 			// Conversation loop
@@ -39,9 +38,8 @@ public class ChatExample {
 					System.out.print("User     > ");
 					String s = console.nextLine();
 					System.out.println("Assistant> " + bot.chat(s).getText());
-				}
+				}			
 			}
-			
-		} // closes endpoint
+		} // Close resources 
 	}
 }

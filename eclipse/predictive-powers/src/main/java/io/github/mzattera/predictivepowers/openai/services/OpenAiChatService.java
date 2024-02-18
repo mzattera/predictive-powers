@@ -227,8 +227,6 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	@Getter(AccessLevel.PROTECTED)
 	private Map<String, Capability> capabilityMap = new HashMap<>();
 
-	// TODO URGENT add tests to check all the methods to manipulate tools
-
 	@Override
 	public List<String> getCapabilities() {
 		return Collections.unmodifiableList(new ArrayList<>(capabilityMap.keySet()));
@@ -511,7 +509,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 				if (e.isContextLengthExceeded()) { // Automatically recover if request is too long
 					int optimal = e.getMaxContextLength() - e.getPromptLength() - 1;
 					if (optimal > 0) {
-						// TODO URGENT Add a test case
+						// TODO Add a test case
 						LOG.warn("Reducing context length for OpenAI chat service from " + req.getMaxTokens() + " to "
 								+ optimal);
 						int old = req.getMaxTokens();
@@ -552,9 +550,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	private void trimConversation(List<OpenAiChatMessage> messages) {
 
 		// Remove tool call results left on top without corresponding calls, or this
-		// will cause HTTP 400 error
-		// TODO urgent test if this fails with FUNCTION too
-		// TODO URGENT add a test case
+		// will cause HTTP 400 error for tools (it does not create issues for functions) 
 		int firstNonToolIndex = 0;
 		for (OpenAiChatMessage m : messages) {
 			if (m.getRole() == Role.TOOL) {

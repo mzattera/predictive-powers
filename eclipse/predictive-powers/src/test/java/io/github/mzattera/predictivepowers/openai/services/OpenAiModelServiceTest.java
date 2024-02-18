@@ -45,8 +45,6 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.Op
 
 class OpenAiModelServiceTest {
 
-	// TODO URGENT add tests to check max context size for all models
-
 	// Models still returned by models API, but decommissioned
 	private final static Set<String> OLD_MODELS = new HashSet<>();
 	static {
@@ -135,7 +133,7 @@ class OpenAiModelServiceTest {
 		} // Close endpoint
 	}
 
-	/** @return The meta data for all chat /completions models */
+	/** @return The meta data for all chat models */
 	static Stream<OpenAiModelMetaData> allChatModelsProvider() {
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 			OpenAiModelService modelSvc = endpoint.getModelService();
@@ -192,5 +190,25 @@ class OpenAiModelServiceTest {
 				throw new IllegalArgumentException(); // paranoid
 			}
 		} // Close endpoint
+	}
+
+	// TODO Fix to see if we can check context length somehow
+
+	/**
+	 * Check max context size it set correctly.
+	 */
+	@ParameterizedTest
+	@MethodSource("allChatModelsProvider")
+	void testContextLength(OpenAiModelMetaData md) {
+//		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
+//			OpenAiChatService bot = oai.getChatService(md.getModel(), "You are an helpful assistant.");
+//			bot.setMaxNewTokens(Integer.MAX_VALUE);
+//			try {
+//				bot.chat("Hi!");
+//				assertTrue(false, "Call should have failed.");
+//			} catch (OpenAiException e) {
+//				assertEquals(e.getMaxContextLength(), md.getContextSize());
+//			}
+//		} // Close endpoint
 	}
 }

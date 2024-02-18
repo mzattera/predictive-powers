@@ -22,6 +22,5 @@ package io.github.mzattera.predictivepowers.services;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface Service {
-	// TODO URGENT make it extend AutoCloseable
+public interface Service extends AutoCloseable {
 }

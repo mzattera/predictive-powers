@@ -93,4 +93,7 @@ public class HuggingFaceImageGenerationService implements ImageGenerationService
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
+	public void close() {
+	}
 }

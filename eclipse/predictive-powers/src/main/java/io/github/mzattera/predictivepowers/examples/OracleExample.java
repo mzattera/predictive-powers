@@ -37,19 +37,18 @@ import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
 @SuppressWarnings("unused")
 public class OracleExample {
 
-	public static void main(String[] args) throws Exception 
-	{
-		
+	public static void main(String[] args) throws Exception {
+
 		// Uncomment the below to use OpenAI services for the oracle
 		AiEndpoint endpoint = new OpenAiEndpoint();
-		
+
 		// Uncomment the below to use Hugging Face services for the oracle
 		// Endpoint endpoint = new HuggingFaceEndpoint();
-		
-		try (endpoint) {
-			
-			// Question answering service
-			QuestionAnsweringService answerSvc = endpoint.getQuestionAnsweringService();
+
+		// Question answering service
+		try (endpoint;
+				QuestionAnsweringService answerSvc = endpoint.getQuestionAnsweringService();
+				) {
 
 			try (Scanner console = new Scanner(System.in)) {
 
@@ -83,20 +82,15 @@ public class OracleExample {
 
 					// If not, answer the question
 					// Create context by finding similar text in the web page
-					List<Pair<EmbeddedText, Double>> context = 
-						knowledgeBase.search(
-							embeddingService.embed(question).get(0),
-							15, 0
-						);
+					List<Pair<EmbeddedText, Double>> context = knowledgeBase
+							.search(embeddingService.embed(question).get(0), 15, 0);
 
 					// Use the context when answering
 					answer = answerSvc.answerWithEmbeddings(question, context);
 
-					System.out.println(
-							"My Answer: " + answer.getAnswer() + "\n"
-					);
+					System.out.println("My Answer: " + answer.getAnswer() + "\n");
 				}
 			}
-		}
-	} // closes endpoint
+		} // closes resources
+	}
 }

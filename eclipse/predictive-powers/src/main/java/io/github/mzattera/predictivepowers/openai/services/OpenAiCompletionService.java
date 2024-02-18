@@ -246,4 +246,8 @@ public class OpenAiCompletionService implements CompletionService {
 		// variants not recognizing the "suffix" parameter
 		throw new UnsupportedOperationException();
 	}
+
+	@Override
+	public void close() {
+	}
 }

@@ -28,18 +28,15 @@ public class FaqExample {
 
 	public static void main(String[] args) throws Exception {
 
-		// OpenAI end-point
-		// Make sure you specify your API key n OPENAI_KEY system environment variable.
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+		// Our query generation service
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
+				OpenAiQuestionExtractionService q = endpoint.getQuestionExtractionService();) {
 
 			// Download Credit Suisse financial statement 2022 PDF and extract its text
 			// We keep only one piece of 750 characters.
 			String statment = ChunkUtil.split(ExtractionUtil.fromUrl(
 					"https://www.credit-suisse.com/media/assets/corporate/docs/about-us/investor-relations/financial-disclosures/financial-reports/csg-ar-2022-en.pdf"),
 					1000).get(3);
-
-			// Our query generation service
-			OpenAiQuestionExtractionService q = endpoint.getQuestionExtractionService();
 
 			// Get some FAQs and print them
 			List<QnAPair> QnA = q.getQuestions(statment);
@@ -69,5 +66,5 @@ public class FaqExample {
 			}
 			System.out.println();
 		}
-	} // closes endpoint
+	} // closes respurces
 }

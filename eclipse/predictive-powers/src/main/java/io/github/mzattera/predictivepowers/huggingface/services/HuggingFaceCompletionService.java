@@ -170,4 +170,8 @@ public class HuggingFaceCompletionService implements CompletionService {
 	public TextCompletion insert(String prompt, String suffix, Map<String, Object> parameters) {
 		throw new UnsupportedOperationException();
 	}
+	
+	@Override
+	public void close() {
+	}	
 }

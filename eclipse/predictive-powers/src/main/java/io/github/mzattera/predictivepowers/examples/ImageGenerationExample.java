@@ -28,18 +28,16 @@ import io.github.mzattera.util.ImageUtil;
 
 public class ImageGenerationExample {
 
-	private final static String PROMPT = 
-			"full body male cyborg shaggy long gray hair short beard green eyes|"
+	private final static String PROMPT = "full body male cyborg shaggy long gray hair short beard green eyes|"
 			+ " shimmering gold metal| lighning| full-length portrait| detailed face|"
 			+ " symmetric| steampunk| cyberpunk| cyborg| intricate detailed| to scale|"
-			+ " hyperrealistic| cinematic lighting| digital art| concept art|"
-			+ " mdjrny-v4 style";
+			+ " hyperrealistic| cinematic lighting| digital art| concept art|" + " mdjrny-v4 style";
 
 	public static void main(String[] args) throws Exception {
 
 		// DALL-E image generation
-		try (AiEndpoint endpoint = new OpenAiEndpoint()) {
-			ImageGenerationService svc = endpoint.getImageGenerationService();
+		try (AiEndpoint endpoint = new OpenAiEndpoint();
+				ImageGenerationService svc = endpoint.getImageGenerationService();) {
 
 			// Generates image
 			BufferedImage img = svc.createImage(PROMPT, 1, 1024, 1024).get(0);
@@ -49,13 +47,13 @@ public class ImageGenerationExample {
 		}
 
 		// Openjourney (notice is same code as above)
-		try (AiEndpoint endpoint = new HuggingFaceEndpoint()) {
-			ImageGenerationService svc = endpoint.getImageGenerationService();
+		try (AiEndpoint endpoint = new HuggingFaceEndpoint();
+				ImageGenerationService svc = endpoint.getImageGenerationService();) {
 			BufferedImage img = svc.createImage(PROMPT, 1, 1024, 1024).get(0);
 			save(img);
 		}
 
-	} // closes endpoint
+	}
 
 	private static void save(BufferedImage img) throws IOException {
 		File tmp = File.createTempFile("GenAI", ".jpg");

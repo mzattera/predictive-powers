@@ -47,13 +47,27 @@ public class AudioRequest {
 	 * srt, verbose_json, or vtt.
 	 */
 	public enum ResponseFormat {
-		JSON("json");
 
-		// TODO add support for the below formats
-//      VERBOSE_JSON("verbose_json"),		
-//		TEXT("text"), 
-//		SRT("srt"), 
-//		VTT("vtt");
+		/**
+		 * Returns JSON data with a single text element that can be parsed into an
+		 * {@link AudioResponse}.
+		 */
+		JSON("json"),
+
+		/**
+		 * Returns JSON that can be converted into a fully populated
+		 * {@link AudioResponse}.
+		 */
+		VERBOSE_JSON("verbose_json"),
+
+		/** Returns just the transcribed text. */
+		TEXT("text"),
+
+		/** Returns the transcribed text in SRT format. */
+		SRT("srt"),
+
+		/** Returns the transcribed text in VTT format. */
+		VTT("vtt");
 
 		private final String label;
 

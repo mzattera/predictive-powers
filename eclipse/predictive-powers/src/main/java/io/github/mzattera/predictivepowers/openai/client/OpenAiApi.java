@@ -97,7 +97,7 @@ public interface OpenAiApi {
 	Single<ResponseBody> audioSpeech(@Body @NonNull AudioSpeechRequest req);
 
 	@POST("audio/transcriptions")
-	Single<AudioResponse> audioTranscriptions(@Body @NonNull RequestBody req);
+	Single<ResponseBody> audioTranscriptions(@Body @NonNull RequestBody req);
 
 	@POST("audio/translations")
 	Single<AudioResponse> audioTranslations(@Body @NonNull RequestBody req);

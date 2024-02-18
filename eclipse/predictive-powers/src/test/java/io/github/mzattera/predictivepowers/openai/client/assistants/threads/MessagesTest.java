@@ -19,7 +19,7 @@ import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
  */
 public class MessagesTest {
 
-	// TODO URGENT Add tests for (threads) messages API
+	// TODO Add tests for (threads) messages API
 
 	@Test
 	void testMessageCreation() {

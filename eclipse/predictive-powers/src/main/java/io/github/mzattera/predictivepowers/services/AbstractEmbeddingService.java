@@ -112,4 +112,8 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 	public List<EmbeddedText> embedURL(URL url) throws IOException, SAXException, TikaException {
 		return embed(ExtractionUtil.fromUrl(url));
 	}
+
+	@Override
+	public void close() {
+	}
 }

@@ -32,8 +32,9 @@ public class CompletionExample {
 		// Uncomment the below to use Hugging Face
 		// AiEndpoint endpoint = new HuggingFaceEndpoint();
 
-		try (endpoint) {
-			CompletionService cs = endpoint.getCompletionService();
+		try (endpoint;
+			CompletionService cs = endpoint.getCompletionService(); ) {			
+			
 			System.out.println(cs.complete("Alan Turing was").getText());
 		}
 	}

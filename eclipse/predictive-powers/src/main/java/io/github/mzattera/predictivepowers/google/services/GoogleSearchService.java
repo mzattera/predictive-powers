@@ -70,7 +70,7 @@ public class GoogleSearchService implements SearchService {
 		List<Link> result = new ArrayList<>(search.getItems().size());
 		for (Result i : search.getItems()) {
 			try {
-				// TODO URGENT add all fields to SearchResult
+				// TODO add all fields to SearchResult
 				result.add(Link.builder().title(i.getTitle()).url((new URI(i.getLink())).toURL()).build());
 			} catch (MalformedURLException | URISyntaxException e) {
 				LOG.error("Malformed URL in search result: " + i.getLink(), e);
@@ -78,5 +78,9 @@ public class GoogleSearchService implements SearchService {
 		}
 
 		return result;
+	}
+
+	@Override
+	public void close() {
 	}
 }

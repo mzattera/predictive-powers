@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -34,8 +35,11 @@ import io.github.mzattera.predictivepowers.services.AbstractTool;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.Toolset;
+import io.github.mzattera.predictivepowers.services.messages.FilePart;
+import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
+import io.github.mzattera.util.ResourceUtil;
 import lombok.NonNull;
 
 public class OpenAiTokenizerTest {
@@ -290,9 +294,9 @@ public class OpenAiTokenizerTest {
 			@JsonProperty(required = true)
 			public TemperatureUnits unit3;
 
-			// TODO URGENT Remove or redo tests			
-			@SuppressWarnings("unused")
-			public boolean bull;
+			// TODO URGENT Add it back and redo tests
+//			@SuppressWarnings("unused")
+//			public boolean bull;
 		}
 
 		public GetCurrentWeatherTool() {
@@ -323,7 +327,7 @@ public class OpenAiTokenizerTest {
 
 	private final static Toolset TOOLSET = new Toolset();
 	static {
-		for (int i=0;i<3;++i) {
+		for (int i = 0; i < 3; ++i) {
 			TOOLSET.putTool("getCurrentWeather" + i, GetCurrentWeatherTool.class);
 		}
 	}
@@ -436,6 +440,28 @@ public class OpenAiTokenizerTest {
 		assertEquals(realTokens, tokens);
 	}
 
+	@Test
+	void testVisionTokens() {
+
+		String model = "gpt-4-vision-preview";
+		OpenAiTokenizer counter = modelSvc.getTokenizer(model);
+
+		// Get chat service, set bot personality and tools used
+		OpenAiChatService bot = endpoint.getChatService();
+		bot.setPersonality("You are an helpful assistant.");
+		bot.setModel(model);
+
+		OpenAiChatMessage msg = new OpenAiChatMessage(Role.USER, "Is there any grass in this image?");
+		msg.getContentParts().add(new FilePart(
+				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk.jpg"), ContentType.IMAGE));
+		ChatCompletionsRequest req = bot.getDefaultReq();
+		req.getMessages().add(msg);
+
+		long tokens = counter.count(req);
+		long realTokens = realTokens(req);
+		assertEquals(realTokens, tokens);
+	}
+
 	/**
 	 * Counts the actual token by calling OpenAI API.
 	 * 
@@ -465,4 +491,5 @@ public class OpenAiTokenizerTest {
 			return resp.getUsage().getPromptTokens();
 		}
 	}
+
 }

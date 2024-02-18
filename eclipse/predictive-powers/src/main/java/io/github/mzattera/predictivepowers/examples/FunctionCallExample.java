@@ -29,7 +29,6 @@ import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractTool;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Capability;
-import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.Toolset;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
@@ -85,14 +84,15 @@ public class FunctionCallExample {
 	// A provider to give tool instances to the bot
 	private final static Capability DEFAULT_CAPABILITY = new Toolset(TOOLS);
 
-	public static void main(String[] args) throws ToolInitializationException {
+	public static void main(String[] args) throws Exception {
 
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
 
-			// Get chat service, set bot personality and tools used
+		// Get chat service, set bot personality and tools used
 //			Agent bot = endpoint.getChatService("gpt-4-1106-preview"); // This uses chat API with parallel function calls (tools)
 //			Agent bot = endpoint.getChatService("gpt-3.5-turbo-0613"); // This uses chat API with single function calls (tools)
-			Agent bot = endpoint.getAgentService().getAgent(); // This uses assistants API
+				Agent bot = endpoint.getAgentService().getAgent(); // This uses assistants API
+		) {
 
 			bot.setPersonality("You are an helpful assistant.");
 
@@ -116,7 +116,7 @@ public class FunctionCallExample {
 							// The bot generated tool calls, print them
 							System.out.println("CALL " + " > " + call);
 
-							// Execute calls and handle errors nicely
+							// Execute calls handling errors nicely
 							ToolCallResult result;
 							try {
 								result = call.getTool().invoke(call);
@@ -127,7 +127,7 @@ public class FunctionCallExample {
 						}
 
 						// Pass results back to the bot
-						// Notice this can generate other tool calls, hence the loop
+						// Notice this might generate other tool calls, hence the loop
 						reply = bot.chat(new ChatMessage(results));
 					}
 

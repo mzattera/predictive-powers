@@ -101,8 +101,7 @@ public class EmbeddingServiceTest {
 		assertEquals(json, json2);
 	}
 
-	// TODO URGENT ? add tests using embedding windows, check length and size of the
-	// returned pieces too
+	// TODO add tests using embedding windows, check length and size of the returned pieces too
 
 	@ParameterizedTest
 	@MethodSource("endpoints")

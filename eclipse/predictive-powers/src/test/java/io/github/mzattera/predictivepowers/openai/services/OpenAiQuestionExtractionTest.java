@@ -28,7 +28,7 @@ import io.github.mzattera.predictivepowers.services.QnAPair;
 
 public class OpenAiQuestionExtractionTest {
 
-	// TODO URGENT Add a test to check text is split and trimmed correctly....if possible...
+	// TODO Add a test to check text is split and trimmed correctly....if possible...
 	
 	
 	@Test

@@ -176,7 +176,7 @@ public class OpenAiClient implements ApiClient {
 		// Debug code below
 //		client = http.newBuilder() //
 
-				// Debug code below, outputs the request
+		// Debug code below, outputs the request
 //				.addInterceptor(new Interceptor() {
 //
 //					@Override
@@ -202,7 +202,7 @@ public class OpenAiClient implements ApiClient {
 //					}
 //				}) //
 
-				// Debug code below, outputs the response
+		// Debug code below, outputs the response
 //				.addInterceptor(new Interceptor() {
 //
 //					@Override
@@ -355,12 +355,32 @@ public class OpenAiClient implements ApiClient {
 		download(callApi(api.audioSpeech(req)), downloadedFile);
 	}
 
+	/**
+	 * Creates an audio transcription. Notice the result is returned as a String
+	 * which might contain JSON, depending on the velue of
+	 * {@link AudioRequest#setResponseFormat(io.github.mzattera.predictivepowers.openai.client.audio.AudioRequest.ResponseFormat)}.
+	 * 
+	 * @param audio Audio file to transcribe.
+	 * @param req
+	 * 
+	 * @return A transcription of given stream.
+	 */
 	public String createTranscription(@NonNull java.io.File audio, @NonNull AudioRequest req) throws IOException {
 		try (InputStream is = new FileInputStream(audio)) {
 			return createTranscription(is, FileUtil.getExtension(audio), req);
 		}
 	}
 
+	/**
+	 * Creates an audio transcription. Notice the result is returned as a String
+	 * which might contain JSON, depending on the velue of
+	 * {@link AudioRequest#setResponseFormat(io.github.mzattera.predictivepowers.openai.client.audio.AudioRequest.ResponseFormat)}.
+	 * 
+	 * @param fileName Name of audio file to transcribe.
+	 * @param req
+	 * 
+	 * @return A transcription of given stream.
+	 */
 	public String createTranscription(@NonNull String fileName, @NonNull AudioRequest req) throws IOException {
 		try (InputStream is = new FileInputStream(fileName)) {
 			return createTranscription(is, FileUtil.getExtension(fileName), req);
@@ -368,7 +388,9 @@ public class OpenAiClient implements ApiClient {
 	}
 
 	/**
-	 * Creates an audio transcription.
+	 * Creates an audio transcription. Notice the result is returned as a String
+	 * which might contain JSON, depending on the velue of
+	 * {@link AudioRequest#setResponseFormat(io.github.mzattera.predictivepowers.openai.client.audio.AudioRequest.ResponseFormat)}.
 	 * 
 	 * @param audio  Audio stream.
 	 * @param format Format of the audio stream (e.g. wav).
@@ -382,7 +404,9 @@ public class OpenAiClient implements ApiClient {
 	}
 
 	/**
-	 * Creates an audio transcription.
+	 * Creates an audio transcription. Notice the result is returned as a String
+	 * which might contain JSON, depending on the velue of
+	 * {@link AudioRequest#setResponseFormat(io.github.mzattera.predictivepowers.openai.client.audio.AudioRequest.ResponseFormat)}.
 	 * 
 	 * @param audio  Audio stream.
 	 * @param format Format of the audio stream (e.g. wav).
@@ -390,7 +414,8 @@ public class OpenAiClient implements ApiClient {
 	 * 
 	 * @return A transcription of given stream.
 	 */
-	public String createTranscription(@NonNull byte[] audio, @NonNull String format, @NonNull AudioRequest req) {
+	public String createTranscription(@NonNull byte[] audio, @NonNull String format, @NonNull AudioRequest req)
+			throws IOException {
 
 		MultipartBody.Builder builder = new MultipartBody.Builder().setType(MediaType.get("multipart/form-data"))
 				.addFormDataPart("model", req.getModel())
@@ -409,7 +434,7 @@ public class OpenAiClient implements ApiClient {
 			builder.addFormDataPart("language", req.getLanguage());
 		}
 
-		return callApi(api.audioTranscriptions(builder.build())).getText();
+		return callApi(api.audioTranscriptions(builder.build())).string();
 	}
 
 	public String createTranslation(@NonNull java.io.File audio, @NonNull AudioRequest req) throws IOException {
@@ -423,6 +448,9 @@ public class OpenAiClient implements ApiClient {
 			return createTranslation(is, FileUtil.getExtension(fileName), req);
 		}
 	}
+
+	// TODO extend oudio methods so the result is not saved into a String but on a
+	// file/stream
 
 	/**
 	 * Creates an audio translation.
@@ -474,8 +502,7 @@ public class OpenAiClient implements ApiClient {
 		}
 	}
 
-	public File uploadFile(@NonNull FilePart file, @NonNull String purpose)
-			throws IOException {
+	public File uploadFile(@NonNull FilePart file, @NonNull String purpose) throws IOException {
 
 		return uploadFile(file.getInputStream(), file.getName(), purpose);
 	}
@@ -689,7 +716,8 @@ public class OpenAiClient implements ApiClient {
 		return callApi(api.threadsRunsCreate(req));
 	}
 
-	public DataList<Run> listRuns(@NonNull String threadId, SortOrder order, Integer limit, String after, String before) {
+	public DataList<Run> listRuns(@NonNull String threadId, SortOrder order, Integer limit, String after,
+			String before) {
 		return callApi(api.threadsRuns(threadId, limit, order.toString(), after, before));
 	}
 

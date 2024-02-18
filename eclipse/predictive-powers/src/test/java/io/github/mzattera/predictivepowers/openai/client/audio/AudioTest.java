@@ -16,12 +16,14 @@
 package io.github.mzattera.predictivepowers.openai.client.audio;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
+import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.audio.AudioSpeechRequest.Voice;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.util.ResourceUtil;
@@ -32,25 +34,43 @@ class AudioTest {
 	 * Transcription from a file.
 	 */
 	@Test
-	void test01() throws IOException {
+	void testTranscript() throws IOException {
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
-			String model = "whisper-1";
 			AudioRequest req = new AudioRequest();
-
-			req.setModel(model);
-			req.setResponseFormat(null);
+			req.setModel("whisper-1");
 			req.setLanguage("it");
 
+			req.setResponseFormat(null);
 			String resp = endpoint.getClient().createTranscription(ResourceUtil.getResourceFile("it-buongiorno.m4a"),
 					req);
-			assertEquals("Buongiorno", resp);
+			assertTrue(resp.toLowerCase().contains("buongiorno"));
 
-			req.setModel(model);
 			req.setResponseFormat(AudioRequest.ResponseFormat.JSON);
-			req.setLanguage("it");
-
 			resp = endpoint.getClient().createTranscription(ResourceUtil.getResourceFile("it-buongiorno.m4a"), req);
-			assertEquals("Buongiorno", resp);
+			assertTrue(resp.toLowerCase().contains("buongiorno"));
+			AudioResponse aResp = OpenAiClient.getJsonMapper().readValue(resp, AudioResponse.class);
+			assertTrue(aResp.getText().toLowerCase().contains("buongiorno"));
+
+			req.setResponseFormat(AudioRequest.ResponseFormat.SRT);
+			resp = endpoint.getClient().createTranscription(ResourceUtil.getResourceFile("it-buongiorno.m4a"), req);
+			assertTrue(resp.toLowerCase().contains("buongiorno"));
+
+			req.setResponseFormat(AudioRequest.ResponseFormat.TEXT);
+			resp = endpoint.getClient().createTranscription(ResourceUtil.getResourceFile("it-buongiorno.m4a"), req);
+			assertTrue(resp.toLowerCase().contains("buongiorno"));
+
+			req.setResponseFormat(AudioRequest.ResponseFormat.VERBOSE_JSON);
+			resp = endpoint.getClient().createTranscription(ResourceUtil.getResourceFile("it-buongiorno.m4a"), req);
+			assertTrue(resp.toLowerCase().contains("buongiorno"));
+			aResp = OpenAiClient.getJsonMapper().readValue(resp, AudioResponse.class);
+			assertTrue(aResp.getText().toLowerCase().contains("buongiorno"));
+			assertEquals(1, aResp.getSegments().size());
+			assertTrue(aResp.getSegments().get(0).getText().toLowerCase().contains("buongiorno"));
+
+			req.setResponseFormat(AudioRequest.ResponseFormat.VTT);
+			resp = endpoint.getClient().createTranscription(ResourceUtil.getResourceFile("it-buongiorno.m4a"), req);
+			assertTrue(resp.toLowerCase().contains("buongiorno"));
+			assertTrue(resp.startsWith("WEBVTT"));
 		} // Close endpoint
 	}
 
@@ -58,7 +78,7 @@ class AudioTest {
 	 * File translation.
 	 */
 	@Test
-	void test02() throws IOException {
+	void testTranslation() throws IOException {
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 			String model = "whisper-1";
 			AudioRequest req = new AudioRequest();
@@ -76,7 +96,7 @@ class AudioTest {
 	 * @throws IOException
 	 */
 	@Test
-	void test03() throws IOException {
+	void testTTS() throws IOException {
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 			String text = "Ma così posso dire polenta senza perdere la elle?";
 			AudioSpeechRequest req = AudioSpeechRequest.builder().model("tts-1").input(text).voice(Voice.ONYX).build();

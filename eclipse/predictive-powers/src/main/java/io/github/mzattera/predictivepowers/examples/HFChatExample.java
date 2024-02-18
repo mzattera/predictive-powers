@@ -25,11 +25,9 @@ public class HFChatExample {
 
 	public static void main(String[] args) {
 
-		try (HuggingFaceEndpoint endpoint = new HuggingFaceEndpoint()) {
-
-			// Get chat service and set bot personality
-			HuggingFaceChatService bot = endpoint.getChatService();
-			bot.setMaxNewTokens(50);
+		// Get chat service
+		try (HuggingFaceEndpoint endpoint = new HuggingFaceEndpoint();
+				HuggingFaceChatService bot = endpoint.getChatService();) {
 
 			// Conversation loop
 			try (Scanner console = new Scanner(System.in)) {
@@ -40,6 +38,6 @@ public class HFChatExample {
 				}
 			}
 
-		} // closes endpoint
+		} // closes resources
 	}
 }

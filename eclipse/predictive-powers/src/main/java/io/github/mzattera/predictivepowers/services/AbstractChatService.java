@@ -67,4 +67,8 @@ public abstract class AbstractChatService implements ChatService {
 	public ChatCompletion complete(String prompt) {
 		return complete(new ChatMessage(Author.USER, prompt));
 	}
+	
+	@Override
+	public void close() {
+	}
 }

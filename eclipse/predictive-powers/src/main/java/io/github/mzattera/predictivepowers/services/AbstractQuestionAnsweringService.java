@@ -72,4 +72,8 @@ public abstract class AbstractQuestionAnsweringService implements QuestionAnswer
 
 		return result;
 	}
+
+	@Override
+	public void close() {
+	}
 }

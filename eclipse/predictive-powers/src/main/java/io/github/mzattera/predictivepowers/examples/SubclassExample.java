@@ -24,13 +24,13 @@ public class SubclassExample {
 	@SuppressWarnings("unused")
 	public static void main(String[] args) {
 
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
 
 			// Explicitly instantiates a subclass of QuestionAnsweringService that uses OpenAi API
 			OpenAiQuestionAnsweringService svc = endpoint.getQuestionAnsweringService();
-
+		) {
 			// ... use the service here
 
-		} // close endpoint
+		} // close resources
 	}
 }

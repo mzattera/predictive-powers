@@ -120,4 +120,8 @@ public class OpenAiAgentService implements AgentService {
 	public OpenAiAgentService(OpenAiEndpoint endpoint) {
 		this.endpoint = endpoint;
 	}
+
+	@Override
+	public void close() {
+	}
 }

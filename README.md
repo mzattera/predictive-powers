@@ -52,7 +52,7 @@ as explained [here](https://logback.qos.ch/manual/configuration.html).
 API clients are the lowest-level components of this library; they allow you to perform direct API calls to service providers. 
 For example, you can access OpenAI API directly by instantiating an `OpenAiClient` and calling its methods.
 
-API clients in the library automatically intercept HTTP errors 429, 500 & 503, which normally indicate temporarily unavailability of APIs
+API clients in the library automatically intercept HTTP errors 429, 500, 503, and 504, which normally indicate temporarily unavailability of APIs
 an retry calls after a random and exponentially increasing wait time ([exponential backoff strategy](https://platform.openai.com/docs/guides/rate-limits/error-mitigation)).
 This feature can be easily disabled, if desired.
 

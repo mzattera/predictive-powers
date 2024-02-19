@@ -18,7 +18,10 @@ package io.github.mzattera.predictivepowers.openai.client.moderations;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -28,38 +31,40 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString
 public class ModerationCategoryScores {
 
-
-	double hate;
+	private double hate;
 
 	@JsonProperty("hate/threatening")
-	double hateThreatening;
+	private double hateThreatening;
 
-	double harassment;
+	private double harassment;
 
 	@JsonProperty("harassment/threatening")
-	double harassmentThreatening;
+	private double harassmentThreatening;
 
 	@JsonProperty("self-harm")
-	double selfHarm;
+	private double selfHarm;
 
 	@JsonProperty("self-harm/intent")
-	double selfHarmIntent;
+	private double selfHarmIntent;
 
 	@JsonProperty("self-harm/instructions")
-	double selfHarmInstructions;
+	private double selfHarmInstructions;
 
-	double sexual;
+	private double sexual;
 
 	@JsonProperty("sexual/minors")
-	double sexualMinors;
+	private double sexualMinors;
 
-	double violence;
+	private double violence;
 
 	@JsonProperty("violence/graphic")
-	double violenceGraphic;
+	private double violenceGraphic;
 }

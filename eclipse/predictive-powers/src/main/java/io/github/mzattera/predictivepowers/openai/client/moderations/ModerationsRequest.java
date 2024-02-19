@@ -34,12 +34,12 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-@Getter
-@Setter
-@Builder
 @NoArgsConstructor
 @RequiredArgsConstructor
 @AllArgsConstructor
+@Builder
+@Getter
+@Setter
 @ToString
 public class ModerationsRequest {
 

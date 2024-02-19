@@ -26,5 +26,5 @@ import lombok.experimental.SuperBuilder;
 public class TextPart implements MessagePart {
 
 	@NonNull
-	protected String content;
+	private String content;
 }

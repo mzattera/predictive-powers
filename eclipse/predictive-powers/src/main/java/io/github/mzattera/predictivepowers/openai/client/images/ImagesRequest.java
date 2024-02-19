@@ -21,8 +21,8 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -32,12 +32,11 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
-@Builder
-// @NoArgsConstructor
-@RequiredArgsConstructor
-@AllArgsConstructor
 @ToString
 public class ImagesRequest {
 
@@ -126,13 +125,13 @@ public class ImagesRequest {
 	}
 
 	// Can be null for edits and variations
-	String prompt;
+	private String prompt;
 
-	String model;
-	Integer n;
-	ImageQuality quality;
-	ResponseFormat responseFormat;
-	ImageSize size;
-	ImageStyle style;
-	String user;
+	private String model;
+	private Integer n;
+	private ImageQuality quality;
+	private ResponseFormat responseFormat;
+	private ImageSize size;
+	private ImageStyle style;
+	private String user;
 }

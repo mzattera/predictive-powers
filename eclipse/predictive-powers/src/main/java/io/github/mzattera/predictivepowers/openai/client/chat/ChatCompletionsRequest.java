@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -42,12 +43,12 @@ import lombok.ToString;
  * @author Massmiliano "Maxi" Zattera.
  *
  */
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @RequiredArgsConstructor
 @AllArgsConstructor
+@Builder
+@Getter
+@Setter
 @ToString
 public class ChatCompletionsRequest {
 
@@ -55,22 +56,22 @@ public class ChatCompletionsRequest {
 	 * Provides custom serialization.
 	 */
 	private final static class ResponseFormatSerializer extends StdSerializer<ResponseFormat> {
-	
+
 		private static final long serialVersionUID = -4506958348962250647L;
-	
+
 		@SuppressWarnings("unused")
 		public ResponseFormatSerializer() {
 			this(null);
 		}
-	
+
 		public ResponseFormatSerializer(Class<ResponseFormat> t) {
 			super(t);
 		}
-	
+
 		@Override
 		public void serialize(ResponseFormat value, JsonGenerator jgen, SerializerProvider provider)
 				throws IOException, JsonProcessingException {
-	
+
 			jgen.writeStartObject();
 			jgen.writeStringField("type", value.label);
 			jgen.writeEndObject();
@@ -93,46 +94,46 @@ public class ChatCompletionsRequest {
 
 	@NonNull
 	@Builder.Default
-	List<OpenAiChatMessage> messages = new ArrayList<>();
+	private List<OpenAiChatMessage> messages = new ArrayList<>();
 
 	@NonNull
-	String model;
+	private String model;
 
 	Double frequencyPenalty;
-	Map<String, Integer> logitBias;
+	private Map<String, Integer> logitBias;
 
 	/**
 	 * Higher-level functions in the library will try to calculate this
 	 * automatically if it is null when submitting a request.
 	 */
-	Integer maxTokens;
+	private Integer maxTokens;
 
-	Integer n;
-	Double presencePenalty;
-	ResponseFormat responseFormat;
-	Integer seed;
-	List<String> stop;
+	private Integer n;
+	private Double presencePenalty;
+	private ResponseFormat responseFormat;
+	private Integer seed;
+	private List<String> stop;
 
 	// TODO: Add support for streaming input at least in direct API calls, if so
 	// make sure services do not stream
-	final boolean stream = false;
+	private final boolean stream = false;
 
-	Double temperature;
-	Double topP;
+	private Double temperature;
+	private Double topP;
 
-	List<OpenAiTool> tools;
-	ToolChoice toolChoice;
+	private List<OpenAiTool> tools;
+	private ToolChoice toolChoice;
 
-	String user;
+	private String user;
 
 	/**
 	 * Notice: Setting this without providing {@link #functions} causes an HTTP 400
 	 * error. See {@link FunctionChoice}.
 	 */
-	FunctionChoice functionCall;
+	private FunctionChoice functionCall;
 
 	/**
 	 * Notice: HTTP 400 error is generated if this is an empty list.
 	 */
-	List<Function> functions;
+	private List<Function> functions;
 }

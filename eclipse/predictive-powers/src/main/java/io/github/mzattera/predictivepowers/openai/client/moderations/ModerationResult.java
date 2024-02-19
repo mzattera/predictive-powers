@@ -16,7 +16,10 @@
 
 package io.github.mzattera.predictivepowers.openai.client.moderations;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -26,12 +29,15 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString
 public class ModerationResult {
 
-	boolean flagged;
-	ModerationCategories categories;
-	ModerationCategoryScores categoryScores;
+	private boolean flagged;
+	private ModerationCategories categories;
+	private ModerationCategoryScores categoryScores;
 }

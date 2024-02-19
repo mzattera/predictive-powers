@@ -21,8 +21,7 @@ import lombok.ToString;
 /**
  * Content for an assistant Message.
  */
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-//@RequiredArgsConstructor
+@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Getter
@@ -50,7 +49,8 @@ public class Content {
 	private Type type;
 
 	// For image_file type, this will contain a single key "file_id"
-	private Map<String, String> imageFile;
+	@Builder.Default
+	private Map<String, String> imageFile = new HashMap<>();
 
 	// In case message us text type
 	private Text text;
@@ -70,6 +70,7 @@ public class Content {
 	@NoArgsConstructor(access = AccessLevel.PROTECTED)
 	@RequiredArgsConstructor
 	@AllArgsConstructor
+	@Builder
 	@Getter
 	@Setter
 	@ToString
@@ -78,10 +79,10 @@ public class Content {
 		@NonNull
 		private String value;
 
+		@Builder.Default
 		private List<Annotation> annotations = new ArrayList<>();
 
-		@NoArgsConstructor(access = AccessLevel.PROTECTED)
-//		@RequiredArgsConstructor
+		@NoArgsConstructor
 		@AllArgsConstructor
 		@Builder
 		@Getter
@@ -113,7 +114,7 @@ public class Content {
 			private int startIndex;
 			private int endIndex;
 
-			@NoArgsConstructor(access = AccessLevel.PROTECTED)
+			@NoArgsConstructor
 			@AllArgsConstructor
 			@Getter
 			@Setter

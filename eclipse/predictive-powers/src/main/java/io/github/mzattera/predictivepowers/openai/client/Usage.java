@@ -12,9 +12,13 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package io.github.mzattera.predictivepowers.openai.client;
+ */
+package io.github.mzattera.predictivepowers.openai.client;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -24,12 +28,15 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString
 public class Usage {
-	
-    long promptTokens;
-    long completionTokens;
-    long totalTokens;
+
+	private long promptTokens;
+	private long completionTokens;
+	private long totalTokens;
 }

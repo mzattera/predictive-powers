@@ -20,6 +20,7 @@
 
 package io.github.mzattera.predictivepowers.huggingface.client;
 
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -35,19 +36,18 @@ import lombok.experimental.SuperBuilder;
  * 
  * @author Massimiliano "Maxi" Zattera
  */
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@RequiredArgsConstructor
+@SuperBuilder
 @Getter
 @Setter
-@SuperBuilder
-@NoArgsConstructor
-@RequiredArgsConstructor
-//@AllArgsConstructor
 @ToString
 public class SingleHuggingFaceRequest {
 
 	@NonNull
-	String inputs;
+	private String inputs;
 
 	@NonNull
 	@Builder.Default
-	Options options = new Options();
+	private Options options = new Options();
 }

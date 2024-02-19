@@ -17,6 +17,7 @@
 package io.github.mzattera.predictivepowers.huggingface.client.nlp;
 
 import io.github.mzattera.predictivepowers.huggingface.client.Options;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,37 +31,35 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@Getter
-@Setter
-@Builder
 @NoArgsConstructor
 @RequiredArgsConstructor
-//@AllArgsConstructor
+@Builder
+@Getter
+@Setter
 @ToString
 public class QuestionAnsweringRequest {
 
+	@NoArgsConstructor(access = AccessLevel.PROTECTED)
+	@RequiredArgsConstructor
+	@Builder
 	@Getter
 	@Setter
-	@Builder
-	@NoArgsConstructor
-	@RequiredArgsConstructor
-//	@AllArgsConstructor
 	@ToString
 	public static class Inputs {
 
 		@NonNull
-		String question;
+		private String question;
 
 		@NonNull
-		String context;
+		private String context;
 	}
 
 	@NonNull
 	@Builder.Default
-	Inputs inputs = new Inputs();
+	private Inputs inputs = new Inputs();
 
 	// This is undocumented, but it seems to work.
 	@NonNull
 	@Builder.Default
-	Options options = new Options();
+	private Options options = new Options();
 }

@@ -16,7 +16,10 @@
 
 package io.github.mzattera.predictivepowers.openai.client.completions;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -26,13 +29,16 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString
 public class CompletionsChoice {
-	
-	String text;
-	int index;
-	Logprob logprobs;
-	String finishReason;
+
+	private String text;
+	private int index;
+	private Logprob logprobs;
+	private String finishReason;
 }

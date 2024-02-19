@@ -16,6 +16,7 @@
 
 package io.github.mzattera.predictivepowers.openai.client.finetuning;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -31,22 +32,22 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @RequiredArgsConstructor
 @AllArgsConstructor
+@Builder
+@Getter
+@Setter
 @ToString
 public class FineTuningRequest {
 
 	@NonNull
-	String model;
+	private String model;
 
 	@NonNull
-	String trainingFile;
+	private String trainingFile;
 
-	Hyperparameters hyperparameters;
-	String suffix;
-	String validationFile;
+	private Hyperparameters hyperparameters;
+	private String suffix;
+	private String validationFile;
 }

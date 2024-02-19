@@ -19,6 +19,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -34,12 +35,12 @@ import lombok.ToString;
  * @author Massmiliano "Maxi" Zattera.
  *
  */
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @RequiredArgsConstructor
 @AllArgsConstructor
+@Builder
+@Getter
+@Setter
 @ToString
 public class EmbeddingsRequest {
 
@@ -61,7 +62,7 @@ public class EmbeddingsRequest {
 	}
 	
 	@NonNull
-	String model;
+	private String model;
 
 	/**
 	 * Input text to get embeddings for, encoded as a string.
@@ -72,11 +73,11 @@ public class EmbeddingsRequest {
 	// TODO in reality this supports multiple formats, but I do not think they are really useful
 	@NonNull
 	@Builder.Default
-	List<String> input = new ArrayList<>();
+	private List<String> input = new ArrayList<>();
 
-	EncodingFormat encodingFormat;
+	private EncodingFormat encodingFormat;
 	
-	Integer dimensions;
+	private Integer dimensions;
 	
-	String user;
+	private String user;
 }

@@ -30,7 +30,6 @@ import lombok.experimental.SuperBuilder;
  */
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @RequiredArgsConstructor
-//@AllArgsConstructor
 @SuperBuilder
 @Getter
 @Setter

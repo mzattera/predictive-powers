@@ -16,9 +16,13 @@
 
 package io.github.mzattera.predictivepowers.huggingface.client.nlp;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -28,6 +32,9 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString
@@ -37,6 +44,9 @@ public class ConversationalResponse {
 	 * A facility dictionary to send back for the next input (with the new user
 	 * input addition).
 	 */
+	@NoArgsConstructor
+	@AllArgsConstructor
+	@Builder
 	@Getter
 	@Setter
 	@ToString
@@ -46,17 +56,19 @@ public class ConversationalResponse {
 		 * List of strings. The last inputs from the user in the conversation, <em>after
 		 * the model has run.
 		 */
-		List<String> pastUserInputs;
+		@Builder.Default
+		private List<String> pastUserInputs = new ArrayList<>();
 
 		/**
 		 * List of strings. The last outputs from the model in the conversation,
 		 * <em>after the model has run.
 		 */
-		List<String> generatedResponses;
+		@Builder.Default
+		private List<String> generatedResponses = new ArrayList<>();
 	}
 
-	Conversation conversaton;
+	private Conversation conversaton;
 
 	/** The answer of the bot */
-	String generatedText;
+	private String generatedText;
 }

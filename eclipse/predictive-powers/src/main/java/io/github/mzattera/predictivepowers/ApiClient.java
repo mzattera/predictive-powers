@@ -104,7 +104,7 @@ public interface ApiClient extends AutoCloseable {
 				int retries = 0;
 				int delayMillis = BASE_DELAY_MILLIS;
 				while ((retries < maxRetries)
-						&& ((response.code() == 429) || (response.code() == 500) || (response.code() == 503))) {
+						&& ((response.code() == 429) || (response.code() == 500) || (response.code() == 503) || (response.code() == 504))) {
 
 					// Waits and retries in case server is temporarily unavailable
 

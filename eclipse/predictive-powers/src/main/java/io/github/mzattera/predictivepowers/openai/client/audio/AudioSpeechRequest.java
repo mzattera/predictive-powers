@@ -21,6 +21,7 @@ package io.github.mzattera.predictivepowers.openai.client.audio;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -33,12 +34,12 @@ import lombok.ToString;
 /**
  * Request for the audio/speech OpenAI API.
  */
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @RequiredArgsConstructor
 @AllArgsConstructor
+@Builder
+@Getter
+@Setter
 @ToString
 public class AudioSpeechRequest {
 
@@ -81,14 +82,14 @@ public class AudioSpeechRequest {
 	}
 
 	@NonNull
-	String model;
+	private String model;
 
 	@NonNull
-	String input;
+	private String input;
 
 	@NonNull
-	Voice voice;
+	private Voice voice;
 
-	ResponseFormat responseFormat;
-	Double speed;
+	private ResponseFormat responseFormat;
+	private Double speed;
 }

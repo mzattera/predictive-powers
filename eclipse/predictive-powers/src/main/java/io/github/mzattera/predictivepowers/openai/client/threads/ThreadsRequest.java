@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.github.mzattera.predictivepowers.openai.client.Metadata;
-import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,8 +17,7 @@ import lombok.experimental.SuperBuilder;
  * 
  * @author Massimiliano "Maxi" Zattera
  */
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-//@RequiredArgsConstructor
+@NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
 @Getter

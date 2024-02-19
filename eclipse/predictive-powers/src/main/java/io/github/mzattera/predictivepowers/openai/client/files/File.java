@@ -16,7 +16,10 @@
 
 package io.github.mzattera.predictivepowers.openai.client.files;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -26,20 +29,23 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString
 public class File {
 
-	String id;
-	String object;
-	Long bytes;
-	long createdAt;
-	String filename;
-	String purpose;
+	private String id;
+	private String object;
+	private Long bytes;
+	private long createdAt;
+	private String filename;
+	private String purpose;
 
 	/**
 	 * If the file was attached to an assistant, this will be the assistant ID.
 	 */
-	String assistantId;
+	private String assistantId;
 }

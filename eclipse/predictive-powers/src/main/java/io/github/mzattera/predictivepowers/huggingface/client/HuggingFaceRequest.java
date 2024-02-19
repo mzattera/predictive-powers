@@ -19,11 +19,12 @@ package io.github.mzattera.predictivepowers.huggingface.client;
 import java.util.ArrayList;
 import java.util.List;
 
-import lombok.AllArgsConstructor;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
@@ -34,20 +35,19 @@ import lombok.experimental.SuperBuilder;
  * 
  * @author Massimiliano "Maxi" Zattera
  */
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@RequiredArgsConstructor
+@SuperBuilder
 @Getter
 @Setter
-@SuperBuilder
-@NoArgsConstructor
-//@RequiredArgsConstructor
-@AllArgsConstructor
 @ToString
 public class HuggingFaceRequest {
 
 	@NonNull
 	@Builder.Default
-	List<String> inputs = new ArrayList<>();
+	private List<String> inputs = new ArrayList<>();
 
 	@NonNull
 	@Builder.Default
-	Options options = new Options();
+	private Options options = new Options();
 }

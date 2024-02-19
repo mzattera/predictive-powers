@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.github.mzattera.predictivepowers.openai.client.Metadata;
-import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,8 +12,7 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-//@RequiredArgsConstructor
+@NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
 @Getter

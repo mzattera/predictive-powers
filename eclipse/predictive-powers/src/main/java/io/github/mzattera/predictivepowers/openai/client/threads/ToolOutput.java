@@ -17,7 +17,6 @@
 package io.github.mzattera.predictivepowers.openai.client.threads;
 
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
-import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -29,8 +28,7 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-//@RequiredArgsConstructor
+@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 @Getter

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceRequest;
+import io.github.mzattera.predictivepowers.huggingface.client.Options;
 import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractEmbeddingService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
@@ -59,10 +60,10 @@ public class HuggingFaceEmbeddingService extends AbstractEmbeddingService {
 		List<EmbeddedText> result = new ArrayList<>(chunks.size());
 
 		// TODO replace with defaultReq instead
-		HuggingFaceRequest req = new HuggingFaceRequest();
-		req.getInputs().addAll(chunks);
-		req.getOptions().setWaitForModel(true); // TODO remove? Improve?
-		req.getOptions().setUseCache(true);
+		HuggingFaceRequest req = HuggingFaceRequest.builder() //
+				.inputs(chunks) //
+				.options(new Options(true, true)) //
+				.build();
 
 		List<List<Double>> resp = endpoint.getClient().featureExtraction(getModel(), req);
 		for (int i = 0; i < req.getInputs().size(); ++i) {

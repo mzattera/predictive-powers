@@ -16,9 +16,11 @@
 
 package io.github.mzattera.predictivepowers.openai.client.completions;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -34,45 +36,52 @@ import lombok.ToString;
  * @author Massmiliano "Maxi" Zattera.
  *
  */
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @RequiredArgsConstructor
 @AllArgsConstructor
+@Builder
+@Getter
+@Setter
 @ToString
 public class CompletionsRequest {
 
 	@NonNull
-	String model;
-	
-	String prompt;
-	
+	private String model;
+
+	private String prompt;
+
 	/**
 	 * This is used for Insert edits (part of the prompt following the insertion
 	 * point).
 	 */
-	String suffix;
+	private String suffix;
 
 	/**
 	 * Many functions in this library will try to calculate this automatically, if
 	 * it is null when submitting a request.
 	 */
-	Integer maxTokens;
+	private Integer maxTokens;
 
-	Double temperature;
-	Double topP;
-	Integer n;
+	private Double temperature;
+	private Double topP;
+	private Integer n;
 
-	// TODO: Add support for streaming input at least in direct API calls, if so make sure services do not stream
-	final boolean stream = false;
+	// TODO: Add support for streaming input at least in direct API calls, if so
+	// make sure services do not stream
+	private final boolean stream = false;
 
-	Integer logprobs;
-	Boolean echo;
-	List<String> stop;
-	Double presencePenalty;
-	Double frequencyPenalty;
-	Integer bestOf;
-	Map<String, Integer> logitBias;
-	String user;
+	private Integer logprobs;
+	private Boolean echo;
+
+	// This causes HTTP 400 error if it is an empty list
+	private List<String> stop;
+
+	private Double presencePenalty;
+	private Double frequencyPenalty;
+	private Integer bestOf;
+
+	@Builder.Default
+	private Map<String, Integer> logitBias = new HashMap<>();
+
+	private String user;
 }

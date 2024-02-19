@@ -16,7 +16,10 @@
 package io.github.mzattera.predictivepowers.openai.client.chat;
 
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -26,12 +29,15 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString
 public class ChatCompletionsChoice {
 
-	String finishReason;
-	int index;
-	OpenAiChatMessage message;
+	private String finishReason;
+	private int index;
+	private OpenAiChatMessage message;
 }

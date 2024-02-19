@@ -20,7 +20,10 @@
 
 package io.github.mzattera.predictivepowers.huggingface.client.nlp;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -29,11 +32,14 @@ import lombok.ToString;
  * 
  * @author Massimiliano "Maxi" Zattera
  */
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString
 public class TextClassificationResponse {
 
-	String label;
-	double score;
+	private String label;
+	private double score;
 }

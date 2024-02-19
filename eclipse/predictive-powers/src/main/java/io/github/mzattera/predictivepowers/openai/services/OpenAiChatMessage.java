@@ -58,7 +58,6 @@ import lombok.ToString;
  *
  */
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-//@RequiredArgsConstructor
 @Getter
 @Setter
 @ToString

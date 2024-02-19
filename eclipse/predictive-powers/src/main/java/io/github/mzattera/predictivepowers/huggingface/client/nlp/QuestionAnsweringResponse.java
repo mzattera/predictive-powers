@@ -16,7 +16,10 @@
 
 package io.github.mzattera.predictivepowers.huggingface.client.nlp;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -25,12 +28,15 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString
 public class QuestionAnsweringResponse {
-	String answer;
-	double score;
-	int start;
-	int stop;
+	private String answer;
+	private double score;
+	private int start;
+	private int stop;
 }

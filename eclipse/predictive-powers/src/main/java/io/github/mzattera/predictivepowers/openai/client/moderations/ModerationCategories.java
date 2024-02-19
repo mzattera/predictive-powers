@@ -12,11 +12,15 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package io.github.mzattera.predictivepowers.openai.client.moderations;
+ */
+package io.github.mzattera.predictivepowers.openai.client.moderations;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -26,37 +30,40 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString
 public class ModerationCategories {
 
-	boolean hate;
+	private boolean hate;
 
 	@JsonProperty("hate/threatening")
-	boolean hateThreatening;
+	private boolean hateThreatening;
 
-	boolean harassment;
+	private boolean harassment;
 
 	@JsonProperty("harassment/threatening")
-	boolean harassmentThreatening;
+	private boolean harassmentThreatening;
 
 	@JsonProperty("self-harm")
-	boolean selfHarm;
+	private boolean selfHarm;
 
 	@JsonProperty("self-harm/intent")
-	boolean selfHarmIntent;
+	private boolean selfHarmIntent;
 
 	@JsonProperty("self-harm/instructions")
-	boolean selfHarmInstructions;
+	private boolean selfHarmInstructions;
 
-	boolean sexual;
+	private boolean sexual;
 
 	@JsonProperty("sexual/minors")
-	boolean sexualMinors;
+	private boolean sexualMinors;
 
-	boolean violence;
+	private boolean violence;
 
 	@JsonProperty("violence/graphic")
-	boolean violenceGraphic;
+	private boolean violenceGraphic;
 }

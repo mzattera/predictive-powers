@@ -16,10 +16,14 @@
 
 package io.github.mzattera.predictivepowers.openai.client.completions;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.github.mzattera.predictivepowers.openai.client.Usage;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -29,15 +33,21 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString
 public class CompletionsResponse {
 
-	String id;
-	String object;
-	long created;
-	String model;
-	List<CompletionsChoice> choices;
-	Usage usage;
+	private String id;
+	private String object;
+	private long created;
+	private String model;
+
+	@Builder.Default
+	private List<CompletionsChoice> choices = new ArrayList<>();
+
+	private Usage usage;
 }

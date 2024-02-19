@@ -42,9 +42,12 @@ import com.kjetland.jackson.jsonSchema.JsonSchemaGenerator;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.Tool.ToolParameter;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -56,6 +59,9 @@ import lombok.ToString;
  *
  */
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@RequiredArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString
@@ -65,7 +71,6 @@ public class Function {
 	 * Utility class to deserialize JSON schema.
 	 */
 	@NoArgsConstructor(access = AccessLevel.PROTECTED)
-	// @RequiredArgsConstructor
 	@Getter
 	@Setter
 	@ToString

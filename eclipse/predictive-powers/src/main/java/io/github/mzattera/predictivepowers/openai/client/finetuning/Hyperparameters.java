@@ -31,12 +31,11 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
-@Builder
-@NoArgsConstructor
-//@RequiredArgsConstructor
-@AllArgsConstructor
 @ToString
 public class Hyperparameters {
 
@@ -62,7 +61,7 @@ public class Hyperparameters {
 			return Integer.parseInt(batchSize);
 	}
 	
-	String learningRateMultiplier;
+	private String learningRateMultiplier;
 
 	public void setLearningRateMultiplier(double m) {
 			batchSize = Double.toString(m);

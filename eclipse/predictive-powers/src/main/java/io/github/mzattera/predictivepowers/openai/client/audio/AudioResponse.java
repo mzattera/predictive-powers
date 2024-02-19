@@ -57,6 +57,7 @@ public class AudioResponse {
 	private List<Segment> segments = new ArrayList<>();
 
 	@NoArgsConstructor(access = AccessLevel.PROTECTED)
+	@RequiredArgsConstructor
 	@AllArgsConstructor
 	@Builder
 	@Getter

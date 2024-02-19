@@ -14,7 +14,10 @@
  * limitations under the License.
  */package io.github.mzattera.predictivepowers.openai.client;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -24,20 +27,23 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@Setter
+@NoArgsConstructor
 @Getter
+@Setter
 @ToString
 public class OpenAiError {
 
-	ErrorDetails error;
+	private ErrorDetails error;
 
+	@NoArgsConstructor
+	@AllArgsConstructor
+	@Builder
 	@Getter
 	@Setter
-	@ToString
-	public static class ErrorDetails {
-		String message;
-		String type;
-		String param;
-		String code;
+	@ToString	public static class ErrorDetails {
+		private String message;
+		private String type;
+		private String param;
+		private String code;
 	}
 }

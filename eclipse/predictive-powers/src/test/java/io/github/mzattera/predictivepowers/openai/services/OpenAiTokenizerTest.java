@@ -32,6 +32,7 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.Op
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
 import io.github.mzattera.predictivepowers.services.AbstractTool;
+import io.github.mzattera.predictivepowers.services.Capability;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.Toolset;
@@ -325,11 +326,12 @@ public class OpenAiTokenizerTest {
 		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool()));
 	}
 
-	private final static Toolset TOOLSET = new Toolset();
-	static {
+	private final static Capability getToolset() {
+		Toolset result = new Toolset();
 		for (int i = 0; i < 3; ++i) {
-			TOOLSET.putTool("getCurrentWeather" + i, GetCurrentWeatherTool.class);
+			result.putTool("getCurrentWeather" + i, GetCurrentWeatherTool.class);
 		}
+		return result;
 	}
 
 	/**
@@ -349,7 +351,7 @@ public class OpenAiTokenizerTest {
 		OpenAiChatService bot = endpoint.getChatService();
 		bot.setPersonality("You are an helpful assistant.");
 		bot.setModel(model); // This uses simple function calls
-		bot.addCapability(TOOLSET);
+		bot.addCapability(getToolset());
 
 		ChatCompletionsRequest req = bot.getDefaultReq();
 		req.getMessages().add(new OpenAiChatMessage(Role.USER, "Hi"));
@@ -378,7 +380,7 @@ public class OpenAiTokenizerTest {
 		OpenAiChatService bot = endpoint.getChatService();
 		bot.setPersonality("You are an helpful assistant.");
 		bot.setModel(model); // This uses simple tool (parallel functions) calls
-		bot.addCapability(TOOLSET);
+		bot.addCapability(getToolset());
 
 		ChatCompletionsRequest req = bot.getDefaultReq();
 		req.getMessages().add(new OpenAiChatMessage(Role.USER, "Hi"));

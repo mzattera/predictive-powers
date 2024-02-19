@@ -28,18 +28,17 @@ import lombok.ToString;
  * 
  * @author Massimiliano "Maxi" Zattera
  */
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
-@Builder
-@NoArgsConstructor
-//@RequiredArgsConstructor
-@AllArgsConstructor
 @ToString
 public class FineTuningJobEvent {
 
-	String id;
-	long createdAt;
-	String level;
-	String message;
-	String object;
+	private String id;
+	private long createdAt;
+	private String level;
+	private String message;
+	private String object;
 }

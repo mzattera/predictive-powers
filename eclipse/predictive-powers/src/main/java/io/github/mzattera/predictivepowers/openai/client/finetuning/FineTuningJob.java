@@ -16,6 +16,7 @@
 
 package io.github.mzattera.predictivepowers.openai.client.finetuning;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import lombok.AllArgsConstructor;
@@ -31,55 +32,55 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
-@Builder
-@NoArgsConstructor
-//@RequiredArgsConstructor
-@AllArgsConstructor
 @ToString
 public class FineTuningJob {
 
+	@NoArgsConstructor
+	@AllArgsConstructor
+	@Builder
 	@Getter
 	@Setter
-	@Builder
-	@NoArgsConstructor
-//	@RequiredArgsConstructor
-	@AllArgsConstructor
 	@ToString
 	public static class Error {
 
 		/** A machine-readable error code. */
-		String code;
+		private String code;
 
 		/** A human-readable error message. */
-		String message;
+		private String message;
 
 		/**
 		 * The parameter that was invalid, usually training_file or validation_file.
 		 * This field will be null if the failure was not parameter-specific.
 		 */
-		String param;
+		private String param;
 	}
 
-	String id;
-	long createdAt;
-	Error error;
-	String fineTunedModel;
-	long finishedAt;
-	Hyperparameters hyperparameters;
-	String object;
-	String model;
-	String organizationId;
-	List<String> resultFiles;
+	private String id;
+	private long createdAt;
+	private Error error;
+	private String fineTunedModel;
+	private long finishedAt;
+	private Hyperparameters hyperparameters;
+	private String object;
+	private String model;
+	private String organizationId;
+
+	@Builder.Default
+	private List<String> resultFiles = new ArrayList<>();
 
 	/**
 	 * This goes: validating_files, queued, running, succeeded, failed, or
 	 * cancelled.
 	 */
-	String status;
+	private String status;
 
-	Integer trainedTokens;
-	String validationFile;
-	String trainingFile;
+	private Integer trainedTokens;
+	private String validationFile;
+	private String trainingFile;
 }

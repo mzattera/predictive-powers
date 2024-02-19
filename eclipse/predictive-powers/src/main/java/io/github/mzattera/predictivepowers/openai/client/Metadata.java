@@ -21,7 +21,6 @@ import lombok.experimental.SuperBuilder;
  * It is meant mostly to be extended by classes which require metadata. 
  */
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-//@RequiredArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
 @Getter

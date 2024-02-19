@@ -103,7 +103,7 @@ public class FunctionCall {
 	 * Name of the function to call.
 	 */
 	@NonNull
-	String name;
+	private String name;
 
 	/**
 	 * Parameters to use in the call, as name/value pairs.
@@ -112,5 +112,5 @@ public class FunctionCall {
 	@JsonDeserialize(using = ArgumentsDeserializer.class)
 	@NonNull
 	@Builder.Default
-	Map<String, Object> arguments = new HashMap<>();
+	private Map<String, Object> arguments = new HashMap<>();
 }

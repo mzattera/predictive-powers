@@ -14,9 +14,13 @@
  * limitations under the License.
  */package io.github.mzattera.predictivepowers.openai.client.embeddings;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -26,12 +30,18 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString
 public class Embedding {
 
-	String object;
-	List<Double> embedding;
-	int index;
+	private String object;
+	
+	@Builder.Default
+	private List<Double> embedding = new ArrayList<>();
+	
+	private int index;
 }

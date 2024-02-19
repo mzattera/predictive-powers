@@ -12,12 +12,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package io.github.mzattera.predictivepowers.openai.client.chat;
+ */
+package io.github.mzattera.predictivepowers.openai.client.chat;
 
 import java.util.List;
 
 import io.github.mzattera.predictivepowers.openai.client.Usage;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -27,16 +31,19 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString
 public class ChatCompletionsResponse {
-	
-	String id;
-	List<ChatCompletionsChoice> choices;
-	long created;
-	String model;
-	String systemFingerprint;
-	String object;
-	Usage usage;
+
+	private String id;
+	private List<ChatCompletionsChoice> choices;
+	private long created;
+	private String model;
+	private String systemFingerprint;
+	private String object;
+	private Usage usage;
 }

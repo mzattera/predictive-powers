@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.github.mzattera.predictivepowers.huggingface.client.Options;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -29,21 +30,20 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-@Getter
-@Setter
-@Builder
 @NoArgsConstructor
 @RequiredArgsConstructor
 @AllArgsConstructor
+@Builder
+@Getter
+@Setter
 @ToString
 public class ConversationalRequest {
 
+	@NoArgsConstructor(access = AccessLevel.PROTECTED)
+	@RequiredArgsConstructor
+	@Builder
 	@Getter
 	@Setter
-	@Builder
-	@NoArgsConstructor
-	@RequiredArgsConstructor
-//	@AllArgsConstructor
 	@ToString
 	public static class Inputs {
 
@@ -52,14 +52,14 @@ public class ConversationalRequest {
 		 * 
 		 */
 		@NonNull
-		String text;
+		private String text;
 
 		/**
 		 * A list of strings corresponding to the earlier replies from the model.
 		 */
 		@NonNull
 		@Builder.Default
-		List<String> generatedResponses = new ArrayList<>();
+		private List<String> generatedResponses = new ArrayList<>();
 
 		/**
 		 * A list of strings corresponding to the earlier replies from the user. Should
@@ -67,15 +67,14 @@ public class ConversationalRequest {
 		 */
 		@NonNull
 		@Builder.Default
-		List<String> pastUserInputs = new ArrayList<>();
+		private List<String> pastUserInputs = new ArrayList<>();
 	}
 
+	@NoArgsConstructor
+	@AllArgsConstructor
+	@Builder
 	@Getter
 	@Setter
-	@Builder
-//	@NoArgsConstructor
-	@RequiredArgsConstructor
-	@AllArgsConstructor
 	@ToString
 	public static class Parameters {
 
@@ -83,56 +82,56 @@ public class ConversationalRequest {
 		 * (Default: None). Integer to define the minimum length in tokens of the output
 		 * summary.
 		 */
-		Integer minLength;
+		private Integer minLength;
 
 		/**
 		 * (Default: None). Integer to define the maximum length in tokens of the output
 		 * summary.
 		 */
-		Integer maxLength;
+		private Integer maxLength;
 
 		/**
 		 * (Default: None). Integer to define the top tokens considered within the
 		 * sample operation to create new text.
 		 */
-		Integer topK;
+		private Integer topK;
 
 		/**
 		 * (Default: None). Float to define the tokens that are within the sample
 		 * operation of text generation. Add tokens in the sample for more probable to
 		 * least probable until the sum of the probabilities is greater than top_p.
 		 */
-		Double topP;
+		private Double topP;
 
 		/**
 		 * (Default: 1.0). Float (0.0-100.0). The temperature of the sampling operation.
 		 * 1 means regular sampling, 0 means always take the highest score, 100.0 is
 		 * getting closer to uniform probability.
 		 */
-		Double temperature;
+		private Double temperature;
 
 		/**
 		 * (Default: None). Float (0.0-100.0). The more a token is used within
 		 * generation the more it is penalized to not be picked in successive generation
 		 * passes.
 		 */
-		Double repetitionPenalty;
+		private Double repetitionPenalty;
 
 		/**
 		 * (Default: None). Float (0-120.0). The amount of time in seconds that the
 		 * query should take maximum. Network can cause some overhead so it will be a
 		 * soft limit.
 		 */
-		Double maxTime;
+		private Double maxTime;
 	}
 
 	@Builder.Default
-	Parameters parameters = new Parameters();
+	private Parameters parameters = new Parameters();
 
 	@NonNull
 	@Builder.Default
-	Inputs inputs = new Inputs();
+	private Inputs inputs = new Inputs();
 
 	@Builder.Default
-	Options options = new Options();
+	private Options options = new Options();
 }

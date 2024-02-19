@@ -16,9 +16,12 @@
 
 package io.github.mzattera.predictivepowers.openai.client;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 /**
  * Response from /files DELETE API.
@@ -26,12 +29,15 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
+@NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
 @Getter
 @Setter
 @ToString
 public class DeleteResponse {
 
-	String id;
-	String object;
-	boolean deleted;
+	private String id;
+	private String object;
+	private boolean deleted;
 }

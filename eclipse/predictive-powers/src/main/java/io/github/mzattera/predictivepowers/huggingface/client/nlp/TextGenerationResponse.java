@@ -16,7 +16,9 @@
 
 package io.github.mzattera.predictivepowers.huggingface.client.nlp;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -24,10 +26,12 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
+@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
 @ToString
 public class TextGenerationResponse {
 
-	String generatedText;
+	private String generatedText;
 }

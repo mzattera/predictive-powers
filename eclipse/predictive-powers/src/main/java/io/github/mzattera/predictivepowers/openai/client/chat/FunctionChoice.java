@@ -34,9 +34,9 @@ import lombok.ToString;
 /**
  * Instruct model whether to produce function calls or not.
  */
+@Builder
 @Getter
 @Setter
-@Builder
 @ToString
 @JsonSerialize(using = FunctionCallSerializer.class)
 public class FunctionChoice {
@@ -54,7 +54,7 @@ public class FunctionChoice {
 		/** The model does not call a function. */
 		NONE,
 
-		/** The model can pick between amessage or calling a function */
+		/** The model can pick between a message or calling a function */
 		AUTO,
 
 		/** The model will call a function */
@@ -100,9 +100,9 @@ public class FunctionChoice {
 
 	/** How should the model handle function call options. */
 	@NonNull
-	final Mode mode;
+	private final Mode mode;
 
-	final String name;
+	private final String name;
 
 	/**
 	 * Use this to indicate function_call = {"name": "my_function"}

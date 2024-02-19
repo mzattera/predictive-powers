@@ -19,9 +19,13 @@ package io.github.mzattera.predictivepowers.openai.client;
 import java.util.ArrayList;
 import java.util.List;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 
 /**
  * Sometimes OpenAI API returns list of data in this format.
@@ -29,17 +33,19 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@SuperBuilder
+@Getter
+@Setter
 @ToString
 public class DataList<T> {
 
-	@Getter
-	@Setter
 	private String object;
 
-	@Getter
-	@Setter
 	private List<T> data;
 
+	@Getter(AccessLevel.PROTECTED)
 	@Setter
 	private Boolean hasMore;
 
@@ -49,12 +55,8 @@ public class DataList<T> {
 		return hasMore.booleanValue();
 	}
 
-	@Getter
-	@Setter
 	private String firstId;
 
-	@Getter
-	@Setter
 	private String lastId;
 
 	/**
@@ -65,13 +67,21 @@ public class DataList<T> {
 	public interface Searcher<T> {
 		/**
 		 * Performs a search to get a list of items. These items are a partial result
-		 * for the search. Items must be sorted in in ascending order.
+		 * for the search (a page in paginated search). Items must be sorted in in
+		 * ascending order.
 		 * 
 		 * @param after Only returns items after this one.
 		 */
 		DataList<T> search(String lastId);
 	}
 
+	/**
+	 * Fetch all items of a given type, by using a paginated search.
+	 * 
+	 * @param <T>
+	 * @param search A method to use to get next page of search result.
+	 * @return
+	 */
 	public static <T> List<T> getCompleteList(Searcher<T> search) {
 		List<T> result = new ArrayList<>();
 		String lastId = null;

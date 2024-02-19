@@ -3,6 +3,7 @@
  */
 package io.github.mzattera.predictivepowers.openai.client.threads;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
@@ -33,5 +34,6 @@ public class RunStepDetail {
 
 	private MessageCreationRunStep messageCreation;
 
-	List<OpenAiToolCall> toolCalls;
+	@Builder.Default
+	private List<OpenAiToolCall> toolCalls = new ArrayList<>();
 }

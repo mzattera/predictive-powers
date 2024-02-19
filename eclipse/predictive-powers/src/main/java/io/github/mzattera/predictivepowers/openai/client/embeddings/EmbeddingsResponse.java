@@ -12,12 +12,17 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package io.github.mzattera.predictivepowers.openai.client.embeddings;
+ */
+package io.github.mzattera.predictivepowers.openai.client.embeddings;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.github.mzattera.predictivepowers.openai.client.Usage;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -27,13 +32,19 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString
 public class EmbeddingsResponse {
 
-	String model;
-	String object;
-	List<Embedding> data;
-	Usage usage;
+	private String model;
+	private String object;
+
+	@Builder.Default
+	private List<Embedding> data = new ArrayList<>();
+
+	private Usage usage;
 }

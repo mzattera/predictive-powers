@@ -18,6 +18,7 @@ package io.github.mzattera.predictivepowers.openai.client.audio;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -33,12 +34,12 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@Getter
-@Setter
-@Builder
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @RequiredArgsConstructor
 @AllArgsConstructor
+@Builder
+@Getter
+@Setter
 @ToString
 public class AudioRequest {
 
@@ -83,10 +84,10 @@ public class AudioRequest {
 	}
 
 	@NonNull
-	String model;
+	private String model;
 
-	String prompt;
-	ResponseFormat responseFormat;
-	Double temperature;
-	String language;
+	private String prompt;
+	private ResponseFormat responseFormat;
+	private Double temperature;
+	private String language;
 }

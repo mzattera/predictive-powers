@@ -16,10 +16,7 @@
 package io.github.mzattera.predictivepowers.openai.services;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -38,9 +35,8 @@ import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
-import io.github.mzattera.predictivepowers.services.AbstractChatService;
-import io.github.mzattera.predictivepowers.services.Agent;
-import io.github.mzattera.predictivepowers.services.Capability;
+import io.github.mzattera.predictivepowers.services.AbstractAgent;
+import io.github.mzattera.predictivepowers.services.ChatService;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
@@ -53,7 +49,6 @@ import io.github.mzattera.predictivepowers.services.messages.MessagePart;
 import io.github.mzattera.predictivepowers.services.messages.TextPart;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -68,7 +63,7 @@ import lombok.Setter;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public class OpenAiChatService extends AbstractChatService implements Agent {
+public class OpenAiChatService extends AbstractAgent implements ChatService {
 
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
 	// values from a Map this is done partially
@@ -76,6 +71,33 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiChatService.class);
 
 	public static final String DEFAULT_MODEL = "gpt-4";
+
+	@Getter
+	@Setter
+	private int maxHistoryLength = 1000;
+
+	@Getter
+	@Setter
+	private String personality = null;
+
+	@Getter
+	private int maxConversationSteps = Integer.MAX_VALUE;
+
+	@Override
+	public void setMaxConversationSteps(int l) {
+		if (l < 1)
+			throw new IllegalArgumentException("Must keep at least 1 message.");
+		maxConversationSteps = l;
+	}
+
+	@Getter
+	private int maxConversationTokens = Integer.MAX_VALUE;
+
+	public void setMaxConversationTokens(int n) {
+		if (n < 1)
+			throw new IllegalArgumentException("Must keep at least 1 token.");
+		maxConversationTokens = n;
+	}
 
 	public OpenAiChatService(OpenAiEndpoint ep) {
 		this(ep, ChatCompletionsRequest.builder().model(DEFAULT_MODEL).build());
@@ -90,7 +112,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 		// With GPT you pay max tokens, even if they are not generated, so we put a
 		// reasonable limit here
 		int maxReplyTk = Math.min(modelService.getContextSize(model) / 4, modelService.getMaxNewTokens(model));
-		setMaxConversationTokens(modelService.getContextSize(model) - maxReplyTk);
+		maxConversationTokens = modelService.getContextSize(model) - maxReplyTk;
 		defaultReq.setN(1); // paranoid
 	}
 
@@ -182,8 +204,8 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 		List<OpenAiChatMessage> old = defaultReq.getMessages();
 
 		List<OpenAiChatMessage> msgs = new ArrayList<>();
-		if (getPersonality() != null) {
-			msgs.add(new OpenAiChatMessage(Role.SYSTEM, getPersonality()));
+		if (personality != null) {
+			msgs.add(new OpenAiChatMessage(Role.SYSTEM, personality));
 		}
 		defaultReq.setMessages(msgs);
 		int result = modelService.getTokenizer(getModel()).count(defaultReq);
@@ -220,88 +242,20 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	@Setter
 	private String description = "";
 
-	// Cached tools
-	@Getter(AccessLevel.PROTECTED)
-	private Map<String, OpenAiTool> toolMap = new HashMap<>();
-
-	@Getter(AccessLevel.PROTECTED)
-	private Map<String, Capability> capabilityMap = new HashMap<>();
-
 	@Override
-	public List<String> getCapabilities() {
-		return Collections.unmodifiableList(new ArrayList<>(capabilityMap.keySet()));
-	}
-
-	@Override
-	public void addCapability(@NonNull Capability capability) throws ToolInitializationException {
-
-		// Dispose any existing version of the capability
-		Capability old = capabilityMap.get(capability.getId());
-		if (old != null)
-			removeCapability(old.getId());
-
-		capability.init(this);
-		for (String toolId : capability.getToolIds()) {
-			putTool(capability.getNewToolInstance(toolId));
-		}
-
-		capabilityMap.put(capability.getId(), capability);
-	}
-
-	@Override
-	public void removeCapability(@NonNull String capabilityId) {
-		removeCapability(capabilityMap.get(capabilityId));
-	}
-
-	public void removeCapability(Capability capability) {
-		if (capability == null)
-			return;
-
-		for (String toolId : capability.getToolIds())
-			removeTool(toolId);
-		try {
-			capability.close();
-		} catch (Exception e) {
-		}
-
-		capabilityMap.remove(capability.getId());
-	}
-
-	@Override
-	public void clearCapabilities() {
-		for (Capability capability : capabilityMap.values())
-			removeCapability(capability);
-		capabilityMap.clear();
-	}
-
-	private void putTool(@NonNull Tool tool) throws ToolInitializationException {
-
-		// Try init first
-		tool.init(this);
-
-		// Closes older version of this tool, if any
-		removeTool(tool.getId());
-
-		// Adds new one
-		try {
-			toolMap.put(tool.getId(), (OpenAiTool) tool);
-		} catch (ClassCastException e) {
-			// Wrap the Tool into an OpenAiTool, so we can use any tool with function calls
-			toolMap.put(tool.getId(), new OpenAiTool(tool));
-		}
+	protected void putTool(@NonNull Tool tool) throws ToolInitializationException {
+		OpenAiTool t = (tool instanceof OpenAiTool) ? (OpenAiTool) tool : new OpenAiTool(tool);
+		super.putTool(t);
 		setDefaultTools();
 	}
 
-	private void removeTool(@NonNull String toolId) {
-		OpenAiTool old = toolMap.remove(toolId);
-		if (old != null) {
-			try {
-				old.close();
-			} catch (Exception e) {
-				LOG.warn("Error closing tool: {1}", e.getMessage());
-			}
+	@Override
+	protected boolean removeTool(@NonNull String toolId) {
+		if (super.removeTool(toolId)) {
 			setDefaultTools();
+			return true;
 		}
+		return false;
 	}
 
 	/**
@@ -322,10 +276,14 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 			return;
 		}
 
+		List<OpenAiTool> tools = toolMap.values().stream() //
+				.map(tool -> (OpenAiTool) tool) //
+				.collect(Collectors.toList());
+
 		switch (modelService.getSupportedCallType(getModel())) {
 		case FUNCTIONS:
 			List<Function> f = new ArrayList<>(toolMap.size());
-			for (OpenAiTool t : toolMap.values()) {
+			for (OpenAiTool t : tools) {
 				if (t.getType() != OpenAiTool.Type.FUNCTION) // paranoid, but will support future tools
 					throw new UnsupportedOperationException("Current model supports only old funtion calling API.");
 				f.add(t.getFunction());
@@ -334,7 +292,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 			defaultReq.setTools(null);
 			break;
 		case TOOLS:
-			defaultReq.setTools(new ArrayList<>(toolMap.values()));
+			defaultReq.setTools(tools);
 			defaultReq.setFunctions(null);
 			break;
 		default:
@@ -380,7 +338,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 		history.add(result.getRight());
 
 		// Make sure history is of desired length
-		int toTrim = history.size() - getMaxHistoryLength();
+		int toTrim = history.size() - maxHistoryLength;
 		if (toTrim > 0)
 			history.subList(0, toTrim).clear();
 
@@ -550,7 +508,7 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 	private void trimConversation(List<OpenAiChatMessage> messages) {
 
 		// Remove tool call results left on top without corresponding calls, or this
-		// will cause HTTP 400 error for tools (it does not create issues for functions) 
+		// will cause HTTP 400 error for tools (it does not create issues for functions)
 		int firstNonToolIndex = 0;
 		for (OpenAiChatMessage m : messages) {
 			if (m.getRole() == Role.TOOL) {
@@ -570,11 +528,11 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 		OpenAiTokenizer counter = modelService.getTokenizer(getModel());
 		int steps = 0;
 		for (int i = messages.size() - 1; i >= 0; --i) {
-			if (steps >= getMaxConversationSteps())
+			if (steps >= maxConversationSteps)
 				break;
 
 			int tok = counter.count(messages.subList(i, messages.size()));
-			if (tok > getMaxConversationTokens()) {
+			if (tok > maxConversationTokens) {
 				break;
 			}
 
@@ -585,9 +543,9 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 		else if (steps < messages.size())
 			messages.subList(0, messages.size() - steps).clear();
 
-		if (getPersonality() != null)
+		if (personality != null)
 			// must add a system message on top with personality
-			messages.add(0, new OpenAiChatMessage(Role.SYSTEM, getPersonality()));
+			messages.add(0, new OpenAiChatMessage(Role.SYSTEM, personality));
 	}
 
 	/**
@@ -691,9 +649,5 @@ public class OpenAiChatService extends AbstractChatService implements Agent {
 
 		result.add(new OpenAiChatMessage(msg.getAuthor(), msg.getParts()));
 		return result;
-	}
-
-	@Override
-	public void close() {
 	}
 }

@@ -5,6 +5,7 @@ package io.github.mzattera.predictivepowers.services;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -96,5 +97,85 @@ public abstract class AbstractTool implements Tool {
 
 	@Override
 	public void close() {
+	}
+
+	// Utility methods to read parameters
+	// ////////////////////////////////////////////////////////////////////////////////////////////
+
+	protected boolean getBoolean(String name, Map<String, Object> args) {
+		return getBoolean(name, args.get(name).toString());
+	}
+
+	protected boolean getBoolean(String name, Map<String, Object> args, boolean def) {
+		return getBoolean(name, args.getOrDefault(name, def).toString());
+	}
+
+	protected boolean getBoolean(String name, Object value) {
+		if (value == null)
+			throw new IllegalArgumentException("Missing required parameter \"" + name + "\".");
+
+		String s = value.toString();
+		if ("true".equals(s.trim().toLowerCase()))
+			return true;
+		if ("false".equals(s.trim().toLowerCase()))
+			return false;
+
+		throw new IllegalArgumentException(
+				"Parameter \"" + name + "\" is expected to be a boolean value but it is not.");
+	}
+
+	protected long getLong(String name, Map<String, Object> args) {
+		return getLong(name, args.get(name).toString());
+	}
+
+	protected long getLong(String name, Map<String, Object> args, long def) {
+		return getLong(name, args.getOrDefault(name, def).toString());
+	}
+
+	protected long getLong(String name, Object value) {
+		if (value == null)
+			throw new IllegalArgumentException("Missing required parameter \"" + name + "\".");
+
+		try {
+			return Long.parseLong(value.toString());
+		} catch (Exception e) {
+			throw new IllegalArgumentException(
+					"Parameter \"" + name + "\" is expected to be a integer value but it is not.");
+		}
+	}
+
+	protected double getDouble(String name, Map<String, Object> args) {
+		return getDouble(name, args.get(name).toString());
+	}
+
+	protected double getDouble(String name, Map<String, Object> args, double def) {
+		return getDouble(name, args.getOrDefault(name, def).toString());
+	}
+
+	protected double getDouble(String name, Object value) {
+		if (value == null)
+			throw new IllegalArgumentException("Missing required parameter \"" + name + "\".");
+
+		try {
+			return Double.parseDouble(value.toString());
+		} catch (Exception e) {
+			throw new IllegalArgumentException(
+					"Parameter \"" + name + "\" is expected to be a decimal number but it is not.");
+		}
+	}
+
+	protected String getString(String name, Map<String, Object> args) {
+		return getString(name, args.get(name).toString());
+	}
+
+	protected String getString(String name, Map<String, Object> args, String def) {
+		return getString(name, args.getOrDefault(name, def).toString());
+	}
+
+	protected String getString(String name, Object value) {
+		if (value == null)
+			throw new IllegalArgumentException("Missing required parameter \"" + name + "\".");
+
+		return value.toString();
 	}
 }

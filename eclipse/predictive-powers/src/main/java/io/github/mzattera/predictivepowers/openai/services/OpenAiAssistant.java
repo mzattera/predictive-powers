@@ -17,10 +17,10 @@ package io.github.mzattera.predictivepowers.openai.services;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +47,7 @@ import io.github.mzattera.predictivepowers.openai.client.threads.ThreadsRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.ToolOutput;
 import io.github.mzattera.predictivepowers.openai.client.threads.ToolOutputsRequest;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.services.AbstractAgent;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Capability;
 import io.github.mzattera.predictivepowers.services.Tool;
@@ -73,7 +74,7 @@ import lombok.NonNull;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public class OpenAiAssistant implements Agent {
+public class OpenAiAssistant extends AbstractAgent {
 
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiAssistant.class);
 
@@ -322,93 +323,26 @@ public class OpenAiAssistant implements Agent {
 		return result;
 	}
 
-	// Cached tools
-	@Getter(AccessLevel.PROTECTED)
-	private Map<String, OpenAiTool> toolMap = new HashMap<>();
-
-	@Getter(AccessLevel.PROTECTED)
-	private Map<String, Capability> capabilityMap = new HashMap<>();
-
-	@Override
-	public List<String> getCapabilities() {
-		return Collections.unmodifiableList(new ArrayList<>(capabilityMap.keySet()));
-	}
-
 	@Override
 	public void addCapability(@NonNull Capability capability) throws ToolInitializationException {
 
 		synch();
-
-		// Dispose any existing version of the capability
-		Capability old = capabilityMap.get(capability.getId());
-		if (old != null)
-			removeCapability(old.getId());
-		capability.init(this);
-
-		for (String toolId : capability.getToolIds()) {
-			putTool(capability.getNewToolInstance(toolId));
-		}
-
-		capabilityMap.put(capability.getId(), capability);
-
+		super.addCapability(capability);
 		update();
 	}
 
 	@Override
 	public void removeCapability(@NonNull String capabilityId) {
 		synch();
-		removeCapability(capabilityMap.get(capabilityId));
+		super.removeCapability(capabilityId);
 		update();
 	}
 
-	private void removeCapability(Capability capability) {
-		if (capability == null)
-			return;
-
-		for (String toolId : capability.getToolIds())
-			removeTool(toolId);
-		try {
-			capability.close();
-		} catch (Exception e) {
-			LOG.warn("Error closing capability: {1}", e.getMessage());
-		}
-
-		capabilityMap.remove(capability.getId());
-	}
-
 	@Override
-	public void clearCapabilities() {
-		for (Capability capability : capabilityMap.values())
-			removeCapability(capability);
-		capabilityMap.clear();
-	}
-
-	private void putTool(@NonNull Tool tool) throws ToolInitializationException {
-
-		// Tries if init goes
-		tool.init(this);
-
-		// Closes older version of this tool, if any
-		removeTool(tool.getId());
-
-		// Adds new one
-		try {
-			toolMap.put(tool.getId(), (OpenAiTool) tool);
-		} catch (ClassCastException e) {
-			// Wrap the Tool into an OpenAiTool, so we can use any tool with function calls
-			toolMap.put(tool.getId(), new OpenAiTool(tool));
-		}
-	}
-
-	private void removeTool(@NonNull String toolId) {
-		OpenAiTool old = toolMap.remove(toolId);
-		if (old != null) {
-			try {
-				old.close();
-			} catch (Exception e) {
-				LOG.warn("Error closing tool: {1}", e.getMessage());
-			}
-		}
+	protected void putTool(@NonNull Tool tool) throws ToolInitializationException {
+		// Notice we store only instances of OpenAiTool
+		OpenAiTool t = (tool instanceof OpenAiTool) ? (OpenAiTool) tool : new OpenAiTool(tool);
+		super.putTool(t);
 	}
 
 	/**
@@ -483,6 +417,7 @@ public class OpenAiAssistant implements Agent {
 
 	@Override
 	public void close() {
+		super.close();
 		if (thread != null) {
 			// Currently, there is no way to cleanup threads when an agent is deleted. Since
 			// we are not managing conversations at this stage, we simply delete the old
@@ -516,22 +451,22 @@ public class OpenAiAssistant implements Agent {
 		openAiAssistant = getClient().retrieveAssistant(id);
 
 		// Updated list of tools, in synch with agent
-		Map<String, OpenAiTool> newTools = new HashMap<>();
+		Map<String, Tool> newTools = new HashMap<>();
 		for (OpenAiTool tool : openAiAssistant.getTools()) {
 			String id = tool.getId();
-			OpenAiTool newTool = toolMap.get(id);
+			Tool newTool = toolMap.get(id);
 			if (newTool == null) // New tool added by some other user, for now use a proxy
 				newTool = tool;
 			newTools.put(id, newTool);
 		}
 
 		// Disposes tools that are no longer needed
-		for (OpenAiTool oldTool : toolMap.values()) {
+		for (Tool oldTool : toolMap.values()) {
 			if (!newTools.containsKey(oldTool.getId())) // tool removed by some other user
 				try {
 					oldTool.close();
 				} catch (Exception e) {
-					LOG.warn("Error closing tool: {1}", e.getMessage());
+					LOG.warn("Error closing tool", e);
 				}
 		}
 
@@ -544,9 +479,10 @@ public class OpenAiAssistant implements Agent {
 	 */
 	private void update() {
 
-		// Updates assistant config with latest tools too (fetched configuration cannot
-		// de-serialize tools properly
-		openAiAssistant.setTools(new ArrayList<>(toolMap.values()));
+		// Updates assistant config with latest tools too
+		openAiAssistant.setTools(toolMap.values().stream() //
+				.map(tool -> (OpenAiTool) tool) //
+				.collect(Collectors.toList()));
 
 		openAiAssistant = getClient().modifyAssistant( //
 				openAiAssistant.getId(), //

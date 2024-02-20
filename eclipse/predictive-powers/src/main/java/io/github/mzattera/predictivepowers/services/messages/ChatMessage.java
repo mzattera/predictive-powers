@@ -49,7 +49,7 @@ import lombok.ToString;
 @ToString
 public class ChatMessage {
 
-	// TODO Add parts to support citations/annotations
+	// TODO URGENT Add parts to support citations/annotations
 
 	/**
 	 * The author (originator) of the message.

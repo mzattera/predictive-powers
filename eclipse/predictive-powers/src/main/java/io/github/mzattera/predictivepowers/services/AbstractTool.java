@@ -27,7 +27,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @SuperBuilder
 public abstract class AbstractTool implements Tool {
-	
+
 	@Getter
 	private final String id;
 
@@ -36,7 +36,7 @@ public abstract class AbstractTool implements Tool {
 	private String description = "";
 
 	@Getter
-	@NonNull 
+	@NonNull
 	private List<? extends ToolParameter> parameters = new ArrayList<>();
 
 	protected void setParameters(List<? extends ToolParameter> parameters) {
@@ -63,8 +63,8 @@ public abstract class AbstractTool implements Tool {
 	@Setter
 	private Capability capability;
 
-	@Getter (AccessLevel.PROTECTED)
-	@Setter (AccessLevel.PROTECTED)
+	@Getter(AccessLevel.PROTECTED)
+	@Setter(AccessLevel.PROTECTED)
 	private Agent agent;
 
 	@Getter
@@ -75,8 +75,8 @@ public abstract class AbstractTool implements Tool {
 	public void init(@NonNull Agent agent) {
 		if (initialized)
 			throw new IllegalStateException("Tool not yet initialized");
-		this.agent=agent;
-		initialized=true;
+		this.agent = agent;
+		initialized = true;
 	}
 
 	protected AbstractTool(@NonNull String id, String description) {
@@ -102,15 +102,15 @@ public abstract class AbstractTool implements Tool {
 	// Utility methods to read parameters
 	// ////////////////////////////////////////////////////////////////////////////////////////////
 
-	protected boolean getBoolean(String name, Map<String, Object> args) {
+	protected static boolean getBoolean(String name, Map<String, Object> args) {
 		return getBoolean(name, args.get(name).toString());
 	}
 
-	protected boolean getBoolean(String name, Map<String, Object> args, boolean def) {
+	protected static boolean getBoolean(String name, Map<String, Object> args, boolean def) {
 		return getBoolean(name, args.getOrDefault(name, def).toString());
 	}
 
-	protected boolean getBoolean(String name, Object value) {
+	protected static boolean getBoolean(String name, Object value) {
 		if (value == null)
 			throw new IllegalArgumentException("Missing required parameter \"" + name + "\".");
 
@@ -124,15 +124,15 @@ public abstract class AbstractTool implements Tool {
 				"Parameter \"" + name + "\" is expected to be a boolean value but it is not.");
 	}
 
-	protected long getLong(String name, Map<String, Object> args) {
+	protected static long getLong(String name, Map<String, Object> args) {
 		return getLong(name, args.get(name).toString());
 	}
 
-	protected long getLong(String name, Map<String, Object> args, long def) {
+	protected static long getLong(String name, Map<String, Object> args, long def) {
 		return getLong(name, args.getOrDefault(name, def).toString());
 	}
 
-	protected long getLong(String name, Object value) {
+	protected static long getLong(String name, Object value) {
 		if (value == null)
 			throw new IllegalArgumentException("Missing required parameter \"" + name + "\".");
 
@@ -144,15 +144,15 @@ public abstract class AbstractTool implements Tool {
 		}
 	}
 
-	protected double getDouble(String name, Map<String, Object> args) {
+	protected static double getDouble(String name, Map<String, Object> args) {
 		return getDouble(name, args.get(name).toString());
 	}
 
-	protected double getDouble(String name, Map<String, Object> args, double def) {
+	protected static double getDouble(String name, Map<String, Object> args, double def) {
 		return getDouble(name, args.getOrDefault(name, def).toString());
 	}
 
-	protected double getDouble(String name, Object value) {
+	protected static double getDouble(String name, Object value) {
 		if (value == null)
 			throw new IllegalArgumentException("Missing required parameter \"" + name + "\".");
 
@@ -164,15 +164,15 @@ public abstract class AbstractTool implements Tool {
 		}
 	}
 
-	protected String getString(String name, Map<String, Object> args) {
+	protected static String getString(String name, Map<String, Object> args) {
 		return getString(name, args.get(name).toString());
 	}
 
-	protected String getString(String name, Map<String, Object> args, String def) {
+	protected static String getString(String name, Map<String, Object> args, String def) {
 		return getString(name, args.getOrDefault(name, def).toString());
 	}
 
-	protected String getString(String name, Object value) {
+	protected static String getString(String name, Object value) {
 		if (value == null)
 			throw new IllegalArgumentException("Missing required parameter \"" + name + "\".");
 

@@ -32,6 +32,7 @@ import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import io.github.mzattera.util.ResourceUtil;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
  * Tests for agents API.
@@ -128,15 +129,9 @@ public class AssistantsTest {
 			@Getter
 			private List<? extends ToolParameter> parameters = new ArrayList<>();
 
-			@Override
-			public void setCapability(Capability capability) {
-				throw new UnsupportedOperationException();
-			}
-
-			@Override
-			public Capability getCapability() {
-				throw new UnsupportedOperationException();
-			}
+			@Getter
+			@Setter
+			private Capability capability;
 		}));
 
 		Map<String, String> meta = new HashMap<>();
@@ -185,7 +180,7 @@ public class AssistantsTest {
 					null, //
 					agentIds.get(0));
 			assertNotNull(list);
-			list(list);
+//			list(list);
 			assertFalse(list.hasMore());
 			agents = list.getData();
 			assertNotNull(agents);
@@ -196,7 +191,7 @@ public class AssistantsTest {
 					agentIds.size() - 1, //
 					null, agentIds.get(agentIds.size() - 1));
 			assertNotNull(list);
-			list(list);
+//			list(list);
 			assertTrue(list.hasMore());
 			agents = list.getData();
 			assertNotNull(agents);
@@ -209,7 +204,7 @@ public class AssistantsTest {
 					agentIds.get(agentIds.size() - 1), //
 					null);
 			assertNotNull(agents);
-			list(agents);
+//			list(agents);
 			assertEquals(agentIds.get(0), agents.get(agents.size() - 2).getId());
 
 			list = cli.listAssistants(SortOrder.ASCENDING, //
@@ -217,7 +212,7 @@ public class AssistantsTest {
 					null, //
 					agentIds.get(0));
 			assertNotNull(list);
-			list(list);
+//			list(list);
 			agents = list.getData();
 			assertNotNull(agents);
 			assertEquals(1, agents.size());
@@ -273,18 +268,18 @@ public class AssistantsTest {
 		return result;
 	}
 
-	private void list(DataList<Assistant> l) {
-		list(l.getData());
-		System.out.println("Has More: " + l.hasMore());
-	}
-
-	private void list(List<Assistant> l) {
-		System.out.println();
-		for (int i = 0; i < l.size(); ++i) {
-			Assistant a = l.get(i);
-			System.out.println(i + "\t" + a.getId() + "\t" + a.getName() + "\t" + a.getCreatedAt());
-		}
-	}
+//	private void list(DataList<Assistant> l) {
+//		list(l.getData());
+//		System.out.println("Has More: " + l.hasMore());
+//	}
+//
+//	private void list(List<Assistant> l) {
+//		System.out.println();
+//		for (int i = 0; i < l.size(); ++i) {
+//			Assistant a = l.get(i);
+//			System.out.println(i + "\t" + a.getId() + "\t" + a.getName() + "\t" + a.getCreatedAt());
+//		}
+//	}
 
 	@Test
 	void testFiles() throws IOException {

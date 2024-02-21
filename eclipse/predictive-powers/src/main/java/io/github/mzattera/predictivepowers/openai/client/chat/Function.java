@@ -85,7 +85,7 @@ public class Function {
 		List<ToolParameter> properties = new ArrayList<>();
 		List<String> required;
 
-		JsonSchema(List<? extends ToolParameter> parameters) {
+		JsonSchema(@NonNull List<? extends ToolParameter> parameters) {
 			properties.addAll(parameters);
 		}
 	}
@@ -140,8 +140,8 @@ public class Function {
 			gen.writeBooleanField("additionalProperties", schema.additionalProperties);
 
 			// Serialize properties
+			gen.writeObjectFieldStart("properties");
 			if (schema.properties != null && !schema.properties.isEmpty()) {
-				gen.writeObjectFieldStart("properties");
 				for (ToolParameter prop : schema.properties) {
 					gen.writeObjectFieldStart(prop.name);
 					gen.writeStringField("type", prop.type.toString());
@@ -157,8 +157,8 @@ public class Function {
 					}
 					gen.writeEndObject();
 				}
-				gen.writeEndObject();
 			}
+			gen.writeEndObject();
 
 			// List required fields
 

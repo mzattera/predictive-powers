@@ -369,7 +369,7 @@ public class OpenAiChatServiceTest {
 			svc.getModifiableHistory().add(new OpenAiChatMessage(Role.USER, "Hi!"));
 
 			ChatCompletion resp = svc.chat("Hi");
-			assertEquals(FinishReason.COMPLETED, resp);
+			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
 
 			// Tests with tools
 			model = null;
@@ -386,7 +386,7 @@ public class OpenAiChatServiceTest {
 			svc.getModifiableHistory().add(new OpenAiChatMessage(Role.USER, "Hi!"));
 
 			resp = svc.chat("Hi");
-			assertEquals(FinishReason.COMPLETED, resp);
+			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
 		} // Close endpoint
 	}
 }

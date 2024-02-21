@@ -141,9 +141,26 @@
 
 	<build>
 		<plugins>
-			<!-- This Maven plugin creates a single JAR with all dependencies,
-			when "package" runs -->
 			<plugin>
+				<!-- This Maven plugin runs JUnit tests and create output files -->
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>3.2.5</version>
+				<configuration>
+					<test><!-- your test suite class name should be here -->
+					</test>
+				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>org.junit.jupiter</groupId>
+						<artifactId>junit-jupiter-engine</artifactId>
+						<version>5.10.2</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+			<plugin>
+				<!-- This Maven plugin creates a single JAR with all
+				dependencies, when "package" runs -->
 				<artifactId>maven-assembly-plugin</artifactId>
 				<version>3.6.0</version>
 				<configuration>

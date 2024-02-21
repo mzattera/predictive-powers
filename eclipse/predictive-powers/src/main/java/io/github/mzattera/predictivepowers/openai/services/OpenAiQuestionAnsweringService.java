@@ -84,9 +84,17 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 	 * Answer a question, using completion service.
 	 */
 	public QnAPair answer(String question) {
-		ChatCompletion resp = completionService.complete(question);
-		return QnAPair.builder().question(question).answer(resp.getText())
-				.explanation("Answer provided by OpenAI competions API (model knowledge).").build();
+		ResponseFormat oldFormat = completionService.getDefaultReq().getResponseFormat();
+		try {
+			// If response format is set to JSON, it will cause an error if the question
+			// does not contain the word JSON, therefore we disable that in this case.
+			completionService.getDefaultReq().setResponseFormat(null);
+			ChatCompletion resp = completionService.complete(question);
+			return QnAPair.builder().question(question).answer(resp.getText())
+					.explanation("Answer provided by OpenAI competions API (model knowledge).").build();
+		} finally {
+			completionService.getDefaultReq().setResponseFormat(oldFormat);
+		}
 	}
 
 	@Override

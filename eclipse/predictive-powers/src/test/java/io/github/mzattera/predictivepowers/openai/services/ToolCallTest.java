@@ -187,7 +187,7 @@ public class ToolCallTest {
 
 		String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(tc);
 		assertEquals(
-				"{\n  \"type\" : \"function\",\n  \"function\" : {\n    \"name\" : \"testCall\",\n    \"arguments\" : \"{\\r\\n  \\\"name\\\" : \\\"pippo\\\",\\r\\n  \\\"value\\\" : 6\\r\\n}\"\n  },\n  \"id\" : \"test_id\"\n}",
+				"{\n  \"type\" : \"function\",\n  \"function\" : {\n    \"name\" : \"testCall\",\n    \"arguments\" : \"{\\n  \\\"name\\\" : \\\"pippo\\\",\\n  \\\"value\\\" : 6\\n}\"\n  },\n  \"id\" : \"test_id\"\n}",
 				json);
 	}
 

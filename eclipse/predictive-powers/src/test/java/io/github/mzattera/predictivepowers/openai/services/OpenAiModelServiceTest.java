@@ -82,7 +82,7 @@ class OpenAiModelServiceTest {
 			for (Model m : models) {
 				String model = m.getId();
 
-				if (model.contains("ft-"))
+				if (model.contains("ft"))
 					continue; // fine-tunes can be ignored
 				if (deprecated.remove(model))
 					continue; // Skip old models

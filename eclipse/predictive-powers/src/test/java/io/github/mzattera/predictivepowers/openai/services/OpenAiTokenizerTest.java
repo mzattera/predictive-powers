@@ -318,14 +318,6 @@ public class OpenAiTokenizerTest {
 		}
 	}
 
-	// List of functions available to the bot (for now it is only 1).
-	private final static List<Tool> TOOLS = new ArrayList<>();
-	static {
-		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool()));
-		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool()));
-		TOOLS.add(new OpenAiTool(new GetCurrentWeatherTool()));
-	}
-
 	private final static Capability getToolset() {
 		Toolset result = new Toolset();
 		for (int i = 0; i < 3; ++i) {
@@ -455,7 +447,9 @@ public class OpenAiTokenizerTest {
 
 		OpenAiChatMessage msg = new OpenAiChatMessage(Role.USER, "Is there any grass in this image?");
 		msg.getContentParts().add(new FilePart(
-				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk.jpg"), ContentType.IMAGE));
+				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-MED.png"), ContentType.IMAGE));
+		msg.getContentParts().add(new FilePart(
+				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png"), ContentType.IMAGE));
 		ChatCompletionsRequest req = bot.getDefaultReq();
 		req.getMessages().add(msg);
 

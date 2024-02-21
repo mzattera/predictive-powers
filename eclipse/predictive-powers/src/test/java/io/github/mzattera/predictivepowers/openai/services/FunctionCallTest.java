@@ -152,7 +152,7 @@ public class FunctionCallTest {
 		assertEquals("{\n" + "  \"name\" : \"get_current_weather\",\n"
 				+ "  \"description\" : \"Get the current weather in a given location.\",\n"
 				+ "  \"parameters\" : {\n" + "    \"$schema\" : \"http://json-schema.org/draft-04/schema#\",\n"
-				+ "    \"title\" : \"Get Current Weather Parameters\",\n" + "    \"type\" : \"object\",\n"
+				+ "    \"title\" : \"Function Parameters\",\n" + "    \"type\" : \"object\",\n"
 				+ "    \"additionalProperties\" : false,\n" + "    \"properties\" : {\n"
 				+ "      \"location\" : {\n" + "        \"type\" : \"string\",\n"
 				+ "        \"description\" : \"The city and state, e.g. San Francisco, CA\"\n" + "      },\n"
@@ -181,7 +181,7 @@ public class FunctionCallTest {
 		fc.setArguments(ar);
 		String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(fc);
 		assertEquals("{\n" + "  \"name\" : \"testCall\",\n"
-				+ "  \"arguments\" : \"{\\r\\n  \\\"name\\\" : \\\"pippo\\\",\\r\\n  \\\"value\\\" : 6\\r\\n}\"\n"
+				+ "  \"arguments\" : \"{\\n  \\\"name\\\" : \\\"pippo\\\",\\n  \\\"value\\\" : 6\\n}\"\n"
 				+ "}", json);
 	}
 

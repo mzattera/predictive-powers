@@ -107,6 +107,9 @@ public class OpenAiChatMessage {
 						if (file.getUrl() != null)
 							gen.writeStringField("url", file.getUrl().toString());
 						else // base64 encode
+							
+							// TODO scale down the image before encoding
+							// See https://platform.openai.com/docs/guides/vision "Managing Images"
 							gen.writeStringField("url", "data:image/jpeg;base64,"
 									+ Base64.getEncoder().encodeToString(file.getInputStream().readAllBytes()));
 						gen.writeEndObject();

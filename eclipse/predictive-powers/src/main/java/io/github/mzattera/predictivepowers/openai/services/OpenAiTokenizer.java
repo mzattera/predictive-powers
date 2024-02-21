@@ -177,7 +177,7 @@ public class OpenAiTokenizer implements Tokenizer {
 
 			String role = msg.getRole().toString();
 			if ("function".equals(role))
-				sum += 4;
+				sum += 2;
 			else
 				sum += 3;
 			sum += encoding.countTokens(role);
@@ -254,12 +254,17 @@ public class OpenAiTokenizer implements Tokenizer {
 
 			// If we use image model, calculate image tokens.
 			// See https://platform.openai.com/docs/guides/vision
+			boolean firstImage = true;
 			for (MessagePart part : msg.getContentParts()) {
 				if (!(part instanceof FilePart))
 					continue;
 				FilePart file = (FilePart) part;
 				if (file.getContentType() != ContentType.IMAGE)
 					continue;
+				if (firstImage) {
+					sum += 8;
+					firstImage = false;
+				}
 				try {
 					BufferedImage img = ImageUtil.fromBytes(file.getInputStream());
 					int w = img.getWidth();
@@ -282,7 +287,7 @@ public class OpenAiTokenizer implements Tokenizer {
 						sum += 170 * wt * ht + 85;
 					}
 				} catch (Exception e) {
-					sum += 65; // should not happen, but if we cannot read the image put something in
+					sum += 170 + 85; // should not happen, but if we cannot read the image put something in
 				}
 			}
 		} // for each message
@@ -321,7 +326,7 @@ public class OpenAiTokenizer implements Tokenizer {
 			return 0;
 
 		JsonNode functionsArray = OpenAiClient.getJsonMapper().valueToTree(functions);
-		int sum = 4;
+		int sum = "gpt-3.5-turbo".equals(model) ? 8 : 4;
 
 		for (JsonNode function : functionsArray) {
 			sum += encoding.countTokens(function.path("name").asText());

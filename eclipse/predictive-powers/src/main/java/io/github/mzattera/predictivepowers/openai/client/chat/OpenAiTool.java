@@ -88,26 +88,6 @@ public final class OpenAiTool implements Tool {
 	@NonNull
 	private Function function;
 
-	@Override
-	@JsonIgnore
-	public String getId() {
-		if (wrappedTool != null)
-			return wrappedTool.getId();
-		if (type == Type.FUNCTION)
-			return function.getName();
-		return type.toString();
-	}
-
-	@JsonIgnore
-	@Override
-	public String getDescription() {
-		if (wrappedTool != null)
-			return wrappedTool.getDescription();
-		if (type == Type.FUNCTION)
-			return function.getDescription();
-		return ("This is the " + type + " tool available to OpenAI assistants.");
-	}
-
 	private OpenAiTool(Type type) {
 		if (type == Type.FUNCTION)
 			throw new IllegalArgumentException("Function must be provided");
@@ -139,6 +119,26 @@ public final class OpenAiTool implements Tool {
 		this.type = Type.FUNCTION;
 		this.function = new Function(tool);
 		this.wrappedTool = tool;
+	}
+
+	@Override
+	@JsonIgnore
+	public String getId() {
+		if (wrappedTool != null)
+			return wrappedTool.getId();
+		if (type == Type.FUNCTION)
+			return function.getName();
+		return type.toString();
+	}
+
+	@JsonIgnore
+	@Override
+	public String getDescription() {
+		if (wrappedTool != null)
+			return wrappedTool.getDescription();
+		if (type == Type.FUNCTION)
+			return function.getDescription();
+		return ("This is the " + type + " tool available to OpenAI assistants.");
 	}
 
 	@Override

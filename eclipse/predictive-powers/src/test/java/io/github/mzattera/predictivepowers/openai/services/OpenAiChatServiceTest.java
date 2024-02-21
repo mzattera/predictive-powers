@@ -260,7 +260,7 @@ public class OpenAiChatServiceTest {
 	 * Getters and setters
 	 */
 	@Test
-	public void test04() {
+	public void testGettersAndSetters() {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			OpenAiChatService s = ep.getChatService();
 			String m = s.getModel();

@@ -101,7 +101,10 @@ public class ChatCompletionsRequest {
 
 	Double frequencyPenalty;
 	private Map<String, Integer> logitBias;
-
+	
+	private Boolean logprobs;
+	private Integer topLogprobs;
+	
 	/**
 	 * Higher-level functions in the library will try to calculate this
 	 * automatically if it is null when submitting a request.

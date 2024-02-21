@@ -40,4 +40,5 @@ public class ChatCompletionsChoice {
 	private String finishReason;
 	private int index;
 	private OpenAiChatMessage message;
+	private LogProbs logprobs;
 }

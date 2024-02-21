@@ -68,7 +68,7 @@ public class ToolChoice {
 	 */
 	static final class ToolChoiceSerializer extends StdSerializer<ToolChoice> {
 
-		private static final long serialVersionUID = -4506958348962250647L;
+		private static final long serialVersionUID = -1L;
 
 		public ToolChoiceSerializer() {
 			this(null);

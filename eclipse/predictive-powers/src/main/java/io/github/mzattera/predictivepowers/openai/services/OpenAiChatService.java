@@ -15,6 +15,7 @@
  */
 package io.github.mzattera.predictivepowers.openai.services;
 
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -39,6 +40,7 @@ import io.github.mzattera.predictivepowers.services.AbstractAgent;
 import io.github.mzattera.predictivepowers.services.ChatService;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.messages.Base64FilePart;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
@@ -49,6 +51,7 @@ import io.github.mzattera.predictivepowers.services.messages.MessagePart;
 import io.github.mzattera.predictivepowers.services.messages.TextPart;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
+import io.github.mzattera.util.ImageUtil;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -636,18 +639,42 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 			return result;
 		}
 
-		// Quickly checks only remaining parts are image URLS or text.
-		// API will fail if the model does not support them eventually.
-		for (MessagePart part : msg.getParts()) {
-			if (part instanceof TextPart)
-				continue;
-			if ((part instanceof FilePart) && (((FilePart) part).getContentType() == ContentType.IMAGE))
-				continue;
-			throw new IllegalArgumentException(
-					"Unsupported part in message (only text and images are supported): " + part);
-		}
+		// Check remaining parts are images or text.
+		// API will fail if the model does not support them eventually (e.g. using an
+		// image for a model that is not a vision model).
 
-		result.add(new OpenAiChatMessage(msg.getAuthor(), msg.getParts()));
+		List<MessagePart> newParts = new ArrayList<>(msg.getParts().size());
+		for (MessagePart part : msg.getParts()) {
+
+			if (part instanceof TextPart) {
+				newParts.add(part);
+
+			} else if (part instanceof FilePart) {
+
+				FilePart file = (FilePart) part;
+				if (file.getContentType() != ContentType.IMAGE)
+					throw new IllegalArgumentException("Only files with coontent type = IMAGE are supported.");
+
+				// We ensure the image is Base64 encoded and pre-scaled,
+				// unless it is a remote file that we do not touch (for performance reasons)
+				if (!file.isLocalFile()) {
+					newParts.add(part);
+				} else {
+					try {
+						BufferedImage img = ImageUtil.fromBytes(file.getInputStream());
+						BufferedImage scaled = ImageUtil.scaleDown(img);
+						newParts.add(new Base64FilePart(ImageUtil.toBytes("png", scaled), file.getName(),
+								ContentType.IMAGE));
+					} catch (Exception e) {
+						newParts.add(part);
+					}
+				}
+			} else
+				throw new IllegalArgumentException(
+						"Unsupported part in message (only text and images are supported): " + part);
+		} // for each part
+
+		result.add(new OpenAiChatMessage(msg.getAuthor(), newParts));
 		return result;
 	}
 }

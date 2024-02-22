@@ -266,28 +266,37 @@ public class OpenAiTokenizer implements Tokenizer {
 					firstImage = false;
 				}
 				try {
-					BufferedImage img = ImageUtil.fromBytes(file.getInputStream());
-					int w = img.getWidth();
-					int h = img.getHeight();
-					if ((w <= 512) && (h <= 512)) {
-						// As we support only detail=auto, we assume model will use low detail
-						sum += 65;
+					if (!file.isLocalFile()) {
+						// For performance reasons, we do not inspect the image so we just estimate
+						// tokens
+						sum += 170 * 2 + 85; // should not happen, but if we cannot read the image put something in
 					} else {
-						double scaleW = 2048d / w;
-						double scaleH = 2048d / h;
-						w *= Math.min(scaleW, scaleH);
-						h *= Math.min(scaleW, scaleH);
-						scaleW = 768d / w;
-						scaleH = 768d / h;
-						w *= Math.max(scaleW, scaleH);
-						h *= Math.max(scaleW, scaleH);
-						int wt = w / 512 + ((w % 512) > 0 ? 1 : 0);
-						int ht = h / 512 + ((h % 512) > 0 ? 1 : 0);
+						// Inspect image for exact token calculation
+						BufferedImage img = ImageUtil.fromBytes(file.getInputStream());
+						int w = img.getWidth();
+						int h = img.getHeight();
+//						if ((w <= 512) && (h <= 512)) {
+//							// We assume in this case we use low detail mode, even though it is not assured
+//							sum += 65;
+//						} else {
+							if ((w > 2048) || (h > 2048)) {
+								double scale = 2048d / Math.max(w, h);
+								w *= scale;
+								h *= scale;
+							}
+							if ((w > 768) || (h > 768)) {
+								double scale = 768d / Math.min(w, h);
+								w *= scale;
+								h *= scale;
+							}
+							int wt = w / 512 + ((w % 512) > 0 ? 1 : 0);
+							int ht = h / 512 + ((h % 512) > 0 ? 1 : 0);
 
-						sum += 170 * wt * ht + 85;
+							sum += 170 * wt * ht + 85;
+//						}
 					}
 				} catch (Exception e) {
-					sum += 170 + 85; // should not happen, but if we cannot read the image put something in
+					sum += 170 * 2 + 85; // should not happen, but if we cannot read the image put something in
 				}
 			}
 		} // for each message

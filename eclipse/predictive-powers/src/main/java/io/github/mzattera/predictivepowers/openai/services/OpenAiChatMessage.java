@@ -37,6 +37,7 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
+import io.github.mzattera.predictivepowers.services.messages.Base64FilePart;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
@@ -106,12 +107,14 @@ public class OpenAiChatMessage {
 						gen.writeObjectFieldStart("image_url");
 						if (file.getUrl() != null)
 							gen.writeStringField("url", file.getUrl().toString());
-						else // base64 encode
-							
-							// TODO scale down the image before encoding
-							// See https://platform.openai.com/docs/guides/vision "Managing Images"
-							gen.writeStringField("url", "data:image/jpeg;base64,"
-									+ Base64.getEncoder().encodeToString(file.getInputStream().readAllBytes()));
+						else {// base64 encode
+							if (file instanceof Base64FilePart)
+								gen.writeStringField("url", "data:image/jpeg;base64,"
+										+ ((Base64FilePart)file).getEncodedContent());
+							else 
+								gen.writeStringField("url", "data:image/jpeg;base64,"
+										+ Base64.getEncoder().encodeToString(file.getInputStream().readAllBytes()));
+						}
 						gen.writeEndObject();
 					} else {
 						throw new IllegalArgumentException("Unsupported part type: " + part);

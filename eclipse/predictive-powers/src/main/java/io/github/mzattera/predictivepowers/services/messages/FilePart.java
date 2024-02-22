@@ -50,7 +50,7 @@ public class FilePart implements MessagePart {
 	 * If this is a remote file, this is its URL.
 	 */
 	private URL url;
-	
+
 	public FilePart(@NonNull File file) {
 		this(file, ContentType.GENERIC);
 	}
@@ -103,8 +103,10 @@ public class FilePart implements MessagePart {
 
 	/**
 	 * 
-	 * @return True if the file is a web file that is accessible through
-	 *         {@link #getFile()}.
+	 * @return True if the file is a local file, so {@link #getInputStream()} does
+	 *         not need a remote connection. Notice that {@link #getFile()} might
+	 *         still return null (e.g. for in-memory files like
+	 *         {@link Base64FilePart}).
 	 */
 	public boolean isLocalFile() {
 		return (file != null);

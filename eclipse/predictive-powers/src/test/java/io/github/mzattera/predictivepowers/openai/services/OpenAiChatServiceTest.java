@@ -332,7 +332,6 @@ public class OpenAiChatServiceTest {
 			msg.getParts().add(new FilePart(
 					ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk.jpg"), ContentType.IMAGE));
 			ChatCompletion resp = svc.chat(msg);
-			System.out.println(resp.getText());
 			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
 			assertTrue(resp.getText().toUpperCase().contains("YES"));
 		} // Close endpoint

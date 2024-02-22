@@ -2,6 +2,8 @@ package io.github.mzattera.predictivepowers.openai.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -21,7 +23,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
-import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool.Type;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
@@ -33,7 +34,6 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.Op
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
 import io.github.mzattera.predictivepowers.services.AbstractTool;
 import io.github.mzattera.predictivepowers.services.Capability;
-import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.Toolset;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
@@ -434,8 +434,11 @@ public class OpenAiTokenizerTest {
 		assertEquals(realTokens, tokens);
 	}
 
+	/**
+	 * Test images and image urls in a message
+	 */
 	@Test
-	void testVisionTokens() {
+	void testVisionTokens() throws MalformedURLException, URISyntaxException {
 
 		String model = "gpt-4-vision-preview";
 		OpenAiTokenizer counter = modelSvc.getTokenizer(model);
@@ -450,6 +453,60 @@ public class OpenAiTokenizerTest {
 				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-MED.png"), ContentType.IMAGE));
 		msg.getContentParts().add(new FilePart(
 				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png"), ContentType.IMAGE));
+//		msg.getContentParts().add(FilePart.fromUrl(
+//				"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+//				ContentType.IMAGE));
+		ChatCompletionsRequest req = bot.getDefaultReq();
+		req.getMessages().add(msg);
+
+		long tokens = counter.count(req);
+		long realTokens = realTokens(req);
+		assertEquals(realTokens, tokens);
+	}
+
+	/**
+	 * Test single image in a message
+	 */
+	@Test
+	void testVisionTokens3() throws MalformedURLException, URISyntaxException {
+
+		String model = "gpt-4-vision-preview";
+		OpenAiTokenizer counter = modelSvc.getTokenizer(model);
+
+		// Get chat service, set bot personality and tools used
+		OpenAiChatService bot = endpoint.getChatService();
+		bot.setPersonality("You are an helpful assistant.");
+		bot.setModel(model);
+
+		OpenAiChatMessage msg = new OpenAiChatMessage(Role.USER, "Is there any grass in this image?");
+		msg.getContentParts().add(new FilePart(
+				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png"), ContentType.IMAGE));
+		ChatCompletionsRequest req = bot.getDefaultReq();
+		req.getMessages().add(msg);
+
+		long tokens = counter.count(req);
+		long realTokens = realTokens(req);
+		assertEquals(realTokens, tokens);
+	}
+
+	/**
+	 * Checks a single image URL.
+	 */
+	@Test
+	void testVisionTokens2() throws MalformedURLException, URISyntaxException {
+
+		String model = "gpt-4-vision-preview";
+		OpenAiTokenizer counter = modelSvc.getTokenizer(model);
+
+		// Get chat service, set bot personality and tools used
+		OpenAiChatService bot = endpoint.getChatService();
+		bot.setPersonality("You are an helpful assistant.");
+		bot.setModel(model);
+
+		OpenAiChatMessage msg = new OpenAiChatMessage(Role.USER, "Is there any grass in this image?");
+		msg.getContentParts().add(FilePart.fromUrl(
+				"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+				ContentType.IMAGE));
 		ChatCompletionsRequest req = bot.getDefaultReq();
 		req.getMessages().add(msg);
 

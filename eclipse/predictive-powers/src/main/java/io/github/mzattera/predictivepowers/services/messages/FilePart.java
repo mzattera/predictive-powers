@@ -12,6 +12,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 
+import io.github.mzattera.util.FileUtil;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -36,7 +37,22 @@ import lombok.experimental.SuperBuilder;
 public class FilePart implements MessagePart {
 
 	public static enum ContentType {
-		GENERIC, IMAGE, AUDIO
+		AUDIO, IMAGE, TEXT, VIDEO, GENERIC;
+
+		public static ContentType fromMimeType(String mimeType) {
+			switch (mimeType.split("/")[0].toLowerCase()) {
+			case "audio":
+				return AUDIO;
+			case "image":
+				return IMAGE;
+			case "text":
+				return TEXT;
+			case "video":
+				return VIDEO;
+			default:
+				return GENERIC;
+			}
+		}
 	}
 
 	private ContentType contentType;
@@ -51,8 +67,14 @@ public class FilePart implements MessagePart {
 	 */
 	private URL url;
 
+	/**
+	 * Constructor. Notice the file is inspected to determine its content type.
+	 * GENERIC content type is assumed if the file cannot be read.
+	 * 
+	 * @param file
+	 */
 	public FilePart(@NonNull File file) {
-		this(file, ContentType.GENERIC);
+		this(file, ContentType.fromMimeType(FileUtil.getMimeType(file)));
 	}
 
 	public FilePart(@NonNull File file, ContentType contentType) {
@@ -63,6 +85,10 @@ public class FilePart implements MessagePart {
 		this.url = null;
 	}
 
+	/**
+	 * Constructor. Notice the file is inspected to determine its content type.
+	 * GENERIC content type is assumed if the file cannot be read.
+	 */
 	public static FilePart fromFileName(@NonNull String fileName) {
 		return new FilePart(new File(fileName));
 	}
@@ -71,8 +97,12 @@ public class FilePart implements MessagePart {
 		return new FilePart(new File(fileName), contentType);
 	}
 
+	/**
+	 * Constructor. Notice the content at given URL is inspected to determine its
+	 * content type. GENERIC content type is assumed if the content cannot be read.
+	 */
 	public FilePart(@NonNull URL url) {
-		this(url, ContentType.GENERIC);
+		this(url, ContentType.fromMimeType(FileUtil.getMimeType(url)));
 	}
 
 	public FilePart(@NonNull URL url, ContentType contentType) {
@@ -81,8 +111,12 @@ public class FilePart implements MessagePart {
 		this.file = null;
 	}
 
+	/**
+	 * Constructor. Notice the content at given URL is inspected to determine its
+	 * content type. GENERIC content type is assumed if the content cannot be read.
+	 */
 	public static FilePart fromUrl(@NonNull String url) throws MalformedURLException, URISyntaxException {
-		return fromUrl(url, ContentType.GENERIC);
+		return new FilePart((new URI(url)).toURL());
 	}
 
 	public static FilePart fromUrl(@NonNull String url, ContentType contentType)
@@ -128,21 +162,24 @@ public class FilePart implements MessagePart {
 	 * @throws IOException
 	 */
 	public InputStream getInputStream() throws IOException {
-		if (isLocalFile())
+		if (file != null)
 			return new FileInputStream(file);
-		else
+		if (url != null)
 			return url.openStream();
+		return null;
 	}
 
 	@Override
 	public String getContent() {
-		if (isLocalFile()) {
+		if (file != null) {
 			try {
-				return "[File (local) " + file.getCanonicalPath() + ", Content: " + contentType + "]";
+				return "[File: " + file.getCanonicalPath() + ", Content: " + contentType + "]";
 			} catch (IOException e) {
-				return "[File (local): " + file.getName() + ", Content: " + contentType + "]";
+				return "[File: " + file.getName() + ", Content: " + contentType + "]";
 			}
 		}
-		return "[File (online): " + url.toString() + ", Content: " + contentType + "]";
+		if (url != null)
+			return "[File URL: " + url.toString() + ", Content: " + contentType + "]";
+		return "[File], Content: " + contentType + "]";
 	}
 }

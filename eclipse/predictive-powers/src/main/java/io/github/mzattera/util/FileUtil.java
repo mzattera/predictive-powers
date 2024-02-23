@@ -24,9 +24,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import org.apache.tika.Tika;
+import org.apache.tika.mime.MimeTypes;
 
 import lombok.NonNull;
 
@@ -189,6 +193,35 @@ public final class FileUtil {
 		try (BufferedWriter writer = new BufferedWriter(
 				new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8))) {
 			writer.write(text);
+		}
+	}
+
+	/**
+	 * 
+	 * @param file
+	 * @return MIME type for given file.
+	 */
+	public static String getMimeType(File file) {
+		try {
+			Tika tika = new Tika();
+			return tika.detect(file);
+		} catch (IOException e) {
+			return MimeTypes.OCTET_STREAM;
+		}
+	}
+
+	/**
+	 * 
+	 * @param url
+	 * @return MIME type for file at given URL.
+	 * @throws IOException
+	 */
+	public static String getMimeType(URL url) {
+		try {
+			Tika tika = new Tika();
+			return tika.detect(url);
+		} catch (IOException e) {
+			return MimeTypes.OCTET_STREAM;
 		}
 	}
 }

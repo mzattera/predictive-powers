@@ -19,7 +19,7 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 /**
- * This is a {@link FilePart} that contains a base64 encoding of a file.
+ * This is a {@link FilePart} that contains the base64 encoding of a file.
  * 
  * @author Massimiliano "Maxi" Zattera.
  */
@@ -30,7 +30,7 @@ import lombok.experimental.SuperBuilder;
 @ToString
 public class Base64FilePart extends FilePart {
 
-	/** Conent encoded as base64, */
+	/** Content encoded as base64, */
 	@Getter
 	private String encodedContent;
 
@@ -38,35 +38,36 @@ public class Base64FilePart extends FilePart {
 	private String name;
 
 	public Base64FilePart(@NonNull File file) throws IOException {
-		this(file, file.getName(), ContentType.GENERIC);
+		super(file);
+		init(super.getInputStream().readAllBytes(), super.getName());
 	}
 
 	public Base64FilePart(@NonNull File file, ContentType contentType) throws IOException {
-		this(file, file.getName(), contentType);
-	}
-
-	public Base64FilePart(@NonNull File file, @NonNull String name, ContentType contentType) throws IOException {
 		super(file, contentType);
-		encodedContent = Base64.getEncoder().encodeToString(getInputStream().readAllBytes());
-		this.name = name;
+		init(super.getInputStream().readAllBytes(), super.getName());
 	}
 
 	public Base64FilePart(@NonNull URL url) throws IOException {
-		this(url, url.toString(), ContentType.GENERIC);
+		super(url);
+		init(super.getInputStream().readAllBytes(), super.getName());
 	}
 
 	public Base64FilePart(@NonNull URL url, ContentType contentType) throws IOException {
-		this(url, url.toString(), contentType);
+		super(url, contentType);
+		init(super.getInputStream().readAllBytes(), super.getName());
 	}
 
-	public Base64FilePart(@NonNull URL url, @NonNull String name, ContentType contentType) throws IOException {
-		super(url, contentType);
-		encodedContent = Base64.getEncoder().encodeToString(getInputStream().readAllBytes());
-		this.name = name;
+	public Base64FilePart(InputStream in, String name, ContentType contentType) throws IOException {
+		init(in.readAllBytes(), name);
+		setContentType(contentType);
 	}
 
 	public Base64FilePart(byte[] bytes, String name, ContentType contentType) {
+		init(bytes, name);
 		setContentType(contentType);
+	}
+
+	private void init(byte[] bytes, String name) {
 		encodedContent = Base64.getEncoder().encodeToString(bytes);
 		this.name = name;
 	}
@@ -83,7 +84,7 @@ public class Base64FilePart extends FilePart {
 
 	@Override
 	public boolean isLocalFile() {
-		return false;
+		return true;
 	}
 
 	@Override

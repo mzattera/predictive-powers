@@ -162,6 +162,10 @@ public class OpenAiTokenizer implements Tokenizer {
 	}
 
 	/**
+	 * Perform exact token calculation.
+	 * 
+	 * Notice that, for performance reason, this is approximate if any message in
+	 * the list contains a URL to an image.
 	 * 
 	 * @param messages
 	 * @return Number of tokens needed to encode given list of messages.
@@ -279,20 +283,20 @@ public class OpenAiTokenizer implements Tokenizer {
 //							// We assume in this case we use low detail mode, even though it is not assured
 //							sum += 65;
 //						} else {
-							if ((w > 2048) || (h > 2048)) {
-								double scale = 2048d / Math.max(w, h);
-								w *= scale;
-								h *= scale;
-							}
-							if ((w > 768) || (h > 768)) {
-								double scale = 768d / Math.min(w, h);
-								w *= scale;
-								h *= scale;
-							}
-							int wt = w / 512 + ((w % 512) > 0 ? 1 : 0);
-							int ht = h / 512 + ((h % 512) > 0 ? 1 : 0);
+						if ((w > 2048) || (h > 2048)) {
+							double scale = 2048d / Math.max(w, h);
+							w *= scale;
+							h *= scale;
+						}
+						if ((w > 768) || (h > 768)) {
+							double scale = 768d / Math.min(w, h);
+							w *= scale;
+							h *= scale;
+						}
+						int wt = w / 512 + ((w % 512) > 0 ? 1 : 0);
+						int ht = h / 512 + ((h % 512) > 0 ? 1 : 0);
 
-							sum += 170 * wt * ht + 85;
+						sum += 170 * wt * ht + 85;
 //						}
 					}
 				} catch (Exception e) {
@@ -305,6 +309,10 @@ public class OpenAiTokenizer implements Tokenizer {
 	}
 
 	/**
+	 * Perform exact token calculation.
+	 * 
+	 * Notice that, for performance reason, this is approximate if any message in
+	 * the request contains a URL to an image.
 	 * 
 	 * @param req
 	 * @return Number of tokens used to encode given request.

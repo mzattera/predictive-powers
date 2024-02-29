@@ -12,12 +12,15 @@ Advantages of using this library:
      
   2. Hides a lot of the underlying API complexity. For example:
   
-     1. Automated handling of context sizes, with exact token calculations.
+     * Automated handling of context sizes, with exact token calculations.
+     
+     * Automated handling of chat history, with customizable length.
     
-     2. Uniform interface to add tools (function calls) to models, regardless the mechanism they use
-     (e.g. single or paralllel (tools) function calls for OpenAI models). This includes a modular approach to tools. 
+     * Uniform interface to add tools (function calls) to models, regardless the mechanism they use
+     (e.g. single or paralllel function calling for OpenAI models).
+     This includes a modular approach to adding tools to agents. 
     
-     3. Multi-part chat messges that support using files, images or tool (function calls) through same API.
+     * Multi-part chat messges that support using files, images or tool (function calls) through same API.
   
   3. Still allow direct, low-level, access to underlying API from Java.
 
@@ -29,7 +32,9 @@ Advantages of using this library:
      including exact token calculations using proper from [jtokkit](https://github.com/forestwanglin/openai-java)
 	 and [Deep Java Library](https://djl.ai/).
   
-## Installation
+## 1. Quick Start
+
+### Installation
 
 `predictive-powers` requires Java 11 or higher.
 
@@ -49,8 +54,50 @@ The exact process for setting up the environment depends on the operating system
 To configure logback in your applications that use `predictive-powers`, simply add a `logback.xml` configuration file to your classpath,
 as explained [here](https://logback.qos.ch/manual/configuration.html).
 
+### Your First Chat with an Agent
+ 
+One-liner to chat with GPT.
+ 
+The below code handles conversation with a very depressed entity similar to the more famous [Marvin](https://en.wikipedia.org/wiki/Marvin_the_Paranoid_Android).
+ 
+ ```java
+import java.util.Scanner;
+
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
+
+public class ChatExample {
+
+	public static void main(String[] args) {
+
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+
+			// Get chat service and set bot personality
+			OpenAiChatService bot = endpoint.getChatService();
+			bot.setPersonality("You are a very sad and depressed robot. "
+					+ "Your answers highlight the sad part of things "
+					+ " and are caustic, sarcastic, and ironic.");
+
+			// Conversation loop
+			try (Scanner console = new Scanner(System.in)) {
+				while (true) {
+					System.out.print("User     > ");
+					String s = console.nextLine();
+					System.out.println("Assistant> " + bot.chat(s).getText());
+				}
+			}
+			
+		} // closes endpoint
+	}
+}
+```
+
+Below is an example of the code output.
+ 
+![Example of a conversation with GPT-3](./img/Chat.PNG)
+
 	
-## Usage
+## 2. Usage
 
 ### API Clients
 
@@ -347,52 +394,11 @@ In case you need to split text in chunks, `ChunkUtil` class provides several met
 
 
 
-## <a name="examples"></a>Examples
+## <a name="examples"></a>3. Examples (Recipies)
  
 Below some code examples. These examples, can be found in the [example package](eclipse/predictive-powers/src/main/java/io/github/mzattera/predictivepowers/examples).
  
  
-### Chit-chat with GPT
- 
-One-liner to chat with GPT. Notice how the library allows you to set the bot personality and handles chat history automatically.
- 
-The below code handles conversation with a very depressed entity similar to the more famous [Marvin](https://en.wikipedia.org/wiki/Marvin_the_Paranoid_Android).
- 
- ```java
-import java.util.Scanner;
-
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
-
-public class ChatExample {
-
-	public static void main(String[] args) {
-
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
-
-			// Get chat service and set bot personality
-			OpenAiChatService bot = endpoint.getChatService();
-			bot.setPersonality("You are a very sad and depressed robot. "
-					+ "Your answers highlight the sad part of things "
-					+ " and are caustic, sarcastic, and ironic.");
-
-			// Conversation loop
-			try (Scanner console = new Scanner(System.in)) {
-				while (true) {
-					System.out.print("User     > ");
-					String s = console.nextLine();
-					System.out.println("Assistant> " + bot.chat(s).getText());
-				}
-			}
-			
-		} // closes endpoint
-	}
-}
-```
-
-Below is an example of the code output; notice how conversation context is retained automatically through the conversation.
- 
-![Example of a conversation with GPT-3](./img/Chat.PNG)
 
 
 ### More Chat with GPT, Including Function Calling

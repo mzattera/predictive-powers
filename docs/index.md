@@ -12,12 +12,12 @@ Advantages of using this library:
      
   2. Hides a lot of the underlying API complexity. For example:
   
-    1. Automated handling of context sizes, with exact token calculations.
+     1. Automated handling of context sizes, with exact token calculations.
     
-    2. Uniform interface to add tools (function calls) to models, regardless the mechanism they use
-      (e.g. single or paralllel (tools) function calls for OpenAI models). This includes a modular approach to tools. 
+     2. Uniform interface to add tools (function calls) to models, regardless the mechanism they use
+     (e.g. single or paralllel (tools) function calls for OpenAI models). This includes a modular approach to tools. 
     
-    3. Multi-part chat messges that support using files, images or tool (function calls) through same API.
+     3. Multi-part chat messges that support using files, images or tool (function calls) through same API.
   
   3. Still allow direct, low-level, access to underlying API from Java.
 

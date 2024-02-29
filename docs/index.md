@@ -1,24 +1,29 @@
 # predictive-powers
 
-**`predictive-powers` is a library to make generative AI (GenAI) easily accessible to Java developers.
-It has been featured in a chapter of my book
+**`predictive-powers` is a library to easily create autonomous agents using generative AI (GenAI) services.
+It has been featured in a chapter of the book
 "[Ultimate ChatGPT Handbook for Enterprises](https://www.amazon.com/Ultimate-ChatGPT-Handbook-Enterprises-Solution-Cycles-ebook/dp/B0CNT9YV57)"
-which i co-authored with Dr. Harald Gunia and Karolina Galinska.**
+which I co-authored with Dr. Harald Gunia and Karolina Galinska.**
 
-Currently the library:
+Advantages of using this library:
 
-  1. Provides low-level access to OpenAI API.
-     In addition, it adds an abstraction layer on top of function calling functionality,
-	 allowing you to treat all models the same with respect to this feature, regardless whether a model supports simple or parallel function calls.
-
-  2. Provides (limited) low-level access to Hugging Face Hosted Inference API.
-
-  3. Provides access to web search through Google.
-	  
-  4. Adds an abstraction layer for GenAI capabilities, this allows to plug-in different providers seamlessly (see "[Services](#services)" below)
+  1. Adds an abstraction layer for GenAI capabilities, this allows to plug-in different providers seamlessly (see "[Services](#services)" below)
      and reduces amount of code needed to access these capabilities.
+     
+  2. Hides a lot of the underlying API complexity. For example:
   
-  5. Provides a serializable in-memory vector database. Again, plans are to allow users to plug in any existing vector database in the future.
+    1. Automated handling of context sizes, with exact token calculations.
+    
+    2. Uniform interface to add tools (function calls) to models, regardless the mechanism they use
+      (e.g. single or paralllel (tools) function calls for OpenAI models). This includes a modular approach to tools. 
+    
+    3. Multi-part chat messges that support using files, images or tool (function calls) through same API.
+  
+  3. Still allow direct, low-level, access to underlying API from Java.
+
+  4. Provides access to several capabilities in addition to chat completion, including image generation, STT, TTS, and web search.
+  
+  5. Provides a serializable in-memory vector database.
 
   6. Offers methods to easily read, chunk, and embed textual content from web pages and files in different formats (MS Office, PDF, HTML, etc.),
      including exact token calculations using proper from [jtokkit](https://github.com/forestwanglin/openai-java)

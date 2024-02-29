@@ -6,7 +6,7 @@
 	<artifactId>predictive-powers</artifactId>
 	<version>0.4.0</version>
 	<name>PredictivePowers</name>
-	<description>A Java library to (easily?) access OpenAI API</description>
+	<description>A Java library to (easily) create generative AI powered autonomous agents</description>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 

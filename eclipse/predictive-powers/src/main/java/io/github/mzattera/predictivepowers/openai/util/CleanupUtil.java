@@ -25,6 +25,7 @@ import io.github.mzattera.predictivepowers.openai.client.SortOrder;
 import io.github.mzattera.predictivepowers.openai.client.assistants.Assistant;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
 import io.github.mzattera.predictivepowers.openai.client.finetuning.FineTuningJob;
+import io.github.mzattera.predictivepowers.openai.client.finetuning.FineTuningJob.Status;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 
@@ -58,8 +59,8 @@ public class CleanupUtil {
 			System.out.println("Cancelling FineTunes...");
 			List<FineTuningJob> tasks = DataList.getCompleteList((last) -> cli.listFineTuningJobs(null, last));
 			for (FineTuningJob task : tasks) {
-				String status = task.getStatus();
-				if (status.equals("pending") || status.equals("running")) {
+				Status status = task.getStatus();
+				if ((status == Status.VALIDATING_FILES) || (status == Status.RUNNING)) {
 					status = cli.cancelFineTuning(task.getId()).getStatus();
 					System.out.println("Cancelling task: " + task.getId() + " => " + status);
 				} else {

@@ -28,6 +28,7 @@ import org.xml.sax.SAXException;
 
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
+import io.github.mzattera.predictivepowers.openai.client.finetuning.FineTuningJob.Status;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.util.ExtractionUtil;
 import io.github.mzattera.util.ResourceUtil;
@@ -50,11 +51,11 @@ class FineTunesTest {
 			// Start tuning the model
 			FineTuningRequest req = FineTuningRequest.builder().trainingFile(training.getId()).model(MODEL).build();
 			FineTuningJob tuned = c.createFineTuningJob(req);
-			String status = tuned.getStatus();
+			Status status = tuned.getStatus();
 			System.out.println("Status=" + status);
 
 			// Wait it is ready
-			while (!status.equals("succeeded") && !status.equals("failed")) {
+			while ((status != Status.SUCCEEDED) && (status != Status.FAILED)) {
 
 				try {
 					TimeUnit.SECONDS.sleep(10);
@@ -66,7 +67,7 @@ class FineTunesTest {
 				System.out.println("Status=" + status);
 			}
 
-			assertEquals("succeeded", status);
+			assertEquals(Status.SUCCEEDED, status);
 		} // Close endpoint
 	}
 

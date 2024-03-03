@@ -97,7 +97,7 @@ Below is an example of the code output.
 	
 ## 2. Usage
 
-### API Clients
+### 2.1 API Clients
 
 API clients are the lowest-level components of this library; they allow you to perform direct API calls to service providers. 
 For example, you can access OpenAI API directly by instantiating an `OpenAiClient` and calling its methods.
@@ -188,7 +188,7 @@ The below example shows how to configure an `OpenAiClient` to use a proxy.
 [...]
 ```
 
-### <a name="endpoints"></a>Endpoints
+### 2.3 <a name="endpoints"></a>Endpoints
 
 An endpoint uses an API client to provide some capabilities in form of services.
 
@@ -246,7 +246,7 @@ Alternatively, you can use the default constructor which will try to read these 
 
 
 
-### <a name="services"></a>Services
+### 2.3 <a name="services"></a>Services
 
 Once the endpoint is created, it can be used to access "services" which are high-level capabilities.
 Services abstract capabilities, allowing you to use different providers (endpoints) to perform a task.
@@ -344,12 +344,12 @@ public class DefaultConfigurationExample {
 }
 ```
 
-### <a name="agents"></a>Agents
+### 2.4 <a name="agents"></a>===> Agents <===
 
-Agents are the higher abstraction provided by the library (and arguably its whole purpose).
+Agents are the highest abstraction provided by the library (and arguably its whole purpose).
 
 Agents are able to hold a conversation with the user, supporting different media types in addition to plain text messages (e.g. images or files).
-In addition, they can use **tools** to complete the tasks assignedd to them. An example of a tool is the "retrieval" tool
+In addition, they can use **tools** to complete tasks. An example of a tool is the "retrieval" tool
 available to OpenAI assistant that allows agents to search text in their knowledge base. The library allow you to easilly create your own
 tools that the agent will invoke when needed.
 
@@ -362,11 +362,11 @@ Currently two implementations of agents are available:
 You have seen the first example about instantiating and using an agent in a chat in the [quickstart](#chatintroduction); 
 below, we will explain other features available n teh library.
 
-## Chat messages (multipart)
+#### Chat messages (multipart)
 
-### Using images
+#### Using images
 
-### Tools
+#### Tools
 
 Tools are additional functionality that an agent can access at any time, when needed to execute a task.
 

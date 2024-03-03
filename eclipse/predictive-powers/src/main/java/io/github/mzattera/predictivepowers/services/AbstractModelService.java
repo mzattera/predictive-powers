@@ -109,6 +109,7 @@ public abstract class AbstractModelService implements ModelService {
 	 * @return Maximum number of new tokens a model can generate; some models have
 	 *         this limitation in addition to max context size.
 	 */
+	@Override
 	public int getMaxNewTokens(@NonNull String model, int def) {
 		ModelMetaData data = get(model);
 		if ((data == null) || (data.getMaxNewTokens() == null))

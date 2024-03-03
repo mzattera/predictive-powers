@@ -52,34 +52,41 @@ public class OpenAiException extends HttpException {
 
 	/**
 	 * If the error is because request exceeded context size, this is the number of
-	 * tokens in the prompt.
+	 * tokens in the prompt. Notice the code tries to populte this from the rror
+	 * message, but it might fail and this remains -1.
 	 */
 	@Getter
 	private int promptLength = -1;
 
 	/**
 	 * If the error is because request exceeded context size, this is the number of
-	 * tokens requested for the completion.
+	 * tokens requested for the completion. Notice the code tries to populte this
+	 * from the rror message, but it might fail and this remains -1.
 	 */
 	@Getter
 	private int completionLength = -1;
 
 	/**
 	 * If the error is because request exceeded context size, this is the total
-	 * number of requested tokens (prompt + completion).
+	 * number of requested tokens (prompt + completion). Notice the code tries to
+	 * populte this from the rror message, but it might fail and this remains -1.
 	 */
 	@Getter
 	private int requestLength = -1;
 
 	/**
 	 * If the error is because request exceeded context size, this is the maximum
-	 * context length for the model (in tokens).
+	 * context length for the model (in tokens). Notice the code tries to populte
+	 * this from the rror message, but it might fail and this remains -1.
 	 */
 	@Getter
 	private int maxContextLength = -1;
 
-	private final static Pattern PATTERN = Pattern.compile(
+	private final static Pattern PATTERN01 = Pattern.compile(
 			"This model's maximum context length is ([0-9]+) tokens(\\. However,|, however) you requested ([0-9]+) tokens \\(([0-9]+) (in the messages,|in your prompt;) ([0-9]+) (in|for) the completion\\)\\.");
+
+	private final static Pattern PATTERN02 = Pattern.compile(
+			"max_tokens is too large: ([0-9]+). This model supports at most ([0-9]+) completion tokens, whereas you provided 10000.");
 
 	/**
 	 * Builds an exception after an HTTP error.
@@ -96,8 +103,7 @@ public class OpenAiException extends HttpException {
 		error = OpenAiClient.getJsonMapper().readValue(rootCause.response().errorBody().string(), OpenAiError.class);
 
 		if ((rootCause.code() == 400) && (error.getError().getMessage() != null)) {
-			Matcher m = PATTERN.matcher(error.getError().getMessage());
-
+			Matcher m = PATTERN01.matcher(error.getError().getMessage());
 			if (m.find()) {
 				// Too many tokens requested, extract how many
 				maxContextLength = Integer.parseInt(m.group(1));
@@ -105,16 +111,26 @@ public class OpenAiException extends HttpException {
 				promptLength = Integer.parseInt(m.group(4));
 				completionLength = Integer.parseInt(m.group(6));
 				contextLengthExceeded = true;
+			} else {
+
+				// New error message
+				m = PATTERN02.matcher(error.getError().getMessage());
+				if (m.find()) {
+					// Too many tokens requested, extract how many
+					requestLength = Integer.parseInt(m.group(1));
+					completionLength = Integer.parseInt(m.group(2));
+					contextLengthExceeded = true;
+				}
 			}
 		}
 	}
-	
-	@Override 
+
+	@Override
 	public String getMessage() {
-		return "HTTP " + ((HttpException)getCause()).code() + ": " + error.getError().getMessage();
+		return "HTTP " + ((HttpException) getCause()).code() + ": " + error.getError().getMessage();
 	}
-	
-	@Override 
+
+	@Override
 	public String getLocalizedMessage() {
 		return getMessage();
 	}

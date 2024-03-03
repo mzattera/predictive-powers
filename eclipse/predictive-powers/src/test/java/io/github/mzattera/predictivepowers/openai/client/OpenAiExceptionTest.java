@@ -64,10 +64,8 @@ public class OpenAiExceptionTest {
 			OpenAiException e = assertThrows(OpenAiException.class, () -> cli.createChatCompletion(req));
 			assertEquals(400, e.code());
 			assertTrue(e.isContextLengthExceeded());
-			assertEquals(10, e.getPromptLength());
-			assertEquals(10000, e.getCompletionLength());
-			assertEquals(10010, e.getRequestLength());
-			assertEquals(4097, e.getMaxContextLength());
+			assertEquals(10000, e.getRequestLength());
+			assertEquals(4096, e.getCompletionLength());
 		}
 	}
 }

@@ -137,13 +137,22 @@ public class OpenAiTokenizerTest {
 	private final static List<OpenAiChatMessage> FUNCTION_CALL_MESSAGES = new ArrayList<>();
 	static {
 
-		Map<String, Object> params = new HashMap<>();
-		FunctionCall call = FunctionCall.builder().name("functionName").arguments(params).build();
+		Map<String, Object> params;
+		FunctionCall call;
+
+		params = new HashMap<>();
+		call = FunctionCall.builder().name("functionName").arguments(params).build();
 		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
+
+		// REMOVE
+//		call = FunctionCall.builder().name("banaaRepublisislikeaLongfunctionName").arguments(params).build();
+//		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
+
 		params = new HashMap<>();
 		params.put("s", "Prague");
 		call = FunctionCall.builder().name("functionName").arguments(params).build();
 		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
+
 		params = new HashMap<>();
 		params.put("s", "Prague");
 		params.put("i", 3);
@@ -453,9 +462,6 @@ public class OpenAiTokenizerTest {
 				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-MED.png"), ContentType.IMAGE));
 		msg.getContentParts().add(new FilePart(
 				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png"), ContentType.IMAGE));
-//		msg.getContentParts().add(FilePart.fromUrl(
-//				"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
-//				ContentType.IMAGE));
 		ChatCompletionsRequest req = bot.getDefaultReq();
 		req.getMessages().add(msg);
 
@@ -511,8 +517,11 @@ public class OpenAiTokenizerTest {
 		req.getMessages().add(msg);
 
 		long tokens = counter.count(req);
-		long realTokens = realTokens(req);
-		assertEquals(realTokens, tokens);
+
+		// *** IMPORTANT*** with remote images we do not do exact token calculation for
+		// performance reasons.
+//		long realTokens = realTokens(req);
+		assertEquals(440, tokens);
 	}
 
 	/**

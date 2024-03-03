@@ -87,6 +87,8 @@ public class OpenAiChatServiceTest {
 	public void test02() {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			OpenAiChatService cs = ep.getChatService();
+			OpenAiModelService modelService = ep.getModelService();
+			String model = cs.getModel();
 
 			// Personality, history length and conversation steps limits ////////////
 
@@ -102,8 +104,8 @@ public class OpenAiChatServiceTest {
 
 			cs.setMaxHistoryLength(3);
 			cs.setMaxConversationSteps(2);
-			assertEquals(cs.getMaxConversationTokens(),
-					Math.max(ep.getModelService().getContextSize(cs.getDefaultReq().getModel()), 2046) * 3 / 4);
+			assertEquals(cs.getMaxConversationTokens(), modelService.getContextSize(model)
+					- Math.min(modelService.getContextSize(model) / 4, modelService.getMaxNewTokens(model)));
 
 			String question = "How high is Mt.Everest?";
 			ChatCompletion resp = cs.chat(question);

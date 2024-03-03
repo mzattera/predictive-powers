@@ -96,6 +96,7 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 	@Getter
 	private int maxConversationTokens = Integer.MAX_VALUE;
 
+	@Override
 	public void setMaxConversationTokens(int n) {
 		if (n < 1)
 			throw new IllegalArgumentException("Must keep at least 1 token.");

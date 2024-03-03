@@ -200,7 +200,9 @@ public class OpenAiTokenizer implements Tokenizer {
 			}
 
 			if (msg.getFunctionCall() != null) {
-				if ("gpt-3.5-turbo-0301".equals(model))
+				if ("gpt-3.5-turbo".equals(model))
+					sum += 5;
+				else if ("gpt-3.5-turbo-0301".equals(model))
 					sum += 2;
 				else
 					sum += 3;
@@ -208,6 +210,8 @@ public class OpenAiTokenizer implements Tokenizer {
 				sum += encoding.countTokens(functionCall.path("name").asText());
 				if (!functionCall.path("arguments").isMissingNode()) {
 					sum += encoding.countTokens(functionCall.path("arguments").asText());
+					if ("gpt-3.5-turbo".equals(model))
+						sum -= (msg.getFunctionCall().getArguments().size() * 4);
 				}
 			}
 

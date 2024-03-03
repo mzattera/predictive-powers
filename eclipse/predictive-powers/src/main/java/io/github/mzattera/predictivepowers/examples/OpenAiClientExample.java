@@ -30,7 +30,7 @@ public class OpenAiClientExample {
 			// Complete a sentence
 			// see https://platform.openai.com/docs/api-reference/completions
 			CompletionsRequest req = CompletionsRequest.builder()
-					.model("text-davinci-003")
+					.model("davinci-002")
 					.maxTokens(50)
 					.prompt("Alan Turing was")
 					.build();

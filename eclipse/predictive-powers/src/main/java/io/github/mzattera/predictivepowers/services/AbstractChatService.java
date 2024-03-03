@@ -52,6 +52,7 @@ public abstract class AbstractChatService implements ChatService {
 
 	private int maxConversationTokens = Integer.MAX_VALUE;
 
+	@Override
 	public void setMaxConversationTokens(int n) {
 		if (n < 1)
 			throw new IllegalArgumentException("Must keep at least 1 token.");
@@ -67,7 +68,7 @@ public abstract class AbstractChatService implements ChatService {
 	public ChatCompletion complete(String prompt) {
 		return complete(new ChatMessage(Author.USER, prompt));
 	}
-	
+
 	@Override
 	public void close() {
 	}

@@ -102,7 +102,6 @@ public class FunctionCallTest {
 			@JsonPropertyDescription("Temperature unit (Celsius or Farenheit). This is optional.")
 			public TemperatureUnits unit;
 
-			@SuppressWarnings("unused")
 			public Integer fooParameter;
 
 			@JsonPropertyDescription("Unique API code, this is an integer which must be passed and it is always equal to 6.")
@@ -150,20 +149,19 @@ public class FunctionCallTest {
 
 		String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(f);
 		assertEquals("{\n" + "  \"name\" : \"get_current_weather\",\n"
-				+ "  \"description\" : \"Get the current weather in a given location.\",\n"
-				+ "  \"parameters\" : {\n" + "    \"$schema\" : \"http://json-schema.org/draft-04/schema#\",\n"
+				+ "  \"description\" : \"Get the current weather in a given location.\",\n" + "  \"parameters\" : {\n"
+				+ "    \"$schema\" : \"http://json-schema.org/draft-04/schema#\",\n"
 				+ "    \"title\" : \"Function Parameters\",\n" + "    \"type\" : \"object\",\n"
-				+ "    \"additionalProperties\" : false,\n" + "    \"properties\" : {\n"
-				+ "      \"location\" : {\n" + "        \"type\" : \"string\",\n"
+				+ "    \"additionalProperties\" : false,\n" + "    \"properties\" : {\n" + "      \"location\" : {\n"
+				+ "        \"type\" : \"string\",\n"
 				+ "        \"description\" : \"The city and state, e.g. San Francisco, CA\"\n" + "      },\n"
 				+ "      \"unit\" : {\n" + "        \"type\" : \"string\",\n"
 				+ "        \"enum\" : [ \"CELSIUS\", \"FARENHEIT\" ],\n"
 				+ "        \"description\" : \"Temperature unit (Celsius or Farenheit). This is optional.\"\n"
-				+ "      },\n" + "      \"fooParameter\" : {\n" + "        \"type\" : \"integer\"\n"
-				+ "      },\n" + "      \"code\" : {\n" + "        \"type\" : \"integer\",\n"
+				+ "      },\n" + "      \"fooParameter\" : {\n" + "        \"type\" : \"integer\"\n" + "      },\n"
+				+ "      \"code\" : {\n" + "        \"type\" : \"integer\",\n"
 				+ "        \"description\" : \"Unique API code, this is an integer which must be passed and it is always equal to 6.\"\n"
-				+ "      }\n" + "    },\n" + "    \"required\" : [ \"location\", \"code\" ]\n" + "  }\n" + "}",
-				json);
+				+ "      }\n" + "    },\n" + "    \"required\" : [ \"location\", \"code\" ]\n" + "  }\n" + "}", json);
 	}
 
 	/**
@@ -180,9 +178,10 @@ public class FunctionCallTest {
 		ar.put("value", 6);
 		fc.setArguments(ar);
 		String json = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(fc);
-		assertEquals("{\n" + "  \"name\" : \"testCall\",\n"
-				+ "  \"arguments\" : \"{\\n  \\\"name\\\" : \\\"pippo\\\",\\n  \\\"value\\\" : 6\\n}\"\n"
-				+ "}", json);
+		assertEquals(
+				"{\n" + "  \"name\" : \"testCall\",\n"
+						+ "  \"arguments\" : \"{\\n  \\\"name\\\" : \\\"pippo\\\",\\n  \\\"value\\\" : 6\\n}\"\n" + "}",
+				json);
 	}
 
 	/**

@@ -65,6 +65,7 @@ public class DataList<T> {
 	 */
 	@FunctionalInterface
 	public interface Searcher<T> {
+
 		/**
 		 * Performs a search to get a list of items. These items are a partial result
 		 * for the search (a page in paginated search). Items must be sorted in in
@@ -89,6 +90,8 @@ public class DataList<T> {
 		do {
 			data = search.search(lastId);
 			result.addAll(data.getData());
+			if (data.getLastId() == null) // Some APIs return all results at once without pagination
+				break;
 			lastId = data.getLastId();
 		} while (data.hasMore());
 

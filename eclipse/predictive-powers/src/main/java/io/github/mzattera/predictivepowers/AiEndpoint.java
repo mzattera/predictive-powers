@@ -52,9 +52,7 @@ public interface AiEndpoint extends Endpoint {
 
 	ChatService getChatService();
 
-	ChatService getChatService(String personality);
-
-	ChatService getChatService(@NonNull String model, String personality);
+	ChatService getChatService(@NonNull String model);
 
 	AgentService getAgentService();
 

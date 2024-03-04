@@ -54,7 +54,7 @@ The exact process for setting up the environment depends on the operating system
 To configure logback in your applications that use `predictive-powers`, simply add a `logback.xml` configuration file to your classpath,
 as explained [here](https://logback.qos.ch/manual/configuration.html).
 
-### <a name="firstchat"></a>Your First Chat with an Agent
+### <a name="chatintroduction"></a>Your First Chat with an Agent
  
 One-liner to chat with GPT.
  
@@ -97,7 +97,7 @@ Below is an example of the code output.
 	
 ## 2. Usage
 
-### 2.1 API Clients
+### API Clients
 
 API clients are the lowest-level components of this library; they allow you to perform direct API calls to service providers. 
 For example, you can access OpenAI API directly by instantiating an `OpenAiClient` and calling its methods.
@@ -188,7 +188,7 @@ The below example shows how to configure an `OpenAiClient` to use a proxy.
 [...]
 ```
 
-### 2.3 <a name="endpoints"></a>Endpoints
+### <a name="endpoints"></a>Endpoints
 
 An endpoint uses an API client to provide some capabilities in form of services.
 
@@ -246,7 +246,7 @@ Alternatively, you can use the default constructor which will try to read these 
 
 
 
-### 2.3 <a name="services"></a>Services
+### <a name="services"></a>Services
 
 Once the endpoint is created, it can be used to access "services" which are high-level capabilities.
 Services abstract capabilities, allowing you to use different providers (endpoints) to perform a task.
@@ -344,27 +344,75 @@ public class DefaultConfigurationExample {
 }
 ```
 
-### 2.4 <a name="agents"></a>===> Agents <===
+### <a name="agents"></a>===> Agents <===
 
-Agents are the highest abstraction provided by the library (and arguably its whole purpose).
+`Agent`s are the highest abstraction provided by the library (and arguably its whole purpose).
 
-Agents are able to hold a conversation with the user, supporting different media types in addition to plain text messages (e.g. images or files).
-In addition, they can use **tools** to complete tasks. An example of a tool is the "retrieval" tool
-available to OpenAI assistant that allows agents to search text in their knowledge base. The library allow you to easilly create your own
-tools that the agent will invoke when needed.
+Using underlying services, agents are able to hold a conversation with the user, 
+supporting different media types in addition to plain text messages (e.g. images or files).
+Moreover, they can use **tools** to complete tasks. An example of a tool is the "retrieval" tool
+available to OpenAI assistant that allows agents to search content in their knowledge base.
+This library allows you to easilly create your own tools that the agent will invoke when needed.
 
-Currently two implementations of agents are available:
+Currently, two implementations of agents are available:
 
-  *
+  * `OpenAiChatService` uses OpenAI chat completion API.
    
-  *
+  * `OpenAiAssistant` uses OpenAI assistants API.
+  
+`predictive-powers` allows you to use either implementation with no changes in code, as will be shown below. 
 
 You have seen the first example about instantiating and using an agent in a chat in the [quickstart](#chatintroduction); 
 below, we will explain other features available n teh library.
 
-#### Chat messages (multipart)
+#### Multimedia in Conversations
 
-#### Using images
+Interaction with agents happens by exchanging `ChatMessage`s. A `ChatMessage` is a multi-part message that can
+contain text, images or references to files (we will see later specialized parts will handle invoking tools
+and returning corresponding results to the agent).
+
+THe below code invokes GPT vision model to inspect the content of an image. As you can see the image can be
+provided either as a local file or as an URL to an online image.
+
+```java
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.services.Agent;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
+import io.github.mzattera.predictivepowers.services.messages.FilePart;
+import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
+
+public class VisionApiExample {
+
+	public static void main(String[] args) throws MalformedURLException, URISyntaxException {
+
+		// Create agent using GPT vision model
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+			Agent bot = endpoint.getChatService("gpt-4-vision-preview", "You are an helpful agent.");
+
+			// Build the message to send
+			ChatMessage msg = new ChatMessage("Is there any grass in this image?");
+
+			// Include the image to inspect from an URL in the message
+			msg.getParts().add(FilePart.fromUrl(
+					"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+					ContentType.IMAGE));
+
+			// The below shows as you can do the same with a local file image
+//			 msg.getParts().add(
+//			 		new FilePart(new File("YourFileName.jpg"), ContentType.IMAGE)
+//			 );
+
+			// Interact with the bot and print its response
+			System.out.println(bot.chat(msg).getText());
+
+		} // Close resources
+	}
+}
+```
+
 
 #### Tools
 
@@ -378,7 +426,7 @@ Currently, there are two different type of function calls:
 
   * "Single" function calling allows you to provide the model with a list of functions to be called, the model calls one function at a time, that is,
   the model response is either simple text or a single function call.
-    This mode is supported on the following models (at the time of writing):
+    This mode is deprecated and supported on the following models (at the time of writing):
 	  * gpt-4
 	  * gpt-4-0613
 	  * gpt-3.5-turbo
@@ -386,44 +434,178 @@ Currently, there are two different type of function calls:
 	  
   * "Parallel" function callong (or "tool calls") allows developers to provide a list of tools, of which functions are just a specific case.
      Models supporting parallel function calls can return multiple tool invocations in a single response,
-	 improving efficiency. Currently, only functions are  supported as tools in the chat completion API,
-	 but assistants already support	 other tools such as `code_interpreter` and `retrieval` (see OpenAI documentation).
+	 improving efficiency. 
      Parallel function calling mode is supported on the following models (at the time of writing):
 	  * gpt-4-1106-preview
 	  * gpt-3.5-turbo-1106
 
-These two modes of operation are not compatible, with different ways of accessing them in the APIs,
-and trying to use a mode not supported by a model causes errors. This adds complexity to the code that uses function calling and makes 
+These two modes of operation are not compatible, and they require different ways of accessing them in the APIs;
+trying to use a mode not supported by a model causes errors. This adds complexity to the code that uses function calling and makes 
 more difficult to switch between models. Luckily, `predictive-powers` library provides an abstraction layer on top of function calls,
 allowing you to treat all the models in the same way, regardless whether they support single or parallel function calls.
 
-#### Using existing tools (files & retrieval)
+In `predictive-powers`, a tool must implement the `Tool` interface; the interface exposes method to describe what the tool does and
+what parameters it needs to be invoked. An abstract implementation of `Tool` is available, to provide some boilerplate code (see `AbstractTool`).
 
-#### Writing your own tools
+To allow agents to use tools, they must be wrapped into a `Capability` which needs to
+be attached to the agent. Capabilities allow tools that work together to be grouped into a single functionality that can be added
+to the agent. Future version of the library will provide set of capabilities out-of-the box.
 
-Capabilities...
+An agent with attached capabilities can decide at any time in the conversation to invoke one or more of the tools it can access.
+When this happens, the chat message returned by the agent will contain one or more parts which are instances of `ToolCall`;
+each call will indicate the tool being invoked and the parameters to pass to it. It is the developers' responsibility
+to execuute the tool calls and return results to the agent, using a `ToolCallResult`.
 
-Example of a function -> AbstractTool, etc.
+The below code exemplifies the entire process of creating a custom tool, make it accessible to an agent, 
+and handle corresponding tool calls.
+It starts by creating a function (`GetCurrentWeatherTool`) that returns the weather in a given location, 
+provided by the agent. Notice that to define function parameters, we use schema annotations on 
+a class we defiined ad-hoc; alternatively, you can create a list of `ToolParameter`s, if you find that more convenient.
+The code then adds the function to a capability that is attached to the agent.
+Finally, the code includes a conversation loop where it is checked whether the agent issue any tool call;
+when this happens, the function is invoked and its results returned to the agent.
 
-#### More Chat with GPT, Including Function Calling
- 
-This example shows how to use function calling in conversations with GPT models.
-[Function calling](https://platform.openai.com/docs/guides/function-calling) is a feature of GPT models that allows models
-to call a function from a list of functions provided by the developer.
+Notice how the below coode works without change regardless:
 
-The below code demonstrates how function calling works. It provides the models with a function `getCurrentWeather()` that can be called to get the weather at a 
-specific location. When the user asks, for example, for the temperature in El Paso, the model generates a function call; the below code creates a fake answer
-(that in a real application could indeed be generated by calling a weather service).
-
-
+  * Whether you use the chat or the assistants API.
+  * Whether your model uses single or parallel function calls.
+  
  ```java
-TODO Updated example here
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Random;
+import java.util.Scanner;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+
+import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.services.AbstractTool;
+import io.github.mzattera.predictivepowers.services.Agent;
+import io.github.mzattera.predictivepowers.services.Capability;
+import io.github.mzattera.predictivepowers.services.Toolset;
+import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
+import io.github.mzattera.predictivepowers.services.messages.ToolCall;
+import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
+import lombok.NonNull;
+
+public class FunctionCallExample {
+
+	static Random RND = new Random();
+
+	// This is a function that will be accessible to the agent
+	// Notice it must be public.
+	public static class GetCurrentWeatherTool extends AbstractTool {
+
+		// This is a schema describing the function parameters
+		private static class GetCurrentWeatherParameters {
+
+			private enum TemperatureUnits {
+				CELSIUS, FARENHEIT
+			};
+
+			@JsonProperty(required = true)
+			@JsonPropertyDescription("The city and state, e.g. San Francisco, CA.")
+			public String location;
+
+			@JsonPropertyDescription("Temperature unit (CELSIUS or FARENHEIT), defaults to CELSIUS")
+			public TemperatureUnits unit;
+		}
+
+		public GetCurrentWeatherTool() {
+			super("getCurrentWeather", // Function name
+					"Get the current weather in a given location.", // Function description
+					GetCurrentWeatherParameters.class);
+		}
+
+		@Override
+		public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
+			
+			// Function implementation goes here.
+			// In this example we simply return a random temperature.
+			
+			if (!isInitialized())
+				throw new IllegalStateException("Tool must be initialized.");
+			
+			String location = getString("location", call.getArguments());
+			return new ToolCallResult(call, "Temperature in " + location + " is " + (RND.nextInt(10) + 20) + "°C");
+		}
+	}
+
+	// List of functions available to the bot (for now it is only 1).
+	private final static Collection<Class<?>> TOOLS = new ArrayList<>();
+	static {
+		TOOLS.add(GetCurrentWeatherTool.class);
+	}
+
+	// Capability providing the functions to the agent
+	private final static Capability DEFAULT_CAPABILITY = new Toolset(TOOLS);
+
+	public static void main(String[] args) throws Exception {
+
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
+
+		// Get chat service, set bot personality and tools used
+//			Agent bot = endpoint.getChatService("gpt-4-1106-preview"); // This uses chat API with parallel function calls (tools)
+//			Agent bot = endpoint.getChatService("gpt-3.5-turbo-0613"); // This uses chat API with single function calls (tools)
+				Agent bot = endpoint.getAgentService().getAgent(); // This uses assistants API
+		) {
+
+			bot.setPersonality("You are an helpful assistant.");
+
+			// Tells the model which tools it can use, by providing a capability
+			bot.addCapability(DEFAULT_CAPABILITY);
+
+			// Conversation loop
+			try (Scanner console = new Scanner(System.in)) {
+				while (true) {
+					System.out.print("User     > ");
+					String s = console.nextLine();
+
+					ChatCompletion reply = bot.chat(s);
+
+					// Check if bot generated a function call
+					while (reply.hasToolCalls()) {
+
+						List<ToolCallResult> results = new ArrayList<>();
+
+						for (ToolCall call : reply.getToolCalls()) {
+							// The bot generated one or more tool calls,
+							// print them for illustrative purposes
+							System.out.println("CALL " + " > " + call);
+
+							// Execute call handling errors nicely
+							ToolCallResult result;
+							try {
+								result = call.getTool().invoke(call);
+							} catch (Exception e) {
+								result = new ToolCallResult(call, "Error: " + e.getMessage());
+							}
+							results.add(result);
+						}
+
+						// Pass results back to the bot
+						// Notice this might generate other tool calls, hence the loop
+						reply = bot.chat(new ChatMessage(results));
+					}
+
+					System.out.println("Assistant> " + reply.getText());
+				}
+			}
+
+		} // Closes resources
+	}
+}
 ```
 
 Below is an example of a conversation.
  
 ![Example of a conversation using function calling](./img/FunctionCall.PNG)
 
+
+#### Using existing tools (files & retrieval)
  
 ### <a name="kb"></a>Knowledge Base
  
@@ -484,32 +666,39 @@ The below code examplifies how to set limits to the length of requests and repli
 The code works regardless the model being used and whether the bot will later use tools descriptions (which must be sent at each call).
    
 ```java
-	// Get chat service and set bot personality
-	try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
-			OpenAiChatService bot = endpoint.getChatService();
-			OpenAiModelService modelService = endpoint.getModelService();) {
+// Get chat service 
+try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
+		OpenAiChatService bot = endpoint.getChatService();
+		OpenAiModelService modelService = endpoint.getModelService();) {
+
+	// Set bot personality (instructions - system message)
+	bot.setPersonality("You are an helpful and kind assistant.");
+
+	// Number of tokens in bot context
+	String model = bot.getModel();
+	int ctxSize = modelService.getContextSize(model);
+
+	// Let's keep 1/4th of the tokens for bot replies
+	// Notice that some models have a limit on
+	// maximum number of generated tokens that can be smaller
+	int maxNewTokens = Math.min(ctxSize / 4, modelService.getMaxNewTokens(model));
+
+	// Set the maximum number of tokens for conversation history and bot reply
+	// Notice in the calculation we consider tokens used by the bot personality
+	bot.setMaxNewTokens(maxNewTokens);
+	bot.setMaxConversationTokens(ctxSize - bot.getBaseTokens() - maxNewTokens);
+
+	// Optionally, you can limit the number of messages
+	// kept in the conversation context; at most these many messages
+	// from conversation history will be sent to the API at each
+	// conversation exchange
+	bot.setMaxConversationSteps(50);
 			
-		bot.setPersonality("You are an helpful and kind assistant.");
-		
-		// Number of tokens in bot context
-		String model = bot.getModel();
-		int ctxSize = modelService.getContextSize(model);
+	// From now on, service will manage conversation to respect those limits
 
-		// Let's keep 1/4th of the tokens for our reply
-		// Notice that some models have a limit on
-		// maximum number of generated tokens that can be smaller
-		int maxNewTokens = Math.min(ctxSize / 4, modelService.getMaxNewTokens(model));
+	// ...
 
-		// Set the maximum number of tokens for conversation history and bot reply
-		// Notice in the calculation we consider tokens used by the bot personality
-		bot.setMaxNewTokens(maxNewTokens);
-		bot.setMaxConversationTokens(ctxSize - bot.getBaseTokens() - maxNewTokens);
-
-		// From now on, service will manage conversation history to respect those limits
-
-		// ...
-			
-	} // Close resources
+} // Close resources
 ```
 
 ### Chunking

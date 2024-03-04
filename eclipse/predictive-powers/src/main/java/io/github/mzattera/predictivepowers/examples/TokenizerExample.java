@@ -16,29 +16,46 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
-import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService;
 
 public class TokenizerExample {
 
-	@SuppressWarnings("unused")
-	public static void main(String args[]) throws Exception {
-		
-		// Notice same code will work using HuggingFaceEndpoint
-		try (AiEndpoint endpoint = new OpenAiEndpoint()) {
-			
-			// Get a tokenizer for a model, GPT-4 in this example
-			Tokenizer counter = endpoint.getModelService().getTokenizer("gpt-4");
-			
-			// Counts tokens in a string
-			int tokens = counter.count("Hello World");
-			
-			// Get model context size
-			int contextSize = endpoint.getModelService().getContextSize("gpt-4");
+	public static void main(String[] args) {
 
-			// ....
+		// Get chat service 
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
+				OpenAiChatService bot = endpoint.getChatService();
+				OpenAiModelService modelService = endpoint.getModelService();) {
+
+			// Set bot personality (instructions - system message)
+			bot.setPersonality("You are an helpful and kind assistant.");
+
+			// Number of tokens in bot context
+			String model = bot.getModel();
+			int ctxSize = modelService.getContextSize(model);
+
+			// Let's keep 1/4th of the tokens for bot replies
+			// Notice that some models have a limit on
+			// maximum number of generated tokens that can be smaller
+			int maxNewTokens = Math.min(ctxSize / 4, modelService.getMaxNewTokens(model));
+
+			// Set the maximum number of tokens for conversation history and bot reply
+			// Notice in the calculation we consider tokens used by the bot personality
+			bot.setMaxNewTokens(maxNewTokens);
+			bot.setMaxConversationTokens(ctxSize - bot.getBaseTokens() - maxNewTokens);
+
+			// Optionally, you can limit the number of messages
+			// kept in the conversation context; at most these many messages
+			// from conversation history will be sent to the API at each
+			// conversation exchange
+			bot.setMaxConversationSteps(50);
 			
-		} // Close endpoint
+			// From now on, service will manage conversation to respect those limits
+
+			// ...
+
+		} // Close resources
 	}
 }

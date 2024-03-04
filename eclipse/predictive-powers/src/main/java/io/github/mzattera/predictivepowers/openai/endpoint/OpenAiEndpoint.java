@@ -110,16 +110,9 @@ public class OpenAiEndpoint implements AiEndpoint {
 	}
 
 	@Override
-	public OpenAiChatService getChatService(String personality) {
-		OpenAiChatService s = getChatService();
-		s.setPersonality(personality);
-		return s;
-	}
+	public OpenAiChatService getChatService(@NonNull String model) {
 
-	@Override
-	public OpenAiChatService getChatService(@NonNull String model, String personality) {
-
-		OpenAiChatService svc = getChatService(personality);
+		OpenAiChatService svc = getChatService();
 		svc.setModel(model);
 		return svc;
 	}

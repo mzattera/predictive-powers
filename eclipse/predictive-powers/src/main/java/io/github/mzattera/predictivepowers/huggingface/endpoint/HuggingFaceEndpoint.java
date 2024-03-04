@@ -101,17 +101,10 @@ public class HuggingFaceEndpoint implements AiEndpoint {
 	}
 
 	@Override
-	public HuggingFaceChatService getChatService(@NonNull String model, String personality) {
+	public HuggingFaceChatService getChatService(@NonNull String model) {
 		HuggingFaceChatService svc = getChatService();
 		svc.setModel(model);
 		return svc;
-	}
-
-	@Override
-	public HuggingFaceChatService getChatService(String personality) {
-		HuggingFaceChatService s = getChatService();
-		s.setPersonality(personality);
-		return s;
 	}
 
 	@Override

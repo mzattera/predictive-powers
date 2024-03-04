@@ -40,8 +40,8 @@ public class FunctionCallExample {
 
 	static Random RND = new Random();
 
-	// This is a function that will be accessible to the agent (notice it must be
-	// public).
+	// This is a function that will be accessible to the agent
+	// Notice it must be public.
 	public static class GetCurrentWeatherTool extends AbstractTool {
 
 		// This is a schema describing the function parameters
@@ -60,18 +60,22 @@ public class FunctionCallExample {
 		}
 
 		public GetCurrentWeatherTool() {
-			super("getCurrentWeather", //
-					"Get the current weather in a given location.", //
+			super("getCurrentWeather", // Function name
+					"Get the current weather in a given location.", // Function description
 					GetCurrentWeatherParameters.class);
 		}
 
 		@Override
 		public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
+			
 			// Function implementation goes here.
 			// In this example we simply return a random temperature.
+			
 			if (!isInitialized())
 				throw new IllegalStateException("Tool must be initialized.");
-			return new ToolCallResult(call, (RND.nextInt(10) + 20) + "°C");
+			
+			String location = getString("location", call.getArguments());
+			return new ToolCallResult(call, "Temperature in " + location + " is " + (RND.nextInt(10) + 20) + "°C");
 		}
 	}
 
@@ -81,7 +85,7 @@ public class FunctionCallExample {
 		TOOLS.add(GetCurrentWeatherTool.class);
 	}
 
-	// A provider to give tool instances to the bot
+	// Capability providing the functions to the agent
 	private final static Capability DEFAULT_CAPABILITY = new Toolset(TOOLS);
 
 	public static void main(String[] args) throws Exception {
@@ -113,10 +117,11 @@ public class FunctionCallExample {
 						List<ToolCallResult> results = new ArrayList<>();
 
 						for (ToolCall call : reply.getToolCalls()) {
-							// The bot generated tool calls, print them
+							// The bot generated one or more tool calls,
+							// print them for illustrative purposes
 							System.out.println("CALL " + " > " + call);
 
-							// Execute calls handling errors nicely
+							// Execute call handling errors nicely
 							ToolCallResult result;
 							try {
 								result = call.getTool().invoke(call);
@@ -135,6 +140,6 @@ public class FunctionCallExample {
 				}
 			}
 
-		} // closes endpoint
+		} // Closes resources
 	}
 }

@@ -102,6 +102,9 @@ If you are interested mainly in creating agents, you can jump to [corresponding 
 and then eventually go back to the [services secton](#services), 
 to see which services you can leverage to provide additional capabilities to your agent.
 
+All the code snippets in this section can be found in the 
+[example package](https://github.com/mzattera/predictive-powers/tree/master/eclipse/predictive-powers/src/main/java/io/github/mzattera/predictivepowers/examples).
+
 ### API Clients
 
 API clients are the lowest-level components of this library; they allow you to perform direct API calls to service providers. 
@@ -720,7 +723,8 @@ In case you need to split text in chunks, `ChunkUtil` class provides several met
 
 ## <a name="examples"></a>3. - Examples (Recipies)
  
-Below some code examples. These examples, can be found in the [example package](eclipse/predictive-powers/src/main/java/io/github/mzattera/predictivepowers/examples).
+Below some code examples. Their code can be found in the 
+[example package](https://github.com/mzattera/predictive-powers/tree/master/eclipse/predictive-powers/src/main/java/io/github/mzattera/predictivepowers/examples).
 
  
 ### <a name="oracle"></a>All-knowing Oracle (Retrieval-Augmented Generation)

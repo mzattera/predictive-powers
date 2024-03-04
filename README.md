@@ -1,13 +1,13 @@
 # predictive-powers
 
-**`predictive-powers` is a library to easily create autonomous [agents](#agents) using generative AI (GenAI) services.
+**`predictive-powers` is a library to easily create autonomous [agents](https://mzattera.github.io/predictive-powers/#agents) using generative AI (GenAI) services.
 It has been featured in a chapter of the book
 "[Ultimate ChatGPT Handbook for Enterprises](https://www.amazon.com/Ultimate-ChatGPT-Handbook-Enterprises-Solution-Cycles-ebook/dp/B0CNT9YV57)"
 which I co-authored with Dr. Harald Gunia and Karolina Galinska.**
 
 Advantages of using this library:
 
-  1. Adds an abstraction layer for GenAI capabilities, this allows to plug-in different providers seamlessly (see "[Services](#services)" below)
+  1. Adds an abstraction layer for GenAI capabilities, this allows to plug-in different providers seamlessly
      and reduces amount of code needed to access these capabilities.
      
   2. Hides a lot of the underlying API complexity. For example:

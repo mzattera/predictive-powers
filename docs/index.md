@@ -22,15 +22,13 @@ Advantages of using this library:
     
      * Multi-part chat messges that support using files, images or tool (function calls) through same API.
   
-  3. Still allow direct, low-level, access to underlying API from Java.
+  3. Still allows direct, low-level, access to underlying API from Java.
 
   4. Provides access to several capabilities in addition to chat completion, including image generation, STT, TTS, and web search.
   
   5. Provides a serializable in-memory vector database.
 
-  6. Offers methods to easily read, chunk, and embed textual content from web pages and files in different formats (MS Office, PDF, HTML, etc.),
-     including exact token calculations using proper from [jtokkit](https://github.com/forestwanglin/openai-java)
-	 and [Deep Java Library](https://djl.ai/).
+  6. Offers methods to easily read, chunk, and embed textual content from web pages and files in different formats (MS Office, PDF, HTML, etc.).
   
 ## 1. - Quick Start
 
@@ -44,7 +42,7 @@ The source is a [Maven](https://maven.apache.org/) project inside the `eclipse` 
 The code depends, among others, on [Lomboc](https://projectlombok.org/) which is correctly referenced within the `pom.xml` file for this project.
 However, to have Lomboc to work in the Eclipse editor, you need to install it inside Eclipse (or any other IDE you are using), as explained on Lomboc website.
 
-To avoid passing API keys explicitly in code, the library tries to read them from the operating system environment.
+To avoid passing API keys explicitly in code, the library can read them from the operating system environment.
 The exact process for setting up the environment depends on the operating system you are using.
 
 ### Logging
@@ -109,8 +107,8 @@ to see which services you can leverage to provide additional capabilities to you
 API clients are the lowest-level components of this library; they allow you to perform direct API calls to service providers. 
 For example, you can access OpenAI API directly by instantiating an `OpenAiClient` and calling its methods.
 
-API clients in the library automatically intercept HTTP errors 429, 500, 503, and 504, which normally indicate temporarily unavailability of APIs
-an retry calls after a random and exponentially increasing wait time ([exponential backoff strategy](https://platform.openai.com/docs/guides/rate-limits/error-mitigation)).
+API clients in the library automatically intercept HTTP errors 429, 500, 503, and 504, which normally indicate temporarily unavailability of APIs,
+and retry calls after a random and exponentially increasing wait time ([exponential backoff strategy](https://platform.openai.com/docs/guides/rate-limits/error-mitigation)).
 This feature can be easily disabled, if desired.
 
 Class constructors typically allow you to pass your API key, which will be used in all subsequent calls.
@@ -118,7 +116,7 @@ Alternatively, default constructors will try to read the key from your system en
 please refer to the below examples, the [endpoint](#endpoints) section, or the JavaDoc for more details.
 
 After the client is instantiated, you can call the provider API directly; 
-this part of code is not heavily documented but it is meant to match exactly API definitions from service providers.
+this part of code might not be heavily documented but it is meant to match exactly API definitions from service providers.
 
 ```java
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
@@ -207,7 +205,7 @@ Currently, there are two types of endpoints:
   * `SearchEndpoint`: provides Internet search capabilities.
     Currently, the only example of `SearchEndpoint` is `GoogleSearchService` which allows performing web searches using Google.
 
-#### `OpenAiEndpoint` and `HuggingFaceEndpoint`
+#### OpenAiEndpoint and HuggingFaceEndpoint
 
 `OpenAiEndpoint` and `HuggingFaceEndpoint` are the currently available endpoints that provide GenAi capabilities.
 
@@ -238,7 +236,7 @@ The example below shows how to create instances of these endpoints.
 [...]
 ```
 
-#### `GoogleEndpoint`
+#### GoogleEndpoint
 
 `GoogleEndpoint` is, currently, the sole implementation of `SearchEndpoint` available; as such, it provides methods to perform a web search, namely by using Google as search engine.
 
@@ -363,7 +361,7 @@ This library allows you to easilly create your own tools that the agent will inv
 
 Currently, two implementations of agents are available:
 
-  * `OpenAiChatService` uses OpenAI chat completion API.
+  * `OpenAiChatService` uses OpenAI chat API.
    
   * `OpenAiAssistant` uses OpenAI assistants API.
   
@@ -375,8 +373,8 @@ below, we will explain other features available n teh library.
 #### Multimedia in Conversations
 
 Interaction with agents happens by exchanging `ChatMessage`s. A `ChatMessage` is a multi-part message that can
-contain text, images or references to files (we will see later specialized parts will handle invoking tools
-and returning corresponding results to the agent).
+contain text, images or references to files (we will see later how some specialized parts will handle invoking tools
+and returning corresponding results to the agent as well).
 
 The below code invokes GPT vision model to inspect the content of an image. As you can see the image can be
 provided either as a local file or as an URL to an online image.
@@ -427,7 +425,7 @@ Tools are additional functionality that an agent can access at any time, when ne
 
 In the OpenAI API, there are few tools available to agents using the [assistants](https://platform.openai.com/docs/api-reference/assistants/createAssistant)
  API (retrieval and code interpreter, see below).
-In addition, both assistants and [chat completion](https://platform.openai.com/docs/api-reference/chat) APIs
+In addition, both assistants and [chat](https://platform.openai.com/docs/api-reference/chat) APIs
 allow developers to write their own tools and accesss them through a "[function call](https://platform.openai.com/docs/guides/function-calling)" mechanism.
 Currently, there are two different type of function calls:
 
@@ -439,7 +437,7 @@ Currently, there are two different type of function calls:
 	  * gpt-3.5-turbo
 	  * gpt-3.5-turbo-0613
 	  
-  * "Parallel" function callong (or "tool calls") allows developers to provide a list of tools, of which functions are just a specific case.
+  * "Parallel" function calling (or "tool calls") allows developers to provide a list of tools, of which functions are just a specific case.
      Models supporting parallel function calls can return multiple tool invocations in a single response,
 	 improving efficiency. 
      Parallel function calling mode is supported on the following models (at the time of writing):
@@ -467,16 +465,18 @@ The below code exemplifies the entire process of creating a custom tool, making 
 and handlng corresponding calls.
 It starts by creating a tool (`GetCurrentWeatherTool`) that returns the weather in a given location, 
 provided by the agent. Notice that, to define function parameters, we use schema annotations on 
-a class we defiined ad-hoc; alternatively, you can create a list of `ToolParameter`s, if you find that more convenient.
+an ad-hoc class; alternatively, you can create a list of `ToolParameter`s, if you find that more convenient.
 The code then adds the function to a capability that is attached to the agent.
 Finally, the code includes a conversation loop where it checks whether the agent issues any tool call;
 when this happens, the function is invoked and its results returned to the agent.
 
-Notice how the below coode works without change regardless:
+Notice how the below code works without change regardless:
 
   * Whether you use the chat or the assistants API.
   * Whether your model uses single or parallel function calls.
-  
+ 
+ To cause a tool invocation, just ask for the weather in some city. 
+ 
  ```java
 import java.util.ArrayList;
 import java.util.Collection;
@@ -630,7 +630,7 @@ Below is an example of a conversation.
 
 Some services, namely those using OpenAI GPT models, have limits on number of tokens in input and output.
 
-`ModelService`s provide data about models, including maximum context size, and suitable tokenizers for each model.
+`ModelService`s provide metadata about models, including maximum context size and suitable tokenizers for each model.
 Normally, developers do not need to care about these details as services will handle them transparently. However, in order for services to do so,
 proper model data needs to be available to the `ModelService`. This means that, in case you create a new model (e.g. by training an existing OpenAI one), you need to make its data known to the 
 corresponding `ModelService` by "registering" the model with `ModelService.put(String,ModelData)`; please refer to the JavaDoc for details.
@@ -661,18 +661,20 @@ Below an example showing how to count tokens in a string and how to get context 
 
 There are some additional considerations about token calculation when using the OpenAI API.
 
-  * For OpenAI, the `OpenAiTokenizer` class provides exact calculation of tokens for calling chat completions API; this includes calulating size of a request which includes not only 
+  * For OpenAI, the `OpenAiTokenizer` class provides exact calculation of tokens for calling chat API; this includes calulating size of a request which includes not only 
   a prompt, but also function calls, their results, tool descriptions, and images. This is all handled transparently by the class methods `count(List<OpenAiChatMessage>)`
   and `count(ChatCompletionsRequest)`.
 
   * The method `getBaseTokens()` in `OpenAiChatService` allows you to calculate tokens which are consumed at each call by the system message and tool descriptions.
   
-  * If you leave the number of reesponse token unlimited in `OpenAiChatService` using `setMaxNewTokens(null)`, the service will automatically use all of the available
-  context for the response. Notice that this will cause unnecessary high costs if you do not need such long onswers. For this reason, 
+  * If you leave the number of tokens allocated for the response unlimited in `OpenAiChatService` using `setMaxNewTokens(null)`, the service will automatically use all of the available
+  context for the response. Notice that this will cause unnecessary high costs if you do not need such long answers as OpenAI will bill
+  based on the allocated response lenght, regardless whether it is completely filled or not. For this reason, 
   the service sets by default a reasonable limit to reply size. Alternatively, you can set your own limits, as shown in the example below.
 
 The below code examplifies how to set limits to the length of requests and replies when using `OpenAiChatService`.
-The code works regardless the model being used and whether the bot will later use tools descriptions (which must be sent at each call).
+The code works regardless the model being used and whether the service will later use tools descriptions
+(which must be sent at each call if the service is provided with access to any tool).
    
 ```java
 // Get chat service 

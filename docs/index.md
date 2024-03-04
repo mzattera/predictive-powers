@@ -32,7 +32,7 @@ Advantages of using this library:
      including exact token calculations using proper from [jtokkit](https://github.com/forestwanglin/openai-java)
 	 and [Deep Java Library](https://djl.ai/).
   
-## 1. Quick Start
+## 1. - Quick Start
 
 ### Installation
 
@@ -95,7 +95,13 @@ Below is an example of the code output.
 ![Example of a conversation with GPT-3](./img/Chat.PNG)
 
 	
-## 2. Usage
+## 2. - Usage
+
+This section describes all of the library components bottom-up.
+
+If you are interested mainly in creating agents, you can jump to [corresponding section](#agents) direclty
+and then eventually go back to the [services secton](#services), 
+to see which services you can leverage to add your agent additional capabilities.
 
 ### API Clients
 
@@ -344,7 +350,7 @@ public class DefaultConfigurationExample {
 }
 ```
 
-### <a name="agents"></a>===> Agents <===
+### <a name="agents"></a>>>===> Agents <===<<
 
 `Agent`s are the highest abstraction provided by the library (and arguably its whole purpose).
 
@@ -421,7 +427,7 @@ Tools are additional functionality that an agent can access at any time, when ne
 In the OpenAI API, there are few tools available to agents using the [assistants](https://platform.openai.com/docs/api-reference/assistants/createAssistant)
  API (retrieval and code interpreter, see below).
 In addition, both assistants and [chat completion](https://platform.openai.com/docs/api-reference/chat) APIs
-allow developers to write their own tools and accesss them through a "function call" mechanism.
+allow developers to write their own tools and accesss them through a "[function call](https://platform.openai.com/docs/guides/function-calling)" mechanism.
 Currently, there are two different type of function calls:
 
   * "Single" function calling allows you to provide the model with a list of functions to be called, the model calls one function at a time, that is,
@@ -708,7 +714,7 @@ In case you need to split text in chunks, `ChunkUtil` class provides several met
 
 
 
-## <a name="examples"></a>3. Examples (Recipies)
+## <a name="examples"></a>3. - Examples (Recipies)
  
 Below some code examples. These examples, can be found in the [example package](eclipse/predictive-powers/src/main/java/io/github/mzattera/predictivepowers/examples).
 

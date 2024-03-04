@@ -72,4 +72,19 @@ public class ToolCall implements MessagePart {
 	public String getContent() {
 		return toString();
 	}
+	
+	/**
+	 * Executes this call.
+	 * Notice this will work only if {{@link #getTool()} returns a valid tool.
+	 * Some services might not be able to retrieve the proper Tool
+	 * instance; this depends on the service generating the call. If the tool is unset
+	 * developers need to map this call to the proper tool externally from the
+	 * service instead of using this method.
+	 * 
+	 * @return Result of invoking the tool.
+	 * @throws Exception If an error occurs while executing the call.
+	 */
+	public ToolCallResult execute() throws Exception {
+		return getTool().invoke(this);
+	}
 }

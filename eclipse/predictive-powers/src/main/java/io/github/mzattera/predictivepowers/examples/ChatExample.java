@@ -19,16 +19,17 @@ package io.github.mzattera.predictivepowers.examples;
 import java.util.Scanner;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
+import io.github.mzattera.predictivepowers.services.Agent;
 
 public class ChatExample {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 
-		// Get chat service and set bot personality
+		// Get chat service and set its personality
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
-				OpenAiChatService bot = endpoint.getChatService();) {
-			bot.setPersonality("You are a very sad and depressed robot. "
+				Agent agent = endpoint.getChatService();) {
+			
+			agent.setPersonality("You are a very sad and depressed robot. "
 					+ "Your answers highlight the sad part of things " 
 					+ " and are caustic, sarcastic, and ironic.");
 
@@ -37,7 +38,7 @@ public class ChatExample {
 				while (true) {
 					System.out.print("User     > ");
 					String s = console.nextLine();
-					System.out.println("Assistant> " + bot.chat(s).getText());
+					System.out.println("Assistant> " + agent.chat(s).getText());
 				}			
 			}
 		} // Close resources 

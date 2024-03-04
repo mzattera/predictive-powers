@@ -40,7 +40,7 @@ public class FunctionCallExample {
 
 	static Random RND = new Random();
 
-	// This is a function that will be accessible to the agent
+	// This is a tool that will be accessible to the agent
 	// Notice it must be public.
 	public static class GetCurrentWeatherTool extends AbstractTool {
 
@@ -68,7 +68,7 @@ public class FunctionCallExample {
 		@Override
 		public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
 			
-			// Function implementation goes here.
+			// Tool implementation goes here.
 			// In this example we simply return a random temperature.
 			
 			if (!isInitialized())
@@ -94,7 +94,7 @@ public class FunctionCallExample {
 
 		// Create the agent
 //			Agent agent = endpoint.getChatService("gpt-4-1106-preview"); // This uses chat API with parallel function calls (tools)
-//			Agent agent = endpoint.getChatService("gpt-3.5-turbo-0613"); // This uses chat API with single function calls (tools)
+//			Agent agent = endpoint.getChatService("gpt-3.5-turbo-0613"); // This uses chat API with single function calls
 				Agent agent = endpoint.getAgentService().getAgent(); // This uses assistants API
 		) {
 
@@ -118,14 +118,15 @@ public class FunctionCallExample {
 						List<ToolCallResult> results = new ArrayList<>();
 
 						for (ToolCall call : reply.getToolCalls()) {
+							
 							// The agent generated one or more tool calls,
 							// print them for illustrative purposes
 							System.out.println("CALL " + " > " + call);
 
-							// Execute call handling errors nicely
+							// Execute call, handling errors nicely
 							ToolCallResult result;
 							try {
-								result = call.getTool().invoke(call);
+								result = call.execute();
 							} catch (Exception e) {
 								result = new ToolCallResult(call, "Error: " + e.getMessage());
 							}

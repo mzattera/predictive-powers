@@ -64,16 +64,17 @@ The below code handles conversation with a very depressed entity similar to the 
 import java.util.Scanner;
 
 import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
+import io.github.mzattera.predictivepowers.services.Agent;
 
 public class ChatExample {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 
-		// Get chat service and set bot personality
+		// Get chat service and set its personality
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
-				OpenAiChatService bot = endpoint.getChatService();) {
-			bot.setPersonality("You are a very sad and depressed robot. "
+				Agent agent = endpoint.getChatService();) {
+			
+			agent.setPersonality("You are a very sad and depressed robot. "
 					+ "Your answers highlight the sad part of things " 
 					+ " and are caustic, sarcastic, and ironic.");
 
@@ -82,7 +83,7 @@ public class ChatExample {
 				while (true) {
 					System.out.print("User     > ");
 					String s = console.nextLine();
-					System.out.println("Assistant> " + bot.chat(s).getText());
+					System.out.println("Assistant> " + agent.chat(s).getText());
 				}			
 			}
 		} // Close resources 
@@ -101,7 +102,7 @@ This section describes all of the library components bottom-up.
 
 If you are interested mainly in creating agents, you can jump to [corresponding section](#agents) direclty
 and then eventually go back to the [services secton](#services), 
-to see which services you can leverage to add your agent additional capabilities.
+to see which services you can leverage to provide additional capabilities to your agent.
 
 ### API Clients
 
@@ -260,11 +261,11 @@ For [example](#imgGen), one could use an `OpenAiEndpoint` to obtain an `ImageGen
 alternatively, getting the `ImageGenerationService` instance through an `HuggingFaceEndpoint` will provide the same service,
 through same interface, using OpenJourney hosted on Hugging Face.
 
-Currently, following services are provided by `AiEndpoint`:
+Currently, following services are provided by `AiEndpoint`s:
 
-  * `ModelService`: provides methods to access model metadata (e.g. list models, get model context size, etc.).
+  * `ModelService`: provides methods to access model metadata (e.g. list models, get model context size, tokenizers, etc.).
 	 
-  * `CompletionService`: text completion (including insertions): basically, it executes given text prompt.
+  * `CompletionService`: text completion: basically, it executes given text prompt.
 	 
   * `ChatService`: handles conversations with an agent, taking care of agent personality and conversation history.
   
@@ -356,7 +357,7 @@ public class DefaultConfigurationExample {
 
 Using underlying services, agents are able to hold a conversation with the user, 
 supporting different media types in addition to plain text messages (e.g. images or files).
-Moreover, they can use **tools** to complete tasks. An example of a tool is the "retrieval" tool
+Moreover, they can use "tools" to complete tasks. An example of a tool is the "retrieval" tool
 available to OpenAI assistant that allows agents to search content in their knowledge base.
 This library allows you to easilly create your own tools that the agent will invoke when needed.
 
@@ -377,7 +378,7 @@ Interaction with agents happens by exchanging `ChatMessage`s. A `ChatMessage` is
 contain text, images or references to files (we will see later specialized parts will handle invoking tools
 and returning corresponding results to the agent).
 
-THe below code invokes GPT vision model to inspect the content of an image. As you can see the image can be
+The below code invokes GPT vision model to inspect the content of an image. As you can see the image can be
 provided either as a local file or as an URL to an online image.
 
 ```java
@@ -445,7 +446,7 @@ Currently, there are two different type of function calls:
 	  * gpt-4-1106-preview
 	  * gpt-3.5-turbo-1106
 
-These two modes of operation are not compatible, and they require different ways of accessing them in the APIs;
+These two modes of operation are not compatible, and they require different ways of accessing them from your API calls;
 trying to use a mode not supported by a model causes errors. This adds complexity to the code that uses function calling and makes 
 more difficult to switch between models. Luckily, `predictive-powers` library provides an abstraction layer on top of function calls,
 allowing you to treat all the models in the same way, regardless whether they support single or parallel function calls.
@@ -454,21 +455,21 @@ In `predictive-powers`, a tool must implement the `Tool` interface; the interfac
 what parameters it needs to be invoked. An abstract implementation of `Tool` is available, to provide some boilerplate code (see `AbstractTool`).
 
 To allow agents to use tools, they must be wrapped into a `Capability` which needs to
-be attached to the agent. Capabilities allow tools that work together to be grouped into a single functionality that can be added
-to the agent. Future version of the library will provide set of capabilities out-of-the box.
+be attached to the agent. Capabilities allow tools that work together to be grouped into a single functionality.
+Future version of the library will provide a set of out-of-the box capabilities.
 
 An agent with attached capabilities can decide at any time in the conversation to invoke one or more of the tools it can access.
 When this happens, the chat message returned by the agent will contain one or more parts which are instances of `ToolCall`;
-each call will indicate the tool being invoked and the parameters to pass to it. It is the developers' responsibility
+each call will indicate the tool being invoked and the parameters to pass to it. It is the developer's responsibility
 to execuute the tool calls and return results to the agent, using a `ToolCallResult`.
 
-The below code exemplifies the entire process of creating a custom tool, make it accessible to an agent, 
-and handle corresponding tool calls.
-It starts by creating a function (`GetCurrentWeatherTool`) that returns the weather in a given location, 
-provided by the agent. Notice that to define function parameters, we use schema annotations on 
+The below code exemplifies the entire process of creating a custom tool, making it accessible to an agent, 
+and handlng corresponding calls.
+It starts by creating a tool (`GetCurrentWeatherTool`) that returns the weather in a given location, 
+provided by the agent. Notice that, to define function parameters, we use schema annotations on 
 a class we defiined ad-hoc; alternatively, you can create a list of `ToolParameter`s, if you find that more convenient.
 The code then adds the function to a capability that is attached to the agent.
-Finally, the code includes a conversation loop where it is checked whether the agent issue any tool call;
+Finally, the code includes a conversation loop where it checks whether the agent issues any tool call;
 when this happens, the function is invoked and its results returned to the agent.
 
 Notice how the below coode works without change regardless:
@@ -501,7 +502,7 @@ public class FunctionCallExample {
 
 	static Random RND = new Random();
 
-	// This is a function that will be accessible to the agent
+	// This is a tool that will be accessible to the agent
 	// Notice it must be public.
 	public static class GetCurrentWeatherTool extends AbstractTool {
 
@@ -529,7 +530,7 @@ public class FunctionCallExample {
 		@Override
 		public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
 			
-			// Function implementation goes here.
+			// Tool implementation goes here.
 			// In this example we simply return a random temperature.
 			
 			if (!isInitialized())
@@ -555,7 +556,7 @@ public class FunctionCallExample {
 
 		// Create the agent
 //			Agent agent = endpoint.getChatService("gpt-4-1106-preview"); // This uses chat API with parallel function calls (tools)
-//			Agent agent = endpoint.getChatService("gpt-3.5-turbo-0613"); // This uses chat API with single function calls (tools)
+//			Agent agent = endpoint.getChatService("gpt-3.5-turbo-0613"); // This uses chat API with single function calls
 				Agent agent = endpoint.getAgentService().getAgent(); // This uses assistants API
 		) {
 
@@ -579,14 +580,15 @@ public class FunctionCallExample {
 						List<ToolCallResult> results = new ArrayList<>();
 
 						for (ToolCall call : reply.getToolCalls()) {
+						
 							// The agent generated one or more tool calls,
 							// print them for illustrative purposes
 							System.out.println("CALL " + " > " + call);
 
-							// Execute call handling errors nicely
+							// Execute call, handling errors nicely
 							ToolCallResult result;
 							try {
-								result = call.getTool().invoke(call);
+								result = call.execute();
 							} catch (Exception e) {
 								result = new ToolCallResult(call, "Error: " + e.getMessage());
 							}
@@ -624,7 +626,7 @@ Below is an example of a conversation.
  Some examples about how to use a knowledge base can be found [below](#oracle).
   
 
-### Tokens, tokenizers and other model data
+### Tokens, Tokenizers and Model Metadata
 
 Some services, namely those using OpenAI GPT models, have limits on number of tokens in input and output.
 

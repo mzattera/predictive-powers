@@ -79,7 +79,7 @@ public class FunctionCallExample {
 		}
 	}
 
-	// List of functions available to the bot (for now it is only 1).
+	// List of functions available to the agent (for now it is only 1).
 	private final static Collection<Class<?>> TOOLS = new ArrayList<>();
 	static {
 		TOOLS.add(GetCurrentWeatherTool.class);
@@ -92,16 +92,17 @@ public class FunctionCallExample {
 
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
 
-		// Get chat service, set bot personality and tools used
-//			Agent bot = endpoint.getChatService("gpt-4-1106-preview"); // This uses chat API with parallel function calls (tools)
-//			Agent bot = endpoint.getChatService("gpt-3.5-turbo-0613"); // This uses chat API with single function calls (tools)
-				Agent bot = endpoint.getAgentService().getAgent(); // This uses assistants API
+		// Create the agent
+//			Agent agent = endpoint.getChatService("gpt-4-1106-preview"); // This uses chat API with parallel function calls (tools)
+//			Agent agent = endpoint.getChatService("gpt-3.5-turbo-0613"); // This uses chat API with single function calls (tools)
+				Agent agent = endpoint.getAgentService().getAgent(); // This uses assistants API
 		) {
 
-			bot.setPersonality("You are an helpful assistant.");
+			// Set agent personality (instructions)
+			agent.setPersonality("You are an helpful assistant.");
 
-			// Tells the model which tools it can use, by providing a capability
-			bot.addCapability(DEFAULT_CAPABILITY);
+			// Tell the agent which tools it can use, by providing a capability
+			agent.addCapability(DEFAULT_CAPABILITY);
 
 			// Conversation loop
 			try (Scanner console = new Scanner(System.in)) {
@@ -109,15 +110,15 @@ public class FunctionCallExample {
 					System.out.print("User     > ");
 					String s = console.nextLine();
 
-					ChatCompletion reply = bot.chat(s);
+					ChatCompletion reply = agent.chat(s);
 
-					// Check if bot generated a function call
+					// Check if agent generated a function call
 					while (reply.hasToolCalls()) {
 
 						List<ToolCallResult> results = new ArrayList<>();
 
 						for (ToolCall call : reply.getToolCalls()) {
-							// The bot generated one or more tool calls,
+							// The agent generated one or more tool calls,
 							// print them for illustrative purposes
 							System.out.println("CALL " + " > " + call);
 
@@ -131,9 +132,9 @@ public class FunctionCallExample {
 							results.add(result);
 						}
 
-						// Pass results back to the bot
+						// Pass results back to the agent
 						// Notice this might generate other tool calls, hence the loop
-						reply = bot.chat(new ChatMessage(results));
+						reply = agent.chat(new ChatMessage(results));
 					}
 
 					System.out.println("Assistant> " + reply.getText());

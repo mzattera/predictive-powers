@@ -16,16 +16,17 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService;
 
 public class TokenizerExample {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 
 		// Get chat service 
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
+		try (OpenAiEndpoint endpoint = new DirectOpenAiEndpoint();
 				OpenAiChatService bot = endpoint.getChatService();
 				OpenAiModelService modelService = endpoint.getModelService();) {
 

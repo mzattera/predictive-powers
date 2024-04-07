@@ -90,6 +90,10 @@ public interface ModelService extends AiService {
 		 */
 		@Getter
 		private final Integer maxNewTokens;
+
+		public ModelMetaData(String model, Tokenizer tokenizer, int contextSize, int maxNewTokens) {
+			this(model, tokenizer, Integer.valueOf(contextSize), Integer.valueOf(maxNewTokens));
+		}
 	}
 
 	/**

@@ -16,7 +16,6 @@
 
 package io.github.mzattera.predictivepowers.openai.client.completions;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,6 +44,10 @@ import lombok.ToString;
 @ToString
 public class CompletionsRequest {
 
+	/**
+	 * This is not used in Azure OpenAI, in our implementation we replace it with
+	 * the deployment Id.
+	 */
 	@NonNull
 	private String model;
 
@@ -80,8 +83,11 @@ public class CompletionsRequest {
 	private Double frequencyPenalty;
 	private Integer bestOf;
 
-	@Builder.Default
-	private Map<String, Integer> logitBias = new HashMap<>();
+	// Setting this to an empty map can cause errors when other parameters such as
+	// logprobs are set
+	private Map<String, Integer> logitBias;
 
 	private String user;
+
+	// TODO URGENT completion_config to be added
 }

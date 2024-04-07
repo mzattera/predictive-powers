@@ -18,7 +18,7 @@ package io.github.mzattera.predictivepowers.examples;
 
 import java.util.Scanner;
 
-import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceChatService;
 
 public class HFChatExample {

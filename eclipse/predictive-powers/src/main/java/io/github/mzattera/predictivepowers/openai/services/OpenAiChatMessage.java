@@ -64,9 +64,7 @@ import lombok.ToString;
 @ToString
 public class OpenAiChatMessage {
 
-	// TOOD URGENT handle parts
-
-	// This serializes getParts() as a list of text messages and image URLS, to
+	// This serializes getContentParts() as a list of text messages and image URLS, to
 	// support vision models.
 	private final static class MessagePartSerializer extends StdSerializer<List<MessagePart>> {
 
@@ -109,9 +107,12 @@ public class OpenAiChatMessage {
 							gen.writeStringField("url", file.getUrl().toString());
 						else {// base64 encode
 							if (file instanceof Base64FilePart)
-								gen.writeStringField("url", "data:image/jpeg;base64,"
-										+ ((Base64FilePart)file).getEncodedContent());
-							else 
+								
+								// TODO URGENT Must the image be encoded as JPEG?
+								
+								gen.writeStringField("url",
+										"data:image/jpeg;base64," + ((Base64FilePart) file).getEncodedContent());
+							else
 								gen.writeStringField("url", "data:image/jpeg;base64,"
 										+ Base64.getEncoder().encodeToString(file.getInputStream().readAllBytes()));
 						}
@@ -222,16 +223,16 @@ public class OpenAiChatMessage {
 	 * that can be read with {@link getContent()}. When calling the API, you can use
 	 * {@link setContent()} to set this field to a single string value, or use
 	 * {@link getContentParts()} to provide an array of strings and images (as
-	 * {@link FilePart}s). Notice that {@link getContent()} will return null if the
-	 * message is not a single-part message that contains only text. On the other
-	 * side, {@link getContentParts()} will always return a list of message parts,
-	 * eventually empty.
+	 * {@link FilePart}s). Notice that {@link getContent()} will throw an
+	 * IllegalArgumentException if the message is not a single-part message that
+	 * contains only text. On the other side, {@link getContentParts()} will always
+	 * return a list of message parts, eventually empty.
 	 */
 	@JsonIgnore
 	public String getContent() {
 		if ((contentParts.size() == 1) && (contentParts.get(0) instanceof TextPart))
 			return ((TextPart) contentParts.get(0)).getContent();
-		return null;
+		throw new IllegalArgumentException("This is a multipart message");
 	}
 
 	/**

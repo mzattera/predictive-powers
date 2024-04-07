@@ -26,9 +26,9 @@ import org.apache.tika.exception.TikaException;
 import org.xml.sax.SAXException;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.EmbeddingService;
 import io.github.mzattera.predictivepowers.services.QnAPair;
@@ -40,7 +40,7 @@ public class OracleExample {
 	public static void main(String[] args) throws Exception {
 
 		// Uncomment the below to use OpenAI services for the oracle
-		AiEndpoint endpoint = new OpenAiEndpoint();
+		AiEndpoint endpoint = new DirectOpenAiEndpoint();
 
 		// Uncomment the below to use Hugging Face services for the oracle
 		// Endpoint endpoint = new HuggingFaceEndpoint();

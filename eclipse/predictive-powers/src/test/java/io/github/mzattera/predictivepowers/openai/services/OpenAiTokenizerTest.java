@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
@@ -27,7 +28,6 @@ import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool.Type;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
@@ -37,7 +37,6 @@ import io.github.mzattera.predictivepowers.services.Capability;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.Toolset;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
-import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import io.github.mzattera.util.ResourceUtil;
@@ -45,12 +44,12 @@ import lombok.NonNull;
 
 public class OpenAiTokenizerTest {
 
-	private static OpenAiEndpoint endpoint;
+	private static DirectOpenAiEndpoint endpoint;
 	private static OpenAiModelService modelSvc;
 
 	@BeforeAll
 	static void init() {
-		endpoint = new OpenAiEndpoint();
+		endpoint = new DirectOpenAiEndpoint();
 		modelSvc = endpoint.getModelService();
 	}
 
@@ -459,9 +458,9 @@ public class OpenAiTokenizerTest {
 
 		OpenAiChatMessage msg = new OpenAiChatMessage(Role.USER, "Is there any grass in this image?");
 		msg.getContentParts().add(new FilePart(
-				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-MED.png"), ContentType.IMAGE));
+				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-MED.png"), "image/png"));
 		msg.getContentParts().add(new FilePart(
-				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png"), ContentType.IMAGE));
+				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png"), "image/png"));
 		ChatCompletionsRequest req = bot.getDefaultReq();
 		req.getMessages().add(msg);
 
@@ -486,7 +485,7 @@ public class OpenAiTokenizerTest {
 
 		OpenAiChatMessage msg = new OpenAiChatMessage(Role.USER, "Is there any grass in this image?");
 		msg.getContentParts().add(new FilePart(
-				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png"), ContentType.IMAGE));
+				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png"), "image/png"));
 		ChatCompletionsRequest req = bot.getDefaultReq();
 		req.getMessages().add(msg);
 
@@ -512,7 +511,7 @@ public class OpenAiTokenizerTest {
 		OpenAiChatMessage msg = new OpenAiChatMessage(Role.USER, "Is there any grass in this image?");
 		msg.getContentParts().add(FilePart.fromUrl(
 				"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
-				ContentType.IMAGE));
+				"image/jpeg"));
 		ChatCompletionsRequest req = bot.getDefaultReq();
 		req.getMessages().add(msg);
 
@@ -532,7 +531,7 @@ public class OpenAiTokenizerTest {
 	 */
 	private static long realTokens(ChatCompletionsRequest req) {
 
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+		try (DirectOpenAiEndpoint endpoint = new DirectOpenAiEndpoint()) {
 			req.setMaxTokens(1);
 			ChatCompletionsResponse resp = endpoint.getClient().createChatCompletion(req);
 			return resp.getUsage().getPromptTokens();
@@ -547,7 +546,7 @@ public class OpenAiTokenizerTest {
 	 */
 	private static long realTokens(CompletionsRequest req) {
 
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+		try (DirectOpenAiEndpoint endpoint = new DirectOpenAiEndpoint()) {
 			req.setMaxTokens(1);
 			CompletionsResponse resp = endpoint.getClient().createCompletion(req);
 			return resp.getUsage().getPromptTokens();

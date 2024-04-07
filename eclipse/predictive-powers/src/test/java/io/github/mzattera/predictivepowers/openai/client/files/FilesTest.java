@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.client.DeleteResponse;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.util.ResourceUtil;
 
 class FilesTest {
@@ -35,7 +35,7 @@ class FilesTest {
 
 	@Test
 	void test01() throws IOException {
-		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
+		try (DirectOpenAiEndpoint oai = new DirectOpenAiEndpoint()) {
 			OpenAiClient cli = oai.getClient();
 
 			// See how many files we have

@@ -21,13 +21,13 @@ import java.util.Scanner;
 
 import io.github.mzattera.predictivepowers.openai.client.DataList;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
+import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.SortOrder;
 import io.github.mzattera.predictivepowers.openai.client.assistants.Assistant;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
 import io.github.mzattera.predictivepowers.openai.client.finetuning.FineTuningJob;
 import io.github.mzattera.predictivepowers.openai.client.finetuning.FineTuningJob.Status;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 
 /**
  * Deletes all files and all model fine-tunes.
@@ -39,6 +39,8 @@ import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
  */
 public class CleanupUtil {
 
+	// TODO URGENT Cleanup Azure stuff too
+	
 	public static void main(String[] args) {
 
 		try (Scanner console = new Scanner(System.in)) {
@@ -52,7 +54,7 @@ public class CleanupUtil {
 			}
 		}
 
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
+		try (DirectOpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
 			OpenAiClient cli = ep.getClient();
 
 			// Cancel tuning tasks
@@ -72,8 +74,7 @@ public class CleanupUtil {
 			System.out.println("Deleting Models...");
 			for (Model m : cli.listModels()) {
 				if (!"openai".equals(m.getOwnedBy()) && !"openai-internal".equals(m.getOwnedBy())
-						&& !"system".equals(m.getOwnedBy())
-				) // custom model
+						&& !"system".equals(m.getOwnedBy())) // custom model
 					System.out.println("Deleting fine tuned model: " + m.getId() + " => "
 							+ cli.deleteFineTunedModel(m.getId()).isDeleted());
 			}
@@ -86,8 +87,11 @@ public class CleanupUtil {
 			List<Assistant> l = DataList
 					.getCompleteList((last) -> cli.listAssistants(SortOrder.ASCENDING, null, null, last));
 			for (Assistant a : l) {
-				System.out.println(
-						"Deleting assistant: " + a.getId() + " => " + cli.deleteAssistant(a.getId()).isDeleted());
+				if ("true".equals(a.getMetadata().get("_persist")))
+					System.out.println("Assistant is persisted: " + a.getId());
+				else
+					System.out.println(
+							"Deleting assistant: " + a.getId() + " => " + cli.deleteAssistant(a.getId()).isDeleted());
 			}
 
 			// Delete uploaded files

@@ -16,16 +16,17 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
+import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
 
 public class OpenAiClientExample {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 
 		// Get API key from OS environment variable "OPENAI_API_KEY"
-		try (OpenAiClient client = new OpenAiClient()) {
+		try (OpenAiClient client = new DirectOpenAiClient()) {
 			
 			// Complete a sentence
 			// see https://platform.openai.com/docs/api-reference/completions

@@ -21,9 +21,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.TestConfiguration;
+import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
@@ -36,13 +38,14 @@ import io.github.mzattera.predictivepowers.services.messages.FinishReason;
  */
 public class HuggingFaceChatServiceTest {
 
-	/**
-	 * Check completions not affecting history.
-	 */
+	@DisplayName("Check completions not affecting history.")
 	@Test
 	public void test01() {
-		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
-			HuggingFaceChatService cs = ep.getChatService();
+
+		if (!TestConfiguration.TEST_HF_SERVICES)
+			return;
+
+		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint(); HuggingFaceChatService cs = ep.getChatService();) {
 
 			// Personality
 			String personality = "You are a smart and nice agent.";
@@ -60,14 +63,15 @@ public class HuggingFaceChatServiceTest {
 		} // Close endpoint
 	}
 
-	/**
-	 * Check chat and history management.
-	 */
+	@DisplayName("Check chat and history management.")
 	@Test
-	public void test02() {
-		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
-			HuggingFaceChatService cs = ep.getChatService();
+	public void testHistory() {
 
+		if (!TestConfiguration.TEST_HF_SERVICES)
+			return;
+
+		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint(); HuggingFaceChatService cs = ep.getChatService();) {
+			
 			// Personality, history length and conversation steps limits ////////////
 
 			// Personality
@@ -144,13 +148,16 @@ public class HuggingFaceChatServiceTest {
 		} // Close endpoint
 	}
 
-	/**
-	 * Getters and setters
-	 */
+@DisplayName("Getters and setters.")
 	@Test
-	public void test04() {
-		try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint()) {
-			HuggingFaceChatService s = ep.getChatService();
+	public void testGettersSetters() {
+	
+
+	if (!TestConfiguration.TEST_HF_SERVICES)
+		return;
+
+	try (HuggingFaceEndpoint ep = new HuggingFaceEndpoint(); HuggingFaceChatService s = ep.getChatService();) {
+
 			String m = s.getModel();
 			assertNotNull(m);
 			s.setModel("pippo");
@@ -180,5 +187,4 @@ public class HuggingFaceChatServiceTest {
 			s.setMaxNewTokens(15);
 		}
 	}
-
 }

@@ -5,9 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.github.mzattera.predictivepowers.openai.client.Metadata;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
 import io.github.mzattera.predictivepowers.openai.client.threads.Message.Role;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiFilePart;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
@@ -59,11 +59,13 @@ public class MessagesRequest extends Metadata {
 	 * Build a request to create given message.
 	 * 
 	 * @param msg A generic ChatMessage.
-	 * @return A request that can be used to add given message to the conversation thread.
+	 * @return A request that can be used to add given message to the conversation
+	 *         thread.
 	 * 
 	 * @throws IOException If the message contains files that cannnot be uploaded.
 	 */
-	public static @NonNull MessagesRequest getInstance(ChatMessage msg, OpenAiEndpoint endpoint) throws IOException {
+	public static @NonNull MessagesRequest getInstance(ChatMessage msg, OpenAiEndpoint endpoint)
+			throws IOException {
 
 		if (msg.getAuthor() != Author.USER)
 			throw new IllegalArgumentException("Only user messages are supported.");

@@ -25,8 +25,9 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
@@ -67,9 +68,12 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 		completionService.setModel(model);
 	}
 
-	public OpenAiQuestionExtractionService(OpenAiEndpoint ep) {
-		completionService = ep.getChatService();
-		completionService.setModel(DEFAULT_MODEL);
+	public OpenAiQuestionExtractionService(@NonNull OpenAiEndpoint endpoint) {
+		this(endpoint, DEFAULT_MODEL);
+	}
+
+	public OpenAiQuestionExtractionService(@NonNull OpenAiEndpoint endpoint, @NonNull String model) {
+		completionService = endpoint.getChatService(model);
 		completionService.setPersonality(null);
 		completionService.setTemperature(0.0); // TODO test best settings.
 //		completionService.getDefaultReq().setResponseFormat(ResponseFormat.JSON); // Adding this produces less results
@@ -373,7 +377,7 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 		} catch (JsonProcessingException e) {
 			// Sometimes we have a single value
 			try {
-				result = new QnAPair[] { OpenAiClient.getJsonMapper().readValue(json, QnAPair.class) };
+				result = new QnAPair[] { DirectOpenAiClient.getJsonMapper().readValue(json, QnAPair.class) };
 			} catch (JsonProcessingException e1) {
 				LOG.warn("Malformed JSON when parsing QnAPair[]", e);
 			}

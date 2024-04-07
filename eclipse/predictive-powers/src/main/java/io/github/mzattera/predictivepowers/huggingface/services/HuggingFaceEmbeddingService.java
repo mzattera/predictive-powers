@@ -18,9 +18,9 @@ package io.github.mzattera.predictivepowers.huggingface.services;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.Options;
-import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractEmbeddingService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.util.ChunkUtil;

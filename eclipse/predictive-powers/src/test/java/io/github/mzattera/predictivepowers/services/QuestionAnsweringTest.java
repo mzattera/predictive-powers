@@ -35,9 +35,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionAnsweringService;
 import io.github.mzattera.util.ResourceUtil;
 
@@ -50,7 +50,7 @@ public class QuestionAnsweringTest {
 
 	@BeforeAll
 	static void init() {
-		a = new AiEndpoint[] { new OpenAiEndpoint(), new HuggingFaceEndpoint() };
+		a = new AiEndpoint[] { new DirectOpenAiEndpoint(), new HuggingFaceEndpoint() };
 	}
 
 	@AfterAll
@@ -96,7 +96,7 @@ public class QuestionAnsweringTest {
 	 */
 	@Test
 	public void test02() {
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
+		try (DirectOpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
 			OpenAiQuestionAnsweringService qas = ep.getQuestionAnsweringService();
 
 			qas.setMaxContextTokens(1);
@@ -186,7 +186,7 @@ public class QuestionAnsweringTest {
 	 */
 	public static void main(String args[]) throws FileNotFoundException, IOException {
 
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
+		try (DirectOpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
 			EmbeddingService es = ep.getEmbeddingService();
 			KnowledgeBase kb = new KnowledgeBase();
 

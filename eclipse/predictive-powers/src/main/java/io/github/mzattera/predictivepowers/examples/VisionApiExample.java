@@ -16,30 +16,30 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.services.Agent;
+import io.github.mzattera.predictivepowers.AiEndpoint;
+import io.github.mzattera.predictivepowers.anthropic.client.AnthropicEndpoint;
+import io.github.mzattera.predictivepowers.services.ChatService;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
-import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
 
 public class VisionApiExample {
 
-	public static void main(String[] args) throws MalformedURLException, URISyntaxException {
+	public static void main(String[] args) throws Exception {
 
 		// Create agent using GPT vision model
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
-			Agent bot = endpoint.getChatService("gpt-4-vision-preview");
+//		try (OpenAiEndpoint endpoint = new DirectOpenAiEndpoint()) {
+//			Agent bot = endpoint.getChatService("gpt-4-vision-preview");
+			
+		// Create agent using Anthrop/c
+			try (AiEndpoint endpoint = new AnthropicEndpoint()) {
+				ChatService bot = endpoint.getChatService();
 
 			// Build the message to send
 			ChatMessage msg = new ChatMessage("Is there any grass in this image?");
 
 			// Include the image to inspect from an URL in the message
 			msg.getParts().add(FilePart.fromUrl(
-					"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
-					ContentType.IMAGE));
+					"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"));
 
 			// The below shows as you can do the same with a local file image
 //			 msg.getParts().add(

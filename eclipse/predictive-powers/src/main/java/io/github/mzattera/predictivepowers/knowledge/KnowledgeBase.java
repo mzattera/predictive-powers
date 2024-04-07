@@ -58,7 +58,7 @@ import lombok.NonNull;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-public class KnowledgeBase implements Serializable {
+public class KnowledgeBase implements Serializable, AutoCloseable {
 
 	private static final long serialVersionUID = 42424242L;
 
@@ -499,5 +499,9 @@ public class KnowledgeBase implements Serializable {
 		}
 
 		return result;
+	}
+
+	@Override
+	public void close() {
 	}
 }

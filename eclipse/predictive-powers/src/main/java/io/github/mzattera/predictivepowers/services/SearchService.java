@@ -32,6 +32,7 @@ public interface SearchService extends Service {
 	/**
 	 * Endpoint used for this service.
 	 */
+	@Override
 	SearchEndpoint getEndpoint();
 
 	/**

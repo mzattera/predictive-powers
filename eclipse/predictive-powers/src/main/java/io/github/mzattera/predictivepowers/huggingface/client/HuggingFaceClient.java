@@ -40,7 +40,10 @@ import io.github.mzattera.util.ImageUtil;
 import io.reactivex.Single;
 import lombok.Getter;
 import lombok.NonNull;
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.OkHttpClient.Builder;
+import okhttp3.Response;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -120,8 +123,7 @@ public class HuggingFaceClient implements ApiClient {
 	 */
 	public HuggingFaceClient(String apiKey, int readTimeout, int maxRetries, int keepAliveDuration,
 			int maxIdleConnections) {
-		this(ApiClient.getDefaultHttpClient((apiKey == null) ? getApiKey() : apiKey, readTimeout, maxRetries,
-				keepAliveDuration, maxIdleConnections));
+		this(ApiClient.getDefaultHttpClient(readTimeout, maxRetries, keepAliveDuration, maxIdleConnections));
 	}
 
 	/**
@@ -129,34 +131,83 @@ public class HuggingFaceClient implements ApiClient {
 	 * full customization {@link #getDefaultHttpClient(String, int, int, int)}
 	 */
 	public HuggingFaceClient(OkHttpClient http) {
+		this(null, http);
+	}
 
-		client = http;
-//		client = http.newBuilder().addInterceptor(new Interceptor() {
+	/**
+	 * Constructor. This client uses provided OkHttpClient for API calls, to allow
+	 * full customization {@link #getDefaultHttpClient(String, int, int, int)}
+	 */
+	public HuggingFaceClient(String apiKey, OkHttpClient http) {
+
+		Builder builder = http.newBuilder();
+
+		// Debug code below, outputs the request
+//		builder.addInterceptor(new Interceptor() {
+//
+//			@Override
+//			public Response intercept(Chain chain) throws IOException {
+//				Request req = chain.request();
+//
+//				if (req.body() != null) {
+//					Buffer buffer = new Buffer();
+//					req.body().writeTo(buffer);
+//					String in = buffer.readUtf8();
+//					String bodyContent = "";
+//					try {
+//						// In case body is not JSON
+//						bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
+//								.writeValueAsString(jsonMapper.readTree(in));
+//					} catch (Exception e) {
+//						bodyContent = in;
+//					}
+//					System.out.println("Request body: " + bodyContent);
+//				}
+//
+//				return chain.proceed(req);
+//			}
+//		}); //
+
+		// Debug code below, outputs the response
+//		builder.addInterceptor(new Interceptor() {
 //
 //			@Override
 //			public Response intercept(Chain chain) throws IOException {
 //
-//				try {
-//					System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-//					System.out.println(JSON_MAPPER.writerWithDefaultPrettyPrinter()
-//							.writeValueAsString(chain.request().toString()));
-//					System.out.println("--------------------------------");
-//				} catch (JsonProcessingException e) {
-//					e.printStackTrace();
+//				Response response = chain.proceed(chain.request());
+//				if (response.body() != null) {
+//					BufferedSource source = response.body().source();
+//					source.request(Long.MAX_VALUE);
+//
+//					@SuppressWarnings("deprecation")
+//					Buffer buffer = source.buffer();
+//
+//					String in = buffer.clone().readUtf8();
+//					String bodyContent = "";
+//					try {
+//						// In case body is not JSON
+//						bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
+//								.writeValueAsString(jsonMapper.readTree(in));
+//					} catch (Exception e) {
+//						bodyContent = in;
+//					}
+//					System.out.println("Response body: " + bodyContent);
 //				}
 //
-//				Response resp = chain.proceed(chain.request());
-//				try {
-//					System.out.println(
-//							JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(resp.body().string()));
-//					System.out.println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-//				} catch (JsonProcessingException e) {
-//					e.printStackTrace();
-//				}
-//
-//				return null;
+//				return response; // Return the original response unaltered
 //			}
-//		}).build();
+//		}); //
+
+		builder.addInterceptor(new Interceptor() { // Add API key in authorization header
+			@Override
+			public Response intercept(Chain chain) throws IOException {
+				return chain.proceed(chain.request().newBuilder() //
+						.header("Authorization", "Bearer " + ((apiKey == null) ? getApiKey() : apiKey)) //
+						.build());
+			}
+		}).build();
+
+		client = builder.build();
 
 		Retrofit retrofit = new Retrofit.Builder().baseUrl(API_BASE_URL).client(client)
 				.addConverterFactory(JacksonConverterFactory.create(jsonMapper))

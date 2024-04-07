@@ -94,7 +94,7 @@ Below is an example of the code output.
 ![Example of a conversation with GPT-3](./img/Chat.PNG)
 
 	
-## 2. - Usage
+## 2. - Concepts
 
 This section describes all of the library components bottom-up.
 
@@ -629,7 +629,7 @@ Below is an example of a conversation.
  Some examples about how to use a knowledge base can be found [below](#oracle).
   
 
-### Tokens, Tokenizers and Model Metadata
+### Tokens and Model Metadata
 
 Some services, namely those using OpenAI GPT models, have limits on number of tokens in input and output.
 
@@ -921,7 +921,7 @@ Question: What is Credit Suisse's aim through its strategic, cultural and operat
 ```
  
   
-### <a name="imgGen"></a>Image generation
+### <a name="imgGen"></a>Image Generation
 
 The below code generates two images using an `ImageGenerationService`;  notice how same code invokes DALL-E or Openjourney respectively.
 

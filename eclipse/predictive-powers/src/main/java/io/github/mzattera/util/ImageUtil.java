@@ -16,7 +16,6 @@
 
 package io.github.mzattera.util;
 
-import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -145,36 +144,5 @@ public final class ImageUtil {
 			ImageIO.write(image, ext, baos);
 			return baos.toByteArray();
 		}
-	}
-
-	/**
-	 * Scale down an image for OpenAI vision models.
-	 * 
-	 * As the image is scaled down anyway before being sumbitted to the model, it
-	 * makes sense to scale down local images before sending them to the API. THis
-	 * saves tokens and reduces latency (see
-	 * {@linkplain https://platform.openai.com/docs/guides/vision Managing Images}.
-	 * 
-	 * @return The same image if it is already scaled down, or its scaled down
-	 *         version.
-	 */
-	public static BufferedImage scaleDown(BufferedImage img) {
-		int w = img.getWidth();
-		int h = img.getHeight();
-		double scale1 = 2000d / Math.max(w, h);
-		double scale2 = 768d / Math.min(w, h);
-		double scale = Math.min(scale1, scale2);
-
-		if (scale < 1.0d) {
-			w *= scale;
-			h *= scale;
-			BufferedImage resizedImage = new BufferedImage(w, h, img.getType());
-			Graphics2D graphics2D = resizedImage.createGraphics();
-			graphics2D.drawImage(img, 0, 0, w, h, null);
-			graphics2D.dispose();
-			return resizedImage;
-		}
-
-		return img;
 	}
 }

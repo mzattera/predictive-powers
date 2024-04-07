@@ -26,9 +26,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.github.mzattera.predictivepowers.google.client.GoogleClient;
+import io.github.mzattera.predictivepowers.google.client.GoogleEndpoint;
 import io.github.mzattera.predictivepowers.google.client.Result;
 import io.github.mzattera.predictivepowers.google.client.Search;
-import io.github.mzattera.predictivepowers.google.endpoint.GoogleEndpoint;
 import io.github.mzattera.predictivepowers.services.Link;
 import io.github.mzattera.predictivepowers.services.SearchService;
 import lombok.Getter;

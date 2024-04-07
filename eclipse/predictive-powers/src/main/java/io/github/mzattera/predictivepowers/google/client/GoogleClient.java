@@ -132,7 +132,7 @@ public class GoogleClient implements ApiClient {
 	public GoogleClient(String engineId, String apiKey, int readTimeout, int maxRetries, int keepAliveDuration,
 			int maxIdleConnections) {
 		this((engineId == null) ? getEngineId() : engineId, (apiKey == null) ? getApiKey() : apiKey,
-				ApiClient.getDefaultHttpClient(null, readTimeout, maxRetries, keepAliveDuration, maxIdleConnections));
+				ApiClient.getDefaultHttpClient(readTimeout, maxRetries, keepAliveDuration, maxIdleConnections));
 	}
 
 	/**

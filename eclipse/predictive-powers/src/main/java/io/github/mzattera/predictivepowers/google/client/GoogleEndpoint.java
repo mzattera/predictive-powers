@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.google.endpoint;
+package io.github.mzattera.predictivepowers.google.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.github.mzattera.predictivepowers.SearchEndpoint;
-import io.github.mzattera.predictivepowers.google.client.GoogleClient;
 import io.github.mzattera.predictivepowers.google.services.GoogleSearchService;
 import lombok.Getter;
 import lombok.NonNull;

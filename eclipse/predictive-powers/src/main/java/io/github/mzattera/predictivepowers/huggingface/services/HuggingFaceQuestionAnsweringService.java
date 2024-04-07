@@ -20,9 +20,9 @@ import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.QuestionAnsweringRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.QuestionAnsweringResponse;
-import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;

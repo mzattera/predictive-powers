@@ -18,7 +18,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
-import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -33,7 +32,6 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @Getter
 @Setter
-@ToString
 public class FilePart implements MessagePart {
 
 	public static enum ContentType {
@@ -55,6 +53,16 @@ public class FilePart implements MessagePart {
 		}
 	}
 
+	/**
+	 * MIME type for the file contents.
+	 */
+	@NonNull
+	private String mimeType;
+
+	/**
+	 * Enumeration containing the generic MIME type of the file.
+	 */
+	@NonNull
 	private ContentType contentType;
 
 	/**
@@ -74,27 +82,27 @@ public class FilePart implements MessagePart {
 	 * @param file
 	 */
 	public FilePart(@NonNull File file) {
-		this(file, ContentType.fromMimeType(FileUtil.getMimeType(file)));
+		this(file, FileUtil.getMimeType(file));
 	}
 
-	public FilePart(@NonNull File file, ContentType contentType) {
+	public FilePart(@NonNull File file, String mimeType) {
 		if (!file.isFile() || !file.canRead())
 			throw new IllegalArgumentException("File must be a readable normal file: " + file.getName());
-		this.contentType = contentType;
+		this.mimeType = mimeType;
+		this.contentType = ContentType.fromMimeType(mimeType);
 		this.file = file;
 		this.url = null;
 	}
 
 	/**
 	 * Constructor. Notice the file is inspected to determine its content type.
-	 * GENERIC content type is assumed if the file cannot be read.
 	 */
 	public static FilePart fromFileName(@NonNull String fileName) {
 		return new FilePart(new File(fileName));
 	}
 
-	public static FilePart fromFileName(@NonNull String fileName, ContentType contentType) {
-		return new FilePart(new File(fileName), contentType);
+	public static FilePart fromFileName(@NonNull String fileName, String mimeType) {
+		return new FilePart(new File(fileName), mimeType);
 	}
 
 	/**
@@ -102,13 +110,14 @@ public class FilePart implements MessagePart {
 	 * content type. GENERIC content type is assumed if the content cannot be read.
 	 */
 	public FilePart(@NonNull URL url) {
-		this(url, ContentType.fromMimeType(FileUtil.getMimeType(url)));
+		this(url, FileUtil.getMimeType(url));
 	}
 
-	public FilePart(@NonNull URL url, ContentType contentType) {
-		this.contentType = contentType;
-		this.url = url;
+	public FilePart(@NonNull URL url, String mimeType) {
+		this.mimeType = mimeType;
+		this.contentType = ContentType.fromMimeType(mimeType);
 		this.file = null;
+		this.url = url;
 	}
 
 	/**
@@ -119,9 +128,9 @@ public class FilePart implements MessagePart {
 		return new FilePart((new URI(url)).toURL());
 	}
 
-	public static FilePart fromUrl(@NonNull String url, ContentType contentType)
+	public static FilePart fromUrl(@NonNull String url, String mimeType)
 			throws MalformedURLException, URISyntaxException {
-		return new FilePart((new URI(url)).toURL(), contentType);
+		return new FilePart((new URI(url)).toURL(), mimeType);
 	}
 
 	/**
@@ -173,13 +182,18 @@ public class FilePart implements MessagePart {
 	public String getContent() {
 		if (file != null) {
 			try {
-				return "[File: " + file.getCanonicalPath() + ", Content: " + contentType + "]";
+				return "[File: " + file.getCanonicalPath() + ", Content: " + mimeType + "]";
 			} catch (IOException e) {
-				return "[File: " + file.getName() + ", Content: " + contentType + "]";
+				return "[File: " + file.getName() + ", Content: " + mimeType + "]";
 			}
 		}
 		if (url != null)
-			return "[File URL: " + url.toString() + ", Content: " + contentType + "]";
+			return "[File URL: " + url.toString() + ", Content: " + mimeType + "]";
 		return "[File], Content: " + contentType + "]";
+	}
+
+	@Override
+	public String toString() {
+		return getContent();
 	}
 }

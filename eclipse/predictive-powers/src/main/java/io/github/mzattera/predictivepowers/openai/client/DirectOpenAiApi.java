@@ -64,7 +64,7 @@ import retrofit2.http.Query;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface OpenAiApi {
+public interface DirectOpenAiApi {
 
 	@GET("models")
 	Single<DataList<Model>> models();

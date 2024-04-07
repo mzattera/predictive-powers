@@ -21,9 +21,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.client.Options;
 import io.github.mzattera.predictivepowers.huggingface.client.SingleHuggingFaceRequest;
-import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.ImageGenerationService;
 import lombok.Getter;
 import lombok.NonNull;

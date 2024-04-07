@@ -17,8 +17,8 @@
 package io.github.mzattera.predictivepowers.examples;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 
 @SuppressWarnings("unused")
@@ -27,7 +27,7 @@ public class CompletionExample {
 	public static void main(String[] args) throws Exception {
 
 		// Uncomment the below to use OpenAI
-		AiEndpoint endpoint = new OpenAiEndpoint();
+		AiEndpoint endpoint = new DirectOpenAiEndpoint();
 
 		// Uncomment the below to use Hugging Face
 		// AiEndpoint endpoint = new HuggingFaceEndpoint();

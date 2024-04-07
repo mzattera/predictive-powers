@@ -21,8 +21,8 @@ import java.io.File;
 import java.io.IOException;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.ImageGenerationService;
 import io.github.mzattera.util.ImageUtil;
 
@@ -36,7 +36,7 @@ public class ImageGenerationExample {
 	public static void main(String[] args) throws Exception {
 
 		// DALL-E image generation
-		try (AiEndpoint endpoint = new OpenAiEndpoint();
+		try (AiEndpoint endpoint = new DirectOpenAiEndpoint();
 				ImageGenerationService svc = endpoint.getImageGenerationService();) {
 
 			// Generates image

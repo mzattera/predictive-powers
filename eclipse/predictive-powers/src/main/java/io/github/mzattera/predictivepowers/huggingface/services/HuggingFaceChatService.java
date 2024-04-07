@@ -18,10 +18,10 @@ package io.github.mzattera.predictivepowers.huggingface.services;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.client.Options;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.ConversationalRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.ConversationalResponse;
-import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractChatService;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
@@ -52,6 +52,7 @@ public class HuggingFaceChatService extends AbstractChatService {
 		this.endpoint = ep;
 		this.defaultReq = defaultReq;
 		this.modelService = endpoint.getModelService();
+		setMaxHistoryLength(100);
 	}
 
 	@NonNull
@@ -178,7 +179,7 @@ public class HuggingFaceChatService extends AbstractChatService {
 	public ChatCompletion chat(ChatMessage msg, ConversationalRequest req) {
 		if (!msg.isText())
 			throw new IllegalArgumentException("This service supports only pure text messages.");
-		
+
 		return chat(msg.getContent(), req);
 	}
 
@@ -210,8 +211,8 @@ public class HuggingFaceChatService extends AbstractChatService {
 	 */
 	public ChatCompletion complete(ChatMessage prompt, ConversationalRequest req) {
 		if (!prompt.isText())
-			throw new IllegalArgumentException("THis service supports only pure text messages.");
-		
+			throw new IllegalArgumentException("This service supports only pure text messages.");
+
 		return complete(prompt.getContent(), req);
 	}
 
@@ -233,7 +234,7 @@ public class HuggingFaceChatService extends AbstractChatService {
 		req.getInputs().setGeneratedResponses(history[1]);
 		req.getInputs().setText(msg);
 
-		ConversationalResponse resp = endpoint.getClient().conversational(getModel(), req);
+		ConversationalResponse resp = endpoint.getClient().conversational(model, req);
 
 		return new ChatCompletion(FinishReason.COMPLETED, new ChatMessage(Author.BOT, resp.getGeneratedText()));
 	}
@@ -257,10 +258,11 @@ public class HuggingFaceChatService extends AbstractChatService {
 	 *         limitations set in this instance.
 	 */
 	private List<String>[] trimConversation(String msg, List<String> userHistory, List<String> botHistory) {
-		
-		// In some cases, we do not get the proper tokenizer, therefore we fall back to counting chars
+
+		// In some cases, we do not get the proper tokenizer, therefore we fall back to
+		// counting chars
 		Tokenizer counter = modelService.getTokenizer(model, CharTokenizer.getInstance());
-		
+
 		int tok = counter.count(msg);
 		if (tok > getMaxConversationTokens())
 			throw new IllegalArgumentException("Last message size is " + tok
@@ -284,7 +286,6 @@ public class HuggingFaceChatService extends AbstractChatService {
 		if (steps == 0) {
 			result[0] = new ArrayList<>();
 			result[1] = new ArrayList<>();
-
 		} else if (steps < userHistory.size()) {
 			result[0] = new ArrayList<>(userHistory.subList(userHistory.size() - steps, userHistory.size()));
 			result[1] = new ArrayList<>(botHistory.subList(botHistory.size() - steps, botHistory.size()));

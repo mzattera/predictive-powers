@@ -17,9 +17,9 @@
 package io.github.mzattera.predictivepowers.examples;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiClient;
+import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 
 public class AiEndpointExample {
 
@@ -35,14 +35,14 @@ public class AiEndpointExample {
 		// Creates a OpenAiEndpoint
 		
 		// Get API key from OS environment variable "OPENAI_API_KEY"
-		endpoint = new OpenAiEndpoint();
+		endpoint = new DirectOpenAiEndpoint();
 
 		// Pass API key explicitly (NOT the best practice)
-		endpoint = new OpenAiEndpoint("sk-H0a...Yo1");
+		endpoint = new DirectOpenAiEndpoint("sk-H0a...Yo1");
 
 		// Build endpoint from an existing API client
 		// The client is created reading API key from OS environment
-		OpenAiClient cli = new OpenAiClient();
-		endpoint = new OpenAiEndpoint(cli);		
+		DirectOpenAiClient cli = new DirectOpenAiClient();
+		endpoint = new DirectOpenAiEndpoint(cli);		
 	}
 }

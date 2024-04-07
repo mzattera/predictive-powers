@@ -24,10 +24,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import java.util.List;
+import java.util.stream.Stream;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.TestConfiguration;
+import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
@@ -37,7 +48,6 @@ import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
-import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import io.github.mzattera.util.ResourceUtil;
@@ -52,13 +62,30 @@ public class OpenAiChatServiceTest {
 
 	// TODO add tests to check all the methods to manipulate tools
 
-	/**
-	 * Check completions not affecting history.
-	 */
-	@Test
-	public void test01() {
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			OpenAiChatService cs = ep.getChatService();
+	private static List<ImmutablePair<OpenAiEndpoint, String>> svcs;
+
+	@BeforeAll
+	static void init() {
+		svcs = TestConfiguration.getChatServices().stream() //
+				.filter(p -> p.getLeft() instanceof OpenAiEndpoint) //
+				.map(p -> new ImmutablePair<OpenAiEndpoint, String>((OpenAiEndpoint) p.getLeft(), p.getRight())) //
+				.toList();
+	}
+
+	@AfterAll
+	static void tearDown() {
+		TestConfiguration.close(svcs.stream().map(p -> p.getLeft()).toList());
+	}
+
+	static Stream<ImmutablePair<OpenAiEndpoint, String>> services() {
+		return svcs.stream();
+	}
+
+	@DisplayName("Check completions not affecting history.")
+	@ParameterizedTest
+	@MethodSource("services")
+	public void test01(Pair<OpenAiEndpoint, String> p) throws Exception {
+		try (OpenAiChatService cs = p.getLeft().getChatService(p.getRight())) {
 			assertEquals(0, cs.getModifiableHistory().size());
 
 			// Personality
@@ -77,18 +104,16 @@ public class OpenAiChatServiceTest {
 			assertEquals(cs.getDefaultReq().getMessages().get(1).getRole(), Role.USER);
 			assertEquals(cs.getDefaultReq().getMessages().get(1).getContent(), question);
 			assertEquals(cs.getDefaultReq().getMaxTokens(), null);
-		} // Close endpoint
+		}
 	}
 
-	/**
-	 * Check chat and history management.
-	 */
-	@Test
-	public void test02() {
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			OpenAiChatService cs = ep.getChatService();
-			OpenAiModelService modelService = ep.getModelService();
-			String model = cs.getModel();
+	@DisplayName("Check chat and history management.")
+	@ParameterizedTest
+	@MethodSource("services")
+	public void test02(Pair<OpenAiEndpoint, String> p) throws Exception {
+		OpenAiEndpoint ep = p.getLeft();
+		String model = p.getRight();
+		try (OpenAiChatService cs = ep.getChatService(model); OpenAiModelService modelService = ep.getModelService();) {
 
 			// Personality, history length and conversation steps limits ////////////
 
@@ -224,13 +249,13 @@ public class OpenAiChatServiceTest {
 		} // Close endpoint
 	}
 
-	/**
-	 * Check chat and history management with exception.
-	 */
-	@Test
-	public void test03() {
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			OpenAiChatService cs = ep.getChatService();
+	@DisplayName("Check chat and history management with exception.")
+	@ParameterizedTest
+	@MethodSource("services")
+	public void test03(Pair<OpenAiEndpoint, String> p) throws Exception {
+		OpenAiEndpoint ep = p.getLeft();
+		String model = p.getRight();
+		try (OpenAiChatService cs = ep.getChatService(model)) {
 
 			// Personality, history length and conversation steps limits ////////////
 
@@ -255,15 +280,13 @@ public class OpenAiChatServiceTest {
 
 			// If chat fails, history is not changed
 			assertEquals(10, cs.getModifiableHistory().size());
-		} // Close endpoint
+		}
 	}
 
-	/**
-	 * Getters and setters
-	 */
+	@DisplayName("Getters and setters.")
 	@Test
 	public void testGettersAndSetters() {
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
+		try (OpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
 			OpenAiChatService s = ep.getChatService();
 			String m = s.getModel();
 			assertNotNull(m);
@@ -295,22 +318,21 @@ public class OpenAiChatServiceTest {
 		}
 	}
 
-	/**
-	 * Test image URLs in messages.
-	 * 
-	 * @throws URISyntaxException
-	 * @throws MalformedURLException
-	 */
+	@DisplayName("Test image URLs in messages.")
 	@Test
 	void testImgUrls() throws MalformedURLException, URISyntaxException {
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
-			OpenAiChatService svc = endpoint.getChatService();
+
+		// TODO test with Azure as well
+		if (!TestConfiguration.TEST_DIRECT_OPENAI_SERVICES)
+			return;
+
+		try (OpenAiEndpoint endpoint = new DirectOpenAiEndpoint(); OpenAiChatService svc = endpoint.getChatService();) {
 			svc.setModel("gpt-4-vision-preview");
 
 			ChatMessage msg = new ChatMessage(Author.USER, "Is there any grass in this image?");
 			msg.getParts().add(FilePart.fromUrl(
 					"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
-					ContentType.IMAGE));
+					"image/jpeg"));
 			ChatCompletion resp = svc.chat(msg);
 			System.out.println(resp.getText());
 			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
@@ -318,21 +340,20 @@ public class OpenAiChatServiceTest {
 		} // Close endpoint
 	}
 
-	/**
-	 * Test image URLs in messages.
-	 * 
-	 * @throws URISyntaxException
-	 * @throws MalformedURLException
-	 */
+	@DisplayName("Test image URLs in messages.")
 	@Test
-	void testImgFile() throws MalformedURLException, URISyntaxException {
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
-			OpenAiChatService svc = endpoint.getChatService();
+	void testImgFiles() throws MalformedURLException, URISyntaxException {
+
+		if (!TestConfiguration.TEST_DIRECT_OPENAI_SERVICES)
+			return;
+
+		try (OpenAiEndpoint endpoint = new DirectOpenAiEndpoint(); //
+				OpenAiChatService svc = endpoint.getChatService();) {
 			svc.setModel("gpt-4-vision-preview");
 
 			ChatMessage msg = new ChatMessage(Author.USER, "Is there any grass in this image?");
 			msg.getParts().add(new FilePart(
-					ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk.jpg"), ContentType.IMAGE));
+					ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk.jpg"), "image/jpeg"));
 			ChatCompletion resp = svc.chat(msg);
 			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
 			assertTrue(resp.getText().toUpperCase().contains("YES"));
@@ -347,10 +368,10 @@ public class OpenAiChatServiceTest {
 	 */
 	@Test
 	void testCallResultsOnTop() throws ToolInitializationException {
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
-			OpenAiModelService modelSvc = endpoint.getModelService();
+		try (DirectOpenAiEndpoint endpoint = new DirectOpenAiEndpoint();
+				OpenAiChatService svc = endpoint.getChatService();
+				OpenAiModelService modelSvc = endpoint.getModelService();) {
 
-			OpenAiChatService svc = endpoint.getChatService();
 			Toolset tools = new Toolset();
 			tools.putTool("aTool", FunctionCallTest.GetCurrentWeatherTool.class);
 			svc.addCapability(tools);
@@ -388,6 +409,6 @@ public class OpenAiChatServiceTest {
 
 			resp = svc.chat("Hi");
 			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
-		} // Close endpoint
+		}
 	}
 }

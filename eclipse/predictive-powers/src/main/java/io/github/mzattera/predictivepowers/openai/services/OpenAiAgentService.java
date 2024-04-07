@@ -9,10 +9,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import io.github.mzattera.predictivepowers.openai.client.DataList;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.SortOrder;
 import io.github.mzattera.predictivepowers.openai.client.assistants.Assistant;
 import io.github.mzattera.predictivepowers.openai.client.assistants.AssistantsRequest;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.AgentService;
 import lombok.Getter;
@@ -26,10 +26,12 @@ public class OpenAiAgentService implements AgentService {
 
 	public static final String DEFAULT_MODEL = "gpt-4-turbo-preview";
 
+	@NonNull
 	@Getter
 	private final OpenAiEndpoint endpoint;
 
 	// Model used by default when creating a new agent.
+	@NonNull
 	@Getter
 	@Setter
 	private String model = DEFAULT_MODEL;
@@ -117,8 +119,13 @@ public class OpenAiAgentService implements AgentService {
 		return endpoint.getClient().deleteAssistant(agentId).isDeleted();
 	}
 
-	public OpenAiAgentService(OpenAiEndpoint endpoint) {
+	public OpenAiAgentService(@NonNull OpenAiEndpoint endpoint) {
+		this(endpoint, DEFAULT_MODEL);
+	}
+
+	public OpenAiAgentService(@NonNull OpenAiEndpoint endpoint, @NonNull String model) {
 		this.endpoint = endpoint;
+		this.model = model;
 	}
 
 	@Override

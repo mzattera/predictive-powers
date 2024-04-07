@@ -17,11 +17,11 @@ package io.github.mzattera.predictivepowers.huggingface.services;
 
 import java.util.Map;
 
+import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.client.Options;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationRequest.Parameters;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationResponse;
-import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.TextCompletion;

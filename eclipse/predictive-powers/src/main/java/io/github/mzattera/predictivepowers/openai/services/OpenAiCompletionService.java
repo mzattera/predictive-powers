@@ -20,11 +20,12 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.github.mzattera.predictivepowers.openai.client.AzureOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiException;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsChoice;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 import io.github.mzattera.predictivepowers.services.ModelService;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
@@ -32,7 +33,6 @@ import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.TextCompletion;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
 /**
  * This class does completions (prompt execution).
@@ -40,19 +40,25 @@ import lombok.RequiredArgsConstructor;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@RequiredArgsConstructor
 public class OpenAiCompletionService implements CompletionService {
 
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiCompletionService.class);
 
 	public static final String DEFAULT_MODEL = "davinci-002";
 
-	public OpenAiCompletionService(OpenAiEndpoint ep) {
-		this(ep, CompletionsRequest.builder().model(DEFAULT_MODEL).echo(false).n(1).build());
+	public OpenAiCompletionService(@NonNull OpenAiEndpoint ep) {
+		this(ep, DEFAULT_MODEL);
+	}
+
+	public OpenAiCompletionService(@NonNull OpenAiEndpoint ep, @NonNull String model) {
+		this(ep, CompletionsRequest.builder().model(model).echo(false).n(1).build());
 	}
 
 	public OpenAiCompletionService(OpenAiEndpoint ep, CompletionsRequest defaultReq) {
-		this(ep, ep.getModelService(), defaultReq);
+		this.endpoint = ep;
+		this.modelService = ep.getModelService();
+		this.defaultReq = defaultReq;
+		register();
 	}
 
 	@NonNull
@@ -61,6 +67,22 @@ public class OpenAiCompletionService implements CompletionService {
 
 	@NonNull
 	private final ModelService modelService;
+
+	/**
+	 * Register the deploy ID if we are running in MS Azure See
+	 * {@link AzureOpenAiModelService}.
+	 */
+	private void register() {
+		if (endpoint instanceof AzureOpenAiEndpoint) {
+			String model = getModel();
+			if (modelService.get(model) == null) {
+				// Do a "fake" call to read base model ID (see AzureOpenAiModelService JavaDoc).
+				CompletionsRequest req = CompletionsRequest.builder().model(model).prompt("x").maxTokens(1).build();
+				CompletionsResponse resp = endpoint.getClient().createCompletion(req);
+				((AzureOpenAiModelService) modelService).map(model, resp.getModel());
+			}
+		}
+	}
 
 	/**
 	 * This request, with its parameters, is used as default setting for each call.
@@ -83,6 +105,7 @@ public class OpenAiCompletionService implements CompletionService {
 	@Override
 	public void setModel(@NonNull String model) {
 		defaultReq.setModel(model);
+		register();
 	}
 
 	@Override
@@ -218,7 +241,7 @@ public class OpenAiCompletionService implements CompletionService {
 			}
 
 			CompletionsChoice choice = resp.getChoices().get(0);
-			return new TextCompletion(choice.getText(), FinishReason.fromGptApi(choice.getFinishReason()));
+			return new TextCompletion(choice.getText(), FinishReason.fromOpenAiApi(choice.getFinishReason()));
 
 		} finally {
 

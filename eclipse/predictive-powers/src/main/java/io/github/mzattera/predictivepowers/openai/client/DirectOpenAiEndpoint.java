@@ -14,60 +14,56 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.openai.endpoint;
+package io.github.mzattera.predictivepowers.openai.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
-import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
-import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
-import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
+import io.github.mzattera.predictivepowers.openai.services.DirectOpenAiModelService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiAgentService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiImageGenerationService;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionExtractionService;
 import lombok.Getter;
 import lombok.NonNull;
 
 /**
- * This represents an OpenAI endpoint, from which services can be created.
+ * This represents an OpenAI API endpoint, from which services can be created.
  * 
  * This class is thread-safe.
  * 
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-public class OpenAiEndpoint implements AiEndpoint {
+public class DirectOpenAiEndpoint implements OpenAiEndpoint {
 
-	// TODO add client/endpoint for Azure OpenAI Services
-	// TODO always ensure it returns OpenAI specific services
-
-	private final static Logger LOG = LoggerFactory.getLogger(OpenAiEndpoint.class);
+	private final static Logger LOG = LoggerFactory.getLogger(DirectOpenAiEndpoint.class);
 
 	@Getter
-	private final OpenAiClient client;
+	private final DirectOpenAiClient client;
 
-	public OpenAiEndpoint() {
-		this(new OpenAiClient());
+	public DirectOpenAiEndpoint() {
+		this(new DirectOpenAiClient());
 	}
 
-	public OpenAiEndpoint(String apiKey) {
-		this(new OpenAiClient(apiKey));
+	public DirectOpenAiEndpoint(String apiKey) {
+		this(new DirectOpenAiClient(apiKey));
 	}
 
-	public OpenAiEndpoint(@NonNull OpenAiClient client) {
+	public DirectOpenAiEndpoint(@NonNull DirectOpenAiClient client) {
 		this.client = client;
 	}
 
+	// Mode service is state-less, we do not need to create a new model service each
+	// time.
+	private final DirectOpenAiModelService modelService = new DirectOpenAiModelService(this);
+
 	@Override
-	public OpenAiModelService getModelService() {
-		return new OpenAiModelService(this);
+	public DirectOpenAiModelService getModelService() {
+		return modelService;
 	}
 
 	@Override
@@ -77,14 +73,7 @@ public class OpenAiEndpoint implements AiEndpoint {
 
 	@Override
 	public OpenAiCompletionService getCompletionService(@NonNull String model) {
-
-		OpenAiCompletionService svc = getCompletionService();
-		svc.setModel(model);
-		return svc;
-	}
-
-	public OpenAiCompletionService getCompletionService(CompletionsRequest defaultReq) {
-		return new OpenAiCompletionService(this, defaultReq);
+		return new OpenAiCompletionService(this, model);
 	}
 
 	@Override
@@ -94,14 +83,7 @@ public class OpenAiEndpoint implements AiEndpoint {
 
 	@Override
 	public OpenAiEmbeddingService getEmbeddingService(@NonNull String model) {
-
-		OpenAiEmbeddingService svc = getEmbeddingService();
-		svc.setModel(model);
-		return svc;
-	}
-
-	public OpenAiEmbeddingService getEmbeddingService(@NonNull EmbeddingsRequest defaultReq) {
-		return new OpenAiEmbeddingService(this, defaultReq);
+		return new OpenAiEmbeddingService(this, model);
 	}
 
 	@Override
@@ -111,20 +93,7 @@ public class OpenAiEndpoint implements AiEndpoint {
 
 	@Override
 	public OpenAiChatService getChatService(@NonNull String model) {
-
-		OpenAiChatService svc = getChatService();
-		svc.setModel(model);
-		return svc;
-	}
-
-	public OpenAiChatService getChatService(ChatCompletionsRequest defaultReq) {
-		return new OpenAiChatService(this, defaultReq);
-	}
-
-	public OpenAiChatService getChatService(ChatCompletionsRequest defaultReq, String personality) {
-		OpenAiChatService s = getChatService(defaultReq);
-		s.setPersonality(personality);
-		return s;
+		return new OpenAiChatService(this, model);
 	}
 
 	@Override
@@ -134,9 +103,7 @@ public class OpenAiEndpoint implements AiEndpoint {
 
 	@Override
 	public OpenAiQuestionExtractionService getQuestionExtractionService(@NonNull String model) {
-		OpenAiQuestionExtractionService svc = getQuestionExtractionService();
-		svc.setModel(model);
-		return svc;
+		return new OpenAiQuestionExtractionService(this, model);
 	}
 
 	@Override
@@ -146,9 +113,7 @@ public class OpenAiEndpoint implements AiEndpoint {
 
 	@Override
 	public OpenAiQuestionAnsweringService getQuestionAnsweringService(@NonNull String model) {
-		OpenAiQuestionAnsweringService svc = getQuestionAnsweringService();
-		svc.setModel(model);
-		return svc;
+		return new OpenAiQuestionAnsweringService(this, model);
 	}
 
 	@Override
@@ -158,9 +123,7 @@ public class OpenAiEndpoint implements AiEndpoint {
 
 	@Override
 	public OpenAiImageGenerationService getImageGenerationService(@NonNull String model) {
-		OpenAiImageGenerationService svc = getImageGenerationService();
-		svc.setModel(model);
-		return svc;
+		return new OpenAiImageGenerationService(this, model);
 	}
 
 	@Override
@@ -170,10 +133,7 @@ public class OpenAiEndpoint implements AiEndpoint {
 
 	@Override
 	public OpenAiAgentService getAgentService(@NonNull String model) {
-
-		OpenAiAgentService svc = getAgentService();
-		svc.setModel(model);
-		return svc;
+		return new OpenAiAgentService(this, model);
 	}
 
 	@Override

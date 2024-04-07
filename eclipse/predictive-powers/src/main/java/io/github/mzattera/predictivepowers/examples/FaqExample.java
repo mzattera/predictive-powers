@@ -18,7 +18,8 @@ package io.github.mzattera.predictivepowers.examples;
 
 import java.util.List;
 
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionExtractionService;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.util.ChunkUtil;
@@ -29,7 +30,7 @@ public class FaqExample {
 	public static void main(String[] args) throws Exception {
 
 		// Our query generation service
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
+		try (OpenAiEndpoint endpoint = new DirectOpenAiEndpoint();
 				OpenAiQuestionExtractionService q = endpoint.getQuestionExtractionService();) {
 
 			// Download Credit Suisse financial statement 2022 PDF and extract its text

@@ -27,9 +27,12 @@ import java.util.Collection;
 import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.TestConfiguration;
+import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.util.ResourceUtil;
@@ -42,14 +45,16 @@ import io.github.mzattera.util.ResourceUtil;
  */
 public class KnowledgeBaseTest {
 
-	/**
-	 * Insert some strings in the KB and checks search finds them.
-	 */
+	@DisplayName("Insert some strings in the KB and checks search finds them.")
 	@Test
-	public void test01() {
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			OpenAiEmbeddingService es = ep.getEmbeddingService();
-			KnowledgeBase kb = new KnowledgeBase();
+	public void testSearch() {
+
+		if (!TestConfiguration.TEST_KNOWLEDGE_BASE)
+			return;
+
+		try (OpenAiEndpoint ep = new DirectOpenAiEndpoint();
+				OpenAiEmbeddingService es = ep.getEmbeddingService();
+				KnowledgeBase kb = new KnowledgeBase();) {
 
 			// Do not use saved version here, as we still want to test embedding size.
 			List<String> test = new ArrayList<>();
@@ -109,7 +114,7 @@ public class KnowledgeBaseTest {
 			List<String> domains = kb.listDomains();
 			assertEquals(1, domains.size());
 			assertEquals(KnowledgeBase.DEFAULT_DOMAIN, domains.get(0));
-		} // Close endpoint
+		}
 	}
 
 	private static class IndexMatcher implements EmbeddedTextMatcher {
@@ -126,45 +131,48 @@ public class KnowledgeBaseTest {
 		}
 	}
 
-	/**
-	 * Matcher tests.
-	 * 
-	 * @throws IOException
-	 * @throws ClassNotFoundException
-	 */
+	@DisplayName("Matcher tests.")
 	@Test
-	public void test02() throws ClassNotFoundException, IOException {
-		KnowledgeBase kb = KnowledgeBase.load(ResourceUtil.getResourceFile("kb.object"));
+	public void testMatcher() throws ClassNotFoundException, IOException {
 
-		for (int i = 0; i < savedText.size(); ++i) {
-			EmbeddedTextMatcher m = new IndexMatcher(i);
-			List<EmbeddedText> rs = kb.query(m);
-			assertEquals(1, rs.size());
-			assertEquals(savedText.get(i), rs.get(0).getText());
-		}
+		if (!TestConfiguration.TEST_KNOWLEDGE_BASE)
+			return;
 
-		for (int i = 0; i < savedText.size(); ++i) {
-			EmbeddedTextMatcher m = new IndexMatcher(i);
-			List<EmbeddedText> rs = kb.query("test", m);
-			assertEquals(1, rs.size());
-			assertEquals(savedText.get(i), rs.get(0).getText());
-		}
+		try (KnowledgeBase kb = KnowledgeBase.load(ResourceUtil.getResourceFile("kb.object"))) {
 
-		for (int i = 0; i < savedText.size(); ++i) {
-			EmbeddedTextMatcher m = new IndexMatcher(i);
-			List<EmbeddedText> rs = kb.query(KnowledgeBase.DEFAULT_DOMAIN, m);
-			assertEquals(0, rs.size());
+			for (int i = 0; i < savedText.size(); ++i) {
+				EmbeddedTextMatcher m = new IndexMatcher(i);
+				List<EmbeddedText> rs = kb.query(m);
+				assertEquals(1, rs.size());
+				assertEquals(savedText.get(i), rs.get(0).getText());
+			}
+
+			for (int i = 0; i < savedText.size(); ++i) {
+				EmbeddedTextMatcher m = new IndexMatcher(i);
+				List<EmbeddedText> rs = kb.query("test", m);
+				assertEquals(1, rs.size());
+				assertEquals(savedText.get(i), rs.get(0).getText());
+			}
+
+			for (int i = 0; i < savedText.size(); ++i) {
+				EmbeddedTextMatcher m = new IndexMatcher(i);
+				List<EmbeddedText> rs = kb.query(KnowledgeBase.DEFAULT_DOMAIN, m);
+				assertEquals(0, rs.size());
+			}
 		}
 	}
 
-	/**
-	 * Test using text instead of embeddings.
-	 */
+	@DisplayName("Test using text instead of embeddings.")
 	@Test
 	public void test03() {
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			OpenAiEmbeddingService es = ep.getEmbeddingService();
-			KnowledgeBase kb = new KnowledgeBase();
+
+		if (!TestConfiguration.TEST_KNOWLEDGE_BASE)
+			return;
+
+		try (OpenAiEndpoint ep = new DirectOpenAiEndpoint();
+				OpenAiEmbeddingService es = ep.getEmbeddingService();
+				KnowledgeBase kb = new KnowledgeBase();) {
+
 			kb.createDomain("test");
 			kb.createDomain("other");
 
@@ -210,14 +218,16 @@ public class KnowledgeBaseTest {
 		}
 	}
 
-	/**
-	 * Test null parameters.
-	 */
+	@DisplayName("Test null parameters.")
 	@Test
-	public void test04() {
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			OpenAiEmbeddingService es = ep.getEmbeddingService();
-			KnowledgeBase kb = new KnowledgeBase();
+	public void testNullParameters() {
+
+		if (!TestConfiguration.TEST_KNOWLEDGE_BASE)
+			return;
+
+		try (OpenAiEndpoint ep = new DirectOpenAiEndpoint();
+				OpenAiEmbeddingService es = ep.getEmbeddingService();
+				KnowledgeBase kb = new KnowledgeBase();) {
 
 			List<EmbeddedText> resp = es.embed(savedText.get(0));
 
@@ -255,9 +265,11 @@ public class KnowledgeBaseTest {
 	 * @throws FileNotFoundException
 	 */
 	public static void main(String args[]) throws FileNotFoundException, IOException {
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			OpenAiEmbeddingService es = ep.getEmbeddingService();
-			KnowledgeBase kb = new KnowledgeBase();
+		
+		try (OpenAiEndpoint ep = new DirectOpenAiEndpoint();
+				OpenAiEmbeddingService es = ep.getEmbeddingService();
+				KnowledgeBase kb = new KnowledgeBase();) {
+			
 			kb.createDomain("test");
 
 			for (int i = 0; i < savedText.size(); ++i) {

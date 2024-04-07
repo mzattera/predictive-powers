@@ -16,6 +16,8 @@
 
 package io.github.mzattera.predictivepowers.services;
 
+import io.github.mzattera.predictivepowers.Endpoint;
+
 /**
  * Marker interface for services.
  * 
@@ -23,4 +25,6 @@ package io.github.mzattera.predictivepowers.services;
  *
  */
 public interface Service extends AutoCloseable {
+	
+	Endpoint getEndpoint();
 }

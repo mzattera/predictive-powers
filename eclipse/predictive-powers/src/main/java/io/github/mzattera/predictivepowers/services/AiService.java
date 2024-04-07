@@ -30,8 +30,9 @@ public interface AiService extends Service {
 	/**
 	 * Endpoint used for this service.
 	 */
+	@Override
 	AiEndpoint getEndpoint();
-	
+
 	/**
 	 * Model used for this service.
 	 */

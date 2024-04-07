@@ -45,7 +45,7 @@ public class ChatExample {
 
 	public static void main(String[] args) throws Exception {
 
-		// Get chat service and set its personality
+		// Get agent and set its personality
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
 				Agent agent = endpoint.getChatService();) {
 			

@@ -322,12 +322,6 @@ public class OpenAiTokenizer implements Tokenizer {
 	 * @return Number of tokens used to encode given request.
 	 */
 	public int count(ChatCompletionsRequest req) {
-
-//		System.out.println(OpenAiClient.getJsonMapper().writerWithDefaultPrettyPrinter().writeValueAsString(req));
-
-		if (!model.equals(req.getModel()))
-			throw new IllegalArgumentException("Model mismatch");
-
 		int sum = count(req.getMessages());
 		sum += countFunctions(req.getFunctions());
 		sum += countTools(req.getTools());

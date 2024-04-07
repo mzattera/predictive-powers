@@ -23,21 +23,22 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.TestConfiguration;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceCompletionService;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
@@ -48,150 +49,140 @@ import io.github.mzattera.predictivepowers.services.messages.TextCompletion;
  */
 public class CompletionServiceTest {
 
-	private static AiEndpoint[] a;
+	private static List<Pair<AiEndpoint, String>> svcs;
 
 	@BeforeAll
 	static void init() {
-		a = new AiEndpoint[] { new OpenAiEndpoint(), new HuggingFaceEndpoint() };
+		svcs = TestConfiguration.getCompletionServices();
 	}
 
 	@AfterAll
 	static void tearDown() {
-		for (AiEndpoint ep : a)
-			try {
-				ep.close();
-			} catch (Exception e) {
-			}
+		TestConfiguration.close(svcs.stream().map(p -> p.getLeft()).toList());
 	}
 
-	/** @return List of endpoints which services must be tested. */
-	static Stream<AiEndpoint> endpoints() {
-		return Arrays.stream(a);
+	static Stream<Pair<AiEndpoint, String>> services() {
+		return svcs.stream();
 	}
 
-	/**
-	 * Basic completion.
-	 */
+	@DisplayName("Basic completion.")
 	@ParameterizedTest
-	@MethodSource("endpoints")
-	void test01(AiEndpoint ep) {
-		CompletionService s = ep.getCompletionService();
-		TextCompletion resp = s.complete("Name a mammal.");
-		assertTrue(resp.getStatus() == FinishReason.COMPLETED);
-
-		s.setMaxNewTokens(1);
-		resp = s.complete("Name a mammal.");
-		if (s instanceof OpenAiCompletionService) {
-			assertTrue(resp.getStatus() == FinishReason.TRUNCATED);
-		} else {
+	@MethodSource("services")
+	void test01(Pair<AiEndpoint, String> p) throws Exception {
+		try (CompletionService s = p.getLeft().getCompletionService(p.getRight())) {
+			TextCompletion resp = s.complete("Name a mammal.");
 			assertTrue(resp.getStatus() == FinishReason.COMPLETED);
+
+			s.setMaxNewTokens(1);
+			resp = s.complete("Name a mammal.");
+			if (s instanceof HuggingFaceCompletionService)
+				assertTrue(resp.getStatus() == FinishReason.COMPLETED);
+			else
+				assertTrue(resp.getStatus() == FinishReason.TRUNCATED);
 		}
 	}
 
-	/**
-	 * Getters and setters
-	 */
+	@DisplayName("Getters and setters.")
 	@ParameterizedTest
-	@MethodSource("endpoints")
-	void test02(AiEndpoint ep) {
-		CompletionService s = ep.getCompletionService();
-		String m = s.getModel();
-		assertNotNull(m);
-		s.setModel("pippo");
-		assertEquals("pippo", s.getModel());
-		s.setModel(m);
+	@MethodSource("services")
+	void test02(Pair<AiEndpoint, String> p) throws Exception {
+		try (CompletionService s = p.getLeft().getCompletionService(p.getRight())) {
+			String m = s.getModel();
+			assertNotNull(m);
+			s.setModel("pippo");
+			assertEquals("pippo", s.getModel());
+			s.setModel(m);
 
-		if (s instanceof OpenAiCompletionService) {
-			assertNull(s.getTopK());
-			s.setTopK(null);
-			assertNull(s.getTopK());
-			assertThrows(UnsupportedOperationException.class, () -> s.setTopK(1));
-		} else {
-			s.setTopK(1);
-			assertEquals(1, s.getTopK());
-			s.setTopK(null);
-			assertNull(s.getTopK());
-		}
+			if (s instanceof OpenAiCompletionService) {
+				assertNull(s.getTopK());
+				s.setTopK(null);
+				assertNull(s.getTopK());
+				assertThrows(UnsupportedOperationException.class, () -> s.setTopK(1));
+			} else {
+				s.setTopK(1);
+				assertEquals(1, s.getTopK());
+				s.setTopK(null);
+				assertNull(s.getTopK());
+			}
 
-		s.setTopP(2.0);
-		assertEquals(2.0, s.getTopP());
-		s.setTopP(null);
-		assertNull(s.getTopP());
+			s.setTopP(2.0);
+			assertEquals(2.0, s.getTopP());
+			s.setTopP(null);
+			assertNull(s.getTopP());
 
-		s.setTemperature(3.0);
-		assertEquals(3.0, s.getTemperature());
-		s.setTemperature(null);
-		assertNull(s.getTemperature());
-		s.setTemperature(1.0);
+			s.setTemperature(3.0);
+			assertEquals(3.0, s.getTemperature());
+			s.setTemperature(null);
+			assertNull(s.getTemperature());
+			s.setTemperature(1.0);
 
-		s.setMaxNewTokens(4);
-		assertEquals(4, s.getMaxNewTokens());
-		s.setMaxNewTokens(null);
-		assertNull(s.getMaxNewTokens());
-		s.setMaxNewTokens(15);
+			s.setMaxNewTokens(4);
+			assertEquals(4, s.getMaxNewTokens());
+			s.setMaxNewTokens(null);
+			assertNull(s.getMaxNewTokens());
+			s.setMaxNewTokens(15);
 
-		assertFalse(s.getEcho());
-		s.setEcho(true);
-		assertTrue(s.getEcho());
-		s.setEcho(false);
-		assertFalse(s.getEcho());
-
-		if (s instanceof OpenAiCompletionService) {
-			((OpenAiCompletionService) s).getDefaultReq().setEcho(null);
 			assertFalse(s.getEcho());
-		}
-		if (s instanceof HuggingFaceCompletionService) {
-			((HuggingFaceCompletionService) s).getDefaultReq().getParameters().setReturnFullText(null);
+			s.setEcho(true);
+			assertTrue(s.getEcho());
+			s.setEcho(false);
 			assertFalse(s.getEcho());
+
+			if (s instanceof OpenAiCompletionService) {
+				((OpenAiCompletionService) s).getDefaultReq().setEcho(null);
+				assertFalse(s.getEcho());
+			}
+			if (s instanceof HuggingFaceCompletionService) {
+				((HuggingFaceCompletionService) s).getDefaultReq().getParameters().setReturnFullText(null);
+				assertFalse(s.getEcho());
+			}
 		}
 	}
 
-	/**
-	 * insertion.
-	 */
+	@DisplayName("Insertion.")
 	@ParameterizedTest
-	@MethodSource("endpoints")
-	void test03(AiEndpoint ep) {
-		CompletionService s = ep.getCompletionService();
-		assertThrows(UnsupportedOperationException.class, () -> s.insert("Mount Everest is ", " meters high."));
+	@MethodSource("services")
+	void test03(Pair<AiEndpoint, String> p) throws Exception {
+		try (CompletionService s = p.getLeft().getCompletionService(p.getRight())) {
+			assertThrows(UnsupportedOperationException.class, () -> s.insert("Mount Everest is ", " meters high."));
+		}
 	}
 
-	/**
-	 * Getters and setters
-	 */
+	@DisplayName("Getters and setters.")
 	@ParameterizedTest
-	@MethodSource("endpoints")
-	void test04(AiEndpoint ep) {
+	@MethodSource("services")
+	void test04(Pair<AiEndpoint, String> p) throws Exception {
 
-		CompletionService s = ep.getCompletionService();
+		try (CompletionService s = p.getLeft().getCompletionService(p.getRight())) {
 
-		// TODO Check response contains all parameters?
+			// TODO Check response contains all parameters?
 
-		if (!(s instanceof OpenAiCompletionService)) {
-			s.setTopK(5);
+			if (!(s instanceof OpenAiCompletionService)) {
+				s.setTopK(5);
+			}
+			s.setTopP(null);
+			s.setTemperature(null);
+			s.setMaxNewTokens(40);
+			s.setEcho(true);
+			TextCompletion resp = s.complete("Name a mammal.");
+			assertTrue((resp.getStatus() == FinishReason.COMPLETED) || (resp.getStatus() == FinishReason.TRUNCATED));
+
+			s.setTopK(null);
+			s.setTopP(0.2);
+			s.setTemperature(null);
+			s.setMaxNewTokens(40);
+			s.setEcho(false);
+			resp = s.complete("Name a mammal.");
+			assertTrue((resp.getStatus() == FinishReason.COMPLETED) || (resp.getStatus() == FinishReason.TRUNCATED));
+
+			s.setTopK(null);
+			s.setTopP(null);
+			s.setTemperature(20.0);
+			s.setMaxNewTokens(40);
+			s.setEcho(true);
+			resp = s.complete("Name a mammal.");
+			assertTrue((resp.getStatus() == FinishReason.COMPLETED) || (resp.getStatus() == FinishReason.TRUNCATED));
 		}
-		s.setTopP(null);
-		s.setTemperature(null);
-		s.setMaxNewTokens(40);
-		s.setEcho(true);
-		TextCompletion resp = s.complete("Name a mammal.");
-		assertTrue((resp.getStatus() == FinishReason.COMPLETED) || (resp.getStatus() == FinishReason.TRUNCATED));
-
-		s.setTopK(null);
-		s.setTopP(0.2);
-		s.setTemperature(null);
-		s.setMaxNewTokens(40);
-		s.setEcho(false);
-		resp = s.complete("Name a mammal.");
-		assertTrue((resp.getStatus() == FinishReason.COMPLETED) || (resp.getStatus() == FinishReason.TRUNCATED));
-
-		s.setTopK(null);
-		s.setTopP(null);
-		s.setTemperature(20.0);
-		s.setMaxNewTokens(40);
-		s.setEcho(true);
-		resp = s.complete("Name a mammal.");
-		assertTrue((resp.getStatus() == FinishReason.COMPLETED) || (resp.getStatus() == FinishReason.TRUNCATED));
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

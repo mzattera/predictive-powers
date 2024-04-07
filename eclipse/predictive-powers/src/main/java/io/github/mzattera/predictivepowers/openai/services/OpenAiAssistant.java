@@ -25,8 +25,10 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.github.mzattera.predictivepowers.openai.client.AzureOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.DataList;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.SortOrder;
 import io.github.mzattera.predictivepowers.openai.client.assistants.Assistant;
 import io.github.mzattera.predictivepowers.openai.client.assistants.AssistantsRequest;
@@ -46,7 +48,6 @@ import io.github.mzattera.predictivepowers.openai.client.threads.RunsRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.ThreadsRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.ToolOutput;
 import io.github.mzattera.predictivepowers.openai.client.threads.ToolOutputsRequest;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractAgent;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Capability;
@@ -88,7 +89,7 @@ public class OpenAiAssistant extends AbstractAgent {
 	}
 
 	protected OpenAiClient getClient() {
-		return service.getEndpoint().getClient();
+		return (OpenAiClient) service.getEndpoint().getClient();
 	}
 
 	/**
@@ -118,6 +119,7 @@ public class OpenAiAssistant extends AbstractAgent {
 	public void setModel(@NonNull String model) {
 		synch();
 		openAiAssistant.setModel(model);
+		register();
 		update();
 	}
 
@@ -437,7 +439,7 @@ public class OpenAiAssistant extends AbstractAgent {
 	OpenAiAssistant(@NonNull OpenAiAgentService service, @NonNull String assistantId) {
 		this.service = service;
 		this.id = assistantId;
-		synch();
+		synch(); // Notice this will register the deploy ID under Azure, do not remove
 	}
 
 	/**
@@ -449,6 +451,9 @@ public class OpenAiAssistant extends AbstractAgent {
 
 		// Get agent from server
 		openAiAssistant = getClient().retrieveAssistant(id);
+		
+		// Register model
+		register();
 
 		// Updated list of tools, in synch with agent
 		Map<String, Tool> newTools = new HashMap<>();
@@ -487,6 +492,16 @@ public class OpenAiAssistant extends AbstractAgent {
 		openAiAssistant = getClient().modifyAssistant( //
 				openAiAssistant.getId(), //
 				AssistantsRequest.getInstance(openAiAssistant));
+	}
+
+	/**
+	 * Register the deploy ID if we are running in MS Azure See
+	 * {@link AzureOpenAiModelService}.
+	 */
+	private void register() {
+		if (getEndpoint() instanceof AzureOpenAiEndpoint) {
+			getEndpoint().getChatService(openAiAssistant.getModel());
+		}
 	}
 
 	/**

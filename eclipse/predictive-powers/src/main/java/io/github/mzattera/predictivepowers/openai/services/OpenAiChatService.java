@@ -26,6 +26,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.github.mzattera.predictivepowers.openai.client.AzureOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiException;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsChoice;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
@@ -34,7 +36,6 @@ import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.AbstractAgent;
 import io.github.mzattera.predictivepowers.services.ChatService;
@@ -103,18 +104,23 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 		maxConversationTokens = n;
 	}
 
-	public OpenAiChatService(OpenAiEndpoint ep) {
-		this(ep, ChatCompletionsRequest.builder().model(DEFAULT_MODEL).build());
+	public OpenAiChatService(@NonNull OpenAiEndpoint ep) {
+		this(ep, DEFAULT_MODEL);
+	}
+
+	public OpenAiChatService(@NonNull OpenAiEndpoint ep, @NonNull String model) {
+		this(ep, ChatCompletionsRequest.builder().model(model).build());
 	}
 
 	public OpenAiChatService(OpenAiEndpoint ep, ChatCompletionsRequest defaultReq) {
 		this.endpoint = ep;
 		this.defaultReq = defaultReq;
 		modelService = endpoint.getModelService();
-		String model = defaultReq.getModel();
+		register();
 
 		// With GPT you pay max tokens, even if they are not generated, so we put a
 		// reasonable limit here
+		String model = defaultReq.getModel();
 		int maxReplyTk = Math.min(modelService.getContextSize(model) / 4, modelService.getMaxNewTokens(model));
 		maxConversationTokens = modelService.getContextSize(model) - maxReplyTk;
 		defaultReq.setN(1); // paranoid
@@ -132,6 +138,7 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 	@Override
 	public void setModel(@NonNull String model) {
 		defaultReq.setModel(model);
+		register();
 	}
 
 	/**
@@ -145,6 +152,23 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 	private final ChatCompletionsRequest defaultReq;
 
 	private final OpenAiModelService modelService;
+
+	/**
+	 * Register the deploy ID if we are running in MS Azure See
+	 * {@link AzureOpenAiModelService}.
+	 */
+	private void register() {
+		if (endpoint instanceof AzureOpenAiEndpoint) {
+			String model = getModel();
+			if (modelService.get(model) == null) {
+				// Do a "fake" call to read base model ID (see AzureOpenAiModelService JavaDoc).
+				ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).maxTokens(1).build();
+				req.getMessages().add(new OpenAiChatMessage(Role.USER, "Hi"));
+				ChatCompletionsResponse resp = endpoint.getClient().createChatCompletion(req);
+				((AzureOpenAiModelService) modelService).map(model, resp.getModel());
+			}
+		}
+	}
 
 	@Override
 	public Integer getTopK() {
@@ -403,9 +427,8 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 	 * is used, if provided.
 	 */
 	public ChatCompletion complete(ChatMessage prompt, ChatCompletionsRequest req) {
-		List<OpenAiChatMessage> msgs = new ArrayList<>();
-		msgs.addAll(fromChatMessage(prompt));
-		trimConversation(msgs);
+		List<OpenAiChatMessage> msgs = new ArrayList<>(fromChatMessage(prompt));
+		trimConversation(msgs); // Adds personality as well
 
 		return complete(msgs, req);
 	}
@@ -488,7 +511,7 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 			}
 
 			ChatCompletionsChoice choice = resp.getChoices().get(0);
-			return new ImmutablePair<>(FinishReason.fromGptApi(choice.getFinishReason()), choice.getMessage());
+			return new ImmutablePair<>(FinishReason.fromOpenAiApi(choice.getFinishReason()), choice.getMessage());
 
 		} finally {
 
@@ -598,9 +621,6 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 	 * for the OpenAi API. This is meant for abstraction and easier interoperability
 	 * of agents.
 	 * 
-	 * @param md  Model metadata, this is needed since conversion depends on which
-	 *            features the model supports.
-	 * @param msg
 	 * @throws IllegalArgumentException if the message is not in a format supported
 	 *                                  directly by OpenAI API.
 	 */
@@ -662,10 +682,7 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 					newParts.add(part);
 				} else {
 					try {
-						BufferedImage img = ImageUtil.fromBytes(file.getInputStream());
-						BufferedImage scaled = ImageUtil.scaleDown(img);
-						newParts.add(new Base64FilePart(ImageUtil.toBytes("png", scaled), file.getName(),
-								ContentType.IMAGE));
+						newParts.add(Base64FilePart.forOpenAi(file));
 					} catch (Exception e) {
 						newParts.add(part);
 					}

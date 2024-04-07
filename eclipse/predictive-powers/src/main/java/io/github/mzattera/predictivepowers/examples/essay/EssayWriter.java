@@ -45,9 +45,9 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import io.github.mzattera.predictivepowers.examples.essay.EssayWriter.Essay.Section;
 import io.github.mzattera.predictivepowers.google.client.GoogleClient;
-import io.github.mzattera.predictivepowers.google.endpoint.GoogleEndpoint;
+import io.github.mzattera.predictivepowers.google.client.GoogleEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
@@ -284,7 +284,7 @@ public class EssayWriter implements Closeable {
 
 	// Endpoints used by the agent
 
-	protected OpenAiEndpoint openAi;
+	protected DirectOpenAiEndpoint openAi;
 	protected GoogleEndpoint google;
 
 	// The agent's knowledge base
@@ -301,7 +301,7 @@ public class EssayWriter implements Closeable {
 	}
 
 	private void initializeEndPoints() {
-		openAi = new OpenAiEndpoint();
+		openAi = new DirectOpenAiEndpoint();
 		google = new GoogleEndpoint(new GoogleClient(GOOGLE_ENGINE_ID, GoogleClient.getApiKey()));
 	}
 

@@ -37,9 +37,9 @@ public abstract class AbstractChatService implements ChatService {
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
 	// values from a Map, see CompletionService
 
-	private int maxHistoryLength = 1000;
-
 	private String personality = null;
+
+	private int maxHistoryLength = Integer.MAX_VALUE;
 
 	private int maxConversationSteps = Integer.MAX_VALUE;
 

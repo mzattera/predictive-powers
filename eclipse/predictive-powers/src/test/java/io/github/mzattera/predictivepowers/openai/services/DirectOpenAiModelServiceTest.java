@@ -31,19 +31,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiException;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.models.Model;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.FunctionCallTest.GetCurrentWeatherTool;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
 
-class OpenAiModelServiceTest {
+class DirectOpenAiModelServiceTest {
 
 	// Models still returned by models API, but decommissioned
 	private final static Set<String> OLD_MODELS = new HashSet<>();
@@ -68,11 +68,11 @@ class OpenAiModelServiceTest {
 	 */
 	@Test
 	void test01() {
-		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
+		try (DirectOpenAiEndpoint oai = new DirectOpenAiEndpoint()) {
 			OpenAiModelService modelSvc = oai.getModelService();
 
 			Set<String> deprecated = new HashSet<>(OLD_MODELS);
-			Set<String> actual = OpenAiModelService.getModelsMetadata() //
+			Set<String> actual = DirectOpenAiModelService.getModelsMetadata() //
 					.map(OpenAiModelMetaData::getModel) //
 					.collect(Collectors.toSet());
 
@@ -125,7 +125,7 @@ class OpenAiModelServiceTest {
 
 	@Test
 	void test02() {
-		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
+		try (DirectOpenAiEndpoint oai = new DirectOpenAiEndpoint()) {
 			String id = "gpt-3.5-turbo";
 			Model model = oai.getClient().retrieveModel(id);
 			assertEquals(id, model.getId());
@@ -135,7 +135,7 @@ class OpenAiModelServiceTest {
 
 	/** @return The meta data for all chat models */
 	static Stream<OpenAiModelMetaData> allChatModelsProvider() {
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
+		try (DirectOpenAiEndpoint endpoint = new DirectOpenAiEndpoint()) {
 			OpenAiModelService modelSvc = endpoint.getModelService();
 			return modelSvc.listModels().stream() //
 					.filter(model -> !model.startsWith("gpt-4-32k")) //
@@ -151,7 +151,7 @@ class OpenAiModelServiceTest {
 	@ParameterizedTest
 	@MethodSource("allChatModelsProvider")
 	void test03(OpenAiModelMetaData md) {
-		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
+		try (DirectOpenAiEndpoint oai = new DirectOpenAiEndpoint()) {
 			ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(md.getModel()).build();
 
 			// Bypass setTools() to make sure we test the correct function call type

@@ -3,6 +3,8 @@
  */
 package io.github.mzattera.predictivepowers.services.messages;
 
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +12,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Base64;
 
+import io.github.mzattera.util.ImageUtil;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,6 +23,9 @@ import lombok.experimental.SuperBuilder;
 
 /**
  * This is a {@link FilePart} that contains the base64 encoding of a file.
+ * Notice both {@link #getFile()} and {@link #getUrl()} will return null, whilst
+ * {@link #isLocalFile()} returns true, as the file content is stored in this
+ * object.
  * 
  * @author Massimiliano "Maxi" Zattera.
  */
@@ -39,37 +45,112 @@ public class Base64FilePart extends FilePart {
 
 	public Base64FilePart(@NonNull File file) throws IOException {
 		super(file);
-		init(super.getInputStream().readAllBytes(), super.getName());
+		init(super.getInputStream().readAllBytes(), super.getName(), super.getMimeType());
 	}
 
-	public Base64FilePart(@NonNull File file, ContentType contentType) throws IOException {
-		super(file, contentType);
-		init(super.getInputStream().readAllBytes(), super.getName());
+	public Base64FilePart(@NonNull File file, String mimeType) throws IOException {
+		super(file, mimeType);
+		init(super.getInputStream().readAllBytes(), super.getName(), super.getMimeType());
 	}
 
 	public Base64FilePart(@NonNull URL url) throws IOException {
 		super(url);
-		init(super.getInputStream().readAllBytes(), super.getName());
+		init(super.getInputStream().readAllBytes(), super.getName(), super.getMimeType());
 	}
 
-	public Base64FilePart(@NonNull URL url, ContentType contentType) throws IOException {
-		super(url, contentType);
-		init(super.getInputStream().readAllBytes(), super.getName());
+	public Base64FilePart(@NonNull URL url, String mimeType) throws IOException {
+		super(url, mimeType);
+		init(super.getInputStream().readAllBytes(), super.getName(), super.getMimeType());
 	}
 
-	public Base64FilePart(InputStream in, String name, ContentType contentType) throws IOException {
-		init(in.readAllBytes(), name);
-		setContentType(contentType);
+	public Base64FilePart(InputStream in, String name, String mimeType) throws IOException {
+		init(in.readAllBytes(), name, mimeType);
 	}
 
-	public Base64FilePart(byte[] bytes, String name, ContentType contentType) {
-		init(bytes, name);
-		setContentType(contentType);
+	public Base64FilePart(byte[] bytes, String name, String mimeType) {
+		init(bytes, name, mimeType);
 	}
 
-	private void init(byte[] bytes, String name) {
+	public Base64FilePart(FilePart file) throws IOException {
+		init(file.getInputStream().readAllBytes(), file.getName(), file.getMimeType());
+	}
+
+	/**
+	 * Return a image scaled down for OpenAI vision models.
+	 * 
+	 * As the image is scaled down anyway before being submitted to the model, it
+	 * makes sense to scale down local images before sending them to the API. This
+	 * saves tokens and reduces latency (see
+	 * {@linkplain https://platform.openai.com/docs/guides/vision}).
+	 * 
+	 * @return The same image if it is already scaled down, or its scaled down
+	 *         version.
+	 * @throws IOException
+	 */
+	public static Base64FilePart forOpenAi(FilePart file) throws IOException {
+
+		BufferedImage img = ImageUtil.fromBytes(file.getInputStream());
+
+		int w = img.getWidth();
+		int h = img.getHeight();
+		double scale1 = 2000d / Math.max(w, h);
+		double scale2 = 768d / Math.min(w, h);
+		double scale = Math.min(scale1, scale2);
+
+		if (scale < 1.0d) {
+			w *= scale;
+			h *= scale;
+			BufferedImage resizedImage = new BufferedImage(w, h, img.getType());
+			Graphics2D graphics2D = resizedImage.createGraphics();
+			graphics2D.drawImage(img, 0, 0, w, h, null);
+			graphics2D.dispose();
+			return new Base64FilePart(ImageUtil.toBytes("png", resizedImage), file.getName(), "image/png");
+		} else {
+			return new Base64FilePart(file);
+		}
+	}
+
+	/**
+	 * Return a image scaled down for Anthrop/c vision models.
+	 * 
+	 * As the image is scaled down anyway before being submitted to the model, it
+	 * makes sense to scale down local images before sending them to the API. This
+	 * saves tokens and reduces latency (see
+	 * {@linkplain https://docs.anthropic.com/claude/docs/vision}).
+	 * 
+	 * @return The same image if it is already scaled down, or its scaled down
+	 *         version.
+	 * @throws IOException
+	 */
+	public static Base64FilePart forAnthropic(FilePart file) throws IOException {
+
+		BufferedImage img = ImageUtil.fromBytes(file.getInputStream());
+
+		int w = img.getWidth();
+		int h = img.getHeight();
+
+		double scale1 = 1568d / Math.max(w, h); // Longest edge must be < 1568
+		double scale2 = Math.sqrt((1092d * 1092d) / (w * h)); // Tokens < 1600 -> area < 1092^2
+		double scale = Math.min(scale1, scale2);
+
+		if (scale < 1.0d) {
+			w *= scale;
+			h *= scale;
+			BufferedImage resizedImage = new BufferedImage(w, h, img.getType());
+			Graphics2D graphics2D = resizedImage.createGraphics();
+			graphics2D.drawImage(img, 0, 0, w, h, null);
+			graphics2D.dispose();
+			return new Base64FilePart(ImageUtil.toBytes("png", resizedImage), file.getName(), "image/png");
+		} else {
+			return new Base64FilePart(file);
+		}
+	}
+
+	private void init(byte[] bytes, String name, String mimeType) {
 		encodedContent = Base64.getEncoder().encodeToString(bytes);
 		this.name = name;
+		this.setMimeType(mimeType);
+		this.setContentType(ContentType.fromMimeType(mimeType));
 	}
 
 	@Override
@@ -99,6 +180,6 @@ public class Base64FilePart extends FilePart {
 
 	@Override
 	public String getContent() {
-		return "[File (base64): " + getName() + ", Content: " + getContentType() + "]";
+		return "[File (base64): " + getName() + ", Content: " + getMimeType() + "]";
 	}
 }

@@ -52,7 +52,7 @@ public class OpenAiException extends HttpException {
 
 	/**
 	 * If the error is because request exceeded context size, this is the number of
-	 * tokens in the prompt. Notice the code tries to populte this from the rror
+	 * tokens in the prompt. Notice the code tries to populate this from the rror
 	 * message, but it might fail and this remains -1.
 	 */
 	@Getter
@@ -60,7 +60,7 @@ public class OpenAiException extends HttpException {
 
 	/**
 	 * If the error is because request exceeded context size, this is the number of
-	 * tokens requested for the completion. Notice the code tries to populte this
+	 * tokens requested for the completion. Notice the code tries to populate this
 	 * from the rror message, but it might fail and this remains -1.
 	 */
 	@Getter
@@ -69,15 +69,15 @@ public class OpenAiException extends HttpException {
 	/**
 	 * If the error is because request exceeded context size, this is the total
 	 * number of requested tokens (prompt + completion). Notice the code tries to
-	 * populte this from the rror message, but it might fail and this remains -1.
+	 * populate this from the error message, but it might fail and this remains -1.
 	 */
 	@Getter
 	private int requestLength = -1;
 
 	/**
 	 * If the error is because request exceeded context size, this is the maximum
-	 * context length for the model (in tokens). Notice the code tries to populte
-	 * this from the rror message, but it might fail and this remains -1.
+	 * context length for the model (in tokens). Notice the code tries to populate
+	 * this from the error message, but it might fail and this remains -1.
 	 */
 	@Getter
 	private int maxContextLength = -1;

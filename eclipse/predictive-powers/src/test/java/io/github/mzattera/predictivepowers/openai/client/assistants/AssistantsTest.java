@@ -19,11 +19,12 @@ import java.util.Map.Entry;
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.client.DataList;
+import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.SortOrder;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Capability;
 import io.github.mzattera.predictivepowers.services.Tool;
@@ -46,7 +47,7 @@ public class AssistantsTest {
 	 */
 	@Test
 	void testCreateAssistant() {
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
+		try (OpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
 
 			// Test creation
 			AssistantsRequest original = createAssistantRequest("uno");
@@ -154,7 +155,7 @@ public class AssistantsTest {
 	@Test
 	void testListAndDeleteAgents() {
 
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
+		try (OpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
 			OpenAiClient cli = ep.getClient();
 			DataList<Assistant> list;
 			List<Assistant> agents;
@@ -283,7 +284,7 @@ public class AssistantsTest {
 
 	@Test
 	void testFiles() throws IOException {
-		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
+		try (OpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
 			OpenAiClient cli = ep.getClient();
 
 			File f = cli.uploadFile(ResourceUtil.getResourceFile("banana.txt"), "assistants");

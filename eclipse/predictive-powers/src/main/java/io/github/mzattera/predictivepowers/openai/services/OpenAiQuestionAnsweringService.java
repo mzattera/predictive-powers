@@ -21,8 +21,8 @@ import java.util.List;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest.ResponseFormat;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.AbstractQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.QnAPair;
@@ -48,9 +48,12 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 
 	public static final String DEFAULT_MODEL = "gpt-4-turbo-preview";
 
-	public OpenAiQuestionAnsweringService(OpenAiEndpoint ep) {
-		completionService = ep.getChatService();
-		completionService.setModel(DEFAULT_MODEL);
+	public OpenAiQuestionAnsweringService(@NonNull OpenAiEndpoint endpoint) {
+		this(endpoint, DEFAULT_MODEL);
+	}
+
+	public OpenAiQuestionAnsweringService(@NonNull OpenAiEndpoint endpoint, @NonNull String model) {
+		completionService = endpoint.getChatService(model);
 		completionService.setPersonality(null);
 		completionService.setTemperature(0.0); // TODO test best settings.
 		completionService.getDefaultReq().setResponseFormat(ResponseFormat.JSON);

@@ -18,20 +18,29 @@ package io.github.mzattera.predictivepowers.examples;
 
 import java.util.Scanner;
 
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.services.Agent;
+import io.github.mzattera.predictivepowers.AiEndpoint;
+import io.github.mzattera.predictivepowers.anthropic.client.AnthropicEndpoint;
+import io.github.mzattera.predictivepowers.services.ChatService;
 
 public class ChatExample {
 
 	public static void main(String[] args) throws Exception {
 
 		// Get chat service and set its personality
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
-				Agent agent = endpoint.getChatService();) {
-			
-			agent.setPersonality("You are a very sad and depressed robot. "
-					+ "Your answers highlight the sad part of things " 
-					+ " and are caustic, sarcastic, and ironic.");
+		
+		// OpenAI API
+//		try (AiEndpoint endpoint = new DirectOpenAiEndpoint(); //
+
+		// Azure OpenAI Service
+//		try (AiEndpoint endpoint = new AzureOpenAiEndpoint(); //
+
+		// Anthrop/c API
+		try (AiEndpoint endpoint = new AnthropicEndpoint(); //
+				
+				ChatService agent = endpoint.getChatService();) {
+
+//			agent.setPersonality("You are a very sad and depressed robot. "
+//					+ "Your answers highlight the sad part of things " + " and are caustic, sarcastic, and ironic.");
 
 			// Conversation loop
 			try (Scanner console = new Scanner(System.in)) {
@@ -39,8 +48,8 @@ public class ChatExample {
 					System.out.print("User     > ");
 					String s = console.nextLine();
 					System.out.println("Assistant> " + agent.chat(s).getText());
-				}			
+				}
 			}
-		} // Close resources 
+		} // Close resources
 	}
 }

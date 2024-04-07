@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.huggingface.endpoint;
+package io.github.mzattera.predictivepowers.huggingface.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceClient;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationRequest;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceChatService;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceCompletionService;

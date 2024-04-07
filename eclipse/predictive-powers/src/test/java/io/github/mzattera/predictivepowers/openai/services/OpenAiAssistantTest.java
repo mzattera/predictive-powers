@@ -21,11 +21,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Stream;
 
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import io.github.mzattera.predictivepowers.TestConfiguration;
+import io.github.mzattera.predictivepowers.openai.client.AzureOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.Capability;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.Toolset;
@@ -43,22 +53,42 @@ import io.github.mzattera.util.ResourceUtil;
  */
 public class OpenAiAssistantTest {
 
-	// ** IMPORTANT ** Make sure agents you create for test are not marked with _isPermanent=true in metadata
+	// ** IMPORTANT ** Make sure agents you create for test are not marked with
+	// _isPermanent=true in metadata
 
 	// TODO add tests to check all the methods to manipulate tools
-	
-	/**
-	 * Tests assistants files and retrieval tool.
-	 */
-	@Test
-	public void testRetrieval() throws ToolInitializationException, IOException {
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
-			OpenAiAssistant bot = endpoint.getAgentService().createAgent(//
-					"Test " + System.currentTimeMillis(), //
-					"A test assistant.", //
-					"You are an helpful assistant.", //
-					false, false);
+	private static List<ImmutablePair<OpenAiEndpoint, String>> svcs;
+
+	@BeforeAll
+	static void init() {
+		svcs = TestConfiguration.getAgentServices().stream() //
+				.filter(p -> p.getLeft() instanceof OpenAiEndpoint) //
+				.map(p -> new ImmutablePair<OpenAiEndpoint, String>((OpenAiEndpoint) p.getLeft(), p.getRight())) //
+				.toList();
+	}
+
+	@AfterAll
+	static void tearDown() {
+		TestConfiguration.close(svcs.stream().map(p -> p.getLeft()).toList());
+	}
+
+	static Stream<ImmutablePair<OpenAiEndpoint, String>> services() {
+		return svcs.stream();
+	}
+
+	@DisplayName("Tests assistants files and retrieval tool.")
+	@ParameterizedTest
+	@MethodSource("services")
+	public void testRetrieval(Pair<OpenAiEndpoint, String> p) throws ToolInitializationException, IOException {
+		OpenAiEndpoint ep = p.getLeft();
+		if (ep instanceof AzureOpenAiEndpoint)
+			return;
+		try (OpenAiAssistant bot = ep.getAgentService(p.getRight()).createAgent(//
+				"Test " + System.currentTimeMillis(), //
+				"A test assistant.", //
+				"You are an helpful assistant.", //
+				false, false)) {
 
 			Capability tools = new Toolset();
 			tools.putTool("retrieval", () -> {
@@ -80,20 +110,18 @@ public class OpenAiAssistantTest {
 		}
 	}
 
-	/**
-	 * Tests file attachments.
-	 * 
-	 * @throws ToolInitializationException
-	 */
-	@Test
-	void testFileAttacch() throws ToolInitializationException {
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
-
-			OpenAiAssistant bot = endpoint.getAgentService().createAgent(//
-					"Test " + System.currentTimeMillis(), //
-					"A test assistant.", //
-					"You are an helpful assistant.", //
-					false, false);
+	@DisplayName("Tests file attachments.")
+	@ParameterizedTest
+	@MethodSource("services")
+	void testFileAttacch(Pair<OpenAiEndpoint, String> p) throws ToolInitializationException {
+		OpenAiEndpoint ep = p.getLeft();
+		if (ep instanceof AzureOpenAiEndpoint)
+			return;
+		try (OpenAiAssistant bot = ep.getAgentService(p.getRight()).createAgent(//
+				"Test " + System.currentTimeMillis(), //
+				"A test assistant.", //
+				"You are an helpful assistant.", //
+				false, false)) {
 
 			Capability tools = new Toolset();
 			tools.putTool("retrieval", () -> {

@@ -37,7 +37,7 @@ public enum FinishReason {
 	/** All finish reasons that do not fit in any other value */
 	OTHER;
 
-	public static FinishReason fromGptApi(String reason) {
+	public static FinishReason fromOpenAiApi(String reason) {
 		switch (reason) {
 		case "stop":
 			return FinishReason.COMPLETED;
@@ -45,6 +45,18 @@ public enum FinishReason {
 			return FinishReason.TRUNCATED;
 		case "content_filter":
 			return FinishReason.INAPPROPRIATE;
+		default:
+			return FinishReason.OTHER;
+		}
+	}
+
+	public static FinishReason fromAnthropicApi(String reason) {
+		switch (reason) {
+		case "end_turn":
+		case "stop_sequence":
+			return FinishReason.COMPLETED;
+		case "max_tokens":
+			return FinishReason.TRUNCATED;
 		default:
 			return FinishReason.OTHER;
 		}

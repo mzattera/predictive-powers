@@ -26,18 +26,22 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import io.github.mzattera.predictivepowers.google.endpoint.GoogleEndpoint;
+import io.github.mzattera.predictivepowers.TestConfiguration;
+import io.github.mzattera.predictivepowers.google.client.GoogleEndpoint;
 import io.github.mzattera.predictivepowers.services.Link;
 
 public class GoogleSearchServiceTest {
 
 	@Test
-	public void test01() throws URISyntaxException, MalformedURLException {
+	public void testSearch() throws URISyntaxException, MalformedURLException {
 
-		try (GoogleEndpoint endpoint = new GoogleEndpoint()) {
-			GoogleSearchService service = endpoint.getSearchService();
-			
-			List<Link> results =service.search("Massimiliano Zattera predictive-powers github");
+		if (!TestConfiguration.TEST_GOOGLE_SERVICES)
+			return;
+
+		try (GoogleEndpoint endpoint = new GoogleEndpoint();
+				GoogleSearchService service = endpoint.getSearchService();) {
+
+			List<Link> results = service.search("Massimiliano Zattera predictive-powers github");
 			assertTrue(results.size() > 0);
 			assertEquals((new URI("https://github.com/mzattera")).toURL(), results.get(0).getUrl());
 		}

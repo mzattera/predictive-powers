@@ -18,6 +18,7 @@ package io.github.mzattera.predictivepowers.services;
 
 import java.util.Map;
 
+import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -33,7 +34,7 @@ import lombok.RequiredArgsConstructor;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class AbstractModelService implements ModelService {
 
 	@NonNull

@@ -30,10 +30,11 @@ import java.util.Map;
 import org.apache.tika.exception.TikaException;
 import org.xml.sax.SAXException;
 
+import io.github.mzattera.predictivepowers.openai.client.AzureOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.Embedding;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
 import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractEmbeddingService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.ModelService;
@@ -42,7 +43,6 @@ import io.github.mzattera.util.ChunkUtil;
 import io.github.mzattera.util.ExtractionUtil;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
 /**
  * This class creates embeddings using OpenAI.
@@ -50,18 +50,33 @@ import lombok.RequiredArgsConstructor;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@RequiredArgsConstructor
 public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 
 	public static final String DEFAULT_MODEL = "text-embedding-3-small";
 
-	public OpenAiEmbeddingService(OpenAiEndpoint ep) {
-		this(ep, EmbeddingsRequest.builder().model(DEFAULT_MODEL).build());
-	}
-
 	@NonNull
 	@Getter
 	protected final OpenAiEndpoint endpoint;
+
+	@NonNull
+	private final ModelService modelService;
+
+	/**
+	 * Register the deploy ID if we are running in MS Azure See
+	 * {@link AzureOpenAiModelService}.
+	 */
+	private void register() {
+		if (endpoint instanceof AzureOpenAiEndpoint) {
+			String model = getModel();
+			if (modelService.get(model) == null) {
+				// Do a "fake" call to read base model ID (see AzureOpenAiModelService JavaDoc).
+				EmbeddingsRequest req = EmbeddingsRequest.builder().model(model).build();
+				req.getInput().add("x");
+				EmbeddingsResponse resp = endpoint.getClient().createEmbeddings(req);
+				((AzureOpenAiModelService)modelService).map(model, resp.getModel());
+			}
+		}
+	}
 
 	/**
 	 * This request, with its parameters, is used as default setting for each call.
@@ -72,6 +87,21 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 	@Getter
 	@NonNull
 	private final EmbeddingsRequest defaultReq;
+	
+	public OpenAiEmbeddingService(OpenAiEndpoint ep) {
+		this(ep, DEFAULT_MODEL);
+	}
+
+	public OpenAiEmbeddingService(OpenAiEndpoint ep, @NonNull String model) {
+		this(ep, EmbeddingsRequest.builder().model(DEFAULT_MODEL).build());
+	}
+
+	public OpenAiEmbeddingService(OpenAiEndpoint ep, EmbeddingsRequest embeddingsRequest) {
+		this.endpoint = ep;
+		this.defaultReq = embeddingsRequest;
+		this.modelService = ep.getModelService();
+		register();
+	}
 
 	@Override
 	public String getModel() {
@@ -81,6 +111,7 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 	@Override
 	public void setModel(@NonNull String model) {
 		defaultReq.setModel(model);
+		register();
 	}
 
 	Integer dimensions = null;
@@ -120,10 +151,9 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 
 	public List<EmbeddedText> embed(String text, int chunkSize, int windowSize, int stride, EmbeddingsRequest req) {
 
-		ModelService ms = endpoint.getModelService();
 		String model = req.getModel();
-		int modelSize = ms.getContextSize(model);
-		Tokenizer tokenizer = ms.getTokenizer(model);
+		int modelSize = modelService.getContextSize(model);
+		Tokenizer tokenizer = modelService.getTokenizer(model);
 
 		// Chunk accordingly to user's instructions
 		List<String> chunks = ChunkUtil.split(text, chunkSize, windowSize, stride, tokenizer);
@@ -206,17 +236,20 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 	}
 
 	private List<EmbeddedText> embed(EmbeddingsRequest req) {
-	
+
 		List<EmbeddedText> result = new ArrayList<>(req.getInput().size());
 		EmbeddingsResponse res = endpoint.getClient().createEmbeddings(req);
-	
+
 		for (Embedding e : res.getData()) {
 			int index = e.getIndex();
+			
+			// TODO URGENT do not use the model use the "base" model returned by ModelService, to cover fro azure cases
+			
 			EmbeddedText et = EmbeddedText.builder().text(req.getInput().get(index)).embedding(e.getEmbedding())
 					.model(res.getModel()).build();
 			result.add(et);
 		}
-	
+
 		return result;
-	}
+	}	
 }

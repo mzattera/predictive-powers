@@ -23,8 +23,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import io.github.mzattera.predictivepowers.TestConfiguration;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
@@ -32,14 +34,18 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Rol
 
 public class OpenAiExceptionTest {
 
-	/** Checks OpenAIException properly created when exceeding context size */
+	@DisplayName("Checks OpenAIException properly created when exceeding context size")
+	@SuppressWarnings("unused")
 	@Test
-	public void test01() {
+	public void testCompletion() {
 
-		try (OpenAiClient cli = new OpenAiClient()) {
+		if (!TestConfiguration.TEST_DIRECT_OPENAI_SERVICES && !TestConfiguration.TEST_AZURE_OPENAI_SERVICES)
+			return;
 
-			CompletionsRequest req = CompletionsRequest.builder().model("davinci-002").maxTokens(20_000)
-					.prompt("Ciao!").build();
+		try (OpenAiClient cli = new DirectOpenAiClient()) {
+
+			CompletionsRequest req = CompletionsRequest.builder().model("davinci-002").maxTokens(20_000).prompt("Ciao!")
+					.build();
 			OpenAiException e = assertThrows(OpenAiException.class, () -> cli.createCompletion(req));
 			assertEquals(400, e.code());
 			assertTrue(e.isContextLengthExceeded());
@@ -50,11 +56,15 @@ public class OpenAiExceptionTest {
 		}
 	}
 
-	/** Checks OpenAIException properly created when exceeding context size */
+	@DisplayName("Checks OpenAIException properly created when exceeding context size")
+	@SuppressWarnings("unused")
 	@Test
-	public void test02() {
+	public void testChat(){
 
-		try (OpenAiClient cli = new OpenAiClient()) {
+		if (!TestConfiguration.TEST_DIRECT_OPENAI_SERVICES && !TestConfiguration.TEST_AZURE_OPENAI_SERVICES)
+			return;
+
+		try (OpenAiClient cli = new DirectOpenAiClient()) {
 
 			OpenAiChatMessage msg = new OpenAiChatMessage(Role.USER, "Ciao!");
 			List<OpenAiChatMessage> msgs = new ArrayList<>();

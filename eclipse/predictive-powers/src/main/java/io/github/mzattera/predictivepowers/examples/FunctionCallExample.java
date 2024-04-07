@@ -25,8 +25,7 @@ import java.util.Scanner;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
-import io.github.mzattera.predictivepowers.openai.client.AzureOpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.anthropic.client.AnthropicEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractTool;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Capability;
@@ -68,13 +67,13 @@ public class FunctionCallExample {
 
 		@Override
 		public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
-			
+
 			// Tool implementation goes here.
 			// In this example we simply return a random temperature.
-			
+
 			if (!isInitialized())
 				throw new IllegalStateException("Tool must be initialized.");
-			
+
 			String location = getString("location", call.getArguments());
 			return new ToolCallResult(call, "Temperature in " + location + " is " + (RND.nextInt(10) + 20) + "°C");
 		}
@@ -92,15 +91,21 @@ public class FunctionCallExample {
 	public static void main(String[] args) throws Exception {
 
 		try (
-				// THis uses OpenAI API
-				// OpenAiEndpoint endpoint = new DirectOpenAiEndpoint();
-				// Agent agent = endpoint.getChatService("gpt-4-1106-preview"); // This uses chat API with parallel function calls (tools)
-				// Agent agent = endpoint.getChatService("gpt-3.5-turbo-0613"); // This uses chat API with single function calls
-				// Agent agent = endpoint.getAgentService().getAgent(); // This uses assistants API
-				
-				// This uses agents API over Azure
-				OpenAiEndpoint endpoint = new AzureOpenAiEndpoint();
-				Agent agent = endpoint.getAgentService("gpt4agents").getAgent(); // This uses assistants API
+		// This uses OpenAI API
+//				 OpenAiEndpoint endpoint = new DirectOpenAiEndpoint();
+//				 Agent agent = endpoint.getChatService("gpt-4-1106-preview"); // This uses chat API with parallel function calls (tools)
+		// Agent agent = endpoint.getChatService("gpt-3.5-turbo-0613"); // This uses
+		// chat API with single function calls
+		// Agent agent = endpoint.getAgentService().getAgent(); // This uses assistants
+		// API
+
+		// This uses agents API over Azure
+//				OpenAiEndpoint endpoint = new AzureOpenAiEndpoint();
+//				Agent agent = endpoint.getAgentService("gpt4agents").getAgent(); // This uses assistants API
+
+				// This uses ANTHROP/C
+				AnthropicEndpoint endpoint = new AnthropicEndpoint();
+				Agent agent = endpoint.getChatService(); // This uses assistants API
 		) {
 
 			// Set agent personality (instructions)
@@ -123,7 +128,7 @@ public class FunctionCallExample {
 						List<ToolCallResult> results = new ArrayList<>();
 
 						for (ToolCall call : reply.getToolCalls()) {
-							
+
 							// The agent generated one or more tool calls,
 							// print them for illustrative purposes
 							System.out.println("CALL " + " > " + call);
@@ -133,7 +138,7 @@ public class FunctionCallExample {
 							try {
 								result = call.execute();
 							} catch (Exception e) {
-								result = new ToolCallResult(call, "Error: " + e.getMessage());
+								result = new ToolCallResult(call, e);
 							}
 							results.add(result);
 						}

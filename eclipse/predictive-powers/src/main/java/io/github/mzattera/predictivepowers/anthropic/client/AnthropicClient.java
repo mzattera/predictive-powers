@@ -35,7 +35,10 @@ import lombok.NonNull;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.OkHttpClient.Builder;
+import okhttp3.Request;
 import okhttp3.Response;
+import okio.Buffer;
+import okio.BufferedSource;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
@@ -51,6 +54,8 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
  *
  */
 public class AnthropicClient implements ApiClient {
+
+	public static final String API_VERSION = "2023-06-01";
 
 	private final static Logger LOG = LoggerFactory.getLogger(AnthropicClient.class);
 
@@ -147,68 +152,69 @@ public class AnthropicClient implements ApiClient {
 		Builder builder = http.newBuilder();
 
 		// Debug code below, outputs the request
-//		builder.addInterceptor(new Interceptor() {
-//
-//			@Override
-//			public Response intercept(Chain chain) throws IOException {
-//				Request req = chain.request();
-//
-//				if (req.body() != null) {
-//					Buffer buffer = new Buffer();
-//					req.body().writeTo(buffer);
-//					String in = buffer.readUtf8();
-//					String bodyContent = "";
-//					try {
-//						// In case body is not JSON
-//						bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
-//								.writeValueAsString(jsonMapper.readTree(in));
-//					} catch (Exception e) {
-//						bodyContent = in;
-//					}
-//					System.out.println("Request body: " + bodyContent);
-//				}
-//
-//				return chain.proceed(req);
-//			}
-//		}); //
+		builder.addInterceptor(new Interceptor() {
+
+			@Override
+			public Response intercept(Chain chain) throws IOException {
+				Request req = chain.request();
+
+				if (req.body() != null) {
+					Buffer buffer = new Buffer();
+					req.body().writeTo(buffer);
+					String in = buffer.readUtf8();
+					String bodyContent = "";
+					try {
+						// In case body is not JSON
+						bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
+								.writeValueAsString(jsonMapper.readTree(in));
+					} catch (Exception e) {
+						bodyContent = in;
+					}
+					System.out.println("Request body: " + bodyContent);
+				}
+
+				return chain.proceed(req);
+			}
+		}); //
 
 		// Debug code below, outputs the response
-//		builder.addInterceptor(new Interceptor() {
-//
-//			@Override
-//			public Response intercept(Chain chain) throws IOException {
-//
-//				Response response = chain.proceed(chain.request());
-//				if (response.body() != null) {
-//					BufferedSource source = response.body().source();
-//					source.request(Long.MAX_VALUE);
-//
-//					@SuppressWarnings("deprecation")
-//					Buffer buffer = source.buffer();
-//
-//					String in = buffer.clone().readUtf8();
-//					String bodyContent = "";
-//					try {
-//						// In case body is not JSON
-//						bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
-//								.writeValueAsString(jsonMapper.readTree(in));
-//					} catch (Exception e) {
-//						bodyContent = in;
-//					}
-//					System.out.println("Response body: " + bodyContent);
-//				}
-//
-//				return response; // Return the original response unaltered
-//			}
-//		}); //
+		builder.addInterceptor(new Interceptor() {
+
+			@Override
+			public Response intercept(Chain chain) throws IOException {
+
+				Response response = chain.proceed(chain.request());
+				if (response.body() != null) {
+					BufferedSource source = response.body().source();
+					source.request(Long.MAX_VALUE);
+
+					@SuppressWarnings("deprecation")
+					Buffer buffer = source.buffer();
+
+					String in = buffer.clone().readUtf8();
+					String bodyContent = "";
+					try {
+						// In case body is not JSON
+						bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
+								.writeValueAsString(jsonMapper.readTree(in));
+					} catch (Exception e) {
+						bodyContent = in;
+					}
+					System.out.println("Response body: " + bodyContent);
+				}
+
+				return response; // Return the original response unaltered
+			}
+		}); //
 
 		builder.addInterceptor(new Interceptor() { // Add API key in authorization header
 			@Override
 			public Response intercept(Chain chain) throws IOException {
 				return chain.proceed(chain.request().newBuilder() //
 						.header("x-api-key", (apiKey == null) ? getApiKey() : apiKey) //
-						.header("content-type", "application/json")
-						.header("anthropic-version", "2023-06-01")
+						.header("content-type", "application/json") // 
+						.header("anthropic-version", API_VERSION) //
+						.header("anthropic-beta", "tools-2024-04-04") //
 						.build());
 			}
 		}).build();

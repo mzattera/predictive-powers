@@ -45,6 +45,7 @@ import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.Toolset;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
@@ -327,7 +328,7 @@ public class ToolCallTest {
 			List<ToolCallResult> results = new ArrayList<>();
 			results.add(new ToolCallResult(reply.getToolCalls().get(0), "10°C"));
 			results.add(new ToolCallResult(reply.getToolCalls().get(1), "20°C"));
-			reply = cs.chat(results);
+			reply = cs.chat(new ChatMessage(results));
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
 			assertTrue(reply.getText().contains("10"));
 			assertTrue(reply.getText().contains("20"));

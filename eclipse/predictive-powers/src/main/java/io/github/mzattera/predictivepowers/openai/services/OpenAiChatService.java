@@ -15,7 +15,6 @@
  */
 package io.github.mzattera.predictivepowers.openai.services;
 
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -52,7 +51,6 @@ import io.github.mzattera.predictivepowers.services.messages.MessagePart;
 import io.github.mzattera.predictivepowers.services.messages.TextPart;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
-import io.github.mzattera.util.ImageUtil;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -249,6 +247,7 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 		return history.stream().map(this::fromOpenAiMessage).collect(Collectors.toList());
 	}
 
+	// TODO URGENT, probably add method setHistory(List<ChatMessage> to interface)
 	/** For testing purposes only. This is not meant to be used. */
 	List<OpenAiChatMessage> getModifiableHistory() {
 		return history;
@@ -371,33 +370,6 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 			history.subList(0, toTrim).clear();
 
 		return new ChatCompletion(result.getLeft(), fromOpenAiMessage(result.getRight()));
-	}
-
-	/**
-	 * Continues current chat, by returning results from tool calls to the OpenAI
-	 * API. This is invoked after the model generated tool call(s), proper tools
-	 * were invoked and now their results are ready to be returned to the model.
-	 * Note that the service treats (old) function call API and (new) tool call API
-	 * the same, translating function calls into tool calls transparently.
-	 * 
-	 * @param results the list of results from various call.
-	 */
-	public ChatCompletion chat(List<? extends ToolCallResult> results) {
-		return chat(results, defaultReq);
-	}
-
-	/**
-	 * Continues current chat, by returning results from tool calls to the OpenAI
-	 * API. This is invoked after the model generated tool call(s), proper tools
-	 * were invoked and now their results are ready to be returned to the model.
-	 * Note that the service treats (old) function call API and (new) tool call API
-	 * the same, translating function calls into tool calls transparently.
-	 * 
-	 * @param results the list of results from various call.
-	 */
-	public ChatCompletion chat(List<? extends ToolCallResult> results, ChatCompletionsRequest req) {
-		// Merges all results into a multi-part message
-		return chat(new ChatMessage(results), req);
 	}
 
 	@Override
@@ -613,7 +585,7 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 		}
 
 		// Normal (text) message
-		return new ChatMessage(Author.BOT, msg.getContent());
+		return new ChatMessage(Author.BOT, msg.getContentParts());
 	}
 
 	/**

@@ -16,17 +16,12 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Scanner;
 
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.tika.exception.TikaException;
-import org.xml.sax.SAXException;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
 import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
@@ -34,7 +29,6 @@ import io.github.mzattera.predictivepowers.services.EmbeddingService;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
 
-@SuppressWarnings("unused")
 public class OracleExample {
 
 	public static void main(String[] args) throws Exception {
@@ -48,7 +42,7 @@ public class OracleExample {
 		// Question answering service
 		try (endpoint;
 				QuestionAnsweringService answerSvc = endpoint.getQuestionAnsweringService();
-				) {
+				KnowledgeBase knowledgeBase = new KnowledgeBase();) {
 
 			try (Scanner console = new Scanner(System.in)) {
 
@@ -59,7 +53,6 @@ public class OracleExample {
 
 				// Read the page text, embed it, and store it into a knowledge base
 				EmbeddingService embeddingService = endpoint.getEmbeddingService();
-				KnowledgeBase knowledgeBase = new KnowledgeBase();
 				knowledgeBase.insert(embeddingService.embedURL(pageUrl));
 
 				// Loop to reads questions from user and answer them

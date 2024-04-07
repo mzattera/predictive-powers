@@ -17,7 +17,7 @@
 package io.github.mzattera.predictivepowers.services.messages;
 
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -35,7 +35,6 @@ import lombok.experimental.SuperBuilder;
  */
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @RequiredArgsConstructor
-@AllArgsConstructor
 @SuperBuilder
 @Getter
 @Setter
@@ -49,19 +48,35 @@ public class ToolCallResult implements MessagePart {
 	/** Unique ID of the tool being called. */
 	// TODO Needed?
 	@NonNull
-	String toolId;
+	private String toolId;
 
 	/** Result of calling the tool. */
-	Object result;
+	private Object result;
+
+	/** True of te result is an error. */
+	@Builder.Default
+	private boolean isError = false;
 
 	public ToolCallResult(@NonNull ToolCall call, String result) {
 		toolCallId = call.getId();
 		toolId = call.getTool().getId();
-		this.result = result; 
+		this.result = result;
+	}
+
+	public ToolCallResult(String toolCallId, String toolId, String result) {
+		this.toolCallId = toolCallId;
+		this.toolId = toolId;
+		this.result = result;
+	}
+	
+	public ToolCallResult(ToolCall call, Exception e) {
+		this(call, "Error: " + e.getMessage());
+		isError = true;
 	}
 
 	@Override
 	public String getContent() {
 		return ("ToolCallResult(" + (result == null ? "" : result.toString()) + ")");
 	}
+
 }

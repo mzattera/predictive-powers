@@ -152,10 +152,10 @@ public final class OpenAiTool implements Tool {
 	public int hashCode() {
 		return this.getId().hashCode();
 	}
-	
+
 	///////// Below methods implement the Tool interface
 	/////////////////////////////////////////////////////////////////////////////////////
-	
+
 	@JsonIgnore
 	private Capability capability;
 
@@ -165,7 +165,7 @@ public final class OpenAiTool implements Tool {
 			wrappedTool.setCapability(capability);
 		else
 			this.capability = capability;
-	
+
 	}
 
 	@Override
@@ -217,7 +217,7 @@ public final class OpenAiTool implements Tool {
 		if (wrappedTool != null)
 			return wrappedTool.getParameters();
 		if (type == Type.FUNCTION)
-			return function.getParameters().properties;
+			return function.getParameters().getProperties();
 		else
 			return new ArrayList<>();
 	}

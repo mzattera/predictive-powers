@@ -4,15 +4,18 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -24,6 +27,9 @@ import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
 import io.github.mzattera.predictivepowers.services.messages.MessagePart;
 import io.github.mzattera.predictivepowers.services.messages.TextPart;
+import io.github.mzattera.predictivepowers.services.messages.ToolCall;
+import io.github.mzattera.predictivepowers.services.messages.ToolCall.ToolCallProxy;
+import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -72,9 +78,15 @@ public class Message {
 					gen.writeStartObject(); // Start of part
 
 					if (part instanceof TextPart) {
+
+						// Part is text
+
 						gen.writeStringField("type", "text");
 						gen.writeStringField("text", ((TextPart) part).getContent());
 					} else if (part instanceof FilePart) {
+
+						// Part is an image
+
 						FilePart file = (FilePart) part;
 						if (file.getContentType() != ContentType.IMAGE)
 							throw new IllegalArgumentException("Only files with content type = IMAGE are supported.");
@@ -91,6 +103,36 @@ public class Message {
 									Base64.getEncoder().encodeToString(file.getInputStream().readAllBytes()));
 
 						gen.writeEndObject(); // end source obj
+
+					} else if (part instanceof ToolCall) {
+
+						// Part is a tool call
+
+						ToolCall call = (ToolCall) part;
+						gen.writeStringField("type", "tool_use");
+						gen.writeStringField("id", call.getId());
+						gen.writeStringField("name", call.getTool().getId());
+
+						// Serializing call parameters
+						@NonNull
+						Map<String, ? extends Object> inputMap = call.getArguments();
+						if (inputMap != null) {
+							gen.writeObjectFieldStart("input"); // "input": {
+							for (Map.Entry<String, ? extends Object> entry : inputMap.entrySet()) {
+								gen.writeObjectField(entry.getKey(), entry.getValue());
+							}
+							gen.writeEndObject(); // End of "input"
+						}
+
+					} else if (part instanceof ToolCallResult) {
+
+						// Part is a tool call result
+
+						ToolCallResult result = (ToolCallResult) part;
+						gen.writeStringField("type", "tool_result");
+						gen.writeStringField("tool_use_id", result.getToolCallId());
+						gen.writeStringField("content", result.getResult().toString());
+						gen.writeBooleanField("is_error", result.isError());
 					} else {
 						throw new IllegalArgumentException("Unsupported part type: " + part);
 					}
@@ -109,14 +151,37 @@ public class Message {
 		public List<MessagePart> deserialize(JsonParser p, DeserializationContext ctxt)
 				throws IOException, JsonProcessingException {
 
-			JsonNode node = p.getCodec().readTree(p);
+			ObjectMapper mapper = (ObjectMapper) p.getCodec();
+			JsonNode node = mapper.readTree(p);
 
 			List<MessagePart> parts = new ArrayList<>();
 			for (JsonNode part : node) {
 				String type = part.get("type").asText();
-				if (!"text".equals(type))
+
+				if ("text".equals(type)) {
+
+					// Text part
+
+					parts.add(new TextPart(part.get("text").asText()));
+				} else if ("tool_use".equals(type)) {
+
+					// Tool call part
+
+					// Deserialize the "parameters" object into a Map<String, Object>
+					JsonNode argsNode = part.get("input");
+					Map<String, Object> args = null;
+					if (argsNode != null && !argsNode.isEmpty()) {
+						args = mapper.convertValue(argsNode, new TypeReference<Map<String, Object>>() {
+						});
+					}
+
+					// Notice tool is NOT set; this must be handled by the caller
+					parts.add(ToolCallProxy.builder() //
+							.id(part.get("id").asText()) //
+							.toolName(part.get("name").asText()) //
+							.arguments(args).build());
+				} else
 					throw new IllegalArgumentException("Unsupported message part type: " + type);
-				parts.add(new TextPart(part.get("text").asText()));
 			}
 
 			return parts;
@@ -127,7 +192,7 @@ public class Message {
 			return new ArrayList<>(); // Return empty list on null
 		}
 	}
-	
+
 	public static enum Role {
 
 		USER("user"), ASSISTANT("assistant");
@@ -203,4 +268,19 @@ public class Message {
 	}
 
 	// TODO URGENT add constructor for images
+
+	public static void main(String[] args) {
+		String json = "{\n" + "  \"location\" : \"Zurich\",\n" + "  \"numer\": 3\n" + "}";
+
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			Map<String, Object> map = mapper.readValue(json, new TypeReference<Map<String, Object>>() {
+			});
+
+			// Print the map to see the result
+			System.out.println(map);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 }

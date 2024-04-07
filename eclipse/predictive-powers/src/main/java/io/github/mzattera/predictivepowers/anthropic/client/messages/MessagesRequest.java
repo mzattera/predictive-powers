@@ -37,12 +37,6 @@ public class MessagesRequest {
 		 * An external identifier for the user associated with the request. Optional.
 		 */
 		private String userId;
-
-		/**
-		 * Custom text sequences that cause the model to stop generating. Optional.
-		 */
-		@Builder.Default
-		private List<String> stopSequences = new ArrayList<>();
 	}
 
 	/**
@@ -94,6 +88,11 @@ public class MessagesRequest {
 	 */
 	private Double temperature;
 
+	/**
+	 * Definitions of tools that the model may use. 
+	 */
+	List<AnthropicTool> tools;
+	
 	/**
 	 * Use nucleus sampling. Optional.
 	 */

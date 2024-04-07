@@ -18,20 +18,23 @@ package io.github.mzattera.predictivepowers.anthropic.services;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.github.mzattera.predictivepowers.anthropic.client.AnthropicEndpoint;
+import io.github.mzattera.predictivepowers.anthropic.client.messages.AnthropicTool;
 import io.github.mzattera.predictivepowers.anthropic.client.messages.Message;
 import io.github.mzattera.predictivepowers.anthropic.client.messages.Message.Role;
 import io.github.mzattera.predictivepowers.anthropic.client.messages.MessagesRequest;
 import io.github.mzattera.predictivepowers.anthropic.client.messages.MessagesResponse;
 import io.github.mzattera.predictivepowers.anthropic.services.AnthropicModelService.AnthropicTokenizer;
-import io.github.mzattera.predictivepowers.services.AbstractChatService;
+import io.github.mzattera.predictivepowers.services.AbstractAgent;
+import io.github.mzattera.predictivepowers.services.ChatService;
+import io.github.mzattera.predictivepowers.services.Tool;
+import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.messages.Base64FilePart;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
@@ -41,8 +44,11 @@ import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentTyp
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.MessagePart;
 import io.github.mzattera.predictivepowers.services.messages.TextPart;
+import io.github.mzattera.predictivepowers.services.messages.ToolCall.ToolCallProxy;
+import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
  * ANTHROP\C chat service.
@@ -50,33 +56,51 @@ import lombok.NonNull;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public class AnthropicChatService extends AbstractChatService {
+public class AnthropicChatService extends AbstractAgent implements ChatService {
 
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
 	// values from a Map this is done partially
 
-	private final static Logger LOG = LoggerFactory.getLogger(AnthropicChatService.class);
+//	private final static Logger LOG = LoggerFactory.getLogger(AnthropicChatService.class);
 
 	public static final String DEFAULT_MODEL = "claude-3-opus-20240229";
 
+	@Getter
+	private final String id = UUID.randomUUID().toString();
+
+	@Getter
+	@Setter
+	private String name = "ANTHROP/C Message API Assistant";
+
+	@Getter
+	@Setter
+	private String description = "";
+
+	@Getter
+	@Setter
+	private int maxHistoryLength = Integer.MAX_VALUE;
+
+	@Getter
+	private int maxConversationSteps = 1000;
+
+	@Override
+	public void setMaxConversationSteps(int l) {
+		if (l < 1)
+			throw new IllegalArgumentException("Must keep at least 1 message.");
+		maxConversationSteps = l;
+	}
+
+	@Getter
+	private int maxConversationTokens = Integer.MAX_VALUE;
+
+	@Override
+	public void setMaxConversationTokens(int n) {
+		if (n < 1)
+			throw new IllegalArgumentException("Must keep at least 1 token.");
+		maxConversationTokens = n;
+	}
+
 	private final AnthropicModelService modelService;
-
-	public AnthropicChatService(@NonNull AnthropicEndpoint ep) {
-		this(ep, DEFAULT_MODEL);
-	}
-
-	public AnthropicChatService(@NonNull AnthropicEndpoint ep, @NonNull String model) {
-		this(ep, MessagesRequest.builder().model(model).build());
-	}
-
-	public AnthropicChatService(@NonNull AnthropicEndpoint ep, @NonNull MessagesRequest defaultReq) {
-		this.endpoint = ep;
-		this.defaultReq = defaultReq;
-		this.modelService = ep.getModelService();
-		setMaxConversationSteps(Integer.MAX_VALUE);
-		setMaxConversationTokens(Math.min(10_000, modelService.getContextSize(defaultReq.getModel())));
-		setMaxNewTokens(modelService.getMaxNewTokens(defaultReq.getModel()));
-	}
 
 	@Getter
 	@NonNull
@@ -91,6 +115,22 @@ public class AnthropicChatService extends AbstractChatService {
 	@Getter
 	@NonNull
 	private final MessagesRequest defaultReq;
+
+	public AnthropicChatService(@NonNull AnthropicEndpoint ep) {
+		this(ep, DEFAULT_MODEL);
+	}
+
+	public AnthropicChatService(@NonNull AnthropicEndpoint ep, @NonNull String model) {
+		this(ep, MessagesRequest.builder().model(model).build());
+	}
+
+	public AnthropicChatService(@NonNull AnthropicEndpoint ep, @NonNull MessagesRequest defaultReq) {
+		this.endpoint = ep;
+		this.defaultReq = defaultReq;
+		this.modelService = ep.getModelService();
+		setMaxNewTokens(modelService.getMaxNewTokens(defaultReq.getModel()));
+		setMaxConversationTokens(Math.min(10_000, modelService.getContextSize(defaultReq.getModel())));
+	}
 
 	@Override
 	public String getPersonality() {
@@ -182,6 +222,41 @@ public class AnthropicChatService extends AbstractChatService {
 	@Override
 	public void clearConversation() {
 		history.clear();
+	}
+
+	@Override
+	protected void putTool(@NonNull Tool tool) throws ToolInitializationException {
+		AnthropicTool t = (tool instanceof AnthropicTool) ? (AnthropicTool) tool : new AnthropicTool(tool);
+		super.putTool(t);
+		setDefaultTools();
+	}
+
+	@Override
+	protected boolean removeTool(@NonNull String toolId) {
+		if (super.removeTool(toolId)) {
+			setDefaultTools();
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Set the tools to be used in all subsequent request. This sets tools or
+	 * functions fields in defaultReq properly, taking automatically in
+	 * consideration whether the model support functions or tool calls.
+	 * 
+	 * This is easier than setting tools or functions fields in defaultReq directly.
+	 * 
+	 * @throws UnsupportedOperationException if the model does not support function
+	 *                                       calls.
+	 */
+	private void setDefaultTools() {
+
+		if (toolMap.size() == 0) {
+			defaultReq.setTools(null);
+			return;
+		}
+		defaultReq.setTools(toolMap.values().stream().map(t -> (AnthropicTool) t).toList());
 	}
 
 	@Override
@@ -354,7 +429,19 @@ public class AnthropicChatService extends AbstractChatService {
 	 * @return
 	 */
 	private ChatMessage fromMessage(Message msg) {
-		return new ChatMessage(Author.BOT, msg.getContent());
+		ChatMessage result = new ChatMessage(Author.BOT, msg.getContent());
+
+		// The result might contain tool calls for which the tool is not set (because
+		// not available during deserialization); we set the tool here
+		for (MessagePart p : result.getParts()) {
+			if (p instanceof ToolCallProxy) {
+				ToolCallProxy proxy = (ToolCallProxy) p;
+				if (proxy.getTool() == null)
+					proxy.setTool(toolMap.get(proxy.getToolName()));
+			}
+		}
+
+		return result;
 	}
 
 	/**
@@ -373,7 +460,8 @@ public class AnthropicChatService extends AbstractChatService {
 
 		for (MessagePart part : msg.getParts()) {
 
-			if (part instanceof TextPart) {
+			if ((part instanceof TextPart) || (part instanceof ToolCallResult)) {
+
 				result.getContent().add(part);
 
 			} else if (part instanceof FilePart) {

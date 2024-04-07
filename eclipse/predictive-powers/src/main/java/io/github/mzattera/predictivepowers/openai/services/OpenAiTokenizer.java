@@ -186,9 +186,13 @@ public class OpenAiTokenizer implements Tokenizer {
 				sum += 3;
 			sum += encoding.countTokens(role);
 
-			if (msg.getContent() != null)
+			// TODO urgent, what when we mix text an images? We should analyze parts separately, probably
+			try {
 				sum += encoding.countTokens(msg.getContent());
-
+			} catch (IllegalArgumentException e) {
+				// Message is not a simple text message
+			}
+			
 			if (msg.getName() != null) {
 				if (!"gpt-4-vision-preview".equals(model)) {
 					sum += encoding.countTokens(msg.getName());

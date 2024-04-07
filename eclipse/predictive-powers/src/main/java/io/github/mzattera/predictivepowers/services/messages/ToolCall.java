@@ -47,6 +47,19 @@ import lombok.experimental.SuperBuilder;
 public class ToolCall implements MessagePart {
 
 	/**
+	 * Sometimes it is not possible to create a {@link ToolCall} instance, as we have only the tool name.
+	 * This class is meant to save the name until an instance of tool is available.
+	 */
+	@RequiredArgsConstructor
+	@SuperBuilder
+	@Getter
+	@Setter
+	@ToString
+	public static class ToolCallProxy extends ToolCall {
+		private final @NonNull String toolName;
+	}
+	
+	/**
 	 * Unique ID for this tool call.
 	 */
 	@NonNull

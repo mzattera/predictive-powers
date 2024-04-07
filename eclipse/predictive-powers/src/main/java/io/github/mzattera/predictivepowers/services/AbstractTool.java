@@ -9,7 +9,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import io.github.mzattera.predictivepowers.openai.client.chat.Function;
+import io.github.mzattera.predictivepowers.services.messages.JsonSchema;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -56,7 +56,7 @@ public abstract class AbstractTool implements Tool {
 	 * @throws JsonProcessingException
 	 */
 	protected void setParameters(Class<?> schema) throws JsonProcessingException {
-		parameters = Function.getParametersFromSchema(schema);
+		parameters = JsonSchema.getParametersFromSchema(schema);
 	}
 
 	@Getter
@@ -92,7 +92,7 @@ public abstract class AbstractTool implements Tool {
 	protected AbstractTool(@NonNull String id, String description, @NonNull Class<?> schema) {
 		this.id = id;
 		this.description = description;
-		this.parameters = Function.getParametersFromSchema(schema);
+		this.parameters = JsonSchema.getParametersFromSchema(schema);
 	}
 
 	@Override
@@ -102,18 +102,19 @@ public abstract class AbstractTool implements Tool {
 	// Utility methods to read parameters
 	// ////////////////////////////////////////////////////////////////////////////////////////////
 
-	protected static boolean getBoolean(String name, Map<String, Object> args) {
-		return getBoolean(name, args.get(name).toString());
+	protected static boolean getBoolean(String name, Map<String, ? extends Object> args) {
+		if (args.containsKey(name))
+			return getBoolean(name, args.get(name));
+		throw new IllegalArgumentException("Missing required parameter \"" + name + "\".");
 	}
 
-	protected static boolean getBoolean(String name, Map<String, Object> args, boolean def) {
-		return getBoolean(name, args.getOrDefault(name, def).toString());
+	protected static boolean getBoolean(String name, Map<String, ? extends Object> args, boolean def) {
+		if (!args.containsKey(name))
+			return def;
+		return getBoolean(name, args.get(name));
 	}
 
-	protected static boolean getBoolean(String name, Object value) {
-		if (value == null)
-			throw new IllegalArgumentException("Missing required parameter \"" + name + "\".");
-
+	private static boolean getBoolean(String name, Object value) {
 		String s = value.toString();
 		if ("true".equals(s.trim().toLowerCase()))
 			return true;
@@ -124,18 +125,19 @@ public abstract class AbstractTool implements Tool {
 				"Parameter \"" + name + "\" is expected to be a boolean value but it is not.");
 	}
 
-	protected static long getLong(String name, Map<String, Object> args) {
-		return getLong(name, args.get(name).toString());
+	protected static long getLong(String name, Map<String, ? extends Object> args) {
+		if (args.containsKey(name))
+			return getLong(name, args.get(name));
+		throw new IllegalArgumentException("Missing required parameter \"" + name + "\".");
 	}
 
-	protected static long getLong(String name, Map<String, Object> args, long def) {
-		return getLong(name, args.getOrDefault(name, def).toString());
+	protected static long getLong(String name, Map<String, ? extends Object> args, long def) {
+		if (!args.containsKey(name))
+			return def;
+		return getLong(name, args.get(name));
 	}
 
-	protected static long getLong(String name, Object value) {
-		if (value == null)
-			throw new IllegalArgumentException("Missing required parameter \"" + name + "\".");
-
+	private static long getLong(String name, Object value) {
 		try {
 			return Long.parseLong(value.toString());
 		} catch (Exception e) {
@@ -144,18 +146,19 @@ public abstract class AbstractTool implements Tool {
 		}
 	}
 
-	protected static double getDouble(String name, Map<String, Object> args) {
-		return getDouble(name, args.get(name).toString());
+	protected static double getDouble(String name, Map<String, ? extends Object> args) {
+		if (args.containsKey(name))
+			return getDouble(name, args.get(name));
+		throw new IllegalArgumentException("Missing required parameter \"" + name + "\".");
 	}
 
-	protected static double getDouble(String name, Map<String, Object> args, double def) {
-		return getDouble(name, args.getOrDefault(name, def).toString());
+	protected static double getDouble(String name, Map<String, ? extends Object> args, double def) {
+		if (!args.containsKey(name))
+			return def;
+		return getDouble(name, args.get(name));
 	}
 
 	protected static double getDouble(String name, Object value) {
-		if (value == null)
-			throw new IllegalArgumentException("Missing required parameter \"" + name + "\".");
-
 		try {
 			return Double.parseDouble(value.toString());
 		} catch (Exception e) {
@@ -164,18 +167,16 @@ public abstract class AbstractTool implements Tool {
 		}
 	}
 
-	protected static String getString(String name, Map<String, Object> args) {
-		return getString(name, args.get(name).toString());
+	protected static String getString(String name, Map<String, ? extends Object> args) {
+		Object result = args.get(name);
+		if (result == null)
+			return null;
+		return result.toString();
 	}
 
-	protected static String getString(String name, Map<String, Object> args, String def) {
-		return getString(name, args.getOrDefault(name, def).toString());
-	}
-
-	protected static String getString(String name, Object value) {
-		if (value == null)
-			throw new IllegalArgumentException("Missing required parameter \"" + name + "\".");
-
-		return value.toString();
+	protected static String getString(String name, Map<String, ? extends Object> args, String def) {
+		if (!args.containsKey(name))
+			return def;
+		return getString(name, args);
 	}
 }

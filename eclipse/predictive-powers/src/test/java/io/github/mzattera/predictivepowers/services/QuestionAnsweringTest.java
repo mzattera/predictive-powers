@@ -186,9 +186,8 @@ public class QuestionAnsweringTest {
 	 */
 	public static void main(String args[]) throws FileNotFoundException, IOException {
 
-		try (DirectOpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
+		try (DirectOpenAiEndpoint ep = new DirectOpenAiEndpoint(); KnowledgeBase kb = new KnowledgeBase()) {
 			EmbeddingService es = ep.getEmbeddingService();
-			KnowledgeBase kb = new KnowledgeBase();
 
 			List<String> test = new ArrayList<>();
 			test.add("Olaf likes bananas");

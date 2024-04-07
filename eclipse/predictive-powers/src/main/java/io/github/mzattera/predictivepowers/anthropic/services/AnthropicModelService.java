@@ -4,7 +4,6 @@
 package io.github.mzattera.predictivepowers.anthropic.services;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,12 +12,9 @@ import java.util.Map;
 
 import io.github.mzattera.predictivepowers.anthropic.client.AnthropicEndpoint;
 import io.github.mzattera.predictivepowers.anthropic.client.messages.Message;
-import io.github.mzattera.predictivepowers.anthropic.client.messages.Message.Role;
 import io.github.mzattera.predictivepowers.anthropic.client.messages.MessagesRequest;
-import io.github.mzattera.predictivepowers.anthropic.client.messages.MessagesResponse;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceModelService.HuggingFaceTokenizer;
 import io.github.mzattera.predictivepowers.services.AbstractModelService;
-import io.github.mzattera.predictivepowers.services.messages.Base64FilePart;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.services.messages.MessagePart;
 import io.github.mzattera.predictivepowers.services.messages.TextPart;
@@ -140,7 +136,7 @@ public class AnthropicModelService extends AbstractModelService {
 	}
 
 	@Override
-	public Tokenizer getTokenizer(@NonNull String model, Tokenizer def) {
+	public AnthropicTokenizer getTokenizer(@NonNull String model, Tokenizer def) {
 		if (!(def instanceof AnthropicTokenizer))
 			throw new IllegalArgumentException("Tokenizer must be a subclass of AnthropicTokenizer");
 		return (AnthropicTokenizer) super.getTokenizer(model, def);

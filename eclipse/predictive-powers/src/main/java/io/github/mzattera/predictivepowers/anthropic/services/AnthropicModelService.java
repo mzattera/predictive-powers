@@ -24,7 +24,7 @@ import lombok.Getter;
 import lombok.NonNull;
 
 /**
- * Model service ro Antrhop/c models.
+ * Model service for Anthrop/c models.
  */
 public class AnthropicModelService extends AbstractModelService {
 

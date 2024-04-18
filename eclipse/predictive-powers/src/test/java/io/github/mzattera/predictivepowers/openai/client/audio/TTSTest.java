@@ -18,6 +18,7 @@ package io.github.mzattera.predictivepowers.openai.client.audio;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -41,12 +42,12 @@ class TTSTest {
 		svcs = TestConfiguration.getTTSServices().stream() //
 				.filter(p -> p.getLeft() instanceof OpenAiEndpoint) //
 				.map(p -> new ImmutablePair<OpenAiEndpoint, String>((OpenAiEndpoint) p.getLeft(), p.getRight())) //
-				.toList();
+				.collect(Collectors.toList());
 	}
 
 	@AfterAll
 	static void tearDown() {
-		TestConfiguration.close(svcs.stream().map(p -> p.getLeft()).toList());
+		TestConfiguration.close(svcs.stream().map(p -> p.getLeft()).collect(Collectors.toList()));
 	}
 
 	static Stream<ImmutablePair<OpenAiEndpoint, String>> services() {

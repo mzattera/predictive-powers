@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -58,7 +59,7 @@ public class CompletionServiceTest {
 
 	@AfterAll
 	static void tearDown() {
-		TestConfiguration.close(svcs.stream().map(p -> p.getLeft()).toList());
+		TestConfiguration.close(svcs.stream().map(p -> p.getLeft()).collect(Collectors.toList()));
 	}
 
 	static Stream<Pair<AiEndpoint, String>> services() {

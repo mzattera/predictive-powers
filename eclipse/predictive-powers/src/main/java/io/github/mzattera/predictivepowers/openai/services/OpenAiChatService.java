@@ -72,7 +72,7 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiChatService.class);
 
-	public static final String DEFAULT_MODEL = "gpt-4-turbo-preview";
+	public static final String DEFAULT_MODEL = "gpt-4-turbo";
 
 	@Getter
 	@Setter

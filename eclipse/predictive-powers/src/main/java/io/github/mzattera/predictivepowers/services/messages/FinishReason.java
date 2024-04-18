@@ -54,6 +54,7 @@ public enum FinishReason {
 		switch (reason) {
 		case "end_turn":
 		case "stop_sequence":
+		case "tool_use":
 			return FinishReason.COMPLETED;
 		case "max_tokens":
 			return FinishReason.TRUNCATED;

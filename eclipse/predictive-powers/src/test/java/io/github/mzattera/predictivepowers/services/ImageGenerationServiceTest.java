@@ -23,6 +23,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -54,7 +55,7 @@ public class ImageGenerationServiceTest {
 
 	@AfterAll
 	static void tearDown() {
-		TestConfiguration.close(svcs.stream().map(p -> p.getLeft()).toList());
+		TestConfiguration.close(svcs.stream().map(p -> p.getLeft()).collect(Collectors.toList()));
 	}
 
 	static Stream<Pair<AiEndpoint, String>> services() {

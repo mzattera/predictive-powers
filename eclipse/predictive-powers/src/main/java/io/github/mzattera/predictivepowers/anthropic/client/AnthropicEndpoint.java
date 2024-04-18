@@ -95,11 +95,13 @@ public class AnthropicEndpoint implements AiEndpoint {
 
 	@Override
 	public AgentService getAgentService() {
+		// TODO URGENT implement
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public AgentService getAgentService(@NonNull String model) {
+		// TODO URGENT implement
 		throw new UnsupportedOperationException();
 	}
 

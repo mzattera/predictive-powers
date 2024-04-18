@@ -100,16 +100,23 @@ public abstract class OpenAiModelService extends AbstractModelService {
 
 	@Override
 	public OpenAiModelMetaData put(@NonNull String model, @NonNull ModelMetaData data) {
-		return (OpenAiModelMetaData) super.put(model, (OpenAiModelMetaData) data);
+		if ((data.getTokenizer() != null) && !(data.getTokenizer() instanceof OpenAiTokenizer))
+			throw new IllegalArgumentException("Tokenizer must be a subclass of OpenAiTokenizer");
+		return (OpenAiModelMetaData) super.put(model, data);
 	}
 
 	@Override
-	public OpenAiTokenizer getTokenizer(@NonNull String model) throws IllegalArgumentException {
-		return (OpenAiTokenizer) super.getTokenizer(model);
+	public OpenAiTokenizer getTokenizer(@NonNull String model) {
+		Tokenizer result = super.getTokenizer(model);
+		if (result == null)
+			return null;
+		return (OpenAiTokenizer) result;
 	}
 
 	@Override
 	public OpenAiTokenizer getTokenizer(@NonNull String model, Tokenizer def) {
+		if ((def != null) && !(def instanceof OpenAiTokenizer))
+			throw new IllegalArgumentException("Tokenizer must be a subclass of OpenAiTokenizer");
 		return (OpenAiTokenizer) super.getTokenizer(model, def);
 	}
 

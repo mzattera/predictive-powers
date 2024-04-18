@@ -30,7 +30,7 @@ public class VisionApiExample {
 //		try (OpenAiEndpoint endpoint = new DirectOpenAiEndpoint()) {
 //			Agent bot = endpoint.getChatService("gpt-4-vision-preview");
 			
-		// Create agent using Anthrop/c
+		// Create agent using Anthropic
 			try (AiEndpoint endpoint = new AnthropicEndpoint()) {
 				ChatService bot = endpoint.getChatService();
 

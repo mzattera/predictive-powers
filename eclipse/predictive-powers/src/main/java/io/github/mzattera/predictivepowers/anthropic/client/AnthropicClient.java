@@ -35,10 +35,7 @@ import lombok.NonNull;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import okhttp3.OkHttpClient.Builder;
-import okhttp3.Request;
 import okhttp3.Response;
-import okio.Buffer;
-import okio.BufferedSource;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
@@ -152,60 +149,60 @@ public class AnthropicClient implements ApiClient {
 		Builder builder = http.newBuilder();
 
 		// Debug code below, outputs the request
-		builder.addInterceptor(new Interceptor() {
-
-			@Override
-			public Response intercept(Chain chain) throws IOException {
-				Request req = chain.request();
-
-				if (req.body() != null) {
-					Buffer buffer = new Buffer();
-					req.body().writeTo(buffer);
-					String in = buffer.readUtf8();
-					String bodyContent = "";
-					try {
-						// In case body is not JSON
-						bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
-								.writeValueAsString(jsonMapper.readTree(in));
-					} catch (Exception e) {
-						bodyContent = in;
-					}
-					System.out.println("Request body: " + bodyContent);
-				}
-
-				return chain.proceed(req);
-			}
-		}); //
+//		builder.addInterceptor(new Interceptor() {
+//
+//			@Override
+//			public Response intercept(Chain chain) throws IOException {
+//				Request req = chain.request();
+//
+//				if (req.body() != null) {
+//					Buffer buffer = new Buffer();
+//					req.body().writeTo(buffer);
+//					String in = buffer.readUtf8();
+//					String bodyContent = "";
+//					try {
+//						// In case body is not JSON
+//						bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
+//								.writeValueAsString(jsonMapper.readTree(in));
+//					} catch (Exception e) {
+//						bodyContent = in;
+//					}
+//					System.out.println("Request body: " + bodyContent);
+//				}
+//
+//				return chain.proceed(req);
+//			}
+//		}); //
 
 		// Debug code below, outputs the response
-		builder.addInterceptor(new Interceptor() {
-
-			@Override
-			public Response intercept(Chain chain) throws IOException {
-
-				Response response = chain.proceed(chain.request());
-				if (response.body() != null) {
-					BufferedSource source = response.body().source();
-					source.request(Long.MAX_VALUE);
-
-					@SuppressWarnings("deprecation")
-					Buffer buffer = source.buffer();
-
-					String in = buffer.clone().readUtf8();
-					String bodyContent = "";
-					try {
-						// In case body is not JSON
-						bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
-								.writeValueAsString(jsonMapper.readTree(in));
-					} catch (Exception e) {
-						bodyContent = in;
-					}
-					System.out.println("Response body: " + bodyContent);
-				}
-
-				return response; // Return the original response unaltered
-			}
-		}); //
+//		builder.addInterceptor(new Interceptor() {
+//
+//			@Override
+//			public Response intercept(Chain chain) throws IOException {
+//
+//				Response response = chain.proceed(chain.request());
+//				if (response.body() != null) {
+//					BufferedSource source = response.body().source();
+//					source.request(Long.MAX_VALUE);
+//
+//					@SuppressWarnings("deprecation")
+//					Buffer buffer = source.buffer();
+//
+//					String in = buffer.clone().readUtf8();
+//					String bodyContent = "";
+//					try {
+//						// In case body is not JSON
+//						bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
+//								.writeValueAsString(jsonMapper.readTree(in));
+//					} catch (Exception e) {
+//						bodyContent = in;
+//					}
+//					System.out.println("Response body: " + bodyContent);
+//				}
+//
+//				return response; // Return the original response unaltered
+//			}
+//		}); //
 
 		builder.addInterceptor(new Interceptor() { // Add API key in authorization header
 			@Override

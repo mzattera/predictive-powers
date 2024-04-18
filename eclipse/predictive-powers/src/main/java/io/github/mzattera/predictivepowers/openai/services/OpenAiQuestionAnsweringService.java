@@ -46,7 +46,7 @@ import lombok.NonNull;
  */
 public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringService {
 
-	public static final String DEFAULT_MODEL = "gpt-4-turbo-preview";
+	public static final String DEFAULT_MODEL = "gpt-4-turbo";
 
 	public OpenAiQuestionAnsweringService(@NonNull OpenAiEndpoint endpoint) {
 		this(endpoint, DEFAULT_MODEL);

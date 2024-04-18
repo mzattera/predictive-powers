@@ -18,7 +18,7 @@ import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.NonNull;
 
 /**
- * This class is a {@link Tool} that Anthrop/c API can use.
+ * This class is a {@link Tool} that Anthropic API can use.
  */
 public class AnthropicTool implements Tool {
 

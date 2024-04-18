@@ -19,6 +19,7 @@ package io.github.mzattera.predictivepowers.openai.services;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
@@ -122,6 +123,6 @@ public class DirectOpenAiModelService extends OpenAiModelService {
 
 	@Override
 	public List<String> listModels() {
-		return endpoint.getClient().listModels().stream().map(m -> m.getId()).toList();
+		return endpoint.getClient().listModels().stream().map(m -> m.getId()).collect(Collectors.toList());
 	}
 }

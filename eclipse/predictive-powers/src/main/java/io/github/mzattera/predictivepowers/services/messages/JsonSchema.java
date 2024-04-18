@@ -269,4 +269,12 @@ public class JsonSchema {
 			return null;
 		}
 	}
+
+	/**
+	 * 
+	 * @return A representation of parameters as JSON schema.
+	 */
+	public static String getSchema(@NonNull List<? extends ToolParameter> parameters) throws JsonProcessingException {
+		return JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(parameters);
+	}
 }

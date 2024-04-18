@@ -18,8 +18,10 @@ package io.github.mzattera.predictivepowers.openai.client.audio;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -31,6 +33,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import io.github.mzattera.predictivepowers.TestConfiguration;
+import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.util.ResourceUtil;
@@ -44,12 +47,12 @@ class STTTest {
 		svcs = TestConfiguration.getSTTServices().stream() //
 				.filter(p -> p.getLeft() instanceof OpenAiEndpoint) //
 				.map(p -> new ImmutablePair<OpenAiEndpoint, String>((OpenAiEndpoint) p.getLeft(), p.getRight())) //
-				.toList();
+				.collect(Collectors.toList());
 	}
 
 	@AfterAll
 	static void tearDown() {
-		TestConfiguration.close(svcs.stream().map(p -> p.getLeft()).toList());
+		TestConfiguration.close(svcs.stream().map(p -> p.getLeft()).collect(Collectors.toList()));
 	}
 
 	static Stream<ImmutablePair<OpenAiEndpoint, String>> services() {
@@ -95,7 +98,7 @@ class STTTest {
 		resp = endpoint.getClient().createTranscription(ResourceUtil.getResourceFile("it-buongiorno.m4a"), req);
 		assertTrue(resp.toLowerCase().contains("buongiorno"));
 		assertTrue(resp.startsWith("WEBVTT"));
-	} // Close endpoint
+	}
 
 	@DisplayName("File translation.")
 	@ParameterizedTest

@@ -24,7 +24,7 @@ import lombok.Setter;
  */
 public class OpenAiAgentService implements AgentService {
 
-	public static final String DEFAULT_MODEL = "gpt-4-turbo-preview";
+	public static final String DEFAULT_MODEL = "gpt-4-turbo";
 
 	@NonNull
 	@Getter

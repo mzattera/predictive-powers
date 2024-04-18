@@ -45,7 +45,7 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiQuestionExtractionService.class);
 
-	public static final String DEFAULT_MODEL = "gpt-4-turbo-preview";
+	public static final String DEFAULT_MODEL = "gpt-4-turbo";
 
 	/**
 	 * This underlying service is used for executing required prompts.

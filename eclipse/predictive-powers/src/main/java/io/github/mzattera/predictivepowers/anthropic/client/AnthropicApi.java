@@ -24,7 +24,7 @@ import retrofit2.http.Body;
 import retrofit2.http.POST;
 
 /**
- * Retrofit definition for Anthrop/c API.
+ * Retrofit definition for Anthropic API.
  * 
  * @author Massimiliano "Maxi" Zattera
  *

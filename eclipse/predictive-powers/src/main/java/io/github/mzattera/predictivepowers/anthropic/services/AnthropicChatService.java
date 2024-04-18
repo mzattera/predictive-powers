@@ -128,7 +128,7 @@ public class AnthropicChatService extends AbstractAgent implements ChatService {
 		this.endpoint = ep;
 		this.defaultReq = defaultReq;
 		this.modelService = ep.getModelService();
-		setMaxNewTokens(modelService.getMaxNewTokens(defaultReq.getModel()));
+		setMaxNewTokens(null); // Number of new tokens must be set
 		setMaxConversationTokens(Math.min(10_000, modelService.getContextSize(defaultReq.getModel())));
 	}
 
@@ -191,11 +191,19 @@ public class AnthropicChatService extends AbstractAgent implements ChatService {
 
 	@Override
 	public Integer getMaxNewTokens() {
-		return defaultReq.getMaxTokens();
+		int result = defaultReq.getMaxTokens();
+		if (result == Integer.MAX_VALUE)
+			return null;
+		return result;
 	}
 
 	@Override
 	public void setMaxNewTokens(Integer maxNewTokens) {
+		// Number of new tokens is mandatory
+		if (maxNewTokens == null)
+			maxNewTokens = modelService.getMaxNewTokens(defaultReq.getModel(), Integer.MAX_VALUE);
+		if (maxNewTokens < 1)
+			throw new IllegalArgumentException("Must generate at minimum 1 new token.");
 		defaultReq.setMaxTokens(maxNewTokens);
 	}
 
@@ -256,7 +264,7 @@ public class AnthropicChatService extends AbstractAgent implements ChatService {
 			defaultReq.setTools(null);
 			return;
 		}
-		defaultReq.setTools(toolMap.values().stream().map(t -> (AnthropicTool) t).toList());
+		defaultReq.setTools(toolMap.values().stream().map(t -> (AnthropicTool) t).collect(Collectors.toList()));
 	}
 
 	@Override
@@ -377,6 +385,9 @@ public class AnthropicChatService extends AbstractAgent implements ChatService {
 	private Pair<FinishReason, Message> chatCompletion(List<Message> messages, MessagesRequest req) {
 		req.setMessages(messages);
 		MessagesResponse resp = endpoint.getClient().createMessage(req);
+
+		System.out.println("### " + resp.getUsage().getInputTokens());
+
 		return new ImmutablePair<>(FinishReason.fromAnthropicApi(resp.getStopReason()), new Message(resp));
 	}
 
@@ -446,7 +457,7 @@ public class AnthropicChatService extends AbstractAgent implements ChatService {
 
 	/**
 	 * This converts a generic ChatMessaege into an Message that is used for
-	 * Anthrop/c API. This is meant for abstraction and easier interoperability of
+	 * Anthropic API. This is meant for abstraction and easier interoperability of
 	 * agents.
 	 * 
 	 * @throws IllegalArgumentException if the message is not in a format supported

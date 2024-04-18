@@ -111,14 +111,14 @@ public class Base64FilePart extends FilePart {
 	}
 
 	/**
-	 * Return a image scaled down for Anthrop/c vision models.
+	 * Return a image scaled down for Anthropic vision models.
 	 * 
 	 * As the image is scaled down anyway before being submitted to the model, it
 	 * makes sense to scale down local images before sending them to the API. This
 	 * saves tokens and reduces latency (see
 	 * {@linkplain https://docs.anthropic.com/claude/docs/vision}).
 	 * 
-	 * @return The same image if it is already scaled down, or its scaled down
+	 * @return The same image, if it is already scaled down, otherwise its scaled down
 	 *         version.
 	 * @throws IOException
 	 */
@@ -130,7 +130,7 @@ public class Base64FilePart extends FilePart {
 		int h = img.getHeight();
 
 		double scale1 = 1568d / Math.max(w, h); // Longest edge must be < 1568
-		double scale2 = Math.sqrt((1092d * 1092d) / (w * h)); // Tokens < 1600 -> area < 1092^2
+		double scale2 = Math.sqrt(1_150_000/(w * h)); // Image < 1.15 Mpixel, or ~1600 tokens
 		double scale = Math.min(scale1, scale2);
 
 		if (scale < 1.0d) {

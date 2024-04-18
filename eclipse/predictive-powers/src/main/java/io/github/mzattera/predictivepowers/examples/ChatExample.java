@@ -34,7 +34,7 @@ public class ChatExample {
 		// Azure OpenAI Service
 //		try (AiEndpoint endpoint = new AzureOpenAiEndpoint(); //
 
-		// Anthrop/c API
+		// Anthropic API
 		try (AiEndpoint endpoint = new AnthropicEndpoint(); //
 				
 				ChatService agent = endpoint.getChatService();) {

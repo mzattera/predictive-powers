@@ -126,11 +126,11 @@ public class AnthropicModelService extends AbstractModelService {
 		}
 
 		MODEL_CONFIG.put("claude-3-opus-20240229", //
-				new ModelMetaData("claude-3-opus-20240229", tok, 200_000, 4096));
+				new ModelMetaData("claude-3-opus-20240229", tok, 200_000, 4096, true));
 		MODEL_CONFIG.put("claude-3-sonnet-20240229", //
-				new ModelMetaData("claude-3-sonnet-20240229", tok, 200_000, 4096));
+				new ModelMetaData("claude-3-sonnet-20240229", tok, 200_000, 4096, true));
 		MODEL_CONFIG.put("claude-3-haiku-20240307", //
-				new ModelMetaData("claude-3-haiku-20240307", tok, 200_000, 4096));
+				new ModelMetaData("claude-3-haiku-20240307", tok, 200_000, 4096, true));
 	}
 
 	@Getter

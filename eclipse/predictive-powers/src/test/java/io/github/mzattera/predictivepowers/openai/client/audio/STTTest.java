@@ -18,7 +18,6 @@ package io.github.mzattera.predictivepowers.openai.client.audio;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -33,7 +32,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import io.github.mzattera.predictivepowers.TestConfiguration;
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.util.ResourceUtil;

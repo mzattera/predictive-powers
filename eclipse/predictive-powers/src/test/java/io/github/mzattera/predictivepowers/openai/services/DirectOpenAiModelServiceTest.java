@@ -44,7 +44,9 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.Op
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
 
 class DirectOpenAiModelServiceTest {
-
+	
+	// TODO URGENT Test that vision support is set correctly by sending images
+	
 	// Models still returned by models API, but decommissioned
 	private final static Set<String> OLD_MODELS = new HashSet<>();
 	static {
@@ -146,7 +148,7 @@ class DirectOpenAiModelServiceTest {
 	}
 
 	/**
-	 * Check function call mode is listed correctly.
+	 * Check function call mode is listed correctly for all chat models.
 	 */
 	@ParameterizedTest
 	@MethodSource("allChatModelsProvider")
@@ -192,7 +194,9 @@ class DirectOpenAiModelServiceTest {
 		} // Close endpoint
 	}
 
-	// TODO Fix to see if we can check context length somehow
+	// TODO URGENT Test max generated tokens by setMaxNewTokens(getContextSize()-tok.count(req))
+
+	// TODO URGENT Test: fix to see if we can check context length somehow
 
 	/**
 	 * Check max context size it set correctly.

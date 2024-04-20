@@ -73,7 +73,7 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiChatService.class);
 
 	public static final String DEFAULT_MODEL = "gpt-4-turbo";
-
+	
 	@Getter
 	@Setter
 	private int maxHistoryLength = 1000;
@@ -119,7 +119,8 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 		// With GPT you pay max tokens, even if they are not generated, so we put a
 		// reasonable limit here
 		String model = defaultReq.getModel();
-		int maxReplyTk = Math.min(modelService.getContextSize(model) / 4, modelService.getMaxNewTokens(model));
+		int maxReplyTk = Math.min(modelService.getContextSize(model) / 5, modelService.getMaxNewTokens(model));
+		setMaxNewTokens(maxReplyTk);
 		maxConversationTokens = modelService.getContextSize(model) - maxReplyTk;
 		defaultReq.setN(1); // paranoid
 	}

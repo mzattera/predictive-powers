@@ -2,7 +2,7 @@
 
 **These instructions are for version 0.5.0 of the library (latest release).**
 
-**If you use the library by directly cloning the repository, please see the [preview website](./preview).**
+**If you use the library by directly cloning the repository, please see the [pre-release website](./preview).**
 
 **`predictive-powers` is a library to easily create autonomous [agents](#agents) using generative AI (GenAI) services.
 An early version of this library has been featured in a chapter of the book

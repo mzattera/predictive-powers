@@ -20,27 +20,35 @@ import java.util.Scanner;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.anthropic.client.AnthropicEndpoint;
+import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceChatService;
 import io.github.mzattera.predictivepowers.services.ChatService;
 
 public class ChatExample {
 
 	public static void main(String[] args) throws Exception {
 
-		// Get chat service and set its personality
-		
-		// OpenAI API
-//		try (AiEndpoint endpoint = new DirectOpenAiEndpoint(); //
+		try (
+				// Uncomment the below to use OpenAI API
+				// AiEndpoint endpoint = new DirectOpenAiEndpoint();
+				// ChatService agent = endpoint.getChatService();
 
-		// Azure OpenAI Service
-//		try (AiEndpoint endpoint = new AzureOpenAiEndpoint(); //
+				// Uncomment the below to Azure OpenAI Cognitive Service
+				// AiEndpoint endpoint = new AzureOpenAiEndpoint();
+				// ChatService agent = endpoint.getChatService("<YourDeployModelName>");
 
-		// Anthropic API
-		try (AiEndpoint endpoint = new AnthropicEndpoint(); //
+				// Uncomment the below to use Anthropic API
+				// AiEndpoint endpoint = new AnthropicEndpoint();
+				// ChatService agent = endpoint.getChatService();
 				
-				ChatService agent = endpoint.getChatService();) {
+				AiEndpoint endpoint = new HuggingFaceEndpoint();
+				ChatService agent = endpoint.getChatService();
+				
+			) {
 
-//			agent.setPersonality("You are a very sad and depressed robot. "
-//					+ "Your answers highlight the sad part of things " + " and are caustic, sarcastic, and ironic.");
+			// Give instructions to agent
+			agent.setPersonality("You are a very sad and depressed robot. "
+					+ "Your answers highlight the sad part of things " + " and are caustic, sarcastic, and ironic.");
 
 			// Conversation loop
 			try (Scanner console = new Scanner(System.in)) {

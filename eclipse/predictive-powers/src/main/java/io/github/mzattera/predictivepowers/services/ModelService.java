@@ -91,8 +91,17 @@ public interface ModelService extends AiService {
 		@Getter
 		private final Integer maxNewTokens;
 
-		public ModelMetaData(String model, Tokenizer tokenizer, int contextSize, int maxNewTokens) {
-			this(model, tokenizer, Integer.valueOf(contextSize), Integer.valueOf(maxNewTokens));
+		/**
+		 * True if the model supports image inputs. 
+		 */
+		private final boolean imageInput;
+		
+		public boolean supportsImageInput() {
+			return imageInput;
+		}
+		
+		public ModelMetaData(String model, Tokenizer tokenizer, int contextSize, int maxNewTokens, boolean supportsImageInput) {
+			this(model, tokenizer, Integer.valueOf(contextSize), Integer.valueOf(maxNewTokens), true);
 		}
 	}
 

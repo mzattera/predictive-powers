@@ -53,7 +53,6 @@ import io.github.mzattera.predictivepowers.openai.client.threads.RunsRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.ThreadAndRunRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.ThreadsRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.ToolOutputsRequest;
-import io.reactivex.Single;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -63,7 +62,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.OkHttpClient.Builder;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -633,21 +631,6 @@ public class AzureOpenAiClient extends OpenAiClient {
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////
-
-	private <T> T callApi(Single<T> apiCall) {
-		try {
-			return apiCall.blockingGet();
-		} catch (HttpException e) {
-
-			OpenAiException oaie;
-			try {
-				oaie = new OpenAiException(e);
-			} catch (Exception ex) {
-				throw e;
-			}
-			throw oaie;
-		}
-	}
 
 	@Override
 	public void close() {

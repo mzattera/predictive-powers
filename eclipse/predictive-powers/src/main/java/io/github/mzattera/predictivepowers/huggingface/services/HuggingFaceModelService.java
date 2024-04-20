@@ -123,7 +123,7 @@ public class HuggingFaceModelService extends AbstractModelService {
 
 		// TODO maybe there is other metadata we can read from Hugging Face (all the
 		// model data are files in a Git repo)
-		ModelMetaData result = new ModelMetaData(model, tokenizer, null, null);
+		ModelMetaData result = new ModelMetaData(model, tokenizer, null, null, false);
 		put(model, result);
 		return result;
 	}

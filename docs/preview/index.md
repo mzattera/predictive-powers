@@ -1,7 +1,7 @@
-# predictive-powers PREVIEW
+# predictive-powers PRE-RELEASE
 
-**These instructions refer to latest version of the code available in the repository.
-They are updated as the implementation  progresses and, as such, might be slightly out of sync with all changes made to the library.**
+**These instructions refer to latest version of the code available in the repository (pre-release).
+They are updated as the implementation  progresses and, as such, might be slightly out of sync with changes made to the library.**
 
 **If you are using latest release of the library, please refer to the [release documentation](../).**
 
@@ -25,7 +25,9 @@ Advantages of using this library:
      (e.g. single or parallel function calling for OpenAI models).
      This includes a modular approach to adding tools to agents. 
     
-     * Multi-part chat messages that support using files, images or tool (function calls) through same API.
+     * Multi-part chat messages that support using files and images through same API.
+	 
+	 * Automated scaling down and caching of images, tailored to each service provider, to reduce latency and costs.
   
   3. Still allows direct, low-level, access to underlying API from Java.
 
@@ -620,6 +622,10 @@ public class FunctionCallExample {
 Below is an example of a conversation.
  
 ![Example of a conversation using function calling](./img/FunctionCall.PNG)
+ 
+#### Using existing tools (files & retrieval)
+
+TODO: Explain how to use agents tool (like retrieval).
  
 ### <a name="kb"></a>Knowledge Base
  

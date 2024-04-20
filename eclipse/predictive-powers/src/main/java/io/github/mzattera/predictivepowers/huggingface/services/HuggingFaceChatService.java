@@ -41,8 +41,7 @@ import lombok.Setter;
  */
 public class HuggingFaceChatService extends AbstractChatService {
 
-//	public static final String DEFAULT_MODEL = "microsoft/DialoGPT-medium";
-	public static final String DEFAULT_MODEL = "facebook/blenderbot-400M-distill";
+	public static final String DEFAULT_MODEL = "microsoft/DialoGPT-medium";
 
 	public HuggingFaceChatService(HuggingFaceEndpoint ep) {
 		this(ep, ConversationalRequest.builder().options(Options.builder().waitForModel(true).build()).build());
@@ -228,10 +227,11 @@ public class HuggingFaceChatService extends AbstractChatService {
 	 */
 	private ChatCompletion chatCompletion(String msg, List<String>[] history, ConversationalRequest req) {
 
-		if (history[0].size() != history[1].size())
+		int hSize = history[0].size();
+		if (hSize != history[1].size())
 			throw new IllegalArgumentException("Conversation history must have a reply for each user message");
-		req.getInputs().setPastUserInputs(history[0]);
-		req.getInputs().setGeneratedResponses(history[1]);
+		req.getInputs().setPastUserInputs(hSize == 0 ? null : history[0]);
+		req.getInputs().setGeneratedResponses(hSize == 0 ? null : history[1]);
 		req.getInputs().setText(msg);
 
 		ConversationalResponse resp = endpoint.getClient().conversational(model, req);

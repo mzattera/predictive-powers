@@ -33,7 +33,7 @@ import retrofit2.HttpException;
  */
 public class OpenAiException extends HttpException {
 
-	private static final long serialVersionUID = 2872745638990379630L;
+	private static final long serialVersionUID = 1L;
 
 	@NonNull
 	private final OpenAiError error;

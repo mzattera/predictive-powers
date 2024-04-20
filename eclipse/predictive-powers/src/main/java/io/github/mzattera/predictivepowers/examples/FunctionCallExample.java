@@ -28,7 +28,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.github.mzattera.predictivepowers.anthropic.client.AnthropicEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractTool;
 import io.github.mzattera.predictivepowers.services.Agent;
-import io.github.mzattera.predictivepowers.services.Capability;
 import io.github.mzattera.predictivepowers.services.Toolset;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
@@ -37,7 +36,7 @@ import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.NonNull;
 
 public class FunctionCallExample {
-
+	
 	static Random RND = new Random();
 
 	// This is a tool that will be accessible to the agent
@@ -60,9 +59,9 @@ public class FunctionCallExample {
 		}
 
 		public GetCurrentWeatherTool() {
-			super("getCurrentWeather", // Function name
-					"Get the current weather in a given location.", // Function description
-					GetCurrentWeatherParameters.class);
+			super("getCurrentWeather", 							// Function name
+					"Get the current weather in a given city.", // Function description
+					GetCurrentWeatherParameters.class);			// Function parameters
 		}
 
 		@Override
@@ -77,42 +76,39 @@ public class FunctionCallExample {
 			String location = getString("location", call.getArguments());
 			return new ToolCallResult(call, "Temperature in " + location + " is " + (RND.nextInt(10) + 20) + "°C");
 		}
-	}
+	} // GetCurrentWeatherTool class
 
 	// List of functions available to the agent (for now it is only 1).
-	private final static Collection<Class<?>> TOOLS = new ArrayList<>();
+	private final static Collection<Class<?>> tools = new ArrayList<>();
 	static {
-		TOOLS.add(GetCurrentWeatherTool.class);
+		tools.add(GetCurrentWeatherTool.class);
 	}
-
-	// Capability providing the functions to the agent
-	private final static Capability DEFAULT_CAPABILITY = new Toolset(TOOLS);
 
 	public static void main(String[] args) throws Exception {
 
 		try (
-		// This uses OpenAI API
-//				 OpenAiEndpoint endpoint = new DirectOpenAiEndpoint();
-//				 Agent agent = endpoint.getChatService("gpt-4-1106-preview"); // This uses chat API with parallel function calls (tools)
-		// Agent agent = endpoint.getChatService("gpt-3.5-turbo-0613"); // This uses
-		// chat API with single function calls
-		// Agent agent = endpoint.getAgentService().getAgent(); // This uses assistants
-		// API
-
-		// This uses agents API over Azure
-//				OpenAiEndpoint endpoint = new AzureOpenAiEndpoint();
-//				Agent agent = endpoint.getAgentService("gpt4agents").getAgent(); // This uses assistants API
-
-				// This uses ANTHROP/C
-				AnthropicEndpoint endpoint = new AnthropicEndpoint();
-				Agent agent = endpoint.getChatService(); // This uses assistants API
+			// This uses OpenAI API =======================================
+			// OpenAiEndpoint endpoint = new DirectOpenAiEndpoint();
+					
+			// This code uses chat API with parallel function calls (tools)		
+			// Agent agent = endpoint.getChatService("gpt-4-1106-preview");
+					
+			// This code uses chat API with single function calls		
+			// Agent agent = endpoint.getChatService("gpt-3.5-turbo-0613"); 
+	
+			// This code uses assistants API
+			// Agent agent = endpoint.getAgentService().getAgent(); 
+	
+			// This code uses ANTHROP/C API ===============================
+			 AnthropicEndpoint endpoint = new AnthropicEndpoint();
+			 Agent agent = endpoint.getChatService(); 
 		) {
 
 			// Set agent personality (instructions)
 			agent.setPersonality("You are an helpful assistant.");
 
 			// Tell the agent which tools it can use, by providing a capability
-			agent.addCapability(DEFAULT_CAPABILITY);
+			agent.addCapability(new Toolset(tools));
 
 			// Conversation loop
 			try (Scanner console = new Scanner(System.in)) {
@@ -129,8 +125,7 @@ public class FunctionCallExample {
 
 						for (ToolCall call : reply.getToolCalls()) {
 
-							// The agent generated one or more tool calls,
-							// print them for illustrative purposes
+							// Print call for illustrative purposes
 							System.out.println("CALL " + " > " + call);
 
 							// Execute call, handling errors nicely
@@ -144,9 +139,11 @@ public class FunctionCallExample {
 						}
 
 						// Pass results back to the agent
-						// Notice this might generate other tool calls, hence the loop
+						// Notice this might in principle generate 
+						// other tool calls, hence the loop
 						reply = agent.chat(new ChatMessage(results));
-					}
+						
+					} // while we serviced all calls
 
 					System.out.println("Assistant> " + reply.getText());
 				}

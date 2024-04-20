@@ -49,12 +49,14 @@ import io.github.mzattera.predictivepowers.openai.client.threads.ToolOutputsRequ
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.util.FileUtil;
 import io.github.mzattera.util.ImageUtil;
+import io.reactivex.Single;
 import lombok.Getter;
 import lombok.NonNull;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
+import retrofit2.HttpException;
 
 /**
  * This is the base class for OpenAI clients that can be implemented over the
@@ -517,6 +519,23 @@ public abstract class OpenAiClient implements ApiClient {
 			while ((lengthRead = is.read(buffer)) > 0) {
 				os.write(buffer, 0, lengthRead);
 			}
+		}
+	}
+	
+	/////////////////////////////////////////////////////////////////////////////////
+
+	protected <T> T callApi(Single<T> apiCall) {
+		try {
+			return apiCall.blockingGet();
+		} catch (HttpException e) {
+
+			OpenAiException oaie;
+			try {
+				oaie = new OpenAiException(e);
+			} catch (Exception ex) {
+				throw e;
+			}
+			throw oaie;
 		}
 	}
 

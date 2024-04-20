@@ -43,6 +43,8 @@ import lombok.NonNull;
  */
 public class OpenAiQuestionExtractionService implements QuestionExtractionService {
 
+	// TODO add "Is there more" follow up to extract more stuff
+	
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiQuestionExtractionService.class);
 
 	public static final String DEFAULT_MODEL = "gpt-4-turbo";

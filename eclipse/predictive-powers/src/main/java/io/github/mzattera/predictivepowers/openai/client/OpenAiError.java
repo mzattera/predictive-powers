@@ -12,12 +12,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */package io.github.mzattera.predictivepowers.openai.client;
+ */
+package io.github.mzattera.predictivepowers.openai.client;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -27,20 +31,23 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@RequiredArgsConstructor
+@Builder
 @Getter
 @Setter
 @ToString
 public class OpenAiError {
 
-	private ErrorDetails error;
+	private @NonNull ErrorDetails error;
 
 	@NoArgsConstructor
 	@AllArgsConstructor
 	@Builder
 	@Getter
 	@Setter
-	@ToString	public static class ErrorDetails {
+	@ToString
+	public static class ErrorDetails {
 		private String message;
 		private String type;
 		private String param;

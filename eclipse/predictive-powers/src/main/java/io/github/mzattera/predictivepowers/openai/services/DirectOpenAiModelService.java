@@ -72,20 +72,26 @@ public class DirectOpenAiModelService extends OpenAiModelService {
 		MODEL_CONFIG.put("gpt-3.5-turbo-1106",
 				new OpenAiModelMetaData("gpt-3.5-turbo-1106", 16385, 4096, SupportedCallType.TOOLS));
 
-		MODEL_CONFIG.put("gpt-4", new OpenAiModelMetaData("gpt-4", 8192, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-turbo", 
+				new OpenAiModelMetaData("gpt-4-turbo", 128000, 4096, SupportedCallType.TOOLS, true));
+		MODEL_CONFIG.put("gpt-4-turbo-2024-04-09",
+				new OpenAiModelMetaData("gpt-4-turbo-2024-04-09", 128000, 4096, SupportedCallType.TOOLS, true));
 		MODEL_CONFIG.put("gpt-4-turbo-preview",
 				new OpenAiModelMetaData("gpt-4-turbo-preview", 128000, 4096, SupportedCallType.TOOLS));
+		MODEL_CONFIG.put("gpt-4-0125-preview",
+				new OpenAiModelMetaData("gpt-4-0125-preview", 128000, 4096, SupportedCallType.TOOLS));
+		MODEL_CONFIG.put("gpt-4-1106-preview",
+				new OpenAiModelMetaData("gpt-4-1106-preview", 128000, 4096, SupportedCallType.TOOLS));
+		MODEL_CONFIG.put("gpt-4-vision-preview",
+				new OpenAiModelMetaData("gpt-4-vision-preview", 128000, 4096, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-1106-vision-preview",
+				new OpenAiModelMetaData("gpt-4-1106-vision-preview", 128000, 4096, SupportedCallType.NONE));
+		
+		MODEL_CONFIG.put("gpt-4", new OpenAiModelMetaData("gpt-4", 8192, SupportedCallType.FUNCTIONS));
 		MODEL_CONFIG.put("gpt-4-0613", new OpenAiModelMetaData("gpt-4-0613", 8192, SupportedCallType.FUNCTIONS));
 		MODEL_CONFIG.put("gpt-4-32k", new OpenAiModelMetaData("gpt-4-32k", 32768, SupportedCallType.FUNCTIONS));
 		MODEL_CONFIG.put("gpt-4-32k-0613",
 				new OpenAiModelMetaData("gpt-4-32k-0613", 32768, SupportedCallType.FUNCTIONS));
-		MODEL_CONFIG.put("gpt-4-32k-0314", new OpenAiModelMetaData("gpt-4-32k-0314", 32768));
-		MODEL_CONFIG.put("gpt-4-1106-preview",
-				new OpenAiModelMetaData("gpt-4-1106-preview", 128000, 4096, SupportedCallType.TOOLS));
-		MODEL_CONFIG.put("gpt-4-0125-preview",
-				new OpenAiModelMetaData("gpt-4-0125-preview", 128000, SupportedCallType.TOOLS));
-		MODEL_CONFIG.put("gpt-4-vision-preview",
-				new OpenAiModelMetaData("gpt-4-vision-preview", 128000, 4096, SupportedCallType.NONE));
 
 		MODEL_CONFIG.put("text-embedding-3-large",
 				new OpenAiModelMetaData("text-embedding-3-large", 8191, SupportedApi.EMBEDDINGS));

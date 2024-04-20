@@ -56,6 +56,10 @@ public abstract class OpenAiModelService extends AbstractModelService {
 			this(model, SupportedApi.CHAT, contextSize, null, supportedCallType);
 		}
 
+		public OpenAiModelMetaData(@NonNull String model, int contextSize, SupportedCallType supportedCallType, boolean hasVision) {
+			this(model, SupportedApi.CHAT, contextSize, null, supportedCallType, hasVision);
+		}
+
 		public OpenAiModelMetaData(@NonNull String model, int contextSize, int maxNewTokens) {
 			this(model, SupportedApi.CHAT, contextSize, maxNewTokens, SupportedCallType.NONE);
 		}
@@ -65,9 +69,19 @@ public abstract class OpenAiModelService extends AbstractModelService {
 			this(model, SupportedApi.CHAT, contextSize, maxNewTokens, supportedCallType);
 		}
 
+		public OpenAiModelMetaData(@NonNull String model, int contextSize, Integer maxNewTokens,
+				SupportedCallType supportedCallType, boolean hasVision) {
+			this(model, SupportedApi.CHAT, contextSize, maxNewTokens, supportedCallType, hasVision);
+		}
+
 		public OpenAiModelMetaData(@NonNull String model, SupportedApi api, Integer contextSize, Integer maxNewTokens,
 				SupportedCallType supportedCallType) {
-			super(model, new OpenAiTokenizer(model), contextSize, maxNewTokens);
+			this(model, api, contextSize, maxNewTokens, supportedCallType, false);
+		}
+
+		public OpenAiModelMetaData(@NonNull String model, SupportedApi api, Integer contextSize, Integer maxNewTokens,
+				SupportedCallType supportedCallType, boolean hasVision) {
+			super(model, new OpenAiTokenizer(model), contextSize, maxNewTokens, hasVision);
 			this.supportedCallType = supportedCallType;
 			this.supportedApi = api;
 		}

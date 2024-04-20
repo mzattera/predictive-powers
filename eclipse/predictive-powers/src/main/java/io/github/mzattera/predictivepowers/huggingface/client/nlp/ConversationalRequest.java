@@ -16,7 +16,6 @@
 
 package io.github.mzattera.predictivepowers.huggingface.client.nlp;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import io.github.mzattera.predictivepowers.huggingface.client.Options;
@@ -40,6 +39,7 @@ import lombok.ToString;
 public class ConversationalRequest {
 
 	@NoArgsConstructor(access = AccessLevel.PROTECTED)
+	@AllArgsConstructor
 	@RequiredArgsConstructor
 	@Builder
 	@Getter
@@ -57,17 +57,13 @@ public class ConversationalRequest {
 		/**
 		 * A list of strings corresponding to the earlier replies from the model.
 		 */
-		@NonNull
-		@Builder.Default
-		private List<String> generatedResponses = new ArrayList<>();
+		private List<String> generatedResponses;
 
 		/**
 		 * A list of strings corresponding to the earlier replies from the user. Should
 		 * be of the same length of generated_responses.
 		 */
-		@NonNull
-		@Builder.Default
-		private List<String> pastUserInputs = new ArrayList<>();
+		private List<String> pastUserInputs;
 	}
 
 	@NoArgsConstructor
@@ -125,8 +121,7 @@ public class ConversationalRequest {
 		private Double maxTime;
 	}
 
-	@Builder.Default
-	private Parameters parameters = new Parameters();
+	private Parameters parameters;
 
 	@NonNull
 	@Builder.Default

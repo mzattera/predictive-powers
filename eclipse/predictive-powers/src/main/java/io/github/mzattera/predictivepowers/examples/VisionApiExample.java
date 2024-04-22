@@ -39,14 +39,9 @@ public class VisionApiExample {
 			// Build the message to send
 			ChatMessage msg = new ChatMessage("Is there any grass in this image?");
 
-			// Include Provide an URL to the the image to inspect
+			// Provide an URL to the the image to inspect
 			msg.getParts().add(FilePart.fromUrl(
 					"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"));
-
-			// The below code shows as you can do the same with a local file image
-//			 msg.getParts().add(
-//			 		new FilePart(new File("YourFileName.jpg"), ContentType.IMAGE)
-//			 );
 
 			// Interact with the bot and print its response
 			System.out.println(bot.chat(msg).getText());

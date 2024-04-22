@@ -33,16 +33,10 @@ public class OracleExample {
 
 	public static void main(String[] args) throws Exception {
 
-		// Uncomment the below to use OpenAI services for the oracle
-		AiEndpoint endpoint = new DirectOpenAiEndpoint();
-
-		// Uncomment the below to use Hugging Face services for the oracle
-		// Endpoint endpoint = new HuggingFaceEndpoint();
-
-		// Question answering service
-		try (endpoint;
+		try (AiEndpoint endpoint = new DirectOpenAiEndpoint();
 				QuestionAnsweringService answerSvc = endpoint.getQuestionAnsweringService();
-				KnowledgeBase knowledgeBase = new KnowledgeBase();) {
+				KnowledgeBase knowledgeBase = new KnowledgeBase();
+		) {
 
 			try (Scanner console = new Scanner(System.in)) {
 

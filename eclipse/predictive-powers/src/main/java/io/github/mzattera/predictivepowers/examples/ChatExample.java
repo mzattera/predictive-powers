@@ -20,8 +20,6 @@ import java.util.Scanner;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.anthropic.client.AnthropicEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceChatService;
 import io.github.mzattera.predictivepowers.services.ChatService;
 
 public class ChatExample {
@@ -38,11 +36,12 @@ public class ChatExample {
 				// ChatService agent = endpoint.getChatService("<YourDeployModelName>");
 
 				// Uncomment the below to use Anthropic API
-				// AiEndpoint endpoint = new AnthropicEndpoint();
-				// ChatService agent = endpoint.getChatService();
-				
-				AiEndpoint endpoint = new HuggingFaceEndpoint();
+				AiEndpoint endpoint = new AnthropicEndpoint();
 				ChatService agent = endpoint.getChatService();
+				
+				// Uncomment the below to use Hugging Face API
+				// AiEndpoint endpoint = new HuggingFaceEndpoint();
+				// ChatService agent = endpoint.getChatService();
 				
 			) {
 

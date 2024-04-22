@@ -26,22 +26,24 @@ public class VisionApiExample {
 
 	public static void main(String[] args) throws Exception {
 
-		// Create agent using GPT vision model
-//		try (OpenAiEndpoint endpoint = new DirectOpenAiEndpoint()) {
-//			Agent bot = endpoint.getChatService("gpt-4-vision-preview");
-			
-		// Create agent using Anthropic
-			try (AiEndpoint endpoint = new AnthropicEndpoint()) {
+		try (
+				// Uncomment the below code to use OpenAI
+				// OpenAiEndpoint endpoint = new DirectOpenAiEndpoint();
+				// Agent bot = endpoint.getChatService("gpt-4-vision-preview");
+
+				// Uncomment the below code to use ANTHROP\C API
+				AiEndpoint endpoint = new AnthropicEndpoint();
 				ChatService bot = endpoint.getChatService();
+		) {
 
 			// Build the message to send
 			ChatMessage msg = new ChatMessage("Is there any grass in this image?");
 
-			// Include the image to inspect from an URL in the message
+			// Include Provide an URL to the the image to inspect
 			msg.getParts().add(FilePart.fromUrl(
 					"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"));
 
-			// The below shows as you can do the same with a local file image
+			// The below code shows as you can do the same with a local file image
 //			 msg.getParts().add(
 //			 		new FilePart(new File("YourFileName.jpg"), ContentType.IMAGE)
 //			 );

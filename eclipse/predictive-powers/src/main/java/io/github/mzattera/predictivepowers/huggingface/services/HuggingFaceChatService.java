@@ -41,7 +41,7 @@ import lombok.Setter;
  */
 public class HuggingFaceChatService extends AbstractChatService {
 
-	public static final String DEFAULT_MODEL = "microsoft/DialoGPT-medium";
+	public static final String DEFAULT_MODEL = "mistralai/Mistral-7B-Instruct-v0.1";
 
 	public HuggingFaceChatService(HuggingFaceEndpoint ep) {
 		this(ep, ConversationalRequest.builder().options(Options.builder().waitForModel(true).build()).build());

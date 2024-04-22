@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.github.mzattera</groupId>
 	<artifactId>predictive-powers</artifactId>
-	<version>0.5.0</version>
+	<version>0.6.0.preview</version>
 	<name>PredictivePowers</name>
 	<description>A Java library to (easily) create GenAI-powered autonomous
 		agents</description>

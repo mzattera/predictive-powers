@@ -130,7 +130,7 @@ public class Base64FilePart extends FilePart {
 		int h = img.getHeight();
 
 		double scale1 = 1568d / Math.max(w, h); // Longest edge must be < 1568
-		double scale2 = Math.sqrt(1_150_000/(w * h)); // Image < 1.15 Mpixel, or ~1600 tokens
+		double scale2 = Math.sqrt(1_150_000d /(w * h)); // Image < 1.15 Mpixel, or ~1600 tokens
 		double scale = Math.min(scale1, scale2);
 
 		if (scale < 1.0d) {

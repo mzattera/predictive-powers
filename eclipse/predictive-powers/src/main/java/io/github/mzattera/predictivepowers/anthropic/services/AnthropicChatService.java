@@ -207,11 +207,7 @@ public class AnthropicChatService extends AbstractAgent implements ChatService {
 		defaultReq.setMaxTokens(maxNewTokens);
 	}
 
-	/**
-	 * This method counts number of tokens that are consumed at each request to
-	 * provide bot instructions (personality). This is the minimum size each request
-	 * to the API will take.
-	 */
+	@Override
 	public int getBaseTokens() {
 		// Instructions tokens
 		String cmd = getPersonality();

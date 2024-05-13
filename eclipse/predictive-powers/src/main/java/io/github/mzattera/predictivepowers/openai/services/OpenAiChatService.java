@@ -217,16 +217,7 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 		defaultReq.setMaxTokens(maxNewTokens);
 	}
 
-	/**
-	 * This method counts number of tokens that are consumed at each request to
-	 * provide bot instructions (personality) and list tools it can use. This is the
-	 * minimum size each request to the API will take. In addition, each request
-	 * will consume the tokens needed to encode messages, which include tool calls
-	 * and their corresponding replies.
-	 * 
-	 * @return Number of tokens in the request including bot personality and tools
-	 *         (functions) descriptions, but excluding any other message.
-	 */
+	@Override
 	public int getBaseTokens() {
 		List<OpenAiChatMessage> old = defaultReq.getMessages();
 

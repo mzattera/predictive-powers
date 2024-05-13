@@ -139,6 +139,11 @@ public class HuggingFaceChatService extends AbstractChatService {
 	}
 
 	@Override
+	public int getBaseTokens() {
+		return 0;
+	}
+
+	@Override
 	public ChatCompletion chat(String msg) {
 		return chat(msg, defaultReq);
 	}

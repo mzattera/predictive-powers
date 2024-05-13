@@ -74,7 +74,7 @@ public interface ApiClient extends AutoCloseable {
 		if (readTimeoutMillis < 0)
 			throw new IllegalArgumentException("Read time out must be >= 0");
 		if (keepAliveDurationMillis < 0)
-			throw new IllegalArgumentException("Keep alive druaation out be >= 0");
+			throw new IllegalArgumentException("Keep alive duration must be >= 0");
 		if (maxIdleConnectionsMillis < 0)
 			throw new IllegalArgumentException("Max idel connections must must be >= 0");
 
@@ -99,9 +99,11 @@ public interface ApiClient extends AutoCloseable {
 //					System.out.println("SERVER BUSY check: " + (retries < maxRetries) + " timeOut:" + readTimeoutMillis
 //							+ " elapsed: " + elapsed + " " + (readTimeoutMillis <= elapsed));
 
+				// TODO URGENT check list of OpenAI, Anthropic and Hugging face errors and let client customize accordingly.
+				
 				while ((retries < maxRetries) && ((readTimeoutMillis == 0) || (elapsed < readTimeoutMillis))
 						&& ((response.code() == 429) || (response.code() == 500) || (response.code() == 503)
-								|| (response.code() == 504))) {
+								|| (response.code() == 504)|| (response.code() == 529))) {
 
 					// Waits and retries as server is temporarily unavailable
 

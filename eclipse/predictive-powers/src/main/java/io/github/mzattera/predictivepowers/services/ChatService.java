@@ -149,6 +149,14 @@ public interface ChatService extends AiService {
 	void setMaxNewTokens(Integer maxNewTokens);
 
 	/**
+	 * This method returns number of tokens that are consumed at each request to
+	 * provide directions (e.g. personality) to this service. This is the minimum
+	 * token size of each request to the API, in addition to token consumed by
+	 * messages.
+	 */
+	public int getBaseTokens();
+
+	/**
 	 * Starts a new chat, clearing current conversation.
 	 */
 	void clearConversation();

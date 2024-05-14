@@ -36,10 +36,10 @@ public interface AgentService extends AiService {
 
 	/**
 	 * 
-	 * @return All exisitng agents that this service can provide.
+	 * @return All existing agents that this service can provide.
 	 */
 	List<? extends Agent> listAgents();
-	
+
 	/**
 	 * Creates a new agent.
 	 * 
@@ -52,8 +52,21 @@ public interface AgentService extends AiService {
 	Agent createAgent(@NonNull String name, String description, String personality);
 
 	/**
+	 * Creates a new agent.
+	 * 
+	 * @param name        Agent name.
+	 * @param description Optional description for the agent.
+	 * @param personality Agent personality (instructions).
+	 * @param model       Model to use for the agent, if different from that set for
+	 *                    this service.
+	 * 
+	 * @return Newly created agent.
+	 */
+	Agent createAgent(@NonNull String name, String description, String personality, String model);
+
+	/**
 	 * Gets the "default" agent. The purpose if this method is return an agent any
-	 * user can use, avoiding the creation of a new user each time. THis in the
+	 * user can use, avoiding the creation of a new agent each time. This in the
 	 * assumption agents are persisted and can be shared between users.
 	 * 
 	 * @return An implementation of an agent ready to use; depending on the

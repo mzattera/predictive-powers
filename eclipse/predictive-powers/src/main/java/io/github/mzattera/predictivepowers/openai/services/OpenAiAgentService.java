@@ -48,7 +48,12 @@ public class OpenAiAgentService implements AgentService {
 
 	@Override
 	public OpenAiAssistant createAgent(@NonNull String name, String description, String personality) {
-		return createAgent(name, description, personality, true, false);
+		return createAgent(name, description, this.model, personality, true, false);
+	}
+
+	@Override
+	public Agent createAgent(@NonNull String name, String description, String personality, String model) {
+		return createAgent(name, description, model, personality, true, false);
 	}
 
 	/**
@@ -64,6 +69,24 @@ public class OpenAiAgentService implements AgentService {
 	 */
 	public OpenAiAssistant createAgent(@NonNull String name, String description, String personality, boolean persist,
 			boolean isDefault) {
+		return createAgent(name, description, this.model, personality, true, false);
+	}
+
+	/**
+	 * 
+	 * @param name
+	 * @param description
+	 * @param personality
+	 * @param model       Model to use for the agent. If this is not null, it will
+	 *                    override the model for this service.
+	 * @param persist     If this is true, the agent is marked such that it is not
+	 *                    deleted by automated cleanup tasks (see CleanupUtil).
+	 * @param isDefault   If true, this indicates this is a "default" assistant
+	 *                    returned by {@link #getAgent()}.
+	 * @return
+	 */
+	public OpenAiAssistant createAgent(@NonNull String name, String description, String model, String personality,
+			boolean persist, boolean isDefault) {
 
 		// Mark this newly created agent such that CleanupUtil does not delete it.
 		Map<String, String> metadata = new HashMap<>();
@@ -71,7 +94,7 @@ public class OpenAiAgentService implements AgentService {
 		metadata.put("_isDefaultAgent", Boolean.toString(isDefault));
 
 		Assistant assistant = endpoint.getClient().createAssistant(AssistantsRequest.builder() //
-				.model(model) //
+				.model(model == null ? this.model : model) //
 				.name(name) //
 				.description(description) //
 				.instructions(personality) //

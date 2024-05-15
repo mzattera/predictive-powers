@@ -93,8 +93,8 @@ public class Base64FilePart extends FilePart {
 
 		int w = img.getWidth();
 		int h = img.getHeight();
-		double scale1 = 2000d / Math.max(w, h);
-		double scale2 = 768d / Math.min(w, h);
+		double scale1 = 2000d / w;
+		double scale2 = 768d / h;
 		double scale = Math.min(scale1, scale2);
 
 		if (scale < 1.0d) {

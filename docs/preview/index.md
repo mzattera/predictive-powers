@@ -27,7 +27,7 @@ Advantages of using this library:
     
      * Multi-part chat messages that support using files and images through same API.
 	 
-	 * Automated scaling down and caching of images, tailored to each service provider, to reduce latency and costs.
+	 * Automated scaling down and caching of images in chats, tailored to each service provider, to reduce latency and costs.
   
   3. Still allows direct, low-level, access to underlying API from Java.
 

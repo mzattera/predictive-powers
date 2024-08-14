@@ -87,10 +87,16 @@ public abstract class AbstractTool implements Tool {
 	@Setter(AccessLevel.PROTECTED)
 	private boolean initialized = false;
 
+	@Getter
+	@Setter(AccessLevel.PROTECTED)
+	private boolean closed = false;
+
 	@Override
 	public void init(@NonNull Agent agent) {
 		if (initialized)
-			throw new IllegalStateException("Tool not yet initialized");
+			throw new IllegalStateException("Tool already initialized");
+		if (closed)
+			throw new IllegalStateException("Tool already closed");
 		this.agent = agent;
 		initialized = true;
 	}
@@ -113,6 +119,7 @@ public abstract class AbstractTool implements Tool {
 
 	@Override
 	public void close() {
+		closed=true;
 	}
 
 	// Utility methods to read parameters

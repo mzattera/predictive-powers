@@ -29,7 +29,7 @@ import lombok.NonNull;
  * It is more advanced than {#link ChatService}, as it can invoke {@link Tool}s
  * to complete its tasks and use files in chat messages.
  * 
- * At the moment, the interface does not expose methods to retrieve and managed
+ * At the moment, the interface does not expose methods to retrieve and manage
  * stored conversations.
  * 
  * @author Massimiliano "Maxi" Zattera

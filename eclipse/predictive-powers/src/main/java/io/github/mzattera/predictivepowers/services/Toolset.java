@@ -24,6 +24,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
@@ -35,6 +38,8 @@ import lombok.Setter;
  * This is a collection of unrelated tools, backed by a Map.
  */
 public class Toolset implements Capability {
+
+	private final static Logger LOG = LoggerFactory.getLogger(Toolset.class);
 
 	public static final String DEFAULT_ID = "tools";
 
@@ -128,7 +133,7 @@ public class Toolset implements Capability {
 			try {
 				return (Tool) tool.getConstructor().newInstance();
 			} catch (Exception e) {
-				e.printStackTrace(System.err);
+				LOG.error("Error adding tool to capability", e);
 				return null;
 			}
 		});

@@ -241,7 +241,7 @@ public class Conversation implements AutoCloseable {
 			one.setPersonality(
 					"You are a philosopher arguing that life is fun. Your goal is to make your user agree that life can be fun. You must immediately end this conversation with an 'OK' status when your user is convinced.");
 			two.setPersonality(
-					"You are in a conversation where your user tries to convince you that life is fun. You are convinced immediately after your user provides a reason why life can be fun. Tell your user you are convinced as soon as you become convinced, do not close the conversation yourself.");
+					"You are in a conversation where your user tries to convince you that life is fun. You are convinced only after your user provided three reasons why life can be fun. Tell your user you are convinced as soon as you become convinced, do not close the conversation yourself.");
 
 			try (Conversation pip = new Conversation(one, two)) {
 				pip.start("OK, let's start!");

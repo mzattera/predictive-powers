@@ -208,20 +208,20 @@ public class AzureOpenAiClient extends OpenAiClient {
 		this(resourceName, null, http);
 	}
 
-	/**
-	 * Constructor. This client uses provided OkHttpClient for API calls, to allow
-	 * full customization (see
-	 * {@link ApiClient#getDefaultHttpClient(int, int, int, int)}).
-	 * 
-	 * @param apiKey       OpenAI API key to use (will be set in the header).
-	 * 
-	 * 
-	 * @param resourceName Resource name for the Azure OpenAI Service to connect to.
-	 *                     If null, it will be read from
-	 *                     {@link #OS_ENV_VAR_NAME_RESOURCE} system environment
-	 *                     variable.
-	 */
-	public AzureOpenAiClient(String resourceName, String apiKey, OkHttpClient http) {
+		/**
+		 * Constructor. This client uses provided OkHttpClient for API calls, to allow
+		 * full customization (see
+		 * {@link ApiClient#getDefaultHttpClient(int, int, int, int)}).
+		 * 
+		 * @param apiKey       OpenAI API key to use (will be set in the header).
+		 * 
+		 * 
+		 * @param resourceName Resource name for the Azure OpenAI Service to connect to.
+		 *                     If null, it will be read from
+		 *                     {@link #OS_ENV_VAR_NAME_RESOURCE} system environment
+		 *                     variable.
+		 */
+		public AzureOpenAiClient(String resourceName, String apiKey, OkHttpClient http) {
 
 		Builder builder = http.newBuilder();
 
@@ -294,7 +294,7 @@ public class AzureOpenAiClient extends OpenAiClient {
 		client = builder.build();
 		azureResourceName = (resourceName == null) ? getResourceName() : resourceName;
 
-		Retrofit retrofit = new Retrofit.Builder().baseUrl("https://" + azureResourceName + ".openai.azure.com/openai/")
+		Retrofit retrofit = new Retrofit.Builder().baseUrl(azureResourceName)
 				.client(client).addConverterFactory(JacksonConverterFactory.create(jsonMapper))
 				.addCallAdapterFactory(RxJava2CallAdapterFactory.create()).build();
 

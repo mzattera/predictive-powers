@@ -34,9 +34,6 @@ import io.github.mzattera.predictivepowers.anthropic.client.messages.Message;
 import io.github.mzattera.predictivepowers.anthropic.client.messages.MessagesRequest;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceModelService.HuggingFaceTokenizer;
 import io.github.mzattera.predictivepowers.services.AbstractModelService;
-import io.github.mzattera.predictivepowers.services.AbstractTool;
-import io.github.mzattera.predictivepowers.services.Capability;
-import io.github.mzattera.predictivepowers.services.Toolset;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.services.messages.MessagePart;
 import io.github.mzattera.predictivepowers.services.messages.TextPart;
@@ -55,7 +52,7 @@ public class AnthropicModelService extends AbstractModelService {
 	public static class AnthropicTokenizer extends HuggingFaceTokenizer {
 
 		// TODO URGENT test it even if results won't be perfect
-		
+
 		public AnthropicTokenizer() throws IOException {
 			// TODO must use a newer version as soon as it is made available
 			super(ai.djl.huggingface.tokenizers.HuggingFaceTokenizer
@@ -69,7 +66,8 @@ public class AnthropicModelService extends AbstractModelService {
 					result += count(p.getContent());
 				if ((p instanceof ToolCall) || (p instanceof ToolCallResult)) {
 					try {
-						result += count(AnthropicClient.getJsonMapper().writerWithDefaultPrettyPrinter().writeValueAsString(p));
+						result += count(
+								AnthropicClient.getJsonMapper().writerWithDefaultPrettyPrinter().writeValueAsString(p));
 					} catch (JsonProcessingException e) {
 					}
 				} else if (p instanceof FilePart) {
@@ -118,13 +116,14 @@ public class AnthropicModelService extends AbstractModelService {
 //					} catch (JsonProcessingException e) {
 //					}
 //				}
-				
+
 				try {
-					result += count(AnthropicClient.getJsonMapper().writerWithDefaultPrettyPrinter().writeValueAsString(req.getTools()));
+					result += count(AnthropicClient.getJsonMapper().writerWithDefaultPrettyPrinter()
+							.writeValueAsString(req.getTools()));
 				} catch (JsonProcessingException e) {
 				}
 			}
-			
+
 			return result;
 		}
 	}
@@ -202,50 +201,5 @@ public class AnthropicModelService extends AbstractModelService {
 		if ((def != null) && !(def instanceof AnthropicTokenizer))
 			throw new IllegalArgumentException("Tokenizer must be a subclass of AnthropicTokenizer");
 		return (AnthropicTokenizer) super.getTokenizer(model, def);
-	}
-
-	//////////////////////////////////////////////////////////////////////////////////////////////
-
-	public static class GetCurrentWeatherTool extends AbstractTool {
-
-		// This is a schema describing the function parameters
-		private static class GetCurrentWeatherParameters {
-		}
-
-		public GetCurrentWeatherTool(@NonNull String name) {
-			super(name, // Function name
-					"A", // Function description
-					GetCurrentWeatherParameters.class);
-		}
-
-		@Override
-		public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
-			return new ToolCallResult(call, "30 Celsius");
-		}
-	}
-
-	// TODO URGENT Below code is to test the tokenizer; remove it.
-	
-	// Capability providing the functions to the agent
-	private final static Capability DEFAULT_CAPABILITY = new Toolset();
-	static {
-		DEFAULT_CAPABILITY.putTool("A", () -> (new GetCurrentWeatherTool("A")));
-		DEFAULT_CAPABILITY.putTool("B", () -> (new GetCurrentWeatherTool("B")));
-		DEFAULT_CAPABILITY.putTool("C", () -> (new GetCurrentWeatherTool("C")));
-	}
-
-	public static void main(String[] args) throws Exception {
-
-		try (AnthropicEndpoint ep = new AnthropicEndpoint(); AnthropicChatService bot = ep.getChatService();) {
-
-			AnthropicTokenizer tok = ep.getModelService().getTokenizer(bot.getModel());
-
-//			bot.complete("Hi");
-//			System.out.println(">>> " + tok.count(bot.getDefaultReq()));
-
-			bot.addCapability(DEFAULT_CAPABILITY);
-			bot.complete("Hi");
-			System.out.println(">>> " + tok.count(bot.getDefaultReq()));
-		}
 	}
 }

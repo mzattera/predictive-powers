@@ -67,7 +67,7 @@ import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
 /**
- * API Client to accessAzure OpenAI Cognitive Service.
+ * API Client to access Azure OpenAI Cognitive Service.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -82,10 +82,9 @@ public class AzureOpenAiClient extends OpenAiClient {
 	public static final String OS_ENV_VAR_NAME_API_KEY = "AZURE_OPENAI_API_KEY";
 
 	/**
-	 * Name of the OS environment variable containing Azure OpenAI Service resource
-	 * name.
+	 * Name of the OS environment variable containing Azure OpenAI endpoint.
 	 */
-	public static final String OS_ENV_VAR_NAME_RESOURCE = "AZURE_OPENAI_RESOURCE_NAME";
+	public static final String OS_ENV_VAR_NAME_ENDPOINT = "AZURE_OPENAI_ENDPOINT";
 
 	public final static int DEFAULT_TIMEOUT_MILLIS = 3 * 60 * 1000;
 	public final static int DEFAULT_MAX_RETRIES = 10;
@@ -93,7 +92,7 @@ public class AzureOpenAiClient extends OpenAiClient {
 	public final static int DEFAULT_MAX_IDLE_CONNECTIONS = 5;
 
 	@Getter
-	private final String azureResourceName;
+	private final String azureEnpointUrl;
 
 	/**
 	 * This is stable API version that all calls through this client will use when
@@ -122,8 +121,8 @@ public class AzureOpenAiClient extends OpenAiClient {
 	 * OpenAI API key is read from {@link #OS_ENV_VAR_NAME_API_KEY} system
 	 * environment variable.
 	 * 
-	 * Azure OpenAI Service resource name is read from
-	 * {@link #OS_ENV_VAR_NAME_RESOURCE} system environment variable.
+	 * Azure OpenAI endpoint name is read from {@link #OS_ENV_VAR_NAME_ENDPOINT}
+	 * system environment variable.
 	 */
 	public AzureOpenAiClient() {
 		this(null, null, DEFAULT_TIMEOUT_MILLIS, DEFAULT_MAX_RETRIES, DEFAULT_KEEP_ALIVE_MILLIS,
@@ -136,31 +135,29 @@ public class AzureOpenAiClient extends OpenAiClient {
 	 * OpenAI API key is read from {@link #OS_ENV_VAR_NAME_API_KEY} system
 	 * environment variable.
 	 * 
-	 * @param resourceName Resource name for the Azure OpenAI Service to connect to.
-	 *                     If null, it will be read from
-	 *                     {@link #OS_ENV_VAR_NAME_RESOURCE} system environment
-	 *                     variable.
+	 * @param endpointUrl Endpoint for the Azure OpenAI Service to connect to. If
+	 *                    null, it will be read from
+	 *                    {@link #OS_ENV_VAR_NAME_ENDPOINT} system environment
+	 *                    variable.
 	 */
-	public AzureOpenAiClient(String resourceName) {
-		this(resourceName, null, DEFAULT_TIMEOUT_MILLIS, DEFAULT_MAX_RETRIES, DEFAULT_KEEP_ALIVE_MILLIS,
+	public AzureOpenAiClient(String endpointUrl) {
+		this(endpointUrl, null, DEFAULT_TIMEOUT_MILLIS, DEFAULT_MAX_RETRIES, DEFAULT_KEEP_ALIVE_MILLIS,
 				DEFAULT_MAX_IDLE_CONNECTIONS);
 	}
 
 	/**
 	 * Constructor, using default parameters for OkHttpClient.
 	 * 
-	 * @param apiKey       OpenAiApi key. If this is null, it will try to read it
-	 *                     from {@link #OS_ENV_VAR_NAME_API_KEY} system environment
-	 *                     variable.
-	 * 
-	 * 
-	 * @param resourceName Resource name for the Azure OpenAI Service to connect to.
-	 *                     If null, it will be read from
-	 *                     {@link #OS_ENV_VAR_NAME_RESOURCE} system environment
-	 *                     variable.
+	 * @param apiKey      OpenAiApi key. If this is null, it will try to read it
+	 *                    from {@link #OS_ENV_VAR_NAME_API_KEY} system environment
+	 *                    variable.
+	 * @param endpointUrl Endpoint for the Azure OpenAI Service to connect to. If
+	 *                    null, it will be read from
+	 *                    {@link #OS_ENV_VAR_NAME_ENDPOINT} system environment
+	 *                    variable.
 	 */
-	public AzureOpenAiClient(String resourceName, String apiKey) {
-		this(resourceName, apiKey, DEFAULT_TIMEOUT_MILLIS, DEFAULT_MAX_RETRIES, DEFAULT_KEEP_ALIVE_MILLIS,
+	public AzureOpenAiClient(String endpointUrl, String apiKey) {
+		this(endpointUrl, apiKey, DEFAULT_TIMEOUT_MILLIS, DEFAULT_MAX_RETRIES, DEFAULT_KEEP_ALIVE_MILLIS,
 				DEFAULT_MAX_IDLE_CONNECTIONS);
 	}
 
@@ -169,9 +166,9 @@ public class AzureOpenAiClient extends OpenAiClient {
 	 * parameters can be specified.
 	 * 
 	 * 
-	 * @param resourceName       Resource name for the Azure OpenAI Service to
-	 *                           connect to. If null, it will be read from
-	 *                           {@link #OS_ENV_VAR_NAME_RESOURCE} system
+	 * @param endpointUrl        Endpoint for the Azure OpenAI Service to connect
+	 *                           to. If null, it will be read from
+	 *                           {@link #OS_ENV_VAR_NAME_ENDPOINT} system
 	 *                           environment variable.
 	 * @param apiKey             OpenAiApi key. If this is null, it will try to read
 	 *                           it from {@link #OS_ENV_VAR_NAME_API_KEY} system
@@ -186,9 +183,9 @@ public class AzureOpenAiClient extends OpenAiClient {
 	 * @param maxIdleConnections Maximum number of idle connections to keep in the
 	 *                           pool.
 	 */
-	public AzureOpenAiClient(String resourceName, String apiKey, int readTimeout, int maxRetries, int keepAliveDuration,
+	public AzureOpenAiClient(String endpointUrl, String apiKey, int readTimeout, int maxRetries, int keepAliveDuration,
 			int maxIdleConnections) {
-		this(resourceName, apiKey,
+		this(endpointUrl, apiKey,
 				ApiClient.getDefaultHttpClient(readTimeout, maxRetries, keepAliveDuration, maxIdleConnections));
 	}
 
@@ -199,29 +196,29 @@ public class AzureOpenAiClient extends OpenAiClient {
 	 * 
 	 * Notice API key header is set in this call, by reading it from OS environment.
 	 * 
-	 * @param resourceName Resource name for the Azure OpenAI Service to connect to.
-	 *                     If null, it will be read from
-	 *                     {@link #OS_ENV_VAR_NAME_RESOURCE} system environment
-	 *                     variable.
+	 * @param endpointUrl Endpoint for the Azure OpenAI Service to connect to. If
+	 *                    null, it will be read from
+	 *                    {@link #OS_ENV_VAR_NAME_ENDPOINT} system environment
+	 *                    variable.
 	 */
-	public AzureOpenAiClient(String resourceName, OkHttpClient http) {
-		this(resourceName, null, http);
+	public AzureOpenAiClient(String endpointUrl, OkHttpClient http) {
+		this(endpointUrl, null, http);
 	}
 
-		/**
-		 * Constructor. This client uses provided OkHttpClient for API calls, to allow
-		 * full customization (see
-		 * {@link ApiClient#getDefaultHttpClient(int, int, int, int)}).
-		 * 
-		 * @param apiKey       OpenAI API key to use (will be set in the header).
-		 * 
-		 * 
-		 * @param resourceName Resource name for the Azure OpenAI Service to connect to.
-		 *                     If null, it will be read from
-		 *                     {@link #OS_ENV_VAR_NAME_RESOURCE} system environment
-		 *                     variable.
-		 */
-		public AzureOpenAiClient(String resourceName, String apiKey, OkHttpClient http) {
+	/**
+	 * Constructor. This client uses provided OkHttpClient for API calls, to allow
+	 * full customization (see
+	 * {@link ApiClient#getDefaultHttpClient(int, int, int, int)}).
+	 * 
+	 * @param apiKey      OpenAI API key to use (will be set in the header).
+	 * 
+	 * 
+	 * @param endpointUrl Endpoint for the Azure OpenAI Service to connect to. If
+	 *                    null, it will be read from
+	 *                    {@link #OS_ENV_VAR_NAME_ENDPOINT} system environment
+	 *                    variable.
+	 */
+	public AzureOpenAiClient(String endpointUrl, String apiKey, OkHttpClient http) {
 
 		Builder builder = http.newBuilder();
 
@@ -292,10 +289,10 @@ public class AzureOpenAiClient extends OpenAiClient {
 		}).build();
 
 		client = builder.build();
-		azureResourceName = (resourceName == null) ? getResourceName() : resourceName;
+		azureEnpointUrl = (endpointUrl == null) ? getEndpointUrl() : endpointUrl;
 
-		Retrofit retrofit = new Retrofit.Builder().baseUrl(azureResourceName)
-				.client(client).addConverterFactory(JacksonConverterFactory.create(jsonMapper))
+		Retrofit retrofit = new Retrofit.Builder().baseUrl(azureEnpointUrl).client(client)
+				.addConverterFactory(JacksonConverterFactory.create(jsonMapper))
 				.addCallAdapterFactory(RxJava2CallAdapterFactory.create()).build();
 
 		api = retrofit.create(AzureOpenAiApi.class);
@@ -315,11 +312,11 @@ public class AzureOpenAiClient extends OpenAiClient {
 	/**
 	 * @return The API key from OS environment.
 	 */
-	public static String getResourceName() {
-		String name = System.getenv(OS_ENV_VAR_NAME_RESOURCE);
+	public static String getEndpointUrl() {
+		String name = System.getenv(OS_ENV_VAR_NAME_ENDPOINT);
 		if (name == null)
 			throw new IllegalArgumentException("Azure OpenAI Service name is not provided and it cannot be found in "
-					+ OS_ENV_VAR_NAME_RESOURCE + " system environment variable");
+					+ OS_ENV_VAR_NAME_ENDPOINT + " system environment variable");
 		return name;
 	}
 

@@ -93,7 +93,7 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 	}
 
 	public OpenAiEmbeddingService(OpenAiEndpoint ep, @NonNull String model) {
-		this(ep, EmbeddingsRequest.builder().model(DEFAULT_MODEL).build());
+		this(ep, EmbeddingsRequest.builder().model(model).build());
 	}
 
 	public OpenAiEmbeddingService(OpenAiEndpoint ep, EmbeddingsRequest embeddingsRequest) {

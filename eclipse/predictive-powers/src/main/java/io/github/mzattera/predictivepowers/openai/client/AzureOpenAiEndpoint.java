@@ -47,7 +47,7 @@ public class AzureOpenAiEndpoint implements OpenAiEndpoint {
 	private final static Logger LOG = LoggerFactory.getLogger(AzureOpenAiEndpoint.class);
 
 	// Because of the mapping between deployment IDs and OpenAI model IDs, we keep a
-	// model service instance per endpoint (= Azure OpenAI Service).
+	// model service instance per endpoint (= Azure OpenAI Service endpoint).
 	// See AzureOpenAiModelService JavaDoc.
 	private final static Map<String, AzureOpenAiModelService> cache = new HashMap<>();
 
@@ -60,22 +60,22 @@ public class AzureOpenAiEndpoint implements OpenAiEndpoint {
 		this(null, null);
 	}
 
-	public AzureOpenAiEndpoint(String resourceName) {
-		this(resourceName, null);
+	public AzureOpenAiEndpoint(String endpointUrl) {
+		this(endpointUrl, null);
 	}
 
-	public AzureOpenAiEndpoint(String resourceName, String apiKey) {
-		this(new AzureOpenAiClient(resourceName, apiKey));
+	public AzureOpenAiEndpoint(String endpointUrl, String apiKey) {
+		this(new AzureOpenAiClient(endpointUrl, apiKey));
 	}
 
 	public AzureOpenAiEndpoint(@NonNull AzureOpenAiClient client) {
 		this.client = client;
-		String resourceName = client.getAzureResourceName();
+		String endpointUrl = client.getAzureEnpointUrl();
 		synchronized (cache) {
-			AzureOpenAiModelService svc = cache.get(resourceName);
+			AzureOpenAiModelService svc = cache.get(endpointUrl);
 			if (svc == null) {
-				svc = new AzureOpenAiModelService();
-				cache.put(resourceName, svc);
+				svc = new AzureOpenAiModelService(); 
+				cache.put(endpointUrl, svc);
 			}
 			modelService = svc;
 		}

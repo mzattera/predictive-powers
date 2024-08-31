@@ -31,7 +31,7 @@ import lombok.NonNull;
 /**
  * This class provides {@link ModelService}s for Azure OpenAI Services.
  * 
- * When calling OpenAi models, the API in Azure requires a OpenAI resource name
+ * When calling OpenAi models, the API in Azure requires a OpenAI endpoint
  * and a deployment ID (= a deployed model name). These values are used in
  * building the API URL and they are not passed as request parameters. In our
  * implementation of Azure OpenAI API, we use deployment IDs as model IDs; this
@@ -50,8 +50,8 @@ import lombok.NonNull;
  * Therefore, when a service is created, we issue a "fake" call to the service
  * to read its base model ID. A mapping is then stored between the model ID for
  * the service (that is its deployment ID) and the base model it uses (the
- * underlying OpenAI model) by calling {@link #map(String, String)}; this is
- * taken care inside {@link AzureOpenAiEndpoint}. In this way, it is possible to
+ * underlying OpenAI model); this is
+ * handled transparently by OpenAi services (see their register() method)). In this way, it is possible to
  * get OpenAI model metadata for each deployed model in Azure.
  * 
  * The disadvantage of this method (beside the "fake" call) is that this model
@@ -65,6 +65,8 @@ import lombok.NonNull;
  */
 public class AzureOpenAiModelService extends OpenAiModelService {
 
+	// TODO URGENT see if you can implement this using the Azure SDK....
+	
 	/**
 	 * Maps each OpenAI model into its metadata
 	 */
@@ -127,7 +129,7 @@ public class AzureOpenAiModelService extends OpenAiModelService {
 	}
 
 	/**
-	 * Every time a new service is created, {@link AzureOpenAiEndpoint} will call
+	 * Every time a new OpenAI service is created, it will call
 	 * this to map the service deployment ID into the underlying OpenAI model used
 	 * by the service.
 	 */

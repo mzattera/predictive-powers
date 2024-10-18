@@ -47,8 +47,7 @@ public final class GPT {
 	private static final int TIMEOUT = 30;
 
 	// TODO REMOVE PRIVATE KEY
-	private static final OpenAiService SERVICE = new OpenAiService(
-			"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", TIMEOUT);
+	private static final OpenAiService SERVICE = new OpenAiService();
 
 	/**
 	 * The token count of your prompt plus returned text cannot exceed the model's

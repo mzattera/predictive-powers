@@ -60,6 +60,8 @@ import retrofit2.http.Query;
  */
 public interface AzureOpenAiApi {
 
+	// TODO URGENT /openai part should be embeded in POST not in base url
+	
 	@POST("deployments/{deployment_id}/completions")
 	Single<CompletionsResponse> completions(@Path("deployment_id") @NonNull String deploymentId, //
 			@Query("api-version") @NonNull String apiVersion, //

@@ -23,7 +23,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Generates unique long IDs.
- * IDs are guaranteed to be unique inside the JVM.ight not be unique over subsequent runs.
+ * IDs are guaranteed to be unique inside the JVM. Might not be unique over subsequent runs.
  */
 public final class IdUtil {
 

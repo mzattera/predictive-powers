@@ -91,6 +91,12 @@ public class AzureOpenAiClient extends OpenAiClient {
 	public final static int DEFAULT_KEEP_ALIVE_MILLIS = 5 * 60 * 1000;
 	public final static int DEFAULT_MAX_IDLE_CONNECTIONS = 5;
 
+	/**
+	 * URL of the azure endpoint to which this client is connected; normally
+	 * something like:
+	 * 
+	 * https://YOUR_RESOURCE_NAME.openai.azure.com/openai/
+	 */
 	@Getter
 	private final String azureEnpointUrl;
 

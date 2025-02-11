@@ -331,14 +331,14 @@ public class AzureOpenAiClient extends OpenAiClient {
 	@Override
 	public List<Model> listModels() {
 		throw new UnsupportedOperationException(
-				"This method is not supported by the Azure OpenAI Service client and is available only from  OpenAI API .");
+				"This method is not supported by the Azure OpenAI Service client and is available only from OpenAI API.");
 
 	}
 
 	@Override
 	public Model retrieveModel(@NonNull String modelId) {
 		throw new UnsupportedOperationException(
-				"This method is not supported by the Azure OpenAI Service client and is available only from  OpenAI API .");
+				"This method is not supported by the Azure OpenAI Service client and is available only from OpenAI API.");
 
 	}
 
@@ -360,13 +360,13 @@ public class AzureOpenAiClient extends OpenAiClient {
 	@Override
 	protected List<Image> createImageEdit(@NonNull MultipartBody body) {
 		throw new UnsupportedOperationException(
-				"This method is not supported by the Azure OpenAI Service client and is available only from  OpenAI API .");
+				"This method is not supported by the Azure OpenAI Service client and is available only from OpenAI API.");
 	}
 
 	@Override
 	protected List<Image> createImageVariation(@NonNull MultipartBody body) {
 		throw new UnsupportedOperationException(
-				"This method is not supported by the Azure OpenAI Service client and is available only from  OpenAI API .");
+				"This method is not supported by the Azure OpenAI Service client and is available only from OpenAI API.");
 	}
 
 	@Override
@@ -417,14 +417,14 @@ public class AzureOpenAiClient extends OpenAiClient {
 	@Override
 	public FineTuningJob createFineTuningJob(@NonNull FineTuningRequest req) {
 		throw new UnsupportedOperationException(
-				"This method is not supported by the Azure OpenAI Service client and is available only from  OpenAI API .");
+				"This method is not supported by the Azure OpenAI Service client and is available only from OpenAI API.");
 
 	}
 
 	@Override
 	public DataList<FineTuningJob> listFineTuningJobs(Integer limit, String after) {
 		throw new UnsupportedOperationException(
-				"This method is not supported by the Azure OpenAI Service client and is available only from  OpenAI API .");
+				"This method is not supported by the Azure OpenAI Service client and is available only from OpenAI API.");
 
 	}
 
@@ -432,35 +432,35 @@ public class AzureOpenAiClient extends OpenAiClient {
 	public DataList<FineTuningJobEvent> listFineTuningEvents(@NonNull String fineTuningJobId, Integer limit,
 			String after) {
 		throw new UnsupportedOperationException(
-				"This method is not supported by the Azure OpenAI Service client and is available only from  OpenAI API .");
+				"This method is not supported by the Azure OpenAI Service client and is available only from OpenAI API.");
 
 	}
 
 	@Override
 	public FineTuningJob retrieveFineTuningJob(@NonNull String fineTuningJobId) {
 		throw new UnsupportedOperationException(
-				"This method is not supported by the Azure OpenAI Service client and is available only from  OpenAI API .");
+				"This method is not supported by the Azure OpenAI Service client and is available only from OpenAI API.");
 
 	}
 
 	@Override
 	public FineTuningJob cancelFineTuning(@NonNull String fineTuningJobId) {
 		throw new UnsupportedOperationException(
-				"This method is not supported by the Azure OpenAI Service client and is available only from  OpenAI API .");
+				"This method is not supported by the Azure OpenAI Service client and is available only from OpenAI API.");
 
 	}
 
 	@Override
 	public DeleteResponse deleteFineTunedModel(@NonNull String model) {
 		throw new UnsupportedOperationException(
-				"This method is not supported by the Azure OpenAI Service client and is available only from  OpenAI API .");
+				"This method is not supported by the Azure OpenAI Service client and is available only from OpenAI API.");
 
 	}
 
 	@Override
 	public ModerationsResponse createModeration(@NonNull ModerationsRequest req) {
 		throw new UnsupportedOperationException(
-				"This method is not supported by the Azure OpenAI Service client and is available only from  OpenAI API .");
+				"This method is not supported by the Azure OpenAI Service client and is available only from OpenAI API.");
 
 	}
 

@@ -60,8 +60,11 @@ import okhttp3.Interceptor;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.OkHttpClient.Builder;
+import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import okio.Buffer;
+import okio.BufferedSource;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
@@ -73,6 +76,21 @@ import retrofit2.converter.jackson.JacksonConverterFactory;
  *
  */
 public class AzureOpenAiClient extends OpenAiClient {
+
+	public static void main(String args[]) {
+		try (AzureOpenAiClient c = new AzureOpenAiClient()) {
+			for (Model m : c.deployments())
+				System.out.println(m.toString());
+		}
+	}
+
+	public List<Model> deployments() {
+//		return callApi(api.deployments("2023-03-15-preview")).getData();
+
+//		return callApi(api.deployments("2024-10-01")).getData();
+//		return callApi(api.deployments("2024-06-01-preview")).getData();
+		return callApi(api.deployments("2025-01-01-preview")).getData();
+	}
 
 	private final static Logger LOG = LoggerFactory.getLogger(AzureOpenAiClient.class);
 
@@ -229,60 +247,61 @@ public class AzureOpenAiClient extends OpenAiClient {
 		Builder builder = http.newBuilder();
 
 		// Debug code below, outputs the request
-//		builder.addInterceptor(new Interceptor() {
-//
-//			@Override
-//			public Response intercept(Chain chain) throws IOException {
-//				Request req = chain.request();
-//
-//				if (req.body() != null) {
-//					Buffer buffer = new Buffer();
-//					req.body().writeTo(buffer);
-//					String in = buffer.readUtf8();
-//					String bodyContent = "";
-//					try {
-//						// In case body is not JSON
-//						bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
-//								.writeValueAsString(jsonMapper.readTree(in));
-//					} catch (Exception e) {
-//						bodyContent = in;
-//					}
-//					System.out.println("Request body: " + bodyContent);
-//				}
-//
-//				return chain.proceed(req);
-//			}
-//		}); //
+		builder.addInterceptor(new Interceptor() {
+
+			@Override
+			public Response intercept(Chain chain) throws IOException {
+				Request req = chain.request();
+				System.out.println("Request URL: " + req.url());
+				
+				if (req.body() != null) {
+					Buffer buffer = new Buffer();
+					req.body().writeTo(buffer);
+					String in = buffer.readUtf8();
+					String bodyContent = "";
+					try {
+						// In case body is not JSON
+						bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
+								.writeValueAsString(jsonMapper.readTree(in));
+					} catch (Exception e) {
+						bodyContent = in;
+					}
+					System.out.println("Request body: " + bodyContent);
+				}
+
+				return chain.proceed(req);
+			}
+		}); //
 
 		// Debug code below, outputs the response
-//		builder.addInterceptor(new Interceptor() {
-//
-//			@Override
-//			public Response intercept(Chain chain) throws IOException {
-//
-//				Response response = chain.proceed(chain.request());
-//				if (response.body() != null) {
-//					BufferedSource source = response.body().source();
-//					source.request(Long.MAX_VALUE);
-//
-//					@SuppressWarnings("deprecation")
-//					Buffer buffer = source.buffer();
-//
-//					String in = buffer.clone().readUtf8();
-//					String bodyContent = "";
-//					try {
-//						// In case body is not JSON
-//						bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
-//								.writeValueAsString(jsonMapper.readTree(in));
-//					} catch (Exception e) {
-//						bodyContent = in;
-//					}
-//					System.out.println("Response body: " + bodyContent);
-//				}
-//
-//				return response; // Return the original response unaltered
-//			}
-//		}); //
+		builder.addInterceptor(new Interceptor() {
+
+			@Override
+			public Response intercept(Chain chain) throws IOException {
+
+				Response response = chain.proceed(chain.request());
+				if (response.body() != null) {
+					BufferedSource source = response.body().source();
+					source.request(Long.MAX_VALUE);
+
+					@SuppressWarnings("deprecation")
+					Buffer buffer = source.buffer();
+
+					String in = buffer.clone().readUtf8();
+					String bodyContent = "";
+					try {
+						// In case body is not JSON
+						bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
+								.writeValueAsString(jsonMapper.readTree(in));
+					} catch (Exception e) {
+						bodyContent = in;
+					}
+					System.out.println("Response body: " + bodyContent);
+				}
+
+				return response; // Return the original response unaltered
+			}
+		}); //
 
 		builder.addInterceptor(new Interceptor() { // Add API key in authorization header
 			@Override
@@ -330,9 +349,7 @@ public class AzureOpenAiClient extends OpenAiClient {
 
 	@Override
 	public List<Model> listModels() {
-		throw new UnsupportedOperationException(
-				"This method is not supported by the Azure OpenAI Service client and is available only from OpenAI API.");
-
+		return callApi(api.models(stableApiVersion)).getData();
 	}
 
 	@Override
@@ -638,7 +655,6 @@ public class AzureOpenAiClient extends OpenAiClient {
 	@Override
 	public void close() {
 		try {
-			super.close();
 			client.dispatcher().executorService().shutdown();
 			client.connectionPool().evictAll();
 			if (client.cache() != null)

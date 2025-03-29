@@ -31,6 +31,7 @@ import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRe
 import io.github.mzattera.predictivepowers.openai.client.files.File;
 import io.github.mzattera.predictivepowers.openai.client.images.Image;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
+import io.github.mzattera.predictivepowers.openai.client.models.Model;
 import io.github.mzattera.predictivepowers.openai.client.threads.Message;
 import io.github.mzattera.predictivepowers.openai.client.threads.MessageFile;
 import io.github.mzattera.predictivepowers.openai.client.threads.MessagesRequest;
@@ -61,6 +62,12 @@ import retrofit2.http.Query;
 public interface AzureOpenAiApi {
 
 	// TODO URGENT /openai part should be embeded in POST not in base url
+	
+	@GET("models")
+	Single<DataList<Model>> models(@Query("api-version") @NonNull String apiVersion);	
+	
+	@GET("deployments")
+	Single<DataList<Model>> deployments(@Query("api-version") @NonNull String apiVersion);	
 	
 	@POST("deployments/{deployment_id}/completions")
 	Single<CompletionsResponse> completions(@Path("deployment_id") @NonNull String deploymentId, //

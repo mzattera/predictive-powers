@@ -535,7 +535,6 @@ public class DirectOpenAiClient extends OpenAiClient {
 	@Override
 	public void close() {
 		try {
-			super.close();
 			client.dispatcher().executorService().shutdown();
 			client.connectionPool().evictAll();
 			if (client.cache() != null)

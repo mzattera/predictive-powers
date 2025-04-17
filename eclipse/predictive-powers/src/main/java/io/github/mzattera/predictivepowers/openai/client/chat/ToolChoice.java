@@ -49,6 +49,9 @@ public class ToolChoice {
 	/** USe this to indicate function_call = auto */
 	public final static ToolChoice AUTO = new ToolChoice(Mode.AUTO, null);
 
+	/** USe this to indicate function_call = required */
+	public final static ToolChoice REQUIRED = new ToolChoice(Mode.REQUIRED, null);
+
 	/**
 	 * Possible response options for a model when function calling is available.
 	 */
@@ -58,6 +61,9 @@ public class ToolChoice {
 
 		/** The model can pick between a message or calling a function */
 		AUTO,
+
+		/** The model must a function */
+		REQUIRED,
 
 		/** The model will call a function */
 		FUNCTION
@@ -88,6 +94,9 @@ public class ToolChoice {
 				break;
 			case AUTO:
 				jgen.writeString("auto");
+				break;
+			case REQUIRED:
+				jgen.writeString("required");
 				break;
 			case FUNCTION:
 				jgen.writeStartObject();

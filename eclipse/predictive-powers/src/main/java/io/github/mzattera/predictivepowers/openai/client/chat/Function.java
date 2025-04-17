@@ -47,20 +47,6 @@ import lombok.ToString;
 @ToString
 public class Function {
 
-	public Function(String name, String description, List<? extends ToolParameter> parameters) {
-		this.name = name;
-		this.description = description;
-		this.parameters = new JsonSchema(parameters);
-	}
-
-	public Function(String name, String description, Class<?> schema) {
-		this(name, description, JsonSchema.getParametersFromSchema(schema));
-	}
-
-	public Function(Tool tool) {
-		this(tool.getId(), tool.getDescription(), tool.getParameters());
-	}
-
 	/**
 	 * The name of the function to be called. Must be a-z, A-Z, 0-9, or contain
 	 * underscores and dashes, with a maximum length of 64.
@@ -84,4 +70,43 @@ public class Function {
 	 */
 	@NonNull // OpenAi errors otherwise
 	private JsonSchema parameters;
+
+	/**
+	 * Whether to enable strict schema adherence when generating the function call.
+	 * If set to true, the model will follow the exact schema defined in the
+	 * parameters field.
+	 * 
+	 * Only a subset of JSON Schema is supported when strict is
+	 * true. See {@linkplain https://platform.openai.com/docs/api-reference/chat/docs/guides/function-calling}.
+	 * 
+	 * This is supported only by tool calls (parallel function calling).
+	 */
+	private Boolean strict;
+
+	public Function(String name, String description, List<? extends ToolParameter> parameters) {
+		this(name, description, parameters, null);
+	}
+
+	public Function(String name, String description, List<? extends ToolParameter> parameters, Boolean strict) {
+		this.name = name;
+		this.description = description;
+		this.parameters = new JsonSchema(parameters);
+		this.strict = strict;
+	}
+
+	public Function(String name, String description, Class<?> schema) {
+		this(name, description, JsonSchema.getParametersFromSchema(schema), null);
+	}
+
+	public Function(String name, String description, Class<?> schema, Boolean strict) {
+		this(name, description, JsonSchema.getParametersFromSchema(schema), strict);
+	}
+
+	public Function(Tool tool) {
+		this(tool.getId(), tool.getDescription(), tool.getParameters(), null);
+	}
+
+	public Function(Tool tool, Boolean strict) {
+		this(tool.getId(), tool.getDescription(), tool.getParameters(), strict);
+	}
 }

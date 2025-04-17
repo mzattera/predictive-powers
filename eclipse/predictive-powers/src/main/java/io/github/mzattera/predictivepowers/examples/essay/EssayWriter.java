@@ -595,7 +595,7 @@ public class EssayWriter implements Closeable {
 		// Prepares the conversation; notice the call to fill the slots in the prompt
 		// template
 		List<OpenAiChatMessage> msgs = new ArrayList<>();
-		msgs.add(new OpenAiChatMessage(Role.SYSTEM,
+		msgs.add(new OpenAiChatMessage(Role.DEVELOPER,
 				"You are an assistant helping a researcher in finding web pages that are relevant for the essay section they are writing."));
 		msgs.add(new OpenAiChatMessage(Role.USER, CompletionService.fillSlots(prompt, params)));
 
@@ -744,7 +744,7 @@ public class EssayWriter implements Closeable {
 
 		// This is the prompt used for creating the section
 		List<OpenAiChatMessage> msgs = new ArrayList<>();
-		msgs.add(new OpenAiChatMessage(Role.SYSTEM,
+		msgs.add(new OpenAiChatMessage(Role.DEVELOPER,
 				"You will be provided with a context and the summary of a section of an essay, both delimited by XML tags."
 						+ " Your task is to use the content of the context to write the entire section of the essay."
 						+ " Use a professional style." + " Avoid content repetitions but be detailed."

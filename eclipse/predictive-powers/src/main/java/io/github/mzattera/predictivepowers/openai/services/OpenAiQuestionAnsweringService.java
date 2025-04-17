@@ -22,7 +22,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest.ResponseFormat;
+import io.github.mzattera.predictivepowers.openai.client.chat.ResponseFormat;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.AbstractQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.services.QnAPair;
@@ -56,7 +56,9 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 		completionService = endpoint.getChatService(model);
 		completionService.setPersonality(null);
 		completionService.setTemperature(0.0); // TODO test best settings.
-		completionService.getDefaultReq().setResponseFormat(ResponseFormat.JSON);
+		
+		// TODO use JSON_SCHEMA instead
+		completionService.getDefaultReq().setResponseFormat(ResponseFormat.JSON_OBJECT);
 	}
 
 	@Override
@@ -110,7 +112,7 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 
 		// Provides instructions and examples
 		List<OpenAiChatMessage> instructions = new ArrayList<>();
-		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
+		instructions.add(new OpenAiChatMessage(Role.DEVELOPER,
 				"You are an agent that answers users' questions truthfully.\n"
 						+ "At each conversation step, you will be provided with a user's question, in a <question> tag,"
 						+ " and a context, in a <context> tags, containing the information you must use to answer"
@@ -121,20 +123,20 @@ public class OpenAiQuestionAnsweringService extends AbstractQuestionAnsweringSer
 						+ " reply with \"I do not know.\".\n"
 						+ "When creating the answer, think step by step and provide your reasoning as well.\n"
 						+ "Return both the answer and the reasoning in JSON format."));
-		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
+		instructions.add(new OpenAiChatMessage(Role.DEVELOPER,
 				"<context>\n" + "Biglydoos are small rodent similar to mice.\n" + "Biglydoos eat cranberries.\n"
 						+ "Biglydoos are green.\n" + "</context>\n" + "<question>Do biglydoos eat fruits?</question>",
 				"example_user"));
-		instructions.add(new OpenAiChatMessage(Role.SYSTEM, //
+		instructions.add(new OpenAiChatMessage(Role.DEVELOPER, //
 				"{\n" + "  \"answer\": \"Yes, biglydoos eat fruits.\",\n"
 						+ "  \"explanation\": \"1. The context states: \"Biglydoos eat cranberries\".\\n"
 						+ "2. Cranberries are a kind of fruit.\\n" + "3. Therefore, biglydoos eat fruits.\"\n" + "}",
 				"example_assistant"));
-		instructions.add(new OpenAiChatMessage(Role.SYSTEM,
+		instructions.add(new OpenAiChatMessage(Role.DEVELOPER,
 				"<context>\n" + "Biglydoos are small rodent similar to mice.\n" + "Biglydoos eat cranberries.\n"
 						+ "</context>\n" + "<question>What color are biglydoos?</question>",
 				"example_user"));
-		instructions.add(new OpenAiChatMessage(Role.SYSTEM, //
+		instructions.add(new OpenAiChatMessage(Role.DEVELOPER, //
 				"{\n" + "  \"answer\": \"I do not know.\",\n"
 						+ "  \"explanation\": \"1. This information is not provided in the context.\"\n" + "}",
 				"example_assistant"));

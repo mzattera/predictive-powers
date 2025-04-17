@@ -224,4 +224,25 @@ public final class FileUtil {
 			return MimeTypes.OCTET_STREAM;
 		}
 	}
+
+	/**
+	 * Extracts the format (e.g. wav, jpeg) from a MIME type.
+	 *
+	 * @param mimeType The MIME type string (e.g. "audio/wav" or "image/jpeg" or
+	 *                 "audio").
+	 * @return The format (e.g. "wav", "jpeg", or the top-level type like "audio" if
+	 *         no subtype is present).
+	 */
+	public static String formatFromMimeType(String mimeType) {
+		if (mimeType == null || mimeType.isBlank()) {
+			return null;
+		}
+
+		String[] parts = mimeType.split("/");
+		if (parts.length == 2 && !parts[1].isBlank()) {
+			return parts[1].toLowerCase(); // subtype, e.g. wav, jpeg
+		} else {
+			return parts[0].toLowerCase(); // generic type, e.g. audio, image
+		}
+	}
 }

@@ -58,6 +58,7 @@ import okhttp3.Interceptor;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.OkHttpClient.Builder;
+import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import retrofit2.Retrofit;
@@ -109,7 +110,21 @@ public class DirectOpenAiClient extends OpenAiClient {
 	 *               {@link #OS_ENV_VAR_NAME} system environment variable.
 	 */
 	public DirectOpenAiClient(String apiKey) {
-		this(apiKey, DEFAULT_TIMEOUT_MILLIS, DEFAULT_MAX_RETRIES, DEFAULT_KEEP_ALIVE_MILLIS,
+		this(apiKey, null, null, DEFAULT_TIMEOUT_MILLIS, DEFAULT_MAX_RETRIES, DEFAULT_KEEP_ALIVE_MILLIS,
+				DEFAULT_MAX_IDLE_CONNECTIONS);
+	}
+
+	/**
+	 * Constructor, using default parameters for OkHttpClient.
+	 * 
+	 * @param apiKey       OpenAiApi key. If this is null, it will try to read it
+	 *                     from {@link #OS_ENV_VAR_NAME} system environment
+	 *                     variable.
+	 * @param organization Your OpenAI organization (or null).
+	 * @param project      Your OpenAI project (or null).
+	 */
+	public DirectOpenAiClient(String apiKey, String organization, String project) {
+		this(apiKey, organization, project, DEFAULT_TIMEOUT_MILLIS, DEFAULT_MAX_RETRIES, DEFAULT_KEEP_ALIVE_MILLIS,
 				DEFAULT_MAX_IDLE_CONNECTIONS);
 	}
 
@@ -136,6 +151,31 @@ public class DirectOpenAiClient extends OpenAiClient {
 	}
 
 	/**
+	 * Constructor. This client uses an underlying OkHttpClient for API calls, which
+	 * parameters can be specified.
+	 * 
+	 * @param apiKey             OpenAiApi key. If this is null, it will try to read
+	 *                           it from {@link #OS_ENV_VAR_NAME} system environment
+	 *                           variable.
+	 * @param organization       Your OpenAI organization (or null).
+	 * @param project            Your OpenAI project (or null).
+	 * @param readTimeout        Read timeout for connections. 0 means no timeout.
+	 * @param maxRetries         In case we receive an HTTP error signaling
+	 *                           temporary server unavailability, the client will
+	 *                           retry the call, at maximum this amount of times.
+	 *                           Use values <= 0 to disable this feature.
+	 * @param keepAliveDuration  Timeout for connections in client pool
+	 *                           (milliseconds).
+	 * @param maxIdleConnections Maximum number of idle connections to keep in the
+	 *                           pool.
+	 */
+	public DirectOpenAiClient(String apiKey, String organization, String project, int readTimeout, int maxRetries,
+			int keepAliveDuration, int maxIdleConnections) {
+		this(apiKey, organization, project,
+				ApiClient.getDefaultHttpClient(readTimeout, maxRetries, keepAliveDuration, maxIdleConnections));
+	}
+
+	/**
 	 * Constructor. This client uses provided OkHttpClient for API calls, to allow
 	 * full customization (see
 	 * {@link ApiClient#getDefaultHttpClient(int, int, int, int)}).
@@ -154,6 +194,19 @@ public class DirectOpenAiClient extends OpenAiClient {
 	 * @param apiKey OpenAI API key to use (will be set in the header).
 	 */
 	public DirectOpenAiClient(String apiKey, OkHttpClient http) {
+		this(apiKey, null, null, http);
+	}
+
+	/**
+	 * Constructor. This client uses provided OkHttpClient for API calls, to allow
+	 * full customization (see
+	 * {@link ApiClient#getDefaultHttpClient(int, int, int, int)}).
+	 * 
+	 * @param apiKey       OpenAI API key to use (will be set in the header).
+	 * @param organization Your OpenAI organization (or null).
+	 * @param project      Your OpenAI project (or null).
+	 */
+	public DirectOpenAiClient(String apiKey, String organization, String project, OkHttpClient http) {
 
 		Builder builder = http.newBuilder();
 
@@ -216,10 +269,23 @@ public class DirectOpenAiClient extends OpenAiClient {
 		builder.addInterceptor(new Interceptor() { // Add API key in authorization header
 			@Override
 			public Response intercept(Chain chain) throws IOException {
-				return chain.proceed(chain.request().newBuilder() //
+				Request request = chain.request().newBuilder() //
 						.header("Authorization", "Bearer " + ((apiKey == null) ? getApiKey() : apiKey)) //
 						.header("OpenAI-Beta", "assistants=v1") //
-						.build());
+						.build();
+				if (organization != null) {
+					request = request.newBuilder() //
+							.header("OpenAI-Organization", organization) //
+							.build();
+				}
+				if (project != null) {
+					request = request.newBuilder() //
+							.header("OpenAI-Project", project) //
+							.build();
+				}
+
+				return chain.proceed(request);
+
 			}
 		}).build();
 

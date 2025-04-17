@@ -15,6 +15,7 @@
  */
 package io.github.mzattera.predictivepowers.openai.services;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -45,7 +46,6 @@ import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
-import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.MessagePart;
 import io.github.mzattera.predictivepowers.services.messages.TextPart;
@@ -73,7 +73,7 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiChatService.class);
 
 	public static final String DEFAULT_MODEL = "gpt-4-turbo";
-	
+
 	@Getter
 	@Setter
 	private int maxHistoryLength = 1000;
@@ -157,11 +157,12 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 	 * {@link AzureOpenAiModelService}.
 	 */
 	private void register() {
+		// TODO URGENT REMOVE
 		if (endpoint instanceof AzureOpenAiEndpoint) {
 			String model = getModel();
 			if (modelService.get(model) == null) {
 				// Do a "fake" call to read base model ID (see AzureOpenAiModelService JavaDoc).
-				ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).maxTokens(1).build();
+				ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).maxCompletionTokens(1).build();
 				req.getMessages().add(new OpenAiChatMessage(Role.USER, "Hi"));
 				ChatCompletionsResponse resp = endpoint.getClient().createChatCompletion(req);
 				((AzureOpenAiModelService) modelService).map(model, resp.getModel());
@@ -209,12 +210,12 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 
 	@Override
 	public Integer getMaxNewTokens() {
-		return defaultReq.getMaxTokens();
+		return defaultReq.getMaxCompletionTokens();
 	}
 
 	@Override
 	public void setMaxNewTokens(Integer maxNewTokens) {
-		defaultReq.setMaxTokens(maxNewTokens);
+		defaultReq.setMaxCompletionTokens(maxNewTokens);
 	}
 
 	@Override
@@ -223,7 +224,7 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 
 		List<OpenAiChatMessage> msgs = new ArrayList<>();
 		if (personality != null) {
-			msgs.add(new OpenAiChatMessage(Role.SYSTEM, personality));
+			msgs.add(new OpenAiChatMessage(Role.DEVELOPER, personality));
 		}
 		defaultReq.setMessages(msgs);
 		int result = modelService.getTokenizer(getModel()).count(defaultReq);
@@ -438,7 +439,7 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 
 		req.setMessages(messages);
 
-		boolean autofit = (req.getMaxTokens() == null) && (modelService.getContextSize(model, -1) != -1);
+		boolean autofit = (req.getMaxTokens() == null) && (req.getMaxCompletionTokens() == null) && (modelService.getContextSize(model, -1) != -1);
 
 		try {
 			if (autofit) {
@@ -448,7 +449,7 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 				if (size <= 0)
 					throw new IllegalArgumentException("Requests size (" + tok + ") exceeds model context size ("
 							+ modelService.getContextSize(model) + ")");
-				req.setMaxTokens(Math.min(size, modelService.getMaxNewTokens(model)));
+				req.setMaxCompletionTokens(Math.min(size, modelService.getMaxNewTokens(model)));
 			}
 
 			ChatCompletionsResponse resp = null;
@@ -459,14 +460,14 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 					int optimal = e.getMaxContextLength() - e.getPromptLength() - 1;
 					if (optimal > 0) {
 						// TODO Add a test case
-						LOG.warn("Reducing context length for OpenAI chat service from " + req.getMaxTokens() + " to "
+						LOG.warn("Reducing context length for OpenAI chat service from " + req.getMaxCompletionTokens() + " to "
 								+ optimal);
-						int old = req.getMaxTokens();
-						req.setMaxTokens(optimal);
+						int old = req.getMaxCompletionTokens();
+						req.setMaxCompletionTokens(optimal);
 						try {
 							resp = endpoint.getClient().createChatCompletion(req);
 						} finally {
-							req.setMaxTokens(old);
+							req.setMaxCompletionTokens(old);
 						}
 					} else
 						throw e; // Context too small anyway
@@ -480,8 +481,10 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 		} finally {
 
 			// for next call, or maxTokens will remain fixed
-			if (autofit)
+			if (autofit) {
 				req.setMaxTokens(null);
+				req.setMaxCompletionTokens(null);
+			}
 		}
 	}
 
@@ -536,11 +539,11 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 
 		if (personality != null)
 			// must add a system message on top with personality
-			messages.add(0, new OpenAiChatMessage(Role.SYSTEM, personality));
+			messages.add(0, new OpenAiChatMessage(Role.DEVELOPER, personality));
 	}
 
 	/**
-	 * Turns an OpenAiChatMessage into a ChatMessage.
+	 * Turns an OpenAiChatMessage returned by API into a ChatMessage.
 	 * 
 	 * @param msg
 	 * @return
@@ -577,13 +580,20 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 		}
 
 		// Normal (text) message
-		return new ChatMessage(Author.BOT, msg.getContentParts());
+		List<MessagePart> parts = msg.getContentParts();
+		AudioOutput a = msg.getAudio();
+		if (a != null) { // Agent returned audio response, let's add it as a new part
+			FilePart part = new Base64FilePart(a.getData(), a.getId(), "audio");
+			part.setTranscript(a.getTranscript());
+			parts.add(part);
+		}
+		return new ChatMessage(Author.BOT, parts);
 	}
 
 	/**
-	 * This converts a generic ChatMessaege into an OpenAIChatMessage that is used
-	 * for the OpenAi API. This is meant for abstraction and easier interoperability
-	 * of agents.
+	 * This converts a generic ChatMessaege provided by user into an
+	 * OpenAIChatMessage that is used for the OpenAi API. This is meant for
+	 * abstraction and easier interoperability of agents.
 	 * 
 	 * @throws IllegalArgumentException if the message is not in a format supported
 	 *                                  directly by OpenAI API.
@@ -619,7 +629,7 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 				}
 				break;
 			default:
-				throw new IllegalArgumentException("Model does not support function calling.");
+				throw new IllegalArgumentException("Model " + getModel() + " does not support function calling.");
 			}
 			return result;
 		}
@@ -631,29 +641,45 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 		List<MessagePart> newParts = new ArrayList<>(msg.getParts().size());
 		for (MessagePart part : msg.getParts()) {
 
-			if (part instanceof TextPart) {
+			if ((part instanceof TextPart) || (part instanceof OpenAiFilePart)) { // This covers RefusalTextPart as well
 				newParts.add(part);
 
 			} else if (part instanceof FilePart) {
 
 				FilePart file = (FilePart) part;
-				if (file.getContentType() != ContentType.IMAGE)
-					throw new IllegalArgumentException("Only files with coontent type = IMAGE are supported.");
 
-				// We ensure the image is Base64 encoded and pre-scaled,
-				// unless it is a remote file that we do not touch (for performance reasons)
-				if (!file.isLocalFile()) {
-					newParts.add(part);
-				} else {
-					try {
-						newParts.add(Base64FilePart.forOpenAi(file));
-					} catch (Exception e) {
-						newParts.add(part);
+				switch (file.getContentType()) {
+				case IMAGE:
+					// We ensure the image is Base64 encoded and pre-scaled,
+					// unless it is a remote file that we do not touch (for performance reasons)
+					if (!file.isLocalFile()) {
+						newParts.add(file);
+					} else {
+						try {
+							newParts.add(Base64FilePart.forOpenAiImage(file));
+						} catch (Exception e) {
+							newParts.add(file);
+						}
 					}
+
+					// TODO we could add support for detail parameter eventually
+					break;
+				case AUDIO:
+				default:
+					// We ensure the file is already Base64 encoded
+					if (file instanceof Base64FilePart)
+						newParts.add(file);
+					else {
+						try {
+							newParts.add(new Base64FilePart(file));
+						} catch (IOException e) {
+							newParts.add(file);
+						}
+					}
+					break;
 				}
 			} else
-				throw new IllegalArgumentException(
-						"Unsupported part in message (only text and images are supported): " + part);
+				throw new IllegalArgumentException("Unsupported message part: " + part.getClass().getName());
 		} // for each part
 
 		result.add(new OpenAiChatMessage(msg.getAuthor(), newParts));

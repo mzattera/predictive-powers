@@ -15,9 +15,12 @@
  */
 package io.github.mzattera.predictivepowers.openai.client.chat;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import io.github.mzattera.predictivepowers.openai.client.Usage;
+import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest.ServiceTier;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -31,7 +34,8 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+// @RequiredArgsConstructor
 @AllArgsConstructor
 @Builder
 @Getter
@@ -39,11 +43,13 @@ import lombok.ToString;
 @ToString
 public class ChatCompletionsResponse {
 
-	private String id;
-	private List<ChatCompletionsChoice> choices;
+	@Builder.Default
+	private List<ChatCompletionsChoice> choices = new ArrayList<>();
 	private long created;
+	private String id;
 	private String model;
-	private String systemFingerprint;
 	private String object;
+	private ServiceTier serviceTier;
+	private String systemFingerprint;
 	private Usage usage;
 }

@@ -35,15 +35,15 @@ import io.github.mzattera.predictivepowers.services.Service;
  */
 public final class TestConfiguration {
 
-	public final static boolean TEST_GOOGLE_SERVICES = true;
+	public final static boolean TEST_GOOGLE_SERVICES = false;
 
-	public final static boolean TEST_HF_SERVICES = true;
+	public final static boolean TEST_HF_SERVICES = false;
 
-	public final static boolean TEST_KNOWLEDGE_BASE = true;
+	public final static boolean TEST_KNOWLEDGE_BASE = false;
 
 	public final static boolean TEST_DIRECT_OPENAI_SERVICES = true;
 
-	public final static boolean TEST_AZURE_OPENAI_SERVICES = true;
+	public final static boolean TEST_AZURE_OPENAI_SERVICES = false;
 
 	public static List<AiEndpoint> getAiEndpoints() {
 

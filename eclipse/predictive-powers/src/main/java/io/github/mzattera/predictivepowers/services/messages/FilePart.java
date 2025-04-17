@@ -28,10 +28,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 
+import org.apache.tika.mime.MimeTypes;
+
 import io.github.mzattera.util.FileUtil;
-import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
@@ -44,16 +44,14 @@ import lombok.experimental.SuperBuilder;
  * 
  * @author Massimiliano "Maxi" Zattera.
  */
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
 @Getter
-@Setter
 public class FilePart implements MessagePart {
 
 	public static enum ContentType {
 		AUDIO, IMAGE, TEXT, VIDEO, GENERIC;
 
-		public static ContentType fromMimeType(String mimeType) {
+		public static ContentType fromMimeType(@NonNull String mimeType) {
 			switch (mimeType.split("/")[0].toLowerCase()) {
 			case "audio":
 				return AUDIO;
@@ -75,6 +73,11 @@ public class FilePart implements MessagePart {
 	@NonNull
 	private String mimeType;
 
+	protected void setMimeType(@NonNull String mimeType) {
+		this.mimeType = (mimeType == null ? MimeTypes.OCTET_STREAM : mimeType);
+		this.contentType = ContentType.fromMimeType(mimeType);
+	}
+
 	/**
 	 * Enumeration containing the generic MIME type of the file.
 	 */
@@ -84,66 +87,91 @@ public class FilePart implements MessagePart {
 	/**
 	 * If this is a local file, this points to the file itself.
 	 */
-	private File file;
+	private final File file;
 
 	/**
 	 * If this is a remote file, this is its URL.
 	 */
-	private URL url;
+	private final URL url;
+
+	/**
+	 * For AUDIO files, this can optionally contain a transcript.
+	 */
+	@Setter
+	private String transcript;
+	
+	protected FilePart(String mameType) {
+		this.file = null;
+		this.url = null;
+		setMimeType(mimeType);
+	}
 
 	/**
 	 * Constructor. Notice the file is inspected to determine its content type.
-	 * GENERIC content type is assumed if the file cannot be read.
-	 * 
-	 * @param file
 	 */
 	public FilePart(@NonNull File file) {
-		this(file, FileUtil.getMimeType(file));
+		this(file, null);
 	}
 
+	/**
+	 * Constructor. Notice the file is inspected if mimeType==null to determine its
+	 * content type.
+	 */
 	public FilePart(@NonNull File file, String mimeType) {
-		if (!file.isFile() || !file.canRead())
-			throw new IllegalArgumentException("File must be a readable normal file: " + file.getName());
-		this.mimeType = mimeType;
-		this.contentType = ContentType.fromMimeType(mimeType);
 		this.file = file;
 		this.url = null;
+		if (!file.isFile() || !file.canRead())
+			throw new IllegalArgumentException("File must be a readable normal file: " + file.getName());
+		this.mimeType = (mimeType == null ? FileUtil.getMimeType(file) : mimeType);
+		this.contentType = ContentType.fromMimeType(mimeType);
 	}
 
 	/**
 	 * Constructor. Notice the file is inspected to determine its content type.
 	 */
 	public static FilePart fromFileName(@NonNull String fileName) {
-		return new FilePart(new File(fileName));
+		return new FilePart(new File(fileName), null);
 	}
 
+	/**
+	 * Constructor. Notice the file is inspected if mimeType==null to determine its
+	 * content type.
+	 */
 	public static FilePart fromFileName(@NonNull String fileName, String mimeType) {
 		return new FilePart(new File(fileName), mimeType);
 	}
 
 	/**
 	 * Constructor. Notice the content at given URL is inspected to determine its
-	 * content type. GENERIC content type is assumed if the content cannot be read.
+	 * content type.
 	 */
 	public FilePart(@NonNull URL url) {
-		this(url, FileUtil.getMimeType(url));
-	}
-
-	public FilePart(@NonNull URL url, String mimeType) {
-		this.mimeType = mimeType;
-		this.contentType = ContentType.fromMimeType(mimeType);
-		this.file = null;
-		this.url = url;
+		this(url, null);
 	}
 
 	/**
 	 * Constructor. Notice the content at given URL is inspected to determine its
-	 * content type. GENERIC content type is assumed if the content cannot be read.
+	 * content type if mimeType==null.
 	 */
-	public static FilePart fromUrl(@NonNull String url) throws MalformedURLException, URISyntaxException {
-		return new FilePart((new URI(url)).toURL());
+	public FilePart(@NonNull URL url, @NonNull String mimeType) {
+		this.file = null;
+		this.url = url;
+		this.mimeType = (mimeType == null ? FileUtil.getMimeType(url) : mimeType);
+		this.contentType = ContentType.fromMimeType(mimeType);
 	}
 
+	/**
+	 * Constructor. Notice the content at given URL is inspected to determine its
+	 * content type.
+	 */
+	public static FilePart fromUrl(@NonNull String url) throws MalformedURLException, URISyntaxException {
+		return new FilePart((new URI(url)).toURL(), null);
+	}
+
+	/**
+	 * Constructor. Notice the content at given URL is inspected to determine its
+	 * content type if mimeType==null.
+	 */
 	public static FilePart fromUrl(@NonNull String url, String mimeType)
 			throws MalformedURLException, URISyntaxException {
 		return new FilePart((new URI(url)).toURL(), mimeType);
@@ -192,6 +220,20 @@ public class FilePart implements MessagePart {
 		if (url != null)
 			return url.openStream();
 		return null;
+	}
+
+	/**
+	 * 
+	 * @return Format of the file (e.g. wav or jpg). The format is inferred from
+	 *         file extension, for local files, or from MIME type for other files.
+	 */
+	public String getFormat() {
+		String result = null;
+		if (file != null)
+			result = FileUtil.getExtension(file);
+		if (result.isBlank())
+			return FileUtil.formatFromMimeType(mimeType);
+		return result;
 	}
 
 	@Override

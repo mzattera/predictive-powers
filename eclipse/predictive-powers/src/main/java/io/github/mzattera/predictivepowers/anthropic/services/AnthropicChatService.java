@@ -479,7 +479,7 @@ public class AnthropicChatService extends AbstractAgent implements ChatService {
 
 				// Parts with images are converted and scaled into base64
 				try {
-					result.getContent().add(Base64FilePart.forAnthropic(file));
+					result.getContent().add(Base64FilePart.forAnthropicImage(file));
 				} catch (IOException e) {
 					throw new IllegalArgumentException("Error accessing image: " + file, e);
 				}

@@ -100,11 +100,11 @@ public class OpenAiChatServiceTest {
 			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(0, cs.getModifiableHistory().size());
 			assertEquals(cs.getDefaultReq().getMessages().size(), 2);
-			assertEquals(cs.getDefaultReq().getMessages().get(0).getRole(), Role.SYSTEM);
+			assertEquals(cs.getDefaultReq().getMessages().get(0).getRole(), Role.DEVELOPER);
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getContent(), personality);
 			assertEquals(cs.getDefaultReq().getMessages().get(1).getRole(), Role.USER);
 			assertEquals(cs.getDefaultReq().getMessages().get(1).getContent(), question);
-			assertEquals(cs.getDefaultReq().getMaxTokens(), null);
+			assertEquals(cs.getDefaultReq().getMaxCompletionTokens(), null);
 		}
 	}
 
@@ -144,13 +144,13 @@ public class OpenAiChatServiceTest {
 			assertEquals(cs.getModifiableHistory().get(2).getRole(), Role.ASSISTANT);
 			assertEquals(cs.getModifiableHistory().get(2).getContent(), resp.getText());
 			assertEquals(3, cs.getDefaultReq().getMessages().size());
-			assertEquals(cs.getDefaultReq().getMessages().get(0).getRole(), Role.SYSTEM);
+			assertEquals(cs.getDefaultReq().getMessages().get(0).getRole(), Role.DEVELOPER);
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getContent(), personality);
 			assertEquals(cs.getDefaultReq().getMessages().get(1).getRole(), Role.USER);
 			assertEquals(cs.getDefaultReq().getMessages().get(1).getContent(), "" + 9);
 			assertEquals(cs.getDefaultReq().getMessages().get(2).getRole(), Role.USER);
 			assertEquals(cs.getDefaultReq().getMessages().get(2).getContent(), question);
-			assertEquals(cs.getDefaultReq().getMaxTokens(), null);
+			assertEquals(cs.getDefaultReq().getMaxCompletionTokens(), null);
 
 			// NO personality, history length and conversation steps limits ////////////
 			// Also testing maxTokens
@@ -178,7 +178,7 @@ public class OpenAiChatServiceTest {
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getContent(), "" + 9);
 			assertEquals(cs.getDefaultReq().getMessages().get(1).getRole(), Role.USER);
 			assertEquals(cs.getDefaultReq().getMessages().get(1).getContent(), question);
-			assertEquals(cs.getDefaultReq().getMaxTokens(), 100);
+			assertEquals(cs.getDefaultReq().getMaxCompletionTokens(), 100);
 
 			// Personality, history length and conversation tokens limits ////////////
 
@@ -203,11 +203,11 @@ public class OpenAiChatServiceTest {
 			assertEquals(cs.getModifiableHistory().get(2).getRole(), Role.ASSISTANT);
 			assertEquals(cs.getModifiableHistory().get(2).getContent(), resp.getText());
 			assertEquals(2, cs.getDefaultReq().getMessages().size());
-			assertEquals(cs.getDefaultReq().getMessages().get(0).getRole(), Role.SYSTEM);
+			assertEquals(cs.getDefaultReq().getMessages().get(0).getRole(), Role.DEVELOPER);
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getContent(), personality);
 			assertEquals(cs.getDefaultReq().getMessages().get(1).getRole(), Role.USER);
 			assertEquals(cs.getDefaultReq().getMessages().get(1).getContent(), question);
-			assertEquals(cs.getDefaultReq().getMaxTokens(), null);
+			assertEquals(cs.getDefaultReq().getMaxCompletionTokens(), null);
 
 			// NO personality, history length and conversation tokens limits ////////////
 
@@ -234,7 +234,7 @@ public class OpenAiChatServiceTest {
 			assertEquals(1, cs.getDefaultReq().getMessages().size());
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getRole(), Role.USER);
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getContent(), question);
-			assertEquals(cs.getDefaultReq().getMaxTokens(), null);
+			assertEquals(cs.getDefaultReq().getMaxCompletionTokens(), null);
 
 			// Completion with no personality
 			cs.setPersonality(null);
@@ -245,7 +245,7 @@ public class OpenAiChatServiceTest {
 			assertEquals(1, cs.getDefaultReq().getMessages().size());
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getRole(), Role.USER);
 			assertEquals(cs.getDefaultReq().getMessages().get(0).getContent(), question);
-			assertEquals(cs.getDefaultReq().getMaxTokens(), null);
+			assertEquals(cs.getDefaultReq().getMaxCompletionTokens(), null);
 
 		} // Close endpoint
 	}

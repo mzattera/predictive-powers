@@ -42,7 +42,7 @@ public class OpenAiExceptionTest {
 		if (!TestConfiguration.TEST_DIRECT_OPENAI_SERVICES && !TestConfiguration.TEST_AZURE_OPENAI_SERVICES)
 			return;
 
-		try (OpenAiClient cli = new DirectOpenAiClient()) {
+		try (DirectOpenAiClient cli = new DirectOpenAiClient()) {
 
 			CompletionsRequest req = CompletionsRequest.builder().model("davinci-002").maxTokens(20_000).prompt("Ciao!")
 					.build();
@@ -64,12 +64,12 @@ public class OpenAiExceptionTest {
 		if (!TestConfiguration.TEST_DIRECT_OPENAI_SERVICES && !TestConfiguration.TEST_AZURE_OPENAI_SERVICES)
 			return;
 
-		try (OpenAiClient cli = new DirectOpenAiClient()) {
+		try (DirectOpenAiClient cli = new DirectOpenAiClient()) {
 
 			OpenAiChatMessage msg = new OpenAiChatMessage(Role.USER, "Ciao!");
 			List<OpenAiChatMessage> msgs = new ArrayList<>();
 			msgs.add(msg);
-			ChatCompletionsRequest req = ChatCompletionsRequest.builder().model("gpt-3.5-turbo").maxTokens(10_000)
+			ChatCompletionsRequest req = ChatCompletionsRequest.builder().model("gpt-3.5-turbo").maxCompletionTokens(10_000)
 					.messages(msgs).build();
 			OpenAiException e = assertThrows(OpenAiException.class, () -> cli.createChatCompletion(req));
 			assertEquals(400, e.code());

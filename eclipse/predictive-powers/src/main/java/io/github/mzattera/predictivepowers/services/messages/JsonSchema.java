@@ -55,7 +55,7 @@ import lombok.ToString;
 
 /**
  * Utility class to (de)serialize JSON schema. This is needed since many API
- * serialize {@link Tool} parameters suing JSON Schema. (see
+ * serialize {@link Tool} parameters using JSON Schema. (see
  * {@linkplain https://json-schema.org/understanding-json-schema}).
  * 
  * @author Massimiliano "Maxi" Zattera
@@ -78,7 +78,7 @@ public class JsonSchema {
 	private List<String> required;
 
 	/** Used for JSON serialization of function parameters as schema */
-	private final static JsonSchemaGenerator schemaGenerator = new JsonSchemaGenerator(new ObjectMapper());
+	private final static JsonSchemaGenerator SCHEMA_GENERATOR = new JsonSchemaGenerator(new ObjectMapper());
 
 	/**
 	 * Custom serializer to create JSON schema for a class.
@@ -94,7 +94,7 @@ public class JsonSchema {
 		@Override
 		public void serialize(Class<?> c, JsonGenerator jsonGenerator, SerializerProvider serializerProvider)
 				throws IOException, JsonProcessingException {
-			jsonGenerator.writeTree(schemaGenerator.generateJsonSchema(c));
+			jsonGenerator.writeTree(SCHEMA_GENERATOR.generateJsonSchema(c));
 		}
 	}
 

@@ -99,9 +99,9 @@ public class OpenAiTokenizerTest {
 	/** List of messages without tool calls or tools results */
 	private final static List<OpenAiChatMessage> SIMPLE_MESSAGES = new ArrayList<>();
 	static {
-		SIMPLE_MESSAGES.add(new OpenAiChatMessage(Role.SYSTEM, "You are a nice bot"));
-		SIMPLE_MESSAGES.add(new OpenAiChatMessage(Role.SYSTEM, "You are a nice bot", "system_user"));
-		SIMPLE_MESSAGES.add(new OpenAiChatMessage(Role.SYSTEM, "Thank you!", "system_assistant"));
+		SIMPLE_MESSAGES.add(new OpenAiChatMessage(Role.DEVELOPER, "You are a nice bot"));
+		SIMPLE_MESSAGES.add(new OpenAiChatMessage(Role.DEVELOPER, "You are a nice bot", "system_user"));
+		SIMPLE_MESSAGES.add(new OpenAiChatMessage(Role.DEVELOPER, "Thank you!", "system_assistant"));
 		SIMPLE_MESSAGES.add(new OpenAiChatMessage(Role.ASSISTANT, "HI."));
 		SIMPLE_MESSAGES.add(new OpenAiChatMessage(Role.ASSISTANT, "HI.", "Tom_the_Assistant"));
 		SIMPLE_MESSAGES.add(new OpenAiChatMessage(Role.USER, "Hi", "maxi"));
@@ -548,7 +548,7 @@ public class OpenAiTokenizerTest {
 	private static long realTokens(ChatCompletionsRequest req) {
 
 		try (DirectOpenAiEndpoint endpoint = new DirectOpenAiEndpoint()) {
-			req.setMaxTokens(1);
+			req.setMaxCompletionTokens(1);
 			ChatCompletionsResponse resp = endpoint.getClient().createChatCompletion(req);
 			return resp.getUsage().getPromptTokens();
 		}

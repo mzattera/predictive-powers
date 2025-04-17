@@ -35,7 +35,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 import io.github.mzattera.predictivepowers.TestConfiguration;
 import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest.ResponseFormat;
 import io.github.mzattera.predictivepowers.openai.client.chat.LogProbs.ContentToken;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
@@ -72,7 +71,7 @@ class ChatCompletionsTest {
 		cr.setModel(model);
 		cr.getMessages().add(new OpenAiChatMessage(Role.USER, prompt));
 		assertTrue(endpoint.getModelService().getContextSize(model, -1) > 0);
-		cr.setMaxTokens(30);
+		cr.setMaxCompletionTokens(30);
 		cr.setStop(new ArrayList<>());
 		cr.getStop().add("feet");
 
@@ -93,7 +92,7 @@ class ChatCompletionsTest {
 		cr.setModel(model);
 		cr.getMessages().add(new OpenAiChatMessage(Role.USER, prompt));
 		assertTrue(endpoint.getModelService().getContextSize(model, -1) > 0);
-		cr.setMaxTokens(30);
+		cr.setMaxCompletionTokens(30);
 		cr.setTopP(0.8);
 
 		ChatCompletionsResponse resp = endpoint.getClient().createChatCompletion(cr);
@@ -166,8 +165,8 @@ class ChatCompletionsTest {
 			cr.setModel("gpt-4-turbo-preview");
 			cr.getMessages().add(new OpenAiChatMessage(Role.USER,
 					"Create fake person record in JSON format containing a name and a birth date."));
-			cr.setResponseFormat(ResponseFormat.JSON);
-			assertEquals(ResponseFormat.JSON, cr.getResponseFormat());
+			cr.setResponseFormat(ResponseFormat.JSON_OBJECT);
+			assertEquals(ResponseFormat.JSON_OBJECT, cr.getResponseFormat());
 
 			// TODO We could check here true JSON is returned
 

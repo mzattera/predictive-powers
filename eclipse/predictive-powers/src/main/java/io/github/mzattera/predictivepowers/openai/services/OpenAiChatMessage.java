@@ -29,6 +29,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -37,11 +38,11 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
+import io.github.mzattera.predictivepowers.openai.client.chat.RefusalPart;
 import io.github.mzattera.predictivepowers.services.messages.Base64FilePart;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
-import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
 import io.github.mzattera.predictivepowers.services.messages.MessagePart;
 import io.github.mzattera.predictivepowers.services.messages.TextPart;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
@@ -64,7 +65,8 @@ import lombok.ToString;
 @ToString
 public class OpenAiChatMessage {
 
-	// This serializes getContentParts() as a list of text messages and image URLS, to
+	// This serializes getContentParts() as a list of text messages and image URLS,
+	// to
 	// support vision models.
 	private final static class MessagePartSerializer extends StdSerializer<List<MessagePart>> {
 
@@ -94,36 +96,74 @@ public class OpenAiChatMessage {
 				gen.writeStartArray();
 				for (MessagePart part : value) {
 					gen.writeStartObject();
-					if (part instanceof TextPart) {
+
+					if (part instanceof RefusalPart) { // This is a refusal message
+						gen.writeStringField("type", "refusal");
+						gen.writeStringField("refusal", ((RefusalPart) part).getContent());
+					} else if (part instanceof TextPart) { // Simple text part
 						gen.writeStringField("type", "text");
 						gen.writeStringField("text", ((TextPart) part).getContent());
-					} else if (part instanceof FilePart) {
-						FilePart file = (FilePart) part;
-						if (file.getContentType() != ContentType.IMAGE)
-							throw new IllegalArgumentException("Only files with content type = IMAGE are supported.");
-						gen.writeStringField("type", "image_url");
-						gen.writeObjectFieldStart("image_url");
-						if (file.getUrl() != null)
-							gen.writeStringField("url", file.getUrl().toString());
-						else {// base64 encode
-							if (file instanceof Base64FilePart)
-								
-								// TODO URGENT Must the image be encoded as JPEG?
-								
-								gen.writeStringField("url",
-										"data:image/jpeg;base64," + ((Base64FilePart) file).getEncodedContent());
-							else
-								gen.writeStringField("url", "data:image/jpeg;base64,"
-										+ Base64.getEncoder().encodeToString(file.getInputStream().readAllBytes()));
-						}
+					} else if (part instanceof OpenAiFilePart) { // This part is a file uploaded with file API
+						gen.writeStringField("type", "file");
+						gen.writeObjectFieldStart("file");
+						gen.writeStringField("file_id", ((OpenAiFilePart) part).getFileId());
 						gen.writeEndObject();
-					} else {
-						throw new IllegalArgumentException("Unsupported part type: " + part);
+					} else if (part instanceof FilePart) { // Handles all files
+
+						FilePart file = (FilePart) part;
+
+						switch (file.getContentType()) {
+						case IMAGE: // Encode Image
+							gen.writeStringField("type", "image_url");
+							gen.writeObjectFieldStart("image_url");
+							if (file.getUrl() != null)
+								gen.writeStringField("url", file.getUrl().toString());
+							else {// base64 encode
+								if (file instanceof Base64FilePart)
+
+									// TODO URGENT Must the image be encoded as JPEG?
+									// https://platform.openai.com/docs/guides/images?api-mode=responses&format=base64-encoded
+
+									gen.writeStringField("url",
+											"data:image/jpeg;base64," + ((Base64FilePart) file).getEncodedContent());
+								else
+									gen.writeStringField("url", "data:image/jpeg;base64,"
+											+ Base64.getEncoder().encodeToString(file.getInputStream().readAllBytes()));
+							}
+							gen.writeEndObject();
+							break;
+						case AUDIO: // Encode Audio
+							gen.writeStringField("type", "input_audio");
+							gen.writeObjectFieldStart("input_audio");
+							if (file instanceof Base64FilePart)
+								gen.writeStringField("data", ((Base64FilePart) file).getEncodedContent());
+							else
+								gen.writeStringField("data",
+										Base64.getEncoder().encodeToString(file.getInputStream().readAllBytes()));
+							gen.writeStringField("format", file.getFormat());
+							gen.writeEndObject();
+							break;
+						default: // All other file types
+							gen.writeStringField("type", "file");
+							gen.writeObjectFieldStart("file");
+							if (file instanceof Base64FilePart)
+								gen.writeStringField("file_data", ((Base64FilePart) file).getEncodedContent());
+							else
+								gen.writeStringField("file_data",
+										Base64.getEncoder().encodeToString(file.getInputStream().readAllBytes()));
+							if (file.isLocalFile())
+								gen.writeStringField("filename", file.getFile().getName());
+							gen.writeEndObject();
+							break;
+						}
+					} else { // Unsupported message part
+						throw new IllegalArgumentException("Unsupported message part: " + part.getClass().getName());
 					}
+
 					gen.writeEndObject();
-				}
+				} // for each message part
 				gen.writeEndArray();
-			}
+			} // Multi-part message
 		}
 	}
 
@@ -132,14 +172,14 @@ public class OpenAiChatMessage {
 	private final static class MessagePartDeserializer extends JsonDeserializer<List<MessagePart>> {
 
 		@Override
-		public List<MessagePart> deserialize(JsonParser p, DeserializationContext ctxt)
-				throws IOException, JsonProcessingException {
+		public List<MessagePart> deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
 			JsonNode node = p.getCodec().readTree(p);
 			List<MessagePart> parts = new ArrayList<>();
 			if (node.isTextual()) {
 				parts.add(new TextPart(node.asText()));
 			} else {
-				throw new IllegalArgumentException(); // API should always return null or a single String
+				// API should always return null or a single String
+				throw new JsonMappingException(p, "Returned message is not a string");
 			}
 			return parts;
 		}
@@ -167,6 +207,12 @@ public class OpenAiChatMessage {
 		SYSTEM("system"),
 
 		/**
+		 * Marks text used for bot configuration (instructions) for newer models. Not
+		 * this is interchangeable with SYSTEM.
+		 */
+		DEVELOPER("developer"),
+
+		/**
 		 * The message was generated by a function that was called by OpenAI function
 		 * call API.
 		 */
@@ -189,16 +235,17 @@ public class OpenAiChatMessage {
 		public String toString() { // Notice we rely on labels not to change
 			return label;
 		}
+
 	}
 
-	static Role authorToRole(Author author) {
+	private static Role authorToRole(Author author) {
 		switch (author) {
 		case USER:
 			return Role.USER;
 		case BOT:
 			return Role.ASSISTANT;
 		default:
-			throw new IllegalArgumentException(); // Guard
+			throw new IllegalArgumentException("Unsupported author: " + author); // Guard
 		}
 	}
 
@@ -282,9 +329,48 @@ public class OpenAiChatMessage {
 	}
 
 	/**
-	 * This will contain tool calls generated by the model.
+	 * Gets refusal message generated by the model, if any.
+	 * 
+	 * Notice this needs a special handling since API responses return this as a
+	 * separate string field, but when the message is serialized back in chat
+	 * history for API call, it is provided as a message part. For this reason, this
+	 * is always stored as a message part of type {@link RefusalPart}; we assume
+	 * either a refusal or a content text is provided in the reply.
+	 */
+	@JsonIgnore
+	public String getRefusal() {
+		for (MessagePart p : contentParts)
+			if (p instanceof RefusalPart)
+				return ((RefusalPart) contentParts.get(0)).getContent();
+		return null;
+	}
+
+	/**
+	 * Sets refusal message generated by the model, if any.
+	 * 
+	 * Notice this needs a special handling since API responses return this as a
+	 * separate string field, but when the message is serialized back in chat
+	 * history for API call, it is provided as a message part. For this reason, this
+	 * is always stored as a message part of type {@link RefusalPart}; we assume
+	 * either a refusal or a content text is provided in the reply.
+	 */
+	public void setRefusal(String refusal) {
+		contentParts.clear();
+		if (refusal != null)
+			contentParts.add(new RefusalPart(refusal));
+	}
+
+	/**
+	 * 
+	 * /** This will contain tool calls generated by the model.
 	 */
 	private List<OpenAiToolCall> toolCalls;
+
+	@JsonIgnore
+	// These are not sent back as part of history
+	private List<Annotation> annotations = new ArrayList<>();
+
+	private AudioOutput audio;
 
 	/**
 	 * Required when returning tool call results to the API.

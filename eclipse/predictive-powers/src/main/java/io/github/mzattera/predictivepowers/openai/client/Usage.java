@@ -15,6 +15,7 @@
  */
 package io.github.mzattera.predictivepowers.openai.client;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -28,7 +29,7 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
 @Getter
@@ -36,7 +37,33 @@ import lombok.ToString;
 @ToString
 public class Usage {
 
+	@NoArgsConstructor(access = AccessLevel.PROTECTED)
+	@AllArgsConstructor
+	@Builder
+	@Getter
+	@Setter
+	@ToString
+	public static class CompletionTokensDetails {
+		private Long acceptedPredictionTokens;
+		private Long audioTokens;
+		private Long reasoningTokens;
+		private Long rejectedPredictionTokens;
+	}
+
+	@NoArgsConstructor(access = AccessLevel.PROTECTED)
+	@AllArgsConstructor
+	@Builder
+	@Getter
+	@Setter
+	@ToString
+	public static class PromptTokensDetails {
+		private Long audioTokens;
+		private Long cachedTokens;
+	}
+
 	private long promptTokens;
 	private long completionTokens;
 	private long totalTokens;
+	private CompletionTokensDetails completionTokensDetails;
+	private PromptTokensDetails promptTokensDetails;
 }

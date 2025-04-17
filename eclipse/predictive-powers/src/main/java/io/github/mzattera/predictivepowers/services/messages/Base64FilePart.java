@@ -29,9 +29,7 @@ import java.net.URL;
 import java.util.Base64;
 
 import io.github.mzattera.util.ImageUtil;
-import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.ToString;
@@ -45,7 +43,6 @@ import lombok.experimental.SuperBuilder;
  * 
  * @author Massimiliano "Maxi" Zattera.
  */
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
 @Getter
 @Setter
@@ -61,34 +58,47 @@ public class Base64FilePart extends FilePart {
 
 	public Base64FilePart(@NonNull File file) throws IOException {
 		super(file);
-		init(super.getInputStream().readAllBytes(), super.getName(), super.getMimeType());
+		init(super.getInputStream().readAllBytes(), super.getName());
 	}
 
 	public Base64FilePart(@NonNull File file, String mimeType) throws IOException {
 		super(file, mimeType);
-		init(super.getInputStream().readAllBytes(), super.getName(), super.getMimeType());
+		init(super.getInputStream().readAllBytes(), super.getName());
 	}
 
 	public Base64FilePart(@NonNull URL url) throws IOException {
 		super(url);
-		init(super.getInputStream().readAllBytes(), super.getName(), super.getMimeType());
+		init(super.getInputStream().readAllBytes(), super.getName());
 	}
 
 	public Base64FilePart(@NonNull URL url, String mimeType) throws IOException {
 		super(url, mimeType);
-		init(super.getInputStream().readAllBytes(), super.getName(), super.getMimeType());
+		init(super.getInputStream().readAllBytes(), super.getName());
+	}
+
+	public Base64FilePart(String encodedContent, String name, String mimeType) {
+		super(mimeType);
+		init(Base64.getDecoder().decode(encodedContent), name);
 	}
 
 	public Base64FilePart(InputStream in, String name, String mimeType) throws IOException {
-		init(in.readAllBytes(), name, mimeType);
+		super(mimeType);
+		init(in.readAllBytes(), name);
 	}
 
 	public Base64FilePart(byte[] bytes, String name, String mimeType) {
-		init(bytes, name, mimeType);
+		super(mimeType);
+		init(bytes, name);
 	}
 
 	public Base64FilePart(FilePart file) throws IOException {
-		init(file.getInputStream().readAllBytes(), file.getName(), file.getMimeType());
+		super(file.getMimeType());
+		init(file.getInputStream().readAllBytes(), file.getName());
+	}
+
+	private void init(byte[] bytes, String name) {
+		encodedContent = Base64.getEncoder().encodeToString(bytes);
+		this.name = name;
 	}
 
 	/**
@@ -103,7 +113,7 @@ public class Base64FilePart extends FilePart {
 	 *         version.
 	 * @throws IOException
 	 */
-	public static Base64FilePart forOpenAi(FilePart file) throws IOException {
+	public static Base64FilePart forOpenAiImage(FilePart file) throws IOException {
 
 		BufferedImage img = ImageUtil.fromBytes(file.getInputStream());
 
@@ -134,11 +144,11 @@ public class Base64FilePart extends FilePart {
 	 * saves tokens and reduces latency (see
 	 * {@linkplain https://docs.anthropic.com/claude/docs/vision}).
 	 * 
-	 * @return The same image, if it is already scaled down, otherwise its scaled down
-	 *         version.
+	 * @return The same image, if it is already scaled down, otherwise its scaled
+	 *         down version.
 	 * @throws IOException
 	 */
-	public static Base64FilePart forAnthropic(FilePart file) throws IOException {
+	public static Base64FilePart forAnthropicImage(FilePart file) throws IOException {
 
 		BufferedImage img = ImageUtil.fromBytes(file.getInputStream());
 
@@ -146,7 +156,7 @@ public class Base64FilePart extends FilePart {
 		int h = img.getHeight();
 
 		double scale1 = 1568d / Math.max(w, h); // Longest edge must be < 1568
-		double scale2 = Math.sqrt(1_150_000d /(w * h)); // Image < 1.15 Mpixel, or ~1600 tokens
+		double scale2 = Math.sqrt(1_150_000d / (w * h)); // Image < 1.15 Mpixel, or ~1600 tokens
 		double scale = Math.min(scale1, scale2);
 
 		if (scale < 1.0d) {
@@ -162,23 +172,6 @@ public class Base64FilePart extends FilePart {
 		}
 	}
 
-	private void init(byte[] bytes, String name, String mimeType) {
-		encodedContent = Base64.getEncoder().encodeToString(bytes);
-		this.name = name;
-		this.setMimeType(mimeType);
-		this.setContentType(ContentType.fromMimeType(mimeType));
-	}
-
-	@Override
-	public File getFile() {
-		return null;
-	}
-
-	@Override
-	public URL getUrl() {
-		return null;
-	}
-
 	@Override
 	public boolean isLocalFile() {
 		return true;
@@ -192,10 +185,5 @@ public class Base64FilePart extends FilePart {
 	@Override
 	public InputStream getInputStream() {
 		return new ByteArrayInputStream(Base64.getDecoder().decode(encodedContent));
-	}
-
-	@Override
-	public String getContent() {
-		return "[File (base64): " + getName() + ", Content: " + getMimeType() + "]";
 	}
 }

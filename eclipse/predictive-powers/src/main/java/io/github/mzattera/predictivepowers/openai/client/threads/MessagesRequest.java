@@ -28,7 +28,6 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiFilePart;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
-import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
 import io.github.mzattera.predictivepowers.services.messages.MessagePart;
 import io.github.mzattera.predictivepowers.services.messages.TextPart;
 import lombok.AccessLevel;
@@ -80,8 +79,7 @@ public class MessagesRequest extends Metadata {
 	 * 
 	 * @throws IOException If the message contains files that cannnot be uploaded.
 	 */
-	public static @NonNull MessagesRequest getInstance(ChatMessage msg, OpenAiEndpoint endpoint)
-			throws IOException {
+	public static @NonNull MessagesRequest getInstance(ChatMessage msg, OpenAiEndpoint endpoint) throws IOException {
 
 		if (msg.getAuthor() != Author.USER)
 			throw new IllegalArgumentException("Only user messages are supported.");
@@ -104,7 +102,7 @@ public class MessagesRequest extends Metadata {
 //					content.add(new Content(upload((ImagePart) part)));
 			else if (part instanceof FilePart) {
 				FilePart f = (FilePart) part;
-				fileIds.add(upload(f.getContentType(), f, endpoint).getFileId());
+				fileIds.add(upload(f.getMimeType(), f, endpoint).getFileId());
 			}
 		}
 
@@ -115,13 +113,12 @@ public class MessagesRequest extends Metadata {
 				.build();
 	}
 
-	private static OpenAiFilePart upload(ContentType contentType, FilePart file, OpenAiEndpoint endpoint)
-			throws IOException {
+	private static OpenAiFilePart upload(String mimeType, FilePart file, OpenAiEndpoint endpoint) throws IOException {
 		if (file instanceof OpenAiFilePart)
 			return (OpenAiFilePart) file;
 
 		File oiaFile = endpoint.getClient().uploadFile(file.getInputStream(), file.getName(), "assistants");
-		return new OpenAiFilePart(contentType, oiaFile, endpoint);
+		return new OpenAiFilePart(oiaFile, mimeType, endpoint);
 	}
 
 }

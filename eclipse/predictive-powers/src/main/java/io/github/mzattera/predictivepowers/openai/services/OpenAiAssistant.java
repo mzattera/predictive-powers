@@ -57,7 +57,6 @@ import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
-import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.MessagePart;
 import io.github.mzattera.predictivepowers.services.messages.TextPart;
@@ -388,7 +387,7 @@ public class OpenAiAssistant extends AbstractAgent {
 			oaiFile = getClient().createAssistantFile(id, oaiFile.getId());
 		}
 
-		return new OpenAiFilePart(file.getContentType(), oaiFile);
+		return new OpenAiFilePart(oaiFile, file.getMimeType());
 	}
 
 	/**
@@ -451,7 +450,7 @@ public class OpenAiAssistant extends AbstractAgent {
 
 		// Get agent from server
 		openAiAssistant = getClient().retrieveAssistant(id);
-		
+
 		// Register model
 		register();
 
@@ -522,8 +521,7 @@ public class OpenAiAssistant extends AbstractAgent {
 
 				switch (content.getType()) {
 				case IMAGE_FILE:
-					parts.add(new OpenAiFilePart(ContentType.IMAGE, content.getImageFile().get("file_id"),
-							getEndpoint()));
+					parts.add(new OpenAiFilePart(content.getImageFile().get("file_id"), "image", getEndpoint()));
 					break;
 				case TEXT:
 					StringBuilder sb = new StringBuilder(content.getText().getValue());
@@ -541,12 +539,10 @@ public class OpenAiAssistant extends AbstractAgent {
 							if (a.getFileCitation() != null)
 								sb.append(" - File: [").append(a.getFileCitation().getFileId()).append("]");
 							sb.append("\n\n").append(a.getFileCitation().getQuote());
-							files.add(new OpenAiFilePart(ContentType.GENERIC, a.getFilePath().getFileId(),
-									getEndpoint()));
+							files.add(new OpenAiFilePart(a.getFilePath().getFileId(), null, getEndpoint()));
 							if (a.getFilePath() != null) {
 								sb.append(" - File: [").append(a.getFilePath().getFileId()).append("]");
-								files.add(new OpenAiFilePart(ContentType.GENERIC, a.getFilePath().getFileId(),
-										getEndpoint()));
+								files.add(new OpenAiFilePart(a.getFilePath().getFileId(), null, getEndpoint()));
 							}
 							sb.append("\n\n------------");
 						}

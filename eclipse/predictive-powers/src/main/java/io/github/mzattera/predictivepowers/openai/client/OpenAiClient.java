@@ -239,7 +239,7 @@ public abstract class OpenAiClient implements ApiClient {
 
 	/**
 	 * Creates an audio transcription. Notice the result is returned as a String
-	 * which might contain JSON, depending on the velue of
+	 * which might contain JSON, depending on the value of
 	 * {@link AudioRequest#setResponseFormat(io.github.mzattera.predictivepowers.openai.client.audio.AudioRequest.ResponseFormat)}.
 	 * 
 	 * @param audio  Audio stream.

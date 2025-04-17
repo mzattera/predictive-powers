@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 Massimiliano "Maxi" Zattera
+ * Copyright 2023 Massimiliano "Maxi" Zattera
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,44 +14,36 @@
  * limitations under the License.
  */
 
-/**
- * 
- */
-package io.github.mzattera.predictivepowers.openai.client.audio;
+package io.github.mzattera.predictivepowers.openai.services;
 
-import io.github.mzattera.predictivepowers.openai.services.AudioFormat.Format;
-import io.github.mzattera.predictivepowers.openai.services.AudioFormat.Voice;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-/**
- * Request for the audio/speech OpenAI API.
- */
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@RequiredArgsConstructor
 @AllArgsConstructor
 @Builder
 @Getter
 @Setter
 @ToString
-public class AudioSpeechRequest {
+public class AudioOutput {
 
-	@NonNull
-	private String model;
+	@JsonIgnore
+	private String data;
 
-	@NonNull
-	private String input;
+	@JsonIgnore
+	private long expires_at;
 
-	@NonNull
-	private Voice voice;
+	// Notice that when sending this back as part of conversation history, we only
+	// need to serialize its ID
+	private String id;
 
-	private Format responseFormat;
-	private Double speed;
+	@JsonIgnore
+	private String transcript;
 }

@@ -61,9 +61,13 @@ public enum FinishReason {
 			return FinishReason.TRUNCATED;
 		case "content_filter":
 			return FinishReason.INAPPROPRIATE;
-		default:
+		case "tool_calls":
+		case "function_call":
 			return FinishReason.OTHER;
+		default:
+			throw new IllegalArgumentException("Unrecognized finish reason: " + reason);
 		}
+
 	}
 
 	public static FinishReason fromAnthropicApi(String reason) {

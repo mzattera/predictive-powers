@@ -204,13 +204,14 @@ public class OpenAiTokenizer implements Tokenizer {
 				sum += 3;
 			sum += encoding.countTokens(role);
 
-			// TODO urgent, what when we mix text an images? We should analyze parts separately, probably
+			// TODO urgent, what when we mix text an images? We should analyze parts
+			// separately, probably
 			try {
 				sum += encoding.countTokens(msg.getContent());
 			} catch (IllegalArgumentException e) {
 				// Message is not a simple text message
 			}
-			
+
 			if (msg.getName() != null) {
 				if (!"gpt-4-vision-preview".equals(model)) {
 					sum += encoding.countTokens(msg.getName());
@@ -283,7 +284,7 @@ public class OpenAiTokenizer implements Tokenizer {
 			} // if we have tool calls
 
 			// If we use image model, calculate image tokens.
-			// See https://platform.openai.com/docs/guides/vision
+			// See https://platform.openai.com/docs/guides/images
 			boolean firstImage = true;
 			for (MessagePart part : msg.getContentParts()) {
 				if (!(part instanceof FilePart))
@@ -305,10 +306,6 @@ public class OpenAiTokenizer implements Tokenizer {
 						BufferedImage img = ImageUtil.fromBytes(file.getInputStream());
 						int w = img.getWidth();
 						int h = img.getHeight();
-//						if ((w <= 512) && (h <= 512)) {
-//							// We assume in this case we use low detail mode, even though it is not assured
-//							sum += 65;
-//						} else {
 						if ((w > 2048) || (h > 2048)) {
 							double scale = 2048d / Math.max(w, h);
 							w *= scale;
@@ -323,7 +320,6 @@ public class OpenAiTokenizer implements Tokenizer {
 						int ht = h / 512 + ((h % 512) > 0 ? 1 : 0);
 
 						sum += 170 * wt * ht + 85;
-//						}
 					}
 				} catch (Exception e) {
 					sum += 170 * 2 + 85; // should not happen, but if we cannot read the image put something in

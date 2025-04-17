@@ -31,7 +31,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import io.github.mzattera.predictivepowers.TestConfiguration;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.audio.AudioSpeechRequest.Voice;
+import io.github.mzattera.predictivepowers.openai.services.AudioFormat.Format;
+import io.github.mzattera.predictivepowers.openai.services.AudioFormat.Voice;
 
 class TTSTest {
 
@@ -65,7 +66,7 @@ class TTSTest {
 		AudioSpeechRequest req = AudioSpeechRequest.builder() //
 				.model(model) //
 				.input(text) //
-				.voice(Voice.ONYX).build();
+				.voice(Voice.VERSE).build();
 
 		File tmp = File.createTempFile("STT", ".mp3");
 		endpoint.getClient().createSpeech(req, tmp);
@@ -74,9 +75,9 @@ class TTSTest {
 		req = AudioSpeechRequest.builder() //
 				.model(model) //
 				.input(text) //
-				.responseFormat(AudioSpeechRequest.ResponseFormat.AAC) //
+				.responseFormat(Format.AAC) //
 				.speed(1.0) //
-				.voice(Voice.ONYX).build();
+				.voice(Voice.VERSE).build();
 
 		tmp = File.createTempFile("STT", ".aac");
 		endpoint.getClient().createSpeech(req, tmp);

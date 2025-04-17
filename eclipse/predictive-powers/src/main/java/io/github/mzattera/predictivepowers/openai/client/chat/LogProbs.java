@@ -39,13 +39,6 @@ import lombok.ToString;
 @ToString
 public class LogProbs {
 
-	/**
-	 * A list of message content tokens with log probability information. Can be
-	 * null.
-	 */
-	@Builder.Default
-	private List<ContentToken> content = new ArrayList<>();
-
 	@NoArgsConstructor(access = AccessLevel.PROTECTED)
 	@AllArgsConstructor
 	@Builder
@@ -74,10 +67,19 @@ public class LogProbs {
 
 		/**
 		 * List of the most likely tokens and their log probability, at this token
-		 * position.
+		 * position. This is non null only for LogProbs.content, ContentTokens inside
+		 * ContentToken.topLogprobs do not have this field
 		 */
-		// This is non null only for LogProbs.content, ContentTokens inside
-		// ContentToken.topLogprobs do not have this field
 		private List<ContentToken> topLogprobs;
 	}
+
+	/**
+	 * A list of message content tokens with log probability information. Can be
+	 * null.
+	 */
+	@Builder.Default
+	private List<ContentToken> content = new ArrayList<>();
+
+	@Builder.Default
+	private List<ContentToken> refusal = new ArrayList<>();
 }

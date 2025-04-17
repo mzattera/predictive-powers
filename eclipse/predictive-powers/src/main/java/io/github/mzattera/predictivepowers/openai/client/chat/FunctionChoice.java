@@ -105,21 +105,21 @@ public class FunctionChoice {
 	private final String name;
 
 	/**
-	 * Use this to indicate function_call = {"name": "my_function"}
+	 * Use this to indicate function_call = {"name": "myFunction"}
 	 * 
 	 * @param name
 	 */
-	public FunctionChoice(Function my_function) {
-		this(Mode.FUNCTION, my_function.getName());
+	public FunctionChoice(Function myFunction) {
+		this(Mode.FUNCTION, myFunction.getName());
 	}
 
 	/**
-	 * Use this to indicate function_call = {"name": "my_function"}
+	 * Use this to indicate function_call = {"name": "myFunction"}
 	 * 
 	 * @param name
 	 */
-	public FunctionChoice(String my_function) {
-		this(Mode.FUNCTION, my_function);
+	public FunctionChoice(String myFunction) {
+		this(Mode.FUNCTION, myFunction);
 	}
 
 	private FunctionChoice(Mode mode, String name) {

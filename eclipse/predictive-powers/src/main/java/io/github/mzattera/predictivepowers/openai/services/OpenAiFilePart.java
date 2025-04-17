@@ -23,71 +23,36 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
-import lombok.experimental.SuperBuilder;
 
 /**
  * A {@link FilePart} that encapsulates a OpenAI {@link File} id.
  */
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@RequiredArgsConstructor
-@AllArgsConstructor
-@SuperBuilder
 @Getter
-@Setter
 @ToString
 public class OpenAiFilePart extends FilePart {
 
-	private ContentType contentType;
-
 	@NonNull
-	private String fileId;
+	private final String fileId;
 
 	/**
 	 * If this instance was built from a {@link File}, this is a reference to it.
 	 */
-	private File openAiFile;
+	@JsonIgnore
+	private final File openAiFile;
 
-	private OpenAiEndpoint endpoint;
-
-	public OpenAiFilePart(ContentType contentType, @NonNull String fileId) {
-		this(contentType, fileId, null, null);
-	}
-
-	public OpenAiFilePart(@NonNull String fileId, OpenAiEndpoint endpoint) {
-		this(ContentType.GENERIC, fileId, null, endpoint);
-	}
-
-	public OpenAiFilePart(ContentType contentType, @NonNull String fileId, OpenAiEndpoint endpoint) {
-		this(contentType, fileId, null, endpoint);
-	}
-
-	public OpenAiFilePart(ContentType contentType, @NonNull File file) {
-		this(contentType, file.getId(), file, null);
-	}
-
-	public OpenAiFilePart(@NonNull File file, OpenAiEndpoint endpoint) {
-		this(ContentType.GENERIC, file.getId(), file, endpoint);
-	}
-
-	public OpenAiFilePart(ContentType contentType, @NonNull File file, OpenAiEndpoint endpoint) {
-		this(contentType, file.getId(), file, endpoint);
-	}
-
-	@Override
-	public String getContent() {
-		return "[OpenAI File: " + fileId + ", Content: " + contentType + "]";
-	}
+	/**
+	 * If an end point is provided, then a stream to the file can be obtained.
+	 */
+	@JsonIgnore
+	private final OpenAiEndpoint endpoint;
 
 	@Override
 	public boolean isLocalFile() {
@@ -125,5 +90,35 @@ public class OpenAiFilePart extends FilePart {
 		} catch (Exception other) {
 			throw new IOException(other);
 		}
+	}
+
+	public OpenAiFilePart(@NonNull File openAiFile) {
+		this(openAiFile, null, null);
+	}
+
+	public OpenAiFilePart(@NonNull File openAiFile, String mimeType) {
+		this(openAiFile, mimeType, null);
+	}
+
+	public OpenAiFilePart(@NonNull File openAiFile, String mimeType, OpenAiEndpoint endpoint) {
+		super(mimeType);
+		this.fileId = openAiFile.getId();
+		this.openAiFile = openAiFile;
+		this.endpoint = endpoint;
+	}
+
+	public OpenAiFilePart(@NonNull String fileId) {
+		this(fileId, null, null);
+	}
+
+	public OpenAiFilePart(@NonNull String fileId, String mimeType) {
+		this(fileId, mimeType, null);
+	}
+
+	public OpenAiFilePart(@NonNull String fileId, String mimeType, OpenAiEndpoint endpoint) {
+		super(mimeType);
+		this.fileId = fileId;
+		this.openAiFile = null;
+		this.endpoint = endpoint;
 	}
 }

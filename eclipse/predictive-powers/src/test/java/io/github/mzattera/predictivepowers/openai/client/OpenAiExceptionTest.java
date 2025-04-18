@@ -35,14 +35,13 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Rol
 public class OpenAiExceptionTest {
 
 	@DisplayName("Checks OpenAIException properly created when exceeding context size")
-	@SuppressWarnings("unused")
 	@Test
 	public void testCompletion() {
 
-		if (!TestConfiguration.TEST_DIRECT_OPENAI_SERVICES && !TestConfiguration.TEST_AZURE_OPENAI_SERVICES)
+		if (!TestConfiguration.TEST_OPENAI_SERVICES)
 			return;
 
-		try (DirectOpenAiClient cli = new DirectOpenAiClient()) {
+		try (OpenAiClient cli = new OpenAiClient()) {
 
 			CompletionsRequest req = CompletionsRequest.builder().model("davinci-002").maxTokens(20_000).prompt("Ciao!")
 					.build();
@@ -57,20 +56,19 @@ public class OpenAiExceptionTest {
 	}
 
 	@DisplayName("Checks OpenAIException properly created when exceeding context size")
-	@SuppressWarnings("unused")
 	@Test
-	public void testChat(){
+	public void testChat() {
 
-		if (!TestConfiguration.TEST_DIRECT_OPENAI_SERVICES && !TestConfiguration.TEST_AZURE_OPENAI_SERVICES)
+		if (!TestConfiguration.TEST_OPENAI_SERVICES)
 			return;
 
-		try (DirectOpenAiClient cli = new DirectOpenAiClient()) {
+		try (OpenAiClient cli = new OpenAiClient()) {
 
 			OpenAiChatMessage msg = new OpenAiChatMessage(Role.USER, "Ciao!");
 			List<OpenAiChatMessage> msgs = new ArrayList<>();
 			msgs.add(msg);
-			ChatCompletionsRequest req = ChatCompletionsRequest.builder().model("gpt-3.5-turbo").maxCompletionTokens(10_000)
-					.messages(msgs).build();
+			ChatCompletionsRequest req = ChatCompletionsRequest.builder().model("gpt-3.5-turbo")
+					.maxCompletionTokens(10_000).messages(msgs).build();
 			OpenAiException e = assertThrows(OpenAiException.class, () -> cli.createChatCompletion(req));
 			assertEquals(400, e.code());
 			assertTrue(e.isContextLengthExceeded());

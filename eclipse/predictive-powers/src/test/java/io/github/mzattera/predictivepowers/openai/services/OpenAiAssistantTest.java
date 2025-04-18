@@ -34,7 +34,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import io.github.mzattera.predictivepowers.TestConfiguration;
-import io.github.mzattera.predictivepowers.openai.client.AzureOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.services.Capability;
@@ -83,8 +82,6 @@ public class OpenAiAssistantTest {
 	@MethodSource("services")
 	public void testRetrieval(Pair<OpenAiEndpoint, String> p) throws ToolInitializationException, IOException {
 		OpenAiEndpoint ep = p.getLeft();
-		if (ep instanceof AzureOpenAiEndpoint)
-			return;
 		try (OpenAiAssistant bot = ep.getAgentService(p.getRight()).createAgent(//
 				"Test " + System.currentTimeMillis(), //
 				"A test assistant.", //
@@ -116,8 +113,6 @@ public class OpenAiAssistantTest {
 	@MethodSource("services")
 	void testFileAttacch(Pair<OpenAiEndpoint, String> p) throws ToolInitializationException {
 		OpenAiEndpoint ep = p.getLeft();
-		if (ep instanceof AzureOpenAiEndpoint)
-			return;
 		try (OpenAiAssistant bot = ep.getAgentService(p.getRight()).createAgent(//
 				"Test " + System.currentTimeMillis(), //
 				"A test assistant.", //

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Massimiliano "Maxi" Zattera
+ * Copyright 2023-2024 Massimiliano "Maxi" Zattera
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package io.github.mzattera.predictivepowers.openai.client;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiAgentService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
@@ -25,64 +28,121 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiImageGeneration
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionAnsweringService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionExtractionService;
+import lombok.Getter;
 import lombok.NonNull;
 
 /**
- * This interface is used for OpenAI endpoints that can be implemented over the
- * OpenAI API or an Azure OpenIA Service resource.
+ * This represents an OpenAI API endpoint, from which services can be created.
  * 
- * @author Massimiliano "Maxi" Zattera
+ * This class is thread-safe.
+ * 
+ * @author Massimiliano "Maxi" Zattera.
+ *
  */
-public interface OpenAiEndpoint extends AiEndpoint {
+public class OpenAiEndpoint implements AiEndpoint {
+
+	private final static Logger LOG = LoggerFactory.getLogger(OpenAiEndpoint.class);
+
+	@Getter
+	private final OpenAiClient client;
+
+	public OpenAiEndpoint() {
+		this(new OpenAiClient());
+	}
+
+	public OpenAiEndpoint(String apiKey) {
+		this(new OpenAiClient(apiKey));
+	}
+
+	public OpenAiEndpoint(@NonNull OpenAiClient client) {
+		this.client = client;
+	}
+
+	// Mode service is state-less, we do not need to create a new model service each
+	// time.
+	private final OpenAiModelService modelService = new OpenAiModelService(this);
 
 	@Override
-	OpenAiClient getClient();
+	public OpenAiModelService getModelService() {
+		return modelService;
+	}
 
 	@Override
-	OpenAiModelService getModelService();
+	public OpenAiCompletionService getCompletionService() {
+		return new OpenAiCompletionService(this);
+	}
 
 	@Override
-	OpenAiCompletionService getCompletionService();
+	public OpenAiCompletionService getCompletionService(@NonNull String model) {
+		return new OpenAiCompletionService(this, model);
+	}
 
 	@Override
-	OpenAiCompletionService getCompletionService(@NonNull String model);
+	public OpenAiEmbeddingService getEmbeddingService() {
+		return new OpenAiEmbeddingService(this);
+	}
 
 	@Override
-	OpenAiEmbeddingService getEmbeddingService();
+	public OpenAiEmbeddingService getEmbeddingService(@NonNull String model) {
+		return new OpenAiEmbeddingService(this, model);
+	}
 
 	@Override
-	OpenAiEmbeddingService getEmbeddingService(@NonNull String model);
+	public OpenAiChatService getChatService() {
+		return new OpenAiChatService(this);
+	}
 
 	@Override
-	OpenAiChatService getChatService();
+	public OpenAiChatService getChatService(@NonNull String model) {
+		return new OpenAiChatService(this, model);
+	}
 
 	@Override
-	OpenAiChatService getChatService(@NonNull String model);
+	public OpenAiQuestionExtractionService getQuestionExtractionService() {
+		return new OpenAiQuestionExtractionService(this);
+	}
 
 	@Override
-	OpenAiAgentService getAgentService();
+	public OpenAiQuestionExtractionService getQuestionExtractionService(@NonNull String model) {
+		return new OpenAiQuestionExtractionService(this, model);
+	}
 
 	@Override
-	OpenAiAgentService getAgentService(@NonNull String model);
+	public OpenAiQuestionAnsweringService getQuestionAnsweringService() {
+		return new OpenAiQuestionAnsweringService(this);
+	}
 
 	@Override
-	OpenAiQuestionExtractionService getQuestionExtractionService();
+	public OpenAiQuestionAnsweringService getQuestionAnsweringService(@NonNull String model) {
+		return new OpenAiQuestionAnsweringService(this, model);
+	}
 
 	@Override
-	OpenAiQuestionExtractionService getQuestionExtractionService(@NonNull String model);
+	public OpenAiImageGenerationService getImageGenerationService() {
+		return new OpenAiImageGenerationService(this);
+	}
 
 	@Override
-	OpenAiQuestionAnsweringService getQuestionAnsweringService();
+	public OpenAiImageGenerationService getImageGenerationService(@NonNull String model) {
+		return new OpenAiImageGenerationService(this, model);
+	}
 
 	@Override
-	OpenAiQuestionAnsweringService getQuestionAnsweringService(@NonNull String model);
+	public OpenAiAgentService getAgentService() {
+		return new OpenAiAgentService(this);
+	}
 
 	@Override
-	OpenAiImageGenerationService getImageGenerationService();
+	public OpenAiAgentService getAgentService(@NonNull String model) {
+		return new OpenAiAgentService(this, model);
+	}
 
 	@Override
-	OpenAiImageGenerationService getImageGenerationService(@NonNull String model);
-
-	@Override
-	void close();
+	public synchronized void close() {
+		try {
+			client.close();
+		} catch (Exception e) {
+			LOG.warn("Error while closing endpoint", e);
+		}
+	}
 }

@@ -16,7 +16,6 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
@@ -26,20 +25,17 @@ public class OpenAiClientExample {
 	public static void main(String[] args) throws Exception {
 
 		// Get API key from OS environment variable "OPENAI_API_KEY"
-		try (OpenAiClient client = new DirectOpenAiClient()) {
-			
+		try (OpenAiClient client = new OpenAiClient()) {
+
 			// Complete a sentence
 			// see https://platform.openai.com/docs/api-reference/completions
-			CompletionsRequest req = CompletionsRequest.builder()
-					.model("davinci-002")
-					.maxTokens(50)
-					.prompt("Alan Turing was")
-					.build();
+			CompletionsRequest req = CompletionsRequest.builder().model("davinci-002").maxTokens(50)
+					.prompt("Alan Turing was").build();
 			CompletionsResponse resp = client.createCompletion(req);
 
 			// Prints result
 			System.out.println(resp.getChoices().get(0).getText());
-			
+
 		} // closes client
 	}
 }

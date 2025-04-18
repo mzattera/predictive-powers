@@ -31,7 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiException;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
@@ -43,10 +43,10 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Rol
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
 
-class DirectOpenAiModelServiceTest {
-	
+class OpenAiModelServiceTest {
+
 	// TODO URGENT Test that vision support is set correctly by sending images
-	
+
 	// Models still returned by models API, but decommissioned
 	private final static Set<String> OLD_MODELS = new HashSet<>();
 	static {
@@ -70,11 +70,11 @@ class DirectOpenAiModelServiceTest {
 	 */
 	@Test
 	void test01() {
-		try (DirectOpenAiEndpoint oai = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			OpenAiModelService modelSvc = oai.getModelService();
 
 			Set<String> deprecated = new HashSet<>(OLD_MODELS);
-			Set<String> actual = DirectOpenAiModelService.getModelsMetadata() //
+			Set<String> actual = OpenAiModelService.getModelsMetadata() //
 					.map(OpenAiModelMetaData::getModel) //
 					.collect(Collectors.toSet());
 
@@ -127,7 +127,7 @@ class DirectOpenAiModelServiceTest {
 
 	@Test
 	void test02() {
-		try (DirectOpenAiEndpoint oai = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			String id = "gpt-3.5-turbo";
 			Model model = oai.getClient().retrieveModel(id);
 			assertEquals(id, model.getId());
@@ -137,7 +137,7 @@ class DirectOpenAiModelServiceTest {
 
 	/** @return The meta data for all chat models */
 	static Stream<OpenAiModelMetaData> allChatModelsProvider() {
-		try (DirectOpenAiEndpoint endpoint = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 			OpenAiModelService modelSvc = endpoint.getModelService();
 			return modelSvc.listModels().stream() //
 					.filter(model -> !model.startsWith("gpt-4-32k")) //
@@ -153,7 +153,7 @@ class DirectOpenAiModelServiceTest {
 	@ParameterizedTest
 	@MethodSource("allChatModelsProvider")
 	void test03(OpenAiModelMetaData md) {
-		try (DirectOpenAiEndpoint oai = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(md.getModel()).build();
 
 			// Bypass setTools() to make sure we test the correct function call type
@@ -194,7 +194,8 @@ class DirectOpenAiModelServiceTest {
 		} // Close endpoint
 	}
 
-	// TODO URGENT Test max generated tokens by setMaxNewTokens(getContextSize()-tok.count(req))
+	// TODO URGENT Test max generated tokens by
+	// setMaxNewTokens(getContextSize()-tok.count(req))
 
 	// TODO URGENT Test: fix to see if we can check context length somehow
 

@@ -36,7 +36,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.TestConfiguration;
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest.ImageQuality;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest.ImageStyle;
@@ -92,7 +92,7 @@ public class ImageGenerationServiceTest {
 				System.out.println("Image saved as: " + tmp.getCanonicalPath());
 			}
 		} catch (UnsupportedOperationException e) {
-			assertFalse(p.getLeft() instanceof DirectOpenAiEndpoint);
+			assertFalse(p.getLeft() instanceof OpenAiEndpoint);
 		}
 	}
 
@@ -101,7 +101,7 @@ public class ImageGenerationServiceTest {
 	void testDalle3() throws IOException {
 		String prompt = "A portrait of a blonde lady, with green eyes, holding a green apple. On the background a red wall with a window opened on a country landscape with a lake. In the sky an eagle flies. Neoromantic oil portrait style";
 
-		try (DirectOpenAiEndpoint oai = new DirectOpenAiEndpoint();
+		try (OpenAiEndpoint oai = new OpenAiEndpoint();
 				OpenAiImageGenerationService imgSvc = oai.getImageGenerationService();) {
 			imgSvc.setModel("dall-e-3");
 

@@ -20,7 +20,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.mzattera.predictivepowers.openai.client.AzureOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiException;
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsChoice;
@@ -58,7 +57,6 @@ public class OpenAiCompletionService implements CompletionService {
 		this.endpoint = ep;
 		this.modelService = ep.getModelService();
 		this.defaultReq = defaultReq;
-		register();
 	}
 
 	@NonNull
@@ -67,22 +65,6 @@ public class OpenAiCompletionService implements CompletionService {
 
 	@NonNull
 	private final ModelService modelService;
-
-	/**
-	 * Register the deploy ID if we are running in MS Azure See
-	 * {@link AzureOpenAiModelService}.
-	 */
-	private void register() {
-		if (endpoint instanceof AzureOpenAiEndpoint) {
-			String model = getModel();
-			if (modelService.get(model) == null) {
-				// Do a "fake" call to read base model ID (see AzureOpenAiModelService JavaDoc).
-				CompletionsRequest req = CompletionsRequest.builder().model(model).prompt("x").maxTokens(1).build();
-				CompletionsResponse resp = endpoint.getClient().createCompletion(req);
-				((AzureOpenAiModelService) modelService).map(model, resp.getModel());
-			}
-		}
-	}
 
 	/**
 	 * This request, with its parameters, is used as default setting for each call.
@@ -105,7 +87,6 @@ public class OpenAiCompletionService implements CompletionService {
 	@Override
 	public void setModel(@NonNull String model) {
 		defaultReq.setModel(model);
-		register();
 	}
 
 	@Override

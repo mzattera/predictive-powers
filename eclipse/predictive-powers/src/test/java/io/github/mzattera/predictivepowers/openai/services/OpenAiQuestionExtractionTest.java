@@ -23,7 +23,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 
 public class OpenAiQuestionExtractionTest {
@@ -36,7 +36,7 @@ public class OpenAiQuestionExtractionTest {
 
 		// OpenAI end-point
 		// Make sure you specify your API key n OPENAI_KEY system environment variable.
-		try (DirectOpenAiEndpoint endpoint = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
 			OpenAiQuestionExtractionService q = endpoint.getQuestionExtractionService();
 			String context = "Donatien Alphonse Franquois, Marquis de Sade, was a French nobleman, revolutionary politician, philosopher and writer famous for his literary depictions of a libertine sexuality as well as numerous accusations of sex crimes.";
@@ -83,7 +83,7 @@ public class OpenAiQuestionExtractionTest {
 
 		// OpenAI end-point
 		// Make sure you specify your API key n OPENAI_KEY system environment variable.
-		try (DirectOpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			OpenAiQuestionExtractionService s = ep.getQuestionExtractionService();
 
 			String m = s.getModel();

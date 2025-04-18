@@ -86,7 +86,7 @@ public class OpenAiTokenizer implements Tokenizer {
 		MODEL_TO_ENCODING.put("gpt-4", "cl100k_base");
 		MODEL_TO_ENCODING.put("gpt-4o", "cl100k_base");
 		MODEL_TO_ENCODING.put("gpt-3.5-turbo", "cl100k_base");
-		MODEL_TO_ENCODING.put("gpt-35-turbo", "cl100k_base"); // Azure deployment name
+		MODEL_TO_ENCODING.put("gpt-35-turbo", "cl100k_base"); 
 
 		// base
 		MODEL_TO_ENCODING.put("davinci-002", "cl100k_base");

@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
 import io.github.mzattera.predictivepowers.openai.client.finetuning.FineTuningJob.Status;
 import io.github.mzattera.util.ExtractionUtil;
@@ -42,7 +42,7 @@ class FineTunesTest {
 
 	@Test
 	void test01() throws IOException {
-		try (DirectOpenAiEndpoint oai = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			OpenAiClient c = oai.getClient();
 
 			// Upload file for training
@@ -80,7 +80,7 @@ class FineTunesTest {
 	 */
 	@Test
 	void test02() throws IOException, SAXException, TikaException {
-		try (DirectOpenAiEndpoint oai = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			OpenAiClient c = oai.getClient();
 
 			// Upload file for training
@@ -104,7 +104,7 @@ class FineTunesTest {
 	 */
 	@Test
 	void test03() {
-		try (DirectOpenAiEndpoint oai = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			OpenAiClient c = oai.getClient();
 
 			List<FineTuningJob> fineTunes = c.listFineTuningJobs().getData();
@@ -127,7 +127,7 @@ class FineTunesTest {
 	 */
 	@Test
 	void test04() throws IOException {
-		try (DirectOpenAiEndpoint oai = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			OpenAiClient c = oai.getClient();
 
 			// Upload file for training

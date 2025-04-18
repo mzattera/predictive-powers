@@ -16,7 +16,6 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
 
@@ -24,15 +23,16 @@ public class DefaultConfigurationExample {
 
 	public static void main(String[] args) throws Exception {
 
-		try (OpenAiEndpoint endpoint = new DirectOpenAiEndpoint();
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
 				OpenAiCompletionService cs = endpoint.getCompletionService();) {
 
-			// Set "best_of" parameter in default request, this will affect all further calls
+			// Set "best_of" parameter in default request, this will affect all further
+			// calls
 			cs.getDefaultReq().setBestOf(3);
 
 			// this call (and subsequent ones) now uses best_of = 3
 			System.out.println(cs.complete("Alan Turing was").getText());
-			
+
 		} // closes resources
 	}
 }

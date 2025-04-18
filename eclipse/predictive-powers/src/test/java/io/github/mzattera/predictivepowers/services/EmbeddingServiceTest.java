@@ -54,8 +54,6 @@ import io.github.mzattera.util.ResourceUtil;
  */
 public class EmbeddingServiceTest {
 
-	// TODO URGENT For Azure OpenAI, test two deploys with same or different base model
-	
 	private static List<Pair<AiEndpoint, String>> svcs;
 
 	@BeforeAll

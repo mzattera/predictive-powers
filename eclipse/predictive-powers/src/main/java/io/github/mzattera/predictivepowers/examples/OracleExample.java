@@ -23,7 +23,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.EmbeddingService;
 import io.github.mzattera.predictivepowers.services.QnAPair;
@@ -33,7 +33,7 @@ public class OracleExample {
 
 	public static void main(String[] args) throws Exception {
 
-		try (AiEndpoint endpoint = new DirectOpenAiEndpoint();
+		try (AiEndpoint endpoint = new OpenAiEndpoint();
 				QuestionAnsweringService answerSvc = endpoint.getQuestionAnsweringService();
 				KnowledgeBase knowledgeBase = new KnowledgeBase();
 		) {

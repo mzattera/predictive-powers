@@ -28,7 +28,7 @@ public class VisionApiExample {
 
 		try (
 				// Uncomment the below code to use OpenAI
-				// OpenAiEndpoint endpoint = new DirectOpenAiEndpoint();
+				// OpenAiEndpoint endpoint = new OpenAiEndpoint();
 				// Agent bot = endpoint.getChatService("gpt-4-vision-preview");
 
 				// Uncomment the below code to use ANTHROP\C API

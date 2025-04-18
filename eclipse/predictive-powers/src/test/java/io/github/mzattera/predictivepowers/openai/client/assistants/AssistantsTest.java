@@ -35,7 +35,6 @@ import java.util.Map.Entry;
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.client.DataList;
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.SortOrder;
@@ -63,7 +62,7 @@ public class AssistantsTest {
 	 */
 	@Test
 	void testCreateAssistant() {
-		try (OpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 
 			// Test creation
 			AssistantsRequest original = createAssistantRequest("uno");
@@ -171,7 +170,7 @@ public class AssistantsTest {
 	@Test
 	void testListAndDeleteAgents() {
 
-		try (OpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			OpenAiClient cli = ep.getClient();
 			DataList<Assistant> list;
 			List<Assistant> agents;
@@ -300,7 +299,7 @@ public class AssistantsTest {
 
 	@Test
 	void testFiles() throws IOException {
-		try (OpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			OpenAiClient cli = ep.getClient();
 
 			File f = cli.uploadFile(ResourceUtil.getResourceFile("banana.txt"), "assistants");

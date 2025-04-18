@@ -19,7 +19,7 @@ package io.github.mzattera.predictivepowers.openai.client.chat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
@@ -29,7 +29,7 @@ public class MaxTokensTest {
 	@DisplayName("Check if max_tokens works.")
 	@Test
 	void testLogProbs() {
-		try (DirectOpenAiEndpoint ep = new DirectOpenAiEndpoint();) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint();) {
 
 			ChatCompletionsRequest req = ChatCompletionsRequest.builder().model("o1").build();
 			req.getMessages().add(new OpenAiChatMessage(Role.USER, "Hello, how are you today?"));

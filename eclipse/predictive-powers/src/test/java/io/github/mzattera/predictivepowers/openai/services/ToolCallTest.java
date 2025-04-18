@@ -34,7 +34,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
@@ -79,7 +79,7 @@ public class ToolCallTest {
 	@BeforeAll
 	public static void check() {
 
-		try (DirectOpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			assertEquals(SupportedCallType.TOOLS, ep.getModelService().getSupportedCallType(MODEL));
 		}
 	}
@@ -200,7 +200,7 @@ public class ToolCallTest {
 	@Test
 	public void test54() throws JsonProcessingException, ToolInitializationException {
 
-		try (DirectOpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 
 			OpenAiChatService cs = ep.getChatService("You are an agent supporting user with weather forecasts");
 			cs.setModel(MODEL);
@@ -243,7 +243,7 @@ public class ToolCallTest {
 	@Test
 	public void test55() throws JsonProcessingException, ToolInitializationException {
 
-		try (DirectOpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 
 			OpenAiChatService cs = ep.getChatService("You are an agent supporting user with weather forecasts");
 			cs.setModel(MODEL);
@@ -289,7 +289,7 @@ public class ToolCallTest {
 	@Test
 	public void test56() throws JsonProcessingException, ToolInitializationException {
 
-		try (DirectOpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 
 			OpenAiChatService cs = ep.getChatService("You are an agent supporting user with weather forecasts");
 			cs.setModel(MODEL);
@@ -312,7 +312,7 @@ public class ToolCallTest {
 	@Test
 	public void test57() throws ToolInitializationException {
 
-		try (DirectOpenAiEndpoint endpoint = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 
 			OpenAiChatService cs = endpoint.getChatService("You are an helpful assistant.");
 			cs.setModel(MODEL);

@@ -36,7 +36,7 @@ public class ImageGenerationExample {
 
 		try (
 				// Uncomment this to use DALL-E
-				// AiEndpoint endpoint = new DirectOpenAiEndpoint();
+				// AiEndpoint endpoint = new OpenAiEndpoint();
 				// ImageGenerationService svc = endpoint.getImageGenerationService();
 
 				// Uncomment this to use Openjourney

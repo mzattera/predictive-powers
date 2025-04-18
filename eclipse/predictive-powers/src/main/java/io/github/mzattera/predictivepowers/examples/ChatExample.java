@@ -28,12 +28,8 @@ public class ChatExample {
 
 		try (
 				// Uncomment the below to use OpenAI API
-				// AiEndpoint endpoint = new DirectOpenAiEndpoint();
+				// AiEndpoint endpoint = new OpenAiEndpoint();
 				// ChatService agent = endpoint.getChatService();
-
-				// Uncomment the below to Azure OpenAI Cognitive Service
-				// AiEndpoint endpoint = new AzureOpenAiEndpoint();
-				// ChatService agent = endpoint.getChatService("<YourDeployModelName>");
 
 				// Uncomment the below to use Anthropic API
 				AiEndpoint endpoint = new AnthropicEndpoint();

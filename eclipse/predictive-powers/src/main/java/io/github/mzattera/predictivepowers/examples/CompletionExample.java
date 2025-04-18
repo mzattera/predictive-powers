@@ -25,7 +25,7 @@ public class CompletionExample {
 	public static void main(String[] args) throws Exception {
 
 		// Uncomment the below to use OpenAI API
-		// AiEndpoint endpoint = new DirectOpenAiEndpoint();
+		// AiEndpoint endpoint = new OpenAiEndpoint();
 
 		// Uncomment the below to use Hugging Face API
 		AiEndpoint endpoint = new HuggingFaceEndpoint();

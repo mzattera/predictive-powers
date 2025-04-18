@@ -88,7 +88,7 @@ public class FunctionCallExample {
 
 		try (
 			// This uses OpenAI API =======================================
-			// OpenAiEndpoint endpoint = new DirectOpenAiEndpoint();
+			// OpenAiEndpoint endpoint = new OpenAiEndpoint();
 					
 			// This code uses chat API with parallel function calls (tools)		
 			// Agent agent = endpoint.getChatService("gpt-4-1106-preview");

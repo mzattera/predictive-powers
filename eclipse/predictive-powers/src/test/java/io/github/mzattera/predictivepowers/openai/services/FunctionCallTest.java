@@ -34,7 +34,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.chat.Function;
 import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.FunctionChoice;
@@ -78,7 +78,7 @@ public class FunctionCallTest {
 	@BeforeAll
 	static void check() {
 
-		try (DirectOpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			assertEquals(SupportedCallType.FUNCTIONS, ep.getModelService().getSupportedCallType(MODEL));
 		}
 	}
@@ -192,7 +192,7 @@ public class FunctionCallTest {
 	@Test
 	public void test54() throws JsonProcessingException, ToolInitializationException {
 
-		try (DirectOpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 
 			OpenAiChatService cs = ep.getChatService("You are an agent supporting user with weather forecasts");
 			cs.setModel(MODEL);
@@ -235,7 +235,7 @@ public class FunctionCallTest {
 	@Test
 	public void test55() throws JsonProcessingException, ToolInitializationException {
 
-		try (DirectOpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 
 			OpenAiChatService cs = ep.getChatService("You are an agent supporting user with weather forecasts");
 			cs.setModel(MODEL);
@@ -281,7 +281,7 @@ public class FunctionCallTest {
 	@Test
 	public void test56() throws JsonProcessingException, ToolInitializationException {
 
-		try (DirectOpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 
 			OpenAiChatService cs = ep.getChatService("You are an agent supporting user with weather forecasts");
 			cs.setModel(MODEL);

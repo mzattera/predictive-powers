@@ -33,7 +33,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import io.github.mzattera.predictivepowers.TestConfiguration;
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.chat.LogProbs.ContentToken;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
@@ -106,10 +105,10 @@ class ChatCompletionsTest {
 	@Test
 	void testLogProbs() {
 
-		if (!TestConfiguration.TEST_DIRECT_OPENAI_SERVICES)
+		if (!TestConfiguration.TEST_OPENAI_SERVICES)
 			return;
 
-		try (OpenAiEndpoint endpoint = new DirectOpenAiEndpoint();) {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();) {
 			ChatCompletionsRequest cr = new ChatCompletionsRequest();
 
 			cr.setModel("gpt-4");
@@ -156,10 +155,10 @@ class ChatCompletionsTest {
 	@Test
 	void testResponseFormat() {
 
-		if (!TestConfiguration.TEST_DIRECT_OPENAI_SERVICES)
+		if (!TestConfiguration.TEST_OPENAI_SERVICES)
 			return;
 
-		try (OpenAiEndpoint endpoint = new DirectOpenAiEndpoint();) {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();) {
 			ChatCompletionsRequest cr = new ChatCompletionsRequest();
 
 			cr.setModel("gpt-4-turbo-preview");

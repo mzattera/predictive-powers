@@ -38,7 +38,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import io.github.mzattera.predictivepowers.TestConfiguration;
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
@@ -287,7 +286,7 @@ public class OpenAiChatServiceTest {
 	@DisplayName("Getters and setters.")
 	@Test
 	public void testGettersAndSetters() {
-		try (OpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			OpenAiChatService s = ep.getChatService();
 			String m = s.getModel();
 			assertNotNull(m);
@@ -323,11 +322,10 @@ public class OpenAiChatServiceTest {
 	@Test
 	void testImgUrls() throws MalformedURLException, URISyntaxException {
 
-		// TODO test with Azure as well
-		if (!TestConfiguration.TEST_DIRECT_OPENAI_SERVICES)
+		if (!TestConfiguration.TEST_OPENAI_SERVICES)
 			return;
 
-		try (OpenAiEndpoint endpoint = new DirectOpenAiEndpoint(); OpenAiChatService svc = endpoint.getChatService();) {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint(); OpenAiChatService svc = endpoint.getChatService();) {
 			svc.setModel("gpt-4-vision-preview");
 
 			ChatMessage msg = new ChatMessage(Author.USER, "Is there any grass in this image?");
@@ -345,10 +343,10 @@ public class OpenAiChatServiceTest {
 	@Test
 	void testImgFiles() throws MalformedURLException, URISyntaxException {
 
-		if (!TestConfiguration.TEST_DIRECT_OPENAI_SERVICES)
+		if (!TestConfiguration.TEST_OPENAI_SERVICES)
 			return;
 
-		try (OpenAiEndpoint endpoint = new DirectOpenAiEndpoint(); //
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint(); //
 				OpenAiChatService svc = endpoint.getChatService();) {
 			svc.setModel("gpt-4-vision-preview");
 
@@ -369,7 +367,7 @@ public class OpenAiChatServiceTest {
 	 */
 	@Test
 	void testCallResultsOnTop() throws ToolInitializationException {
-		try (DirectOpenAiEndpoint endpoint = new DirectOpenAiEndpoint();
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
 				OpenAiChatService svc = endpoint.getChatService();
 				OpenAiModelService modelSvc = endpoint.getModelService();) {
 

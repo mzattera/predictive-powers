@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
@@ -44,7 +43,7 @@ import lombok.NonNull;
 public class OpenAiQuestionExtractionService implements QuestionExtractionService {
 
 	// TODO add "Is there more" follow up to extract more stuff
-	
+
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiQuestionExtractionService.class);
 
 	public static final String DEFAULT_MODEL = "gpt-4-turbo";
@@ -379,7 +378,7 @@ public class OpenAiQuestionExtractionService implements QuestionExtractionServic
 		} catch (JsonProcessingException e) {
 			// Sometimes we have a single value
 			try {
-				result = new QnAPair[] { DirectOpenAiClient.getJsonMapper().readValue(json, QnAPair.class) };
+				result = new QnAPair[] { OpenAiClient.getJsonMapper().readValue(json, QnAPair.class) };
 			} catch (JsonProcessingException e1) {
 				LOG.warn("Malformed JSON when parsing QnAPair[]", e);
 			}

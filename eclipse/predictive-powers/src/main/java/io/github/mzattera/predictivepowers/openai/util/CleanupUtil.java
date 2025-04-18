@@ -21,7 +21,7 @@ import java.util.Scanner;
 
 import io.github.mzattera.predictivepowers.openai.client.DataList;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.SortOrder;
 import io.github.mzattera.predictivepowers.openai.client.assistants.Assistant;
 import io.github.mzattera.predictivepowers.openai.client.files.File;
@@ -39,8 +39,6 @@ import io.github.mzattera.predictivepowers.openai.client.models.Model;
  */
 public class CleanupUtil {
 
-	// TODO URGENT Cleanup Azure stuff too
-	
 	public static void main(String[] args) {
 
 		try (Scanner console = new Scanner(System.in)) {
@@ -54,7 +52,7 @@ public class CleanupUtil {
 			}
 		}
 
-		try (DirectOpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			OpenAiClient cli = ep.getClient();
 
 			// Cancel tuning tasks

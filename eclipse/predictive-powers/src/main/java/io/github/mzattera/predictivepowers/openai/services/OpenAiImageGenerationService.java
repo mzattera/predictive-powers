@@ -25,14 +25,11 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.mzattera.predictivepowers.openai.client.AzureOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.images.Image;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest.ImageSize;
 import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest.ResponseFormat;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
 import io.github.mzattera.predictivepowers.services.ImageGenerationService;
 import io.github.mzattera.util.ImageUtil;
 import lombok.Getter;
@@ -75,20 +72,6 @@ public class OpenAiImageGenerationService implements ImageGenerationService {
 	public OpenAiImageGenerationService(@NonNull OpenAiEndpoint ep, ImagesRequest imagesRequest) {
 		this.endpoint = ep;
 		this.defaultReq = imagesRequest;
-		register();
-	}
-
-	/**
-	 * Register the deploy ID if we are running in MS Azure See
-	 * {@link AzureOpenAiModelService}.
-	 */
-	private void register() {
-		if (endpoint instanceof AzureOpenAiEndpoint) {
-			// Not really accurate, but there is no other way to get metadata for an image
-			// model, and should work as we won't need metadata about context
-			String model = getModel();
-			endpoint.getModelService().put(model, new OpenAiModelMetaData(model, SupportedApi.IMAGES));
-		}
 	}
 
 	@Override
@@ -99,7 +82,6 @@ public class OpenAiImageGenerationService implements ImageGenerationService {
 	@Override
 	public void setModel(@NonNull String model) {
 		defaultReq.setModel(model);
-		register();
 	}
 
 	@Override

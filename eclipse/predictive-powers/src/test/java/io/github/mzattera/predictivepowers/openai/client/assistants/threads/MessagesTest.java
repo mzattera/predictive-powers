@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.threads.Message;
 import io.github.mzattera.predictivepowers.openai.client.threads.Message.Role;
 import io.github.mzattera.predictivepowers.openai.client.threads.MessagesRequest;
@@ -39,7 +39,7 @@ public class MessagesTest {
 
 	@Test
 	void testMessageCreation() {
-		try (DirectOpenAiEndpoint ep = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 
 			// Test creation
 			MessagesRequest original = MessagesRequest.builder() //

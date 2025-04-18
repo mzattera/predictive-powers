@@ -36,7 +36,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
 import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
@@ -60,12 +60,12 @@ import lombok.NonNull;
 
 public class OpenAiTokenizerTest {
 
-	private static DirectOpenAiEndpoint endpoint;
+	private static OpenAiEndpoint endpoint;
 	private static OpenAiModelService modelSvc;
 
 	@BeforeAll
 	static void init() {
-		endpoint = new DirectOpenAiEndpoint();
+		endpoint = new OpenAiEndpoint();
 		modelSvc = endpoint.getModelService();
 	}
 
@@ -547,7 +547,7 @@ public class OpenAiTokenizerTest {
 	 */
 	private static long realTokens(ChatCompletionsRequest req) {
 
-		try (DirectOpenAiEndpoint endpoint = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 			req.setMaxCompletionTokens(1);
 			ChatCompletionsResponse resp = endpoint.getClient().createChatCompletion(req);
 			return resp.getUsage().getPromptTokens();
@@ -562,7 +562,7 @@ public class OpenAiTokenizerTest {
 	 */
 	private static long realTokens(CompletionsRequest req) {
 
-		try (DirectOpenAiEndpoint endpoint = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 			req.setMaxTokens(1);
 			CompletionsResponse resp = endpoint.getClient().createCompletion(req);
 			return resp.getUsage().getPromptTokens();

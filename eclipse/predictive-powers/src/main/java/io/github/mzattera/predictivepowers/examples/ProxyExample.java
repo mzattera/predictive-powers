@@ -24,32 +24,28 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 
 import io.github.mzattera.predictivepowers.ApiClient;
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiClient;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 import okhttp3.OkHttpClient;
 
 public class ProxyExample {
 
 	public static void main(String[] args) {
-		
+
 		// Reads API key from OS environment
-		String key = System.getenv(DirectOpenAiClient.OS_ENV_VAR_NAME);
+		String key = System.getenv(OpenAiClient.OS_ENV_VAR_NAME);
 		String host = "<Your proxy host name goes here>";
 		int port = 80; // your proxy port goes here
 
 		Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(host, port));
-		OkHttpClient http = ApiClient.getDefaultHttpClient(
-					DirectOpenAiClient.DEFAULT_TIMEOUT_MILLIS,
-					DirectOpenAiClient.DEFAULT_MAX_RETRIES,
-					DirectOpenAiClient.DEFAULT_KEEP_ALIVE_MILLIS,
-					DirectOpenAiClient.DEFAULT_MAX_IDLE_CONNECTIONS
-				)
-				.newBuilder()
-				.proxy(proxy)
-				.build();
-		DirectOpenAiClient cli = new DirectOpenAiClient(key, http);
-		
-		//... use client here ...
-		
+		OkHttpClient http = ApiClient.getDefaultHttpClient(OpenAiClient.DEFAULT_TIMEOUT_MILLIS, //
+				OpenAiClient.DEFAULT_MAX_RETRIES, //
+				OpenAiClient.DEFAULT_KEEP_ALIVE_MILLIS, //
+				OpenAiClient.DEFAULT_MAX_IDLE_CONNECTIONS) //
+				.newBuilder().proxy(proxy).build();
+		OpenAiClient cli = new OpenAiClient(key, http);
+
+		// ... use client here ...
+
 		cli.close();
 	}
 }

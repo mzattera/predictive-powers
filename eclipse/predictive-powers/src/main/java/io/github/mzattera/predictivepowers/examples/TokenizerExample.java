@@ -16,7 +16,6 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService;
@@ -25,8 +24,8 @@ public class TokenizerExample {
 
 	public static void main(String[] args) throws Exception {
 
-		// Get chat service 
-		try (OpenAiEndpoint endpoint = new DirectOpenAiEndpoint();
+		// Get chat service
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
 				OpenAiChatService bot = endpoint.getChatService();
 				OpenAiModelService modelService = endpoint.getModelService();) {
 
@@ -52,7 +51,7 @@ public class TokenizerExample {
 			// from conversation history will be sent to the API at each
 			// conversation exchange
 			bot.setMaxConversationSteps(50);
-			
+
 			// From now on, service will manage conversation to respect those limits
 
 			// ...

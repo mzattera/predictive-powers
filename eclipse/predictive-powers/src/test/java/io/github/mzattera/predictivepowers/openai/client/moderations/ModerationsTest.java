@@ -20,13 +20,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 
 class ModerationsTest {
 
 	@Test
 	void test01() {
-		try (DirectOpenAiEndpoint oai = new DirectOpenAiEndpoint()) {
+		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			OpenAiClient cli = oai.getClient();
 
 			ModerationsRequest req = new ModerationsRequest();

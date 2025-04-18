@@ -26,6 +26,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -68,24 +71,31 @@ import io.github.mzattera.util.ImageUtil;
 import io.reactivex.Single;
 import lombok.Getter;
 import lombok.NonNull;
+import okhttp3.Interceptor;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
+import okhttp3.OkHttpClient;
+import okhttp3.OkHttpClient.Builder;
+import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 import okhttp3.ResponseBody;
 import retrofit2.HttpException;
+import retrofit2.Retrofit;
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
+import retrofit2.converter.jackson.JacksonConverterFactory;
 
 /**
- * This is the base class for OpenAI clients that can be implemented over the
- * OpenAI API or an Azure OpenIA Service resource.
+ * This is the REST API client to OpenAI API.
  * 
  * @author Massimiliano "Maxi" Zattera
  */
 
-public abstract class OpenAiClient implements ApiClient {
+public class OpenAiClient implements ApiClient {
 
 	/** Used for JSON (de)serialization in API calls */
 	@Getter
-	protected final static ObjectMapper jsonMapper;
+	private final static ObjectMapper jsonMapper;
 
 	static {
 		jsonMapper = new ObjectMapper();
@@ -94,15 +104,277 @@ public abstract class OpenAiClient implements ApiClient {
 		jsonMapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 	}
 
-	public abstract List<Model> listModels();
 
-	public abstract Model retrieveModel(@NonNull String modelId);
+	private final static Logger LOG = LoggerFactory.getLogger(OpenAiClient.class);
 
-	public abstract CompletionsResponse createCompletion(@NonNull CompletionsRequest req);
+	/**
+	 * Name of the OS environment variable containing the API key.
+	 */
+	public static final String OS_ENV_VAR_NAME = "OPENAI_API_KEY";
 
-	public abstract ChatCompletionsResponse createChatCompletion(@NonNull ChatCompletionsRequest req);
+	public final static int DEFAULT_TIMEOUT_MILLIS = 3 * 60 * 1000;
+	public final static int DEFAULT_MAX_RETRIES = 10;
+	public final static int DEFAULT_KEEP_ALIVE_MILLIS = 5 * 60 * 1000;
+	public final static int DEFAULT_MAX_IDLE_CONNECTIONS = 5;
 
-	public abstract List<Image> createImage(@NonNull ImagesRequest req);
+	private final static String API_BASE_URL = "https://api.openai.com/v1/";
+
+	// OpenAI API defined with Retrofit
+	private final OpenAiApi api;
+
+	private final OkHttpClient client;
+
+	/**
+	 * Constructor, using default parameters for OkHttpClient. OpenAI API key is
+	 * read from {@link #OS_ENV_VAR_NAME} system environment variable.
+	 */
+	public OpenAiClient() {
+		this(null, DEFAULT_TIMEOUT_MILLIS, DEFAULT_MAX_RETRIES, DEFAULT_KEEP_ALIVE_MILLIS,
+				DEFAULT_MAX_IDLE_CONNECTIONS);
+	}
+
+	/**
+	 * Constructor, using default parameters for OkHttpClient. OpenAI API key is
+	 * read from {@link #OS_ENV_VAR_NAME} system environment variable.
+	 * 
+	 * @param organizationId Your OpenAI organizationId (or null).
+	 * @param projectId      Your OpenAI projectId (or null).
+	 */
+	public OpenAiClient(String organizationIdId, String projectId) {
+		this(null, organizationIdId, projectId, DEFAULT_TIMEOUT_MILLIS, DEFAULT_MAX_RETRIES, DEFAULT_KEEP_ALIVE_MILLIS,
+				DEFAULT_MAX_IDLE_CONNECTIONS);
+	}
+
+	/**
+	 * Constructor, using default parameters for OkHttpClient.
+	 * 
+	 * @param apiKey OpenAiApi key. If this is null, it will try to read it from
+	 *               {@link #OS_ENV_VAR_NAME} system environment variable.
+	 */
+	public OpenAiClient(String apiKey) {
+		this(apiKey, null, null, DEFAULT_TIMEOUT_MILLIS, DEFAULT_MAX_RETRIES, DEFAULT_KEEP_ALIVE_MILLIS,
+				DEFAULT_MAX_IDLE_CONNECTIONS);
+	}
+
+	/**
+	 * Constructor, using default parameters for OkHttpClient.
+	 * 
+	 * @param apiKey           OpenAiApi key. If this is null, it will try to read
+	 *                         it from {@link #OS_ENV_VAR_NAME} system environment
+	 *                         variable.
+	 * @param organizationIdId Your OpenAI organizationIdId (or null).
+	 * @param projectId        Your OpenAI projectId (or null).
+	 */
+	public OpenAiClient(String apiKey, String organizationIdId, String projectId) {
+		this(apiKey, organizationIdId, projectId, DEFAULT_TIMEOUT_MILLIS, DEFAULT_MAX_RETRIES,
+				DEFAULT_KEEP_ALIVE_MILLIS, DEFAULT_MAX_IDLE_CONNECTIONS);
+	}
+
+	/**
+	 * Constructor. This client uses an underlying OkHttpClient for API calls, which
+	 * parameters can be specified.
+	 * 
+	 * @param apiKey             OpenAiApi key. If this is null, it will try to read
+	 *                           it from {@link #OS_ENV_VAR_NAME} system environment
+	 *                           variable.
+	 * @param readTimeout        Read timeout for connections. 0 means no timeout.
+	 * @param maxRetries         In case we receive an HTTP error signaling
+	 *                           temporary server unavailability, the client will
+	 *                           retry the call, at maximum this amount of times.
+	 *                           Use values <= 0 to disable this feature.
+	 * @param keepAliveDuration  Timeout for connections in client pool
+	 *                           (milliseconds).
+	 * @param maxIdleConnections Maximum number of idle connections to keep in the
+	 *                           pool.
+	 */
+	public OpenAiClient(String apiKey, int readTimeout, int maxRetries, int keepAliveDuration, int maxIdleConnections) {
+		this(apiKey, ApiClient.getDefaultHttpClient(readTimeout, maxRetries, keepAliveDuration, maxIdleConnections));
+	}
+
+	/**
+	 * Constructor. This client uses an underlying OkHttpClient for API calls, which
+	 * parameters can be specified.
+	 * 
+	 * @param apiKey             OpenAiApi key. If this is null, it will try to read
+	 *                           it from {@link #OS_ENV_VAR_NAME} system environment
+	 *                           variable.
+	 * @param organizationId     Your OpenAI organizationId (or null).
+	 * @param projectId          Your OpenAI projectId (or null).
+	 * @param readTimeout        Read timeout for connections. 0 means no timeout.
+	 * @param maxRetries         In case we receive an HTTP error signaling
+	 *                           temporary server unavailability, the client will
+	 *                           retry the call, at maximum this amount of times.
+	 *                           Use values <= 0 to disable this feature.
+	 * @param keepAliveDuration  Timeout for connections in client pool
+	 *                           (milliseconds).
+	 * @param maxIdleConnections Maximum number of idle connections to keep in the
+	 *                           pool.
+	 */
+	public OpenAiClient(String apiKey, String organizationId, String projectId, int readTimeout, int maxRetries,
+			int keepAliveDuration, int maxIdleConnections) {
+		this(apiKey, organizationId, projectId,
+				ApiClient.getDefaultHttpClient(readTimeout, maxRetries, keepAliveDuration, maxIdleConnections));
+	}
+
+	/**
+	 * Constructor. This client uses provided OkHttpClient for API calls, to allow
+	 * full customization (see
+	 * {@link ApiClient#getDefaultHttpClient(int, int, int, int)}).
+	 * 
+	 * Notice API key header is set in this call, by reading it from OS environment.
+	 */
+	public OpenAiClient(OkHttpClient http) {
+		this(null, http);
+	}
+
+	/**
+	 * Constructor. This client uses provided OkHttpClient for API calls, to allow
+	 * full customization (see
+	 * {@link ApiClient#getDefaultHttpClient(int, int, int, int)}).
+	 * 
+	 * @param apiKey OpenAI API key to use (will be set in the header).
+	 */
+	public OpenAiClient(String apiKey, OkHttpClient http) {
+		this(apiKey, null, null, http);
+	}
+
+	/**
+	 * Constructor. This client uses provided OkHttpClient for API calls, to allow
+	 * full customization (see
+	 * {@link ApiClient#getDefaultHttpClient(int, int, int, int)}).
+	 * 
+	 * @param apiKey         OpenAI API key to use (will be set in the header).
+	 * @param organizationId Your OpenAI organizationId (or null).
+	 * @param projectId      Your OpenAI projectId (or null).
+	 */
+	public OpenAiClient(String apiKey, String organizationId, String projectId, OkHttpClient http) {
+
+		Builder builder = http.newBuilder();
+
+		// Debug code below, outputs the request
+//		builder.addInterceptor(new Interceptor() {
+//
+//			@Override
+//			public Response intercept(Chain chain) throws IOException {
+//				Request req = chain.request();
+//
+//				if (req.body() != null) {
+//					Buffer buffer = new Buffer();
+//					req.body().writeTo(buffer);
+//					String in = buffer.readUtf8();
+//					String bodyContent = "";
+//					try {
+//						// In case body is not JSON
+//						bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
+//								.writeValueAsString(jsonMapper.readTree(in));
+//					} catch (Exception e) {
+//						bodyContent = in;
+//					}
+//					System.out.println("Request body: " + bodyContent);
+//				}
+//
+//				return chain.proceed(req);
+//			}
+//		}); //
+
+		// Debug code below, outputs the response
+//		builder.addInterceptor(new Interceptor() {
+//
+//			@Override
+//			public Response intercept(Chain chain) throws IOException {
+//
+//				Response response = chain.proceed(chain.request());
+//				if (response.body() != null) {
+//					BufferedSource source = response.body().source();
+//					source.request(Long.MAX_VALUE);
+//
+//					@SuppressWarnings("deprecation")
+//					Buffer buffer = source.buffer();
+//
+//					String in = buffer.clone().readUtf8();
+//					String bodyContent = "";
+//					try {
+//						// In case body is not JSON
+//						bodyContent = jsonMapper.writerWithDefaultPrettyPrinter()
+//								.writeValueAsString(jsonMapper.readTree(in));
+//					} catch (Exception e) {
+//						bodyContent = in;
+//					}
+//					System.out.println("Response body: " + bodyContent);
+//				}
+//
+//				return response; // Return the original response unaltered
+//			}
+//		}); //
+
+		builder.addInterceptor(new Interceptor() { // Add API key in authorization header
+			@Override
+			public Response intercept(Chain chain) throws IOException {
+				Request request = chain.request().newBuilder() //
+						.header("Authorization", "Bearer " + ((apiKey == null) ? getApiKey() : apiKey)) //
+						.header("OpenAI-Beta", "assistants=v1") //
+						.build();
+				if (organizationId != null) {
+					request = request.newBuilder() //
+							.header("OpenAI-organizationId", organizationId) //
+							.build();
+				}
+				if (projectId != null) {
+					request = request.newBuilder() //
+							.header("OpenAI-projectId", projectId) //
+							.build();
+				}
+
+				return chain.proceed(request);
+
+			}
+		}).build();
+
+		client = builder.build();
+
+		Retrofit retrofit = new Retrofit.Builder().baseUrl(API_BASE_URL).client(client)
+				.addConverterFactory(JacksonConverterFactory.create(jsonMapper))
+				.addCallAdapterFactory(RxJava2CallAdapterFactory.create()).build();
+
+		api = retrofit.create(OpenAiApi.class);
+	}
+
+	/**
+	 * @return The API key from OS environment.
+	 */
+	public static String getApiKey() {
+		String apiKey = System.getenv(OS_ENV_VAR_NAME);
+		if (apiKey == null)
+			throw new IllegalArgumentException("OpenAI API key is not provided and it cannot be found in "
+					+ OS_ENV_VAR_NAME + " system environment variable");
+		return apiKey;
+	}
+
+	//////// API METHODS MAPPED INTO JAVA CALLS ////////////////////////////////////
+
+	public List<Model> listModels() {
+		return callApi(api.models()).getData();
+	}
+
+	public Model retrieveModel(@NonNull String modelId) {
+		return callApi(api.models(modelId));
+	}
+
+	public CompletionsResponse createCompletion(@NonNull CompletionsRequest req) {
+		return callApi(api.completions(req));
+	}
+
+	public ChatCompletionsResponse createChatCompletion(@NonNull ChatCompletionsRequest req) {
+		return callApi(api.chatCompletions(req));
+	}
+
+	public List<Image> createImage(@NonNull ImagesRequest req) {
+		return callApi(api.imagesGenerations(req)).getData();
+	}
+
+	private List<Image> createImageEdit(@NonNull MultipartBody body) {
+		return callApi(api.imagesEdits(body)).getData();
+	}
 
 	public List<Image> createImageEdit(@NonNull BufferedImage image, @NonNull ImagesRequest req, BufferedImage mask)
 			throws IOException {
@@ -134,7 +406,9 @@ public abstract class OpenAiClient implements ApiClient {
 		return createImageEdit(builder.build());
 	}
 
-	protected abstract List<Image> createImageEdit(@NonNull MultipartBody body);
+	private List<Image> createImageVariation(@NonNull MultipartBody body) {
+		return callApi(api.imagesVariations(body)).getData();
+	}
 
 	public List<Image> createImageVariation(@NonNull BufferedImage image, @NonNull ImagesRequest req)
 			throws IOException {
@@ -158,11 +432,15 @@ public abstract class OpenAiClient implements ApiClient {
 		return createImageVariation(builder.build());
 	}
 
-	protected abstract List<Image> createImageVariation(@NonNull MultipartBody body);
-
-	public abstract EmbeddingsResponse createEmbeddings(@NonNull EmbeddingsRequest req);
+	public EmbeddingsResponse createEmbeddings(@NonNull EmbeddingsRequest req) {
+		return callApi(api.embeddings(req));
+	}
 
 	// TODO Add streaming for TTS
+
+	private ResponseBody createSpeechResponse(@NonNull AudioSpeechRequest req) {
+		return callApi(api.audioSpeech(req));
+	}
 
 	/**
 	 * Generates audio from the input text.
@@ -187,7 +465,9 @@ public abstract class OpenAiClient implements ApiClient {
 		download(createSpeechResponse(req), downloadedFile);
 	}
 
-	protected abstract ResponseBody createSpeechResponse(@NonNull AudioSpeechRequest req);
+	private ResponseBody createTranscription(@NonNull String model, @NonNull MultipartBody body) {
+		return callApi(api.audioTranscriptions(body));
+	}
 
 	/**
 	 * Creates an audio transcription. Notice the result is returned as a String
@@ -271,7 +551,9 @@ public abstract class OpenAiClient implements ApiClient {
 		return createTranscription(req.getModel(), builder.build()).string();
 	}
 
-	protected abstract ResponseBody createTranscription(@NonNull String model, @NonNull MultipartBody body);
+	private AudioResponse createTranslation(@NonNull String model, @NonNull MultipartBody body) {
+		return callApi(api.audioTranslations(body));
+	}
 
 	public String createTranslation(@NonNull java.io.File audio, @NonNull AudioRequest req) throws IOException {
 		try (InputStream is = new FileInputStream(audio)) {
@@ -324,9 +606,13 @@ public abstract class OpenAiClient implements ApiClient {
 		return createTranslation(req.getModel(), builder.build()).getText();
 	}
 
-	protected abstract AudioResponse createTranslation(@NonNull String model, @NonNull MultipartBody body);
+	public List<File> listFiles() {
+		return callApi(api.files()).getData();
+	}
 
-	public abstract List<File> listFiles();
+	private File uploadFile(@NonNull MultipartBody body) {
+		return callApi(api.files(body));
+	}
 
 	public File uploadFile(@NonNull String fileName, @NonNull String purpose) throws IOException {
 		return uploadFile(new java.io.File(fileName), purpose);
@@ -356,11 +642,17 @@ public abstract class OpenAiClient implements ApiClient {
 		return uploadFile(builder.build());
 	}
 
-	protected abstract File uploadFile(@NonNull MultipartBody body);
+	public DeleteResponse deleteFile(@NonNull String fileId) {
+		return callApi(api.filesDelete(fileId));
+	}
 
-	public abstract DeleteResponse deleteFile(@NonNull String fileId);
+	public File retrieveFile(@NonNull String fileId) {
+		return callApi(api.files(fileId));
+	}
 
-	public abstract File retrieveFile(@NonNull String fileId);
+	private ResponseBody retrieveFileContentResponse(@NonNull String fileId) {
+		return callApi(api.filesContent(fileId));
+	}
 
 	/**
 	 * Retrieves file content.
@@ -389,32 +681,50 @@ public abstract class OpenAiClient implements ApiClient {
 		download(retrieveFileContentResponse(fileId), downloadedFile);
 	}
 
-	protected abstract ResponseBody retrieveFileContentResponse(@NonNull String fileId);
+	public FineTuningJob createFineTuningJob(@NonNull FineTuningRequest req) {
+		return callApi(api.fineTuningJobsCreate(req));
+	}
 
-	public abstract FineTuningJob createFineTuningJob(@NonNull FineTuningRequest req);
+	public DataList<FineTuningJob> listFineTuningJobs(Integer limit, String after) {
+		return callApi(api.fineTuningJobs(limit, after));
+	}
 
 	public DataList<FineTuningJob> listFineTuningJobs() {
 		return listFineTuningJobs(null, null);
 	}
 
-	public abstract DataList<FineTuningJob> listFineTuningJobs(Integer limit, String after);
-
 	public DataList<FineTuningJobEvent> listFineTuningEvents(@NonNull String fineTuningJobId) {
 		return listFineTuningEvents(fineTuningJobId, null, null);
 	}
 
-	public abstract DataList<FineTuningJobEvent> listFineTuningEvents(@NonNull String fineTuningJobId, Integer limit,
-			String after);
+	public DataList<FineTuningJobEvent> listFineTuningEvents(@NonNull String fineTuningJobId, Integer limit,
+			String after) {
+		return callApi(api.fineTuningJobsEvents(fineTuningJobId, limit, after));
+	}
 
-	public abstract FineTuningJob retrieveFineTuningJob(@NonNull String fineTuningJobId);
+	public FineTuningJob retrieveFineTuningJob(@NonNull String fineTuningJobId) {
+		return callApi(api.fineTuningJobsGet(fineTuningJobId));
+	}
 
-	public abstract FineTuningJob cancelFineTuning(@NonNull String fineTuningJobId);
+	public FineTuningJob cancelFineTuning(@NonNull String fineTuningJobId) {
+		return callApi(api.fineTuningJobsCancel(fineTuningJobId));
+	}
 
-	public abstract DeleteResponse deleteFineTunedModel(@NonNull String model);
+	public DeleteResponse deleteFineTunedModel(@NonNull String model) {
+		return callApi(api.modelsDelete(model));
+	}
 
-	public abstract ModerationsResponse createModeration(@NonNull ModerationsRequest req);
+	public ModerationsResponse createModeration(@NonNull ModerationsRequest req) {
+		return callApi(api.moderations(req));
+	}
 
-	public abstract Assistant createAssistant(@NonNull AssistantsRequest req);
+	public Assistant createAssistant(@NonNull AssistantsRequest req) {
+		return callApi(api.assistantsCreate(req));
+	}
+
+	private File createAssistantFile(@NonNull String assistantId, @NonNull Map<String, String> body) {
+		return callApi(api.assistantsFiles(assistantId, body));
+	}
 
 	public File createAssistantFile(@NonNull String assistantId, @NonNull String fileId) {
 		Map<String, String> body = new HashMap<>();
@@ -422,20 +732,23 @@ public abstract class OpenAiClient implements ApiClient {
 		return createAssistantFile(assistantId, body);
 	}
 
-	protected abstract File createAssistantFile(@NonNull String assistantId, @NonNull Map<String, String> body);
-
 	public DataList<Assistant> listAssistants() {
-		return listAssistants(null, null, null, null);
+		return callApi(api.assistants(null, null, null, null));
 	}
 
-	public abstract DataList<Assistant> listAssistants(SortOrder order, Integer limit, String before, String after);
+	public DataList<Assistant> listAssistants(SortOrder order, Integer limit, String before, String after) {
+		return callApi(api.assistants(limit, (order == null) ? null : order.toString(), after, before));
+	}
+
+	public DataList<File> listAssistantFiles(@NonNull String assistantId, SortOrder order, Integer limit, String before,
+			String after) {
+		return callApi(
+				api.assistantsFiles(assistantId, limit, (order == null) ? null : order.toString(), after, before));
+	}
 
 	public DataList<File> listAssistantFiles(@NonNull String assistantId) {
 		return listAssistantFiles(assistantId, null, null, null, null);
 	}
-
-	public abstract DataList<File> listAssistantFiles(@NonNull String assistantId, SortOrder order, Integer limit,
-			String before, String after);
 
 	/**
 	 * Retrieves an assistant from OpenAI.
@@ -449,85 +762,134 @@ public abstract class OpenAiClient implements ApiClient {
 	 * @param assistantId
 	 * @return
 	 */
-	public abstract Assistant retrieveAssistant(@NonNull String assistantId);
+	public Assistant retrieveAssistant(@NonNull String assistantId) {
+		return callApi(api.assistantsGet(assistantId));
+	}
 
-	public abstract File retrieveAssistantFile(@NonNull String assistantId, @NonNull String fileId);
+	public File retrieveAssistantFile(@NonNull String assistantId, @NonNull String fileId) {
+		return callApi(api.assistantsFilesGet(assistantId, fileId));
+	}
 
-	public abstract Assistant modifyAssistant(@NonNull String assistantId, @NonNull AssistantsRequest req);
+	public Assistant modifyAssistant(@NonNull String assistantId, @NonNull AssistantsRequest req) {
+		return callApi(api.assistantsModify(assistantId, req));
+	}
 
-	public abstract DeleteResponse deleteAssistant(@NonNull String assistantId);
+	public DeleteResponse deleteAssistant(@NonNull String assistantId) {
+		return callApi(api.assistantsDelete(assistantId));
+	}
 
-	public abstract DeleteResponse deteAssistantFile(@NonNull String assistantId, @NonNull String fileId);
+	public DeleteResponse deteAssistantFile(@NonNull String assistantId, @NonNull String fileId) {
+		return callApi(api.assistantsFilesDelete(assistantId, fileId));
+	}
 
-	public abstract OpenAiThread createThread(@NonNull ThreadsRequest req);
+	public OpenAiThread createThread(@NonNull ThreadsRequest req) {
+		return callApi(api.threads(req));
+	}
 
-	public abstract OpenAiThread retrieveThread(@NonNull String threadId);
+	public OpenAiThread retrieveThread(@NonNull String threadId) {
+		return callApi(api.threadsGet(threadId));
+	}
+
+	public OpenAiThread modifyThread(@NonNull String threadId, @NonNull Metadata metadata) {
+		return callApi(api.threadsModify(threadId, metadata));
+	}
 
 	public OpenAiThread modifyThread(@NonNull String threadId, @NonNull Map<String, String> metadata) {
 		return modifyThread(threadId, new Metadata(metadata));
 	}
 
-	public abstract OpenAiThread modifyThread(@NonNull String threadId, @NonNull Metadata metadata);
+	public DeleteResponse deleteThread(@NonNull String threadId) {
+		return callApi(api.threadsDelete(threadId));
+	}
 
-	public abstract DeleteResponse deleteThread(@NonNull String threadId);
+	public Message createMessage(@NonNull String threadId, @NonNull MessagesRequest req) {
+		return callApi(api.threadsMessagesCreate(threadId, req));
+	}
 
-	public abstract Message createMessage(@NonNull String threadId, @NonNull MessagesRequest req);
+	public DataList<Message> listMessages(@NonNull String threadId, SortOrder order, Integer limit, String after,
+			String before) {
+		return callApi(api.threadsMessages(threadId, limit, (order == null) ? null : order.toString(), after, before));
+	}
 
 	public DataList<Message> listMessages(@NonNull String threadId) {
 		return listMessages(threadId, null, null, null, null);
 	}
 
-	public abstract DataList<Message> listMessages(@NonNull String threadId, SortOrder order, Integer limit,
-			String after, String before);
+	public DataList<MessageFile> listMessageFiles(@NonNull String threadId, @NonNull String messageId, SortOrder order,
+			Integer limit, String after, String before) {
+		return callApi(api.threadsMessagesFiles(threadId, messageId, limit, (order == null) ? null : order.toString(),
+				after, before));
+	}
 
 	public DataList<MessageFile> listMessageFiles(@NonNull String threadId, @NonNull String messageId) {
 		return listMessageFiles(threadId, messageId, null, null, null, null);
 	}
 
-	public abstract DataList<MessageFile> listMessageFiles(@NonNull String threadId, @NonNull String messageId,
-			SortOrder order, Integer limit, String after, String before);
+	public Message retrieveMessage(@NonNull String threadId, @NonNull String messageId) {
+		return callApi(api.threadsMessagesGet(threadId, messageId));
+	}
 
-	public abstract Message retrieveMessage(@NonNull String threadId, @NonNull String messageId);
+	public MessageFile retrieveMessageFile(@NonNull String threadId, @NonNull String messageId,
+			@NonNull String fileId) {
+		return callApi(api.threadsMessagesFiles(threadId, messageId, fileId));
+	}
 
-	public abstract MessageFile retrieveMessageFile(@NonNull String threadId, @NonNull String messageId,
-			@NonNull String fileId);
+	public Message modifyMessage(@NonNull String threadId, @NonNull String messageId, @NonNull Metadata metadata) {
+		return callApi(api.threadsMessagesModify(threadId, messageId, metadata));
+	}
 
-	public abstract Message modifyMessage(@NonNull String threadId, @NonNull String messageId,
-			@NonNull Metadata metadata);
+	public Run createRun(@NonNull String threadId, @NonNull RunsRequest req) {
+		return callApi(api.threadsRunsCreate(threadId, req));
+	}
 
-	public abstract Run createRun(@NonNull String threadId, @NonNull RunsRequest req);
+	public Run createThreadAndRun(@NonNull ThreadAndRunRequest req) {
+		return callApi(api.threadsRunsCreate(req));
+	}
 
-	public abstract Run createThreadAndRun(@NonNull ThreadAndRunRequest req);
+	public DataList<Run> listRuns(@NonNull String threadId, SortOrder order, Integer limit, String after,
+			String before) {
+		return callApi(api.threadsRuns(threadId, limit, order.toString(), after, before));
+	}
 
 	public DataList<Run> listRuns(@NonNull String threadId) {
 		return listRuns(threadId, null, null, null, null);
 	}
 
-	public abstract DataList<Run> listRuns(@NonNull String threadId, @NonNull SortOrder order, Integer limit,
-			String after, String before);
+	public DataList<RunStep> listRunSteps(@NonNull String threadId, @NonNull String runId, Integer limit,
+			SortOrder order, String after, String before) {
+		return callApi(
+				api.threadsRunsSteps(threadId, runId, limit, (order == null) ? null : order.toString(), after, before));
+	}
 
 	public DataList<RunStep> listRunSteps(@NonNull String threadId, @NonNull String runId) {
 		return listRunSteps(threadId, runId, null, null, null, null);
 	}
 
-	public abstract DataList<RunStep> listRunSteps(@NonNull String threadId, @NonNull String runId, Integer limit,
-			SortOrder order, String after, String before);
+	public Run retrieveRun(@NonNull String threadId, @NonNull String runId) {
+		return callApi(api.threadsRunsGet(threadId, runId));
+	}
 
-	public abstract Run retrieveRun(@NonNull String threadId, @NonNull String runId);
+	public RunStep retrieveRunStep(@NonNull String threadId, @NonNull String runId, @NonNull String stepId) {
+		return callApi(api.threadsRunsStepsGet(threadId, runId, stepId));
+	}
 
-	public abstract RunStep retrieveRunStep(@NonNull String threadId, @NonNull String runId, @NonNull String stepId);
+	public Run modifyRun(@NonNull String threadId, @NonNull String runId, @NonNull Metadata metadata) {
+		return callApi(api.threadsRunsModify(threadId, runId, metadata));
+	}
 
-	public abstract Run modifyRun(@NonNull String threadId, @NonNull String runId, @NonNull Metadata metadata);
+	public Run submitToolOutputsToRun(@NonNull String threadId, @NonNull String runId,
+			@NonNull ToolOutputsRequest req) {
+		return callApi(api.threadsRunsSubmitToolOutputs(threadId, runId, req));
+	}
 
-	public abstract Run submitToolOutputsToRun(@NonNull String threadId, @NonNull String runId,
-			@NonNull ToolOutputsRequest req);
-
-	public abstract Run cancelRun(@NonNull String threadId, @NonNull String runId);
+	public Run cancelRun(@NonNull String threadId, @NonNull String runId) {
+		return callApi(api.threadsRunsCancel(threadId, runId));
+	}
 
 	/**
 	 * Downloads a file, returned by an HTTP response.
 	 */
-	protected void download(ResponseBody body, java.io.File downloadedFile) throws IOException {
+	private void download(ResponseBody body, java.io.File downloadedFile) throws IOException {
 		try (InputStream is = body.byteStream(); FileOutputStream os = new FileOutputStream(downloadedFile)) {
 
 			byte[] buffer = new byte[4096];
@@ -537,10 +899,10 @@ public abstract class OpenAiClient implements ApiClient {
 			}
 		}
 	}
-	
+
 	/////////////////////////////////////////////////////////////////////////////////
 
-	protected <T> T callApi(Single<T> apiCall) {
+	private <T> T callApi(Single<T> apiCall) {
 		try {
 			return apiCall.blockingGet();
 		} catch (HttpException e) {
@@ -554,4 +916,18 @@ public abstract class OpenAiClient implements ApiClient {
 			throw oaie;
 		}
 	}
+	/////////////////////////////////////////////////////////////////////////////////
+
+	@Override
+	public void close() {
+		try {
+			client.dispatcher().executorService().shutdown();
+			client.connectionPool().evictAll();
+			if (client.cache() != null)
+				client.cache().close();
+		} catch (Exception e) {
+			LOG.warn("Error while closing client", e);
+		}
+	}
+
 }

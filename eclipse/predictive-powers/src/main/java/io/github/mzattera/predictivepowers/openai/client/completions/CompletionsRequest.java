@@ -44,10 +44,6 @@ import lombok.ToString;
 @ToString
 public class CompletionsRequest {
 
-	/**
-	 * This is not used in Azure OpenAI, in our implementation we replace it with
-	 * the deployment Id.
-	 */
 	@NonNull
 	private String model;
 

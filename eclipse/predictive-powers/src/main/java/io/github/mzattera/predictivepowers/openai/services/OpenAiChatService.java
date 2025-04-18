@@ -26,7 +26,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.mzattera.predictivepowers.openai.client.AzureOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiException;
 import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsChoice;
@@ -114,7 +113,6 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 		this.endpoint = ep;
 		this.defaultReq = defaultReq;
 		modelService = endpoint.getModelService();
-		register();
 
 		// With GPT you pay max tokens, even if they are not generated, so we put a
 		// reasonable limit here
@@ -137,7 +135,6 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 	@Override
 	public void setModel(@NonNull String model) {
 		defaultReq.setModel(model);
-		register();
 	}
 
 	/**
@@ -151,24 +148,6 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 	private final ChatCompletionsRequest defaultReq;
 
 	private final OpenAiModelService modelService;
-
-	/**
-	 * Register the deploy ID if we are running in MS Azure See
-	 * {@link AzureOpenAiModelService}.
-	 */
-	private void register() {
-		// TODO URGENT REMOVE
-		if (endpoint instanceof AzureOpenAiEndpoint) {
-			String model = getModel();
-			if (modelService.get(model) == null) {
-				// Do a "fake" call to read base model ID (see AzureOpenAiModelService JavaDoc).
-				ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).maxCompletionTokens(1).build();
-				req.getMessages().add(new OpenAiChatMessage(Role.USER, "Hi"));
-				ChatCompletionsResponse resp = endpoint.getClient().createChatCompletion(req);
-				((AzureOpenAiModelService) modelService).map(model, resp.getModel());
-			}
-		}
-	}
 
 	@Override
 	public Integer getTopK() {
@@ -439,7 +418,8 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 
 		req.setMessages(messages);
 
-		boolean autofit = (req.getMaxTokens() == null) && (req.getMaxCompletionTokens() == null) && (modelService.getContextSize(model, -1) != -1);
+		boolean autofit = (req.getMaxTokens() == null) && (req.getMaxCompletionTokens() == null)
+				&& (modelService.getContextSize(model, -1) != -1);
 
 		try {
 			if (autofit) {
@@ -460,8 +440,8 @@ public class OpenAiChatService extends AbstractAgent implements ChatService {
 					int optimal = e.getMaxContextLength() - e.getPromptLength() - 1;
 					if (optimal > 0) {
 						// TODO Add a test case
-						LOG.warn("Reducing context length for OpenAI chat service from " + req.getMaxCompletionTokens() + " to "
-								+ optimal);
+						LOG.warn("Reducing context length for OpenAI chat service from " + req.getMaxCompletionTokens()
+								+ " to " + optimal);
 						int old = req.getMaxCompletionTokens();
 						req.setMaxCompletionTokens(optimal);
 						try {

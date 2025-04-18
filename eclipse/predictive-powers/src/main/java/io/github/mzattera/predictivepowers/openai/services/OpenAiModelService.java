@@ -16,8 +16,13 @@
 
 package io.github.mzattera.predictivepowers.openai.services;
 
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
 import io.github.mzattera.predictivepowers.services.AbstractModelService;
@@ -27,10 +32,9 @@ import lombok.NonNull;
 import lombok.ToString;
 
 /**
- * This interface represents a {@link ModelService} for OpenAI models, whether
- * they are provided by OpenAI API or Azure OpenAI Service.
+ * This interface represents a {@link ModelService} for OpenAI models.
  */
-public abstract class OpenAiModelService extends AbstractModelService {
+public class OpenAiModelService extends AbstractModelService {
 
 	@ToString(callSuper = true)
 	public static class OpenAiModelMetaData extends ModelMetaData {
@@ -72,7 +76,8 @@ public abstract class OpenAiModelService extends AbstractModelService {
 			this(model, SupportedApi.CHAT, contextSize, null, supportedCallType);
 		}
 
-		public OpenAiModelMetaData(@NonNull String model, int contextSize, SupportedCallType supportedCallType, boolean hasVision) {
+		public OpenAiModelMetaData(@NonNull String model, int contextSize, SupportedCallType supportedCallType,
+				boolean hasVision) {
 			this(model, SupportedApi.CHAT, contextSize, null, supportedCallType, hasVision);
 		}
 
@@ -103,8 +108,97 @@ public abstract class OpenAiModelService extends AbstractModelService {
 		}
 	}
 
-	protected OpenAiModelService(@NonNull Map<String, ModelMetaData> map) {
-		super(map);
+	/**
+	 * Maps each OpenAI model into its metadata
+	 */
+	final static Map<String, ModelMetaData> MODEL_CONFIG = new ConcurrentHashMap<>();
+	static {
+
+		MODEL_CONFIG.put("babbage-002", new OpenAiModelMetaData("babbage-002", 16384, SupportedApi.COMPLETIONS));
+		MODEL_CONFIG.put("davinci-002", new OpenAiModelMetaData("davinci-002", 16385, SupportedApi.COMPLETIONS));
+
+		MODEL_CONFIG.put("gpt-3.5-turbo", new OpenAiModelMetaData("gpt-3.5-turbo", 4096, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-16k",
+				new OpenAiModelMetaData("gpt-3.5-turbo-16k", 16384, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-instruct",
+				new OpenAiModelMetaData("gpt-3.5-turbo-instruct", 4096, SupportedApi.COMPLETIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-instruct-0914",
+				new OpenAiModelMetaData("gpt-3.5-turbo-instruct-0914", 4096, SupportedApi.COMPLETIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-0125",
+				new OpenAiModelMetaData("gpt-3.5-turbo-0125", 16385, 4096, SupportedCallType.TOOLS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-1106",
+				new OpenAiModelMetaData("gpt-3.5-turbo-1106", 16385, 4096, SupportedCallType.TOOLS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-0613",
+				new OpenAiModelMetaData("gpt-3.5-turbo-0613", 4096, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-16k-0613",
+				new OpenAiModelMetaData("gpt-3.5-turbo-16k-0613", 16384, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-3.5-turbo-0301",
+				new OpenAiModelMetaData("gpt-3.5-turbo-0301", 4096, SupportedCallType.NONE));
+		MODEL_CONFIG.put("gpt-3.5-turbo-1106",
+				new OpenAiModelMetaData("gpt-3.5-turbo-1106", 16385, 4096, SupportedCallType.TOOLS));
+
+		MODEL_CONFIG.put("gpt-4", new OpenAiModelMetaData("gpt-4", 8192, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-0613", new OpenAiModelMetaData("gpt-4-0613", 8192, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-32k", new OpenAiModelMetaData("gpt-4-32k", 32768, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-32k-0613",
+				new OpenAiModelMetaData("gpt-4-32k-0613", 32768, SupportedCallType.FUNCTIONS));
+
+		MODEL_CONFIG.put("gpt-4-turbo",
+				new OpenAiModelMetaData("gpt-4-turbo", 128000, 4096, SupportedCallType.TOOLS, true));
+		MODEL_CONFIG.put("gpt-4-turbo-2024-04-09",
+				new OpenAiModelMetaData("gpt-4-turbo-2024-04-09", 128000, 4096, SupportedCallType.TOOLS, true));
+		MODEL_CONFIG.put("gpt-4-turbo-preview",
+				new OpenAiModelMetaData("gpt-4-turbo-preview", 128000, 4096, SupportedCallType.TOOLS));
+		MODEL_CONFIG.put("gpt-4-0125-preview",
+				new OpenAiModelMetaData("gpt-4-0125-preview", 128000, 4096, SupportedCallType.TOOLS));
+		MODEL_CONFIG.put("gpt-4-1106-preview",
+				new OpenAiModelMetaData("gpt-4-1106-preview", 128000, 4096, SupportedCallType.TOOLS));
+		MODEL_CONFIG.put("gpt-4-vision-preview",
+				new OpenAiModelMetaData("gpt-4-vision-preview", 128000, 4096, SupportedCallType.FUNCTIONS));
+		MODEL_CONFIG.put("gpt-4-1106-vision-preview",
+				new OpenAiModelMetaData("gpt-4-1106-vision-preview", 128000, 4096, SupportedCallType.NONE));
+
+		MODEL_CONFIG.put("gpt-4o", new OpenAiModelMetaData("gpt-4o", 128000, 4096, SupportedCallType.TOOLS, true));
+		MODEL_CONFIG.put("gpt-4o-2024-05-13",
+				new OpenAiModelMetaData("gpt-4o-2024-05-13", 128000, 4096, SupportedCallType.TOOLS, true));
+
+		MODEL_CONFIG.put("text-embedding-3-large",
+				new OpenAiModelMetaData("text-embedding-3-large", 8191, SupportedApi.EMBEDDINGS));
+		MODEL_CONFIG.put("text-embedding-3-small",
+				new OpenAiModelMetaData("text-embedding-3-small", 8192, SupportedApi.EMBEDDINGS));
+		MODEL_CONFIG.put("text-embedding-ada-002",
+				new OpenAiModelMetaData("text-embedding-ada-002", 8192, SupportedApi.EMBEDDINGS));
+
+		MODEL_CONFIG.put("tts-1", new OpenAiModelMetaData("tts-1", 4096, SupportedApi.TTS));
+		MODEL_CONFIG.put("tts-1-1106", new OpenAiModelMetaData("tts-1-1106", 2046, SupportedApi.TTS));
+		MODEL_CONFIG.put("tts-1-hd", new OpenAiModelMetaData("tts-1-hd", 2046, SupportedApi.TTS));
+		MODEL_CONFIG.put("tts-1-hd-1106", new OpenAiModelMetaData("tts-1-hd-1106", 2046, SupportedApi.TTS));
+
+		MODEL_CONFIG.put("whisper-1", new OpenAiModelMetaData("whisper-1", SupportedApi.STT));
+
+		MODEL_CONFIG.put("dall-e-2", new OpenAiModelMetaData("dall-e-2", SupportedApi.IMAGES));
+		MODEL_CONFIG.put("dall-e-3", new OpenAiModelMetaData("dall-e-3", SupportedApi.IMAGES));
+	}
+
+	/**
+	 * For testing purposes only.
+	 */
+	static Stream<OpenAiModelMetaData> getModelsMetadata() {
+		return MODEL_CONFIG.values().stream().map(e -> (OpenAiModelMetaData) e);
+	}
+
+	@NonNull
+	@Getter
+	protected final OpenAiEndpoint endpoint;
+
+	public OpenAiModelService(@NonNull OpenAiEndpoint endpoint) {
+		super(MODEL_CONFIG);
+		this.endpoint = endpoint;
+	}
+
+	@Override
+	public List<String> listModels() {
+		return endpoint.getClient().listModels().stream().map(m -> m.getId()).collect(Collectors.toList());
 	}
 
 	/**

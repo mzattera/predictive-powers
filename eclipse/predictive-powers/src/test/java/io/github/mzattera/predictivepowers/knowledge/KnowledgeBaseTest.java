@@ -31,7 +31,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.TestConfiguration;
-import io.github.mzattera.predictivepowers.openai.client.DirectOpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
@@ -52,7 +51,7 @@ public class KnowledgeBaseTest {
 		if (!TestConfiguration.TEST_KNOWLEDGE_BASE)
 			return;
 
-		try (OpenAiEndpoint ep = new DirectOpenAiEndpoint();
+		try (OpenAiEndpoint ep = new OpenAiEndpoint();
 				OpenAiEmbeddingService es = ep.getEmbeddingService();
 				KnowledgeBase kb = new KnowledgeBase();) {
 
@@ -169,7 +168,7 @@ public class KnowledgeBaseTest {
 		if (!TestConfiguration.TEST_KNOWLEDGE_BASE)
 			return;
 
-		try (OpenAiEndpoint ep = new DirectOpenAiEndpoint();
+		try (OpenAiEndpoint ep = new OpenAiEndpoint();
 				OpenAiEmbeddingService es = ep.getEmbeddingService();
 				KnowledgeBase kb = new KnowledgeBase();) {
 
@@ -225,7 +224,7 @@ public class KnowledgeBaseTest {
 		if (!TestConfiguration.TEST_KNOWLEDGE_BASE)
 			return;
 
-		try (OpenAiEndpoint ep = new DirectOpenAiEndpoint();
+		try (OpenAiEndpoint ep = new OpenAiEndpoint();
 				OpenAiEmbeddingService es = ep.getEmbeddingService();
 				KnowledgeBase kb = new KnowledgeBase();) {
 
@@ -265,11 +264,11 @@ public class KnowledgeBaseTest {
 	 * @throws FileNotFoundException
 	 */
 	public static void main(String args[]) throws FileNotFoundException, IOException {
-		
-		try (OpenAiEndpoint ep = new DirectOpenAiEndpoint();
+
+		try (OpenAiEndpoint ep = new OpenAiEndpoint();
 				OpenAiEmbeddingService es = ep.getEmbeddingService();
 				KnowledgeBase kb = new KnowledgeBase();) {
-			
+
 			kb.createDomain("test");
 
 			for (int i = 0; i < savedText.size(); ++i) {

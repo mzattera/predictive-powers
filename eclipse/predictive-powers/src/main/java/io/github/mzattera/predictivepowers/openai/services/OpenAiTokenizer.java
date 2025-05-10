@@ -22,6 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.knuddels.jtokkit.Encodings;
@@ -61,44 +62,80 @@ public class OpenAiTokenizer implements Tokenizer {
 	@NonNull
 	private final Encoding encoding;
 
-	public OpenAiTokenizer(String model) {
-		this.model = model;
-		this.encoding = getEncoding(model);
+	private OpenAiTokenizer(@NonNull String model) {
+		this(model, getEncoding(model));
 	}
 
-	// The logic for getEncoding() and getEncodingName() comes from
+	OpenAiTokenizer(@NonNull String model, Encoding encoding) {
+		this.model = model;
+		this.encoding = encoding;
+	}
+
+	public static OpenAiTokenizer getTokenizer(@NonNull String model) {
+		try {
+			return new OpenAiTokenizer(model);
+		} catch (IllegalArgumentException e) {
+			return null;
+		}
+	}
+
+	private static Encoding getEncoding(String modelName) {
+
+		// Tries "regular" way of getting encoding for model
+		EncodingRegistry registry = Encodings.newDefaultEncodingRegistry();
+		Optional<Encoding> enc = registry.getEncodingForModel(modelName);
+		if (enc.isPresent())
+			return enc.get();
+
+		// If it fails, tries tiktoken mapping
+		String encName = getEncodingName(modelName);
+		if (encName == null)
+			throw new IllegalArgumentException("No encoding found for model: " + modelName);
+
+		switch (encName) {
+		case "cl100k_base":
+			return registry.getEncoding(EncodingType.CL100K_BASE);
+		case "p50k_base":
+			return registry.getEncoding(EncodingType.P50K_BASE);
+		case "p50k_edit":
+			return registry.getEncoding(EncodingType.P50K_EDIT);
+		case "r50k_base":
+			return registry.getEncoding(EncodingType.R50K_BASE);
+		case "o200k_base":
+			return registry.getEncoding(EncodingType.O200K_BASE);
+		default:
+			throw new IllegalArgumentException("No encoding found for model: " + modelName);
+		}
+	}
+
+	// The fall back logic for getEncoding() and getEncodingName() comes from
 	// https://github.com/openai/tiktoken/blob/main/tiktoken/model.py
 	private static final Map<String, String> MODEL_PREFIX_TO_ENCODING = new HashMap<>();
 	static {
-		// Initialize MODEL_PREFIX_TO_ENCODING
 		MODEL_PREFIX_TO_ENCODING.put("gpt-4-", "cl100k_base");
-		MODEL_PREFIX_TO_ENCODING.put("gpt-4o-", "cl100k_base");
+		MODEL_PREFIX_TO_ENCODING.put("gpt-4o-", "o200k_base");
+		MODEL_PREFIX_TO_ENCODING.put("chatgpt-4o-", "o200k_base");
 		MODEL_PREFIX_TO_ENCODING.put("gpt-3.5-turbo-", "cl100k_base");
 		MODEL_PREFIX_TO_ENCODING.put("gpt-35-turbo-", "cl100k_base");
+		MODEL_PREFIX_TO_ENCODING.put("o1-", "o200k_base");
+		MODEL_PREFIX_TO_ENCODING.put("o3-", "o200k_base");
 	}
 
 	private static final Map<String, String> MODEL_TO_ENCODING = new HashMap<>();
 	static {
-
-		// Initialize MODEL_TO_ENCODING
-
-		// chat
 		MODEL_TO_ENCODING.put("gpt-4", "cl100k_base");
-		MODEL_TO_ENCODING.put("gpt-4o", "cl100k_base");
+		MODEL_TO_ENCODING.put("gpt-4o", "o200k_base");
 		MODEL_TO_ENCODING.put("gpt-3.5-turbo", "cl100k_base");
-		MODEL_TO_ENCODING.put("gpt-35-turbo", "cl100k_base"); 
+		MODEL_TO_ENCODING.put("gpt-3.5", "cl100k_base");
+		MODEL_TO_ENCODING.put("gpt-35-turbo", "cl100k_base");
 
-		// base
 		MODEL_TO_ENCODING.put("davinci-002", "cl100k_base");
 		MODEL_TO_ENCODING.put("babbage-002", "cl100k_base");
 
-		// embeddings
 		MODEL_TO_ENCODING.put("text-embedding-3-large", "cl100k_base");
 		MODEL_TO_ENCODING.put("text-embedding-3-small", "cl100k_base");
 		MODEL_TO_ENCODING.put("text-embedding-ada-002", "cl100k_base");
 
-		// DEPRECATED MODELS
-		// text (DEPRECATED)
 		MODEL_TO_ENCODING.put("text-davinci-003", "p50k_base");
 		MODEL_TO_ENCODING.put("text-davinci-002", "p50k_base");
 		MODEL_TO_ENCODING.put("text-davinci-001", "r50k_base");
@@ -110,7 +147,6 @@ public class OpenAiTokenizer implements Tokenizer {
 		MODEL_TO_ENCODING.put("babbage", "r50k_base");
 		MODEL_TO_ENCODING.put("ada", "r50k_base");
 
-		// code (DEPRECATED)
 		MODEL_TO_ENCODING.put("code-davinci-002", "p50k_base");
 		MODEL_TO_ENCODING.put("code-davinci-001", "p50k_base");
 		MODEL_TO_ENCODING.put("code-cushman-002", "p50k_base");
@@ -118,11 +154,9 @@ public class OpenAiTokenizer implements Tokenizer {
 		MODEL_TO_ENCODING.put("davinci-codex", "p50k_base");
 		MODEL_TO_ENCODING.put("cushman-codex", "p50k_base");
 
-		// edit (DEPRECATED)
 		MODEL_TO_ENCODING.put("text-davinci-edit-001", "p50k_edit");
 		MODEL_TO_ENCODING.put("code-davinci-edit-001", "p50k_edit");
 
-		// old embeddings (DEPRECATED)
 		MODEL_TO_ENCODING.put("text-similarity-davinci-001", "r50k_base");
 		MODEL_TO_ENCODING.put("text-similarity-curie-001", "r50k_base");
 		MODEL_TO_ENCODING.put("text-similarity-babbage-001", "r50k_base");
@@ -134,33 +168,14 @@ public class OpenAiTokenizer implements Tokenizer {
 		MODEL_TO_ENCODING.put("code-search-babbage-code-001", "r50k_base");
 		MODEL_TO_ENCODING.put("code-search-ada-code-001", "r50k_base");
 
-		// open source
-		MODEL_TO_ENCODING.put("gpt2", "gpt2");
-	}
+		MODEL_TO_ENCODING.put("o1", "o200k_base");
+		MODEL_TO_ENCODING.put("o3", "o200k_base");
 
-	private static Encoding getEncoding(String modelName) {
-		EncodingRegistry registry = Encodings.newDefaultEncodingRegistry();
-
-		String encName = getEncodingName(modelName);
-		if (encName == null)
-			return null;
-
-		switch (encName) {
-		case "cl100k_base":
-			return registry.getEncoding(EncodingType.CL100K_BASE);
-		case "p50k_base":
-			return registry.getEncoding(EncodingType.P50K_BASE);
-		case "p50k_edit":
-			return registry.getEncoding(EncodingType.P50K_EDIT);
-		case "r50k_base":
-			return registry.getEncoding(EncodingType.R50K_BASE);
-		default:
-			throw new IllegalArgumentException("No encoding for model: " + modelName);
-		}
+		// Added
+		MODEL_TO_ENCODING.put("o4-mini", "o200k_base");
 	}
 
 	private static String getEncodingName(String modelName) {
-
 		String encodingName = MODEL_TO_ENCODING.get(modelName);
 		if (encodingName != null)
 			return encodingName;
@@ -192,6 +207,9 @@ public class OpenAiTokenizer implements Tokenizer {
 
 		int sum = 0;
 
+		// For some models, only first message for a role counts
+		boolean firstMessage = true;
+
 		for (OpenAiChatMessage msg : messages) {
 
 			if ("gpt-3.5-turbo-0301".equals(model))
@@ -212,15 +230,63 @@ public class OpenAiTokenizer implements Tokenizer {
 				// Message is not a simple text message
 			}
 
-			if (msg.getName() != null) {
-				if (!"gpt-4-vision-preview".equals(model)) {
-					sum += encoding.countTokens(msg.getName());
-					if ("gpt-3.5-turbo-0301".equals(model))
+			if (msg.getName() != null) { // Name provided //////////////////////////////////
+
+				sum += encoding.countTokens(msg.getName())+1;
+				if (model.startsWith("o1-mini")) {
+					if (firstMessage)
+						sum-=6;
+					sum += 11;
+				} else if (model.startsWith("o1-preview")) {
+					if (firstMessage)
+						sum-=7;
+					sum += 11;
+				} else if (model.startsWith("o1")) {
+					if (firstMessage)
 						--sum;
-					else if ("system".equals(role) || "assistant".equals(role))
-						++sum;
+				} else if (model.startsWith("o3-mini")) {
+					if (firstMessage)
+						--sum;
+				} else if (model.startsWith("o3")) {
+					if (firstMessage)
+						--sum;
+					if ("assistant".equals(role))
+						sum+=2;
+				} else if (model.startsWith("o4-mini")) {
+					if (firstMessage)
+						--sum;
+					if ("assistant".equals(role))
+						sum+=2;
 				}
-			}
+			} else { // No name provided ///////////////////////////////////
+				if (model.startsWith("o1-mini")) {
+					if (firstMessage)
+						sum += 2;
+					else
+						sum += 8;
+				} else if (model.startsWith("o1-preview")) {
+					if (firstMessage)
+						sum += 1;
+					else
+						sum += 8;
+				} else if (model.startsWith("o1")) {
+					if (firstMessage)
+						--sum;
+				} else if (model.startsWith("o3-mini")) {
+					if (firstMessage)
+						--sum;
+				} else if (model.startsWith("o3")) {
+					if (firstMessage)
+						--sum;
+					if ("assistant".equals(role))
+						sum += 2;
+				} else if (model.startsWith("o4-mini")) {
+					if (firstMessage)
+						--sum;
+					if ("assistant".equals(role))
+						sum += 2;
+				}
+			} // here we were handling name in message
 
 			if (msg.getFunctionCall() != null) {
 				if ("gpt-3.5-turbo".equals(model))
@@ -325,9 +391,14 @@ public class OpenAiTokenizer implements Tokenizer {
 					sum += 170 * 2 + 85; // should not happen, but if we cannot read the image put something in
 				}
 			}
+
+			firstMessage = false;
 		} // for each message
 
+		if (model.startsWith("o1-mini") && (sum>0))
+			--sum;
 		return sum;
+
 	}
 
 	/**

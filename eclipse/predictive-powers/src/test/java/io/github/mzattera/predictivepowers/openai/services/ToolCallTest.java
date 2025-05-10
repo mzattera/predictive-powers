@@ -39,7 +39,7 @@ import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
 import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
 import io.github.mzattera.predictivepowers.openai.client.chat.ToolChoice;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.CallType;
 import io.github.mzattera.predictivepowers.services.AbstractTool;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
@@ -80,7 +80,7 @@ public class ToolCallTest {
 	public static void check() {
 
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			assertEquals(SupportedCallType.TOOLS, ep.getModelService().getSupportedCallType(MODEL));
+			assertEquals(CallType.TOOLS, ep.getModelService().getSupportedCallType(MODEL));
 		}
 	}
 

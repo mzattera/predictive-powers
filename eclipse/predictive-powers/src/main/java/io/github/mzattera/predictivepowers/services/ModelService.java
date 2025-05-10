@@ -16,11 +16,13 @@
 
 package io.github.mzattera.predictivepowers.services;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+import io.github.mzattera.predictivepowers.services.ModelService.ModelMetaData.Mode;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 /**
@@ -58,29 +60,33 @@ public interface ModelService extends AiService {
 	 * @author Massimiliano "Maxi" Zattera.
 	 *
 	 */
-	@RequiredArgsConstructor
+	@Getter
 	@ToString
 	public static class ModelMetaData {
 
 		/**
+		 * Input modalities a model supports.
+		 */
+		public enum Mode {
+			TEXT, IMAGE, AUDIO, EMBEDDINGS
+		}
+
+		/**
 		 * The model this metadata refers to.
 		 */
-		@Getter
-		private final @NonNull String model;
+		protected @NonNull String model;
 
 		/**
 		 * A tokenizer for this (text) model (if any).
 		 */
-		@Getter
-		private final Tokenizer tokenizer;
+		protected Tokenizer tokenizer;
 
 		/**
 		 * Context size for a model (namely for GPT models).
 		 * 
 		 * Null if unlimited.
 		 */
-		@Getter
-		private final Integer contextSize;
+		protected Integer contextSize;
 
 		/**
 		 * Some models (namely GPT-4), even if with a huge context size, return only a
@@ -88,20 +94,86 @@ public interface ModelService extends AiService {
 		 * 
 		 * Null if unlimited.
 		 */
-		@Getter
-		private final Integer maxNewTokens;
+		protected Integer maxNewTokens;
+
+		/** The input modes this model supports */
+		protected final List<Mode> inputModes = new ArrayList<>();
+
+		/** The output modes this model supports */
+		protected final List<Mode> outputModes = new ArrayList<>();
+
+		public boolean supportsImageInput() {
+			return inputModes.contains(Mode.IMAGE);
+		}
+
+		public boolean supportsAudioInput() {
+			return inputModes.contains(Mode.AUDIO);
+		}
+
+		public boolean supportsImageOutput() {
+			return outputModes.contains(Mode.IMAGE);
+		}
+
+		public boolean supportsAudioOutput() {
+			return outputModes.contains(Mode.AUDIO);
+		}
 
 		/**
-		 * True if the model supports image inputs. 
+		 * Creates metadata for a model that supports only text input and output.
 		 */
-		private final boolean imageInput;
-		
-		public boolean supportsImageInput() {
-			return imageInput;
+		public ModelMetaData(@NonNull String model) {
+			this(model, null, null, null, new Mode[] { Mode.TEXT }, new Mode[] { Mode.TEXT });
 		}
-		
-		public ModelMetaData(String model, Tokenizer tokenizer, int contextSize, int maxNewTokens, boolean supportsImageInput) {
-			this(model, tokenizer, Integer.valueOf(contextSize), Integer.valueOf(maxNewTokens), true);
+
+		/**
+		 * Creates metadata for a model that supports only text input and output.
+		 */
+		public ModelMetaData(@NonNull String model, Tokenizer tokenizer) {
+			this(model, tokenizer, null, null, new Mode[] { Mode.TEXT }, new Mode[] { Mode.TEXT });
+		}
+
+		/**
+		 * Creates metadata for a model that supports only text input and output.
+		 */
+		public ModelMetaData(@NonNull String model, Tokenizer tokenizer, Integer contextSize, Integer maxNewTokens) {
+			this(model, tokenizer, Integer.valueOf(contextSize), Integer.valueOf(maxNewTokens),
+					new Mode[] { Mode.TEXT }, new Mode[] { Mode.TEXT });
+		}
+
+		/**
+		 * 
+		 * @param model
+		 * @param tokenizer
+		 * @param contextSize
+		 * @param maxNewTokens
+		 * @param supportsImages True if this model supports images as input, otherwise
+		 *                       it is supposed the model has only text as input and
+		 *                       output.
+		 */
+		public ModelMetaData(@NonNull String model, Tokenizer tokenizer, Integer contextSize, Integer maxNewTokens,
+				boolean supportsImages) {
+			this(model, tokenizer, contextSize, maxNewTokens, new Mode[] { Mode.TEXT },
+					(supportsImages ? new Mode[] { Mode.TEXT, Mode.IMAGE } : new Mode[] { Mode.TEXT }));
+		}
+
+		public ModelMetaData(@NonNull String model, Tokenizer tokenizer, Integer contextSize, Integer maxNewTokens,
+				Mode[] inputModes, Mode[] outputModes) {
+			this.model = model;
+			this.tokenizer = tokenizer;
+			this.contextSize = contextSize;
+			this.maxNewTokens = maxNewTokens;
+			Collections.addAll(this.inputModes, inputModes);
+			Collections.addAll(this.outputModes, outputModes);
+		}
+
+		public ModelMetaData(@NonNull String model, Tokenizer tokenizer, Integer contextSize, Integer maxNewTokens,
+				List<Mode> inputModes, List<Mode> outputModes) {
+			this.model = model;
+			this.tokenizer = tokenizer;
+			this.contextSize = contextSize;
+			this.maxNewTokens = maxNewTokens;
+			this.inputModes.addAll(inputModes);
+			this.outputModes.addAll(outputModes);
 		}
 	}
 
@@ -184,4 +256,18 @@ public interface ModelService extends AiService {
 	 *         this limitation in addition to max context size.
 	 */
 	int getMaxNewTokens(@NonNull String model, int def);
+
+	/**
+	 * 
+	 * @param model
+	 * @return Input modes supported by the model.
+	 */
+	List<Mode> getInputModes(@NonNull String model);
+
+	/**
+	 * 
+	 * @param model
+	 * @return Output modes supported by the model.
+	 */
+	List<Mode> getOutputModes(@NonNull String model);
 }

@@ -16,8 +16,10 @@
 
 package io.github.mzattera.predictivepowers.services;
 
+import java.util.List;
 import java.util.Map;
 
+import io.github.mzattera.predictivepowers.services.ModelService.ModelMetaData.Mode;
 import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -116,6 +118,26 @@ public abstract class AbstractModelService implements ModelService {
 		if ((data == null) || (data.getMaxNewTokens() == null))
 			return def;
 		return data.getMaxNewTokens();
+	}
+
+	/**
+	 * 
+	 * @param model
+	 * @return Input modes supported by the model.
+	 */
+	@Override
+	public List<Mode> getInputModes(@NonNull String model) {
+		return get(model).getInputModes();
+	}
+
+	/**
+	 * 
+	 * @param model
+	 * @return Output modes supported by the model.
+	 */
+	@Override
+	public List<Mode> getOutputModes(@NonNull String model) {
+		return get(model).getOutputModes();
 	}
 
 	@Override

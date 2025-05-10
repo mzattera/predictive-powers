@@ -22,9 +22,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +68,7 @@ import io.github.mzattera.predictivepowers.openai.client.threads.RunsRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.ThreadAndRunRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.ThreadsRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.ToolOutputsRequest;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.util.FileUtil;
 import io.github.mzattera.util.ImageUtil;
@@ -80,6 +84,8 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import okio.Buffer;
+import okio.BufferedSource;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
@@ -103,7 +109,6 @@ public class OpenAiClient implements ApiClient {
 		jsonMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 		jsonMapper.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
 	}
-
 
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiClient.class);
 
@@ -366,6 +371,46 @@ public class OpenAiClient implements ApiClient {
 
 	public ChatCompletionsResponse createChatCompletion(@NonNull ChatCompletionsRequest req) {
 		return callApi(api.chatCompletions(req));
+	}
+
+	public ChatCompletionsResponse getChatCompletion(@NonNull String completionId) {
+		return callApi(api.chatCompletions(completionId));
+	}
+
+	public DataList<OpenAiChatMessage> getChatMessages(@NonNull String completionId) {
+		return getChatMessages(completionId, null, null, null);
+	}
+
+	public DataList<OpenAiChatMessage> getChatMessages(@NonNull String completionId, Integer limit, String order,
+			String after) {
+		return callApi(api.chatCompletionsMessages(completionId, limit, order, after));
+	}
+
+	public DataList<ChatCompletionsResponse> listChatCompletions(Integer limit, String order, String after) {
+		return listChatCompletions(limit, order, after, null, null);
+	}
+
+	public DataList<ChatCompletionsResponse> listChatCompletions(Integer limit, String order, String after,
+			String model) {
+		return listChatCompletions(limit, order, after, null, model);
+	}
+
+	public DataList<ChatCompletionsResponse> listChatCompletions(Integer limit, String order, String after,
+			Map<String, String> metadata, String model) {
+
+		String metaStr = null;
+		if ((metadata != null) && (metadata.size() > 0)) {
+			metaStr = metadata
+					.entrySet().stream().map(e -> "metadata[" + URLEncoder.encode(e.getKey(), StandardCharsets.UTF_8)
+							+ "]=" + URLEncoder.encode(e.getValue(), StandardCharsets.UTF_8))
+					.collect(Collectors.joining("&"));
+		}
+
+		return callApi(api.chatCompletions(limit, order, after, metaStr, model));
+	}
+
+	public DeleteResponse deleteChatCompletion(@NonNull String completionId) {
+		return callApi(api.chatCompletionsDelete(completionId));
 	}
 
 	public List<Image> createImage(@NonNull ImagesRequest req) {
@@ -703,7 +748,7 @@ public class OpenAiClient implements ApiClient {
 	}
 
 	public FineTuningJob retrieveFineTuningJob(@NonNull String fineTuningJobId) {
-		return callApi(api.fineTuningJobsGet(fineTuningJobId));
+		return callApi(api.fineTuningJobs(fineTuningJobId));
 	}
 
 	public FineTuningJob cancelFineTuning(@NonNull String fineTuningJobId) {
@@ -763,11 +808,11 @@ public class OpenAiClient implements ApiClient {
 	 * @return
 	 */
 	public Assistant retrieveAssistant(@NonNull String assistantId) {
-		return callApi(api.assistantsGet(assistantId));
+		return callApi(api.assistants(assistantId));
 	}
 
 	public File retrieveAssistantFile(@NonNull String assistantId, @NonNull String fileId) {
-		return callApi(api.assistantsFilesGet(assistantId, fileId));
+		return callApi(api.assistantsFiles(assistantId, fileId));
 	}
 
 	public Assistant modifyAssistant(@NonNull String assistantId, @NonNull AssistantsRequest req) {
@@ -787,7 +832,7 @@ public class OpenAiClient implements ApiClient {
 	}
 
 	public OpenAiThread retrieveThread(@NonNull String threadId) {
-		return callApi(api.threadsGet(threadId));
+		return callApi(api.threads(threadId));
 	}
 
 	public OpenAiThread modifyThread(@NonNull String threadId, @NonNull Metadata metadata) {
@@ -826,7 +871,7 @@ public class OpenAiClient implements ApiClient {
 	}
 
 	public Message retrieveMessage(@NonNull String threadId, @NonNull String messageId) {
-		return callApi(api.threadsMessagesGet(threadId, messageId));
+		return callApi(api.threadsMessages(threadId, messageId));
 	}
 
 	public MessageFile retrieveMessageFile(@NonNull String threadId, @NonNull String messageId,
@@ -866,11 +911,11 @@ public class OpenAiClient implements ApiClient {
 	}
 
 	public Run retrieveRun(@NonNull String threadId, @NonNull String runId) {
-		return callApi(api.threadsRunsGet(threadId, runId));
+		return callApi(api.threadsRuns(threadId, runId));
 	}
 
 	public RunStep retrieveRunStep(@NonNull String threadId, @NonNull String runId, @NonNull String stepId) {
-		return callApi(api.threadsRunsStepsGet(threadId, runId, stepId));
+		return callApi(api.threadsRunsSteps(threadId, runId, stepId));
 	}
 
 	public Run modifyRun(@NonNull String threadId, @NonNull String runId, @NonNull Metadata metadata) {

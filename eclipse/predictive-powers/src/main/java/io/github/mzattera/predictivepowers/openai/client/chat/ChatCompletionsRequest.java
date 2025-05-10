@@ -237,7 +237,7 @@ public class ChatCompletionsRequest {
 
 	@Builder.Default
 	@JsonSerialize(using = ModalitiesSerializer.class)
-	private List<Modality> modalities = new ArrayList<>();
+	private List<Modality> modalities = null;
 
 	private Integer n;
 	private Boolean parallelToolCalls;

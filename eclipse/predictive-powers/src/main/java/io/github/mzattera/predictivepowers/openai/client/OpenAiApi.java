@@ -47,6 +47,7 @@ import io.github.mzattera.predictivepowers.openai.client.threads.RunsRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.ThreadAndRunRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.ThreadsRequest;
 import io.github.mzattera.predictivepowers.openai.client.threads.ToolOutputsRequest;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
 import io.reactivex.Single;
 import lombok.NonNull;
 import okhttp3.RequestBody;
@@ -80,6 +81,23 @@ public interface OpenAiApi {
 
 	@POST("chat/completions")
 	Single<ChatCompletionsResponse> chatCompletions(@Body @NonNull ChatCompletionsRequest req);
+
+	@GET("chat/completions/{completion_id}")
+	Single<ChatCompletionsResponse> chatCompletions(@Path("completion_id") @NonNull String completionId);
+
+	@GET("chat/completions")
+	Single<DataList<ChatCompletionsResponse>> chatCompletions(
+			@Query("limit") Integer limit, @Query("order") String order, @Query("after") String after, @Query("metadata") String metadata, @Query("model") String model);
+
+	@POST("chat/completions/{completion_id}")
+	Single<ChatCompletionsResponse> chatCompletions(@Path("completion_id") @NonNull String completionId, @Body @NonNull Map<String,String> metadata);
+
+	@GET("chat/completions/{completion_id}/messages")
+	Single<DataList<OpenAiChatMessage>> chatCompletionsMessages(@Path("completion_id") @NonNull String completionId,
+			@Query("limit") Integer limit, @Query("order") String order, @Query("after") String after);
+
+	@DELETE("chat/completions/{completion_id}")
+	Single<DeleteResponse> chatCompletionsDelete(@Path("completion_id") @NonNull String completionId);
 
 	@POST("images/generations")
 	Single<DataList<Image>> imagesGenerations(@Body @NonNull ImagesRequest req);
@@ -129,7 +147,7 @@ public interface OpenAiApi {
 			@Query("after") String after);
 
 	@GET("fine_tuning/jobs/{fine_tuning_job_id}")
-	Single<FineTuningJob> fineTuningJobsGet(@Path("fine_tuning_job_id") @NonNull String fineTuningJobId);
+	Single<FineTuningJob> fineTuningJobs(@Path("fine_tuning_job_id") @NonNull String fineTuningJobId);
 
 	@POST("fine_tuning/jobs/{fine_tuning_job_id}/cancel")
 	Single<FineTuningJob> fineTuningJobsCancel(@Path("fine_tuning_job_id") @NonNull String fineTuningJobId);
@@ -154,10 +172,10 @@ public interface OpenAiApi {
 			@Query("before") String before);
 
 	@GET("assistants/{assistant_id}")
-	Single<Assistant> assistantsGet(@Path("assistant_id") @NonNull String assistantId);
+	Single<Assistant> assistants(@Path("assistant_id") @NonNull String assistantId);
 
 	@GET("assistants/{assistant_id}/files/{file_id}")
-	Single<File> assistantsFilesGet(@Path("assistant_id") @NonNull String assistantId,
+	Single<File> assistantsFiles(@Path("assistant_id") @NonNull String assistantId,
 			@Path("file_id") @NonNull String fileId);
 
 	@POST("assistants/{assistant_id}")
@@ -175,7 +193,7 @@ public interface OpenAiApi {
 	Single<OpenAiThread> threads(@Body @NonNull ThreadsRequest req);
 
 	@GET("threads/{thread_id}")
-	Single<OpenAiThread> threadsGet(@Path("thread_id") @NonNull String threadId);
+	Single<OpenAiThread> threads(@Path("thread_id") @NonNull String threadId);
 
 	@POST("threads/{thread_id}")
 	Single<OpenAiThread> threadsModify(@Path("thread_id") @NonNull String threadId, @Body @NonNull Metadata metadata);
@@ -198,7 +216,7 @@ public interface OpenAiApi {
 			@Query("after") String after, @Query("before") String before);
 
 	@GET("threads/{thread_id}/messages/{message_id}")
-	Single<Message> threadsMessagesGet(@Path("thread_id") @NonNull String threadId,
+	Single<Message> threadsMessages(@Path("thread_id") @NonNull String threadId,
 			@Path("message_id") @NonNull String messageId);
 
 	@GET("threads/{thread_id}/messages/{message_id}/files/{file_id}")
@@ -225,10 +243,10 @@ public interface OpenAiApi {
 			@Query("after") String after, @Query("before") String before);
 
 	@GET("threads/{thread_id}/runs/{run_id}")
-	Single<Run> threadsRunsGet(@Path("thread_id") @NonNull String threadId, @Path("run_id") @NonNull String runId);
+	Single<Run> threadsRuns(@Path("thread_id") @NonNull String threadId, @Path("run_id") @NonNull String runId);
 
 	@GET("threads/{thread_id}/runs/{run_id}/steps/{step_id}")
-	Single<RunStep> threadsRunsStepsGet(@Path("thread_id") @NonNull String threadId,
+	Single<RunStep> threadsRunsSteps(@Path("thread_id") @NonNull String threadId,
 			@Path("run_id") @NonNull String runId, @Path("step_id") @NonNull String stepId);
 
 	@GET("threads/{thread_id}/runs/{run_id}")

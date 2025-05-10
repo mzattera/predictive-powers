@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -47,7 +46,7 @@ class OpenAiModelServiceTest {
 
 	// TODO URGENT Test that vision support is set correctly by sending images
 
-	// Models still returned by models API, but decommissioned
+	// Models still returned by models API, but de-commissioned
 	private final static Set<String> OLD_MODELS = new HashSet<>();
 	static {
 		// Not needed any longer, left here in case the problem re-appears
@@ -74,35 +73,30 @@ class OpenAiModelServiceTest {
 			OpenAiModelService modelSvc = oai.getModelService();
 
 			Set<String> deprecated = new HashSet<>(OLD_MODELS);
-			Set<String> actual = OpenAiModelService.getModelsMetadata() //
-					.map(OpenAiModelMetaData::getModel) //
-					.collect(Collectors.toSet());
-
+			Set<String> actual = OpenAiModelService.getModelsMetadata();
 			List<Model> models = oai.getClient().listModels();
 			assertTrue(models.size() > 0);
 
 			for (Model m : models) {
 				String model = m.getId();
+				actual.remove(model);
 
 				if (model.contains("ft"))
 					continue; // fine-tunes can be ignored
 				if (deprecated.remove(model))
 					continue; // Skip old models
 
-				boolean found = actual.remove(model);
-				if (!found)
-					System.out.println("NEW model not listed: " + m);
-				assertTrue(found);
-
 				OpenAiModelMetaData md = modelSvc.get(model);
-				assertTrue(md != null);
-				if ((md.getSupportedApi() == SupportedApi.IMAGES) || (md.getSupportedApi() == SupportedApi.STT))
-					continue;
+				assertTrue(md != null, "Missing model: " + model);
+				assertEquals(model, md.getModel(), "Model mismatch: " + model + " " + md.getModel());
+				if (!md.getSupportedApis().contains(SupportedApi.CHAT)
+						&& !md.getSupportedApis().contains(SupportedApi.ASSISTANTS))
+					continue; // Skip checking tokenizer
 
 				// Check that tokenizer and context size are provided
-				if (md.getSupportedApi() != SupportedApi.TTS) // Text to speech models do not have encoders
-					assertTrue(modelSvc.getTokenizer(model) != null);
-				assertTrue(modelSvc.getContextSize(model) > 0);
+				assertTrue(modelSvc.getTokenizer(model) != null);
+				assertTrue(modelSvc.getContextSize(model, -1) > 0);
+				assertTrue(modelSvc.getMaxNewTokens(model, -1) > 0);
 			}
 
 			// Check OLD_MODELS does not contain things we do not need any longer.
@@ -111,27 +105,12 @@ class OpenAiModelServiceTest {
 			}
 			assertEquals(0, deprecated.size());
 
-			// Check CONTEXT_SIZES does not contain things we do not need any longer.
-			int skip = 0;
+			// Check we do not keep things we do not need any longer.
 			for (String m : actual) {
-				if (m.startsWith("gpt-4-32k")) { // For some reason, we do not have access to these models
-					++skip;
-					continue;
-				}
 				System.out.println("Model no longer there: " + m);
 			}
-			assertEquals(skip, actual.size());
+			assertEquals(0, actual.size());
 
-		} // Close endpoint
-	}
-
-	@Test
-	void test02() {
-		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
-			String id = "gpt-3.5-turbo";
-			Model model = oai.getClient().retrieveModel(id);
-			assertEquals(id, model.getId());
-			assertEquals("model", model.getObject());
 		} // Close endpoint
 	}
 
@@ -140,10 +119,10 @@ class OpenAiModelServiceTest {
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
 			OpenAiModelService modelSvc = endpoint.getModelService();
 			return modelSvc.listModels().stream() //
-					.filter(model -> !model.startsWith("gpt-4-32k")) //
+//					.filter(model -> !model.startsWith("gpt-4-32k")) //
 					.map(model -> modelSvc.get(model)) //
 					.filter(meta -> meta != null) //
-					.filter(meta -> meta.getSupportedApi() == SupportedApi.CHAT);
+					.filter(meta -> (meta.getSupportedApis().contains(SupportedApi.CHAT)||meta.getSupportedApis().contains(SupportedApi.ASSISTANTS)));
 		}
 	}
 
@@ -155,6 +134,9 @@ class OpenAiModelServiceTest {
 	void test03(OpenAiModelMetaData md) {
 		try (OpenAiEndpoint oai = new OpenAiEndpoint()) {
 			ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(md.getModel()).build();
+			if (md.supportsAudioOutput())
+				// TODO  Test audio models; will need AUDIO tools
+				return;
 
 			// Bypass setTools() to make sure we test the correct function call type
 			switch (md.getSupportedCallType()) {

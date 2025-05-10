@@ -33,17 +33,14 @@ public class OpenAiException extends HttpException {
     private int requestLength = -1;
     @Getter
     private int maxContextLength = -1;
-
-    // New fields for headers
     @Getter
-    private final String openaiOrganization;
+    private final String openAiOrganization;
     @Getter
-    private final String openaiProcessingMs;
+    private final String openAiProcessingMs;
     @Getter
-    private final String openaiVersion;
+    private final String openAiVersion;
     @Getter
     private final String requestId;
-
     @Getter
     private final int rateLimitLimitRequests;
     @Getter
@@ -88,10 +85,9 @@ public class OpenAiException extends HttpException {
             }
         }
 
-        // Extract headers (nullable, as they might not be present)
-        openaiOrganization = response.headers().get("openai-organization");
-        openaiProcessingMs = response.headers().get("openai-processing-ms");
-        openaiVersion = response.headers().get("openai-version");
+        openAiOrganization = response.headers().get("openai-organization");
+        openAiProcessingMs = response.headers().get("openai-processing-ms");
+        openAiVersion = response.headers().get("openai-version");
         requestId = response.headers().get("x-request-id");
 
         rateLimitLimitRequests = parseIntHeader(response, "x-ratelimit-limit-requests");

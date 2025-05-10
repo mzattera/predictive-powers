@@ -31,6 +31,7 @@ import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsReq
 import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
+import lombok.Getter;
 
 public class OpenAiExceptionTest {
 
@@ -52,6 +53,19 @@ public class OpenAiExceptionTest {
 			assertEquals(20000, e.getCompletionLength());
 			assertEquals(20003, e.getRequestLength());
 			assertEquals(16385, e.getMaxContextLength());
+
+//		    System.out.println("openAiOrganization: "+e.getOpenAiOrganization());
+//		    System.out.println("openAiProcessingMs: "+e.getOpenAiProcessingMs());
+//		    System.out.println("openAiVersion: "+e.getOpenAiVersion());
+//		    System.out.println("requestId: "+e.getRequestId());
+//		    System.out.println("rateLimitLimitRequests: "+e.getRateLimitLimitRequests());
+//		    System.out.println("rateLimitLimitTokens: "+e.getRateLimitLimitTokens());
+//		    System.out.println("rateLimitRemainingRequests: "+e.getRateLimitRemainingRequests());
+//		    System.out.println("rateLimitRemainingTokens: "+e.getRateLimitRemainingTokens());
+//		    System.out.println("rateLimitResetRequests: "+e.getRateLimitResetRequests());
+//		    System.out.println("rateLimitResetTokens: "+e.getRateLimitResetTokens());
+//			System.out.println(e.toString());
+//			System.out.println(e.getErrorDetails().toString());
 		}
 	}
 
@@ -74,6 +88,21 @@ public class OpenAiExceptionTest {
 			assertTrue(e.isContextLengthExceeded());
 			assertEquals(10000, e.getRequestLength());
 			assertEquals(4096, e.getCompletionLength());
+
+//		    System.out.println("openAiOrganization: "+e.getOpenAiOrganization());
+//		    System.out.println("openAiProcessingMs: "+e.getOpenAiProcessingMs());
+//		    System.out.println("openAiVersion: "+e.getOpenAiVersion());
+//		    System.out.println("requestId: "+e.getRequestId());
+//		    System.out.println("rateLimitLimitRequests: "+e.getRateLimitLimitRequests());
+//		    System.out.println("rateLimitLimitTokens: "+e.getRateLimitLimitTokens());
+//		    System.out.println("rateLimitRemainingRequests: "+e.getRateLimitRemainingRequests());
+//		    System.out.println("rateLimitRemainingTokens: "+e.getRateLimitRemainingTokens());
+//		    System.out.println("rateLimitResetRequests: "+e.getRateLimitResetRequests());
+//		    System.out.println("rateLimitResetTokens: "+e.getRateLimitResetTokens());
+//			System.out.println(e.toString());
+//			System.out.println(e.getErrorDetails().toString());
+//			System.out.println(e.toString());
+//			System.out.println(e.getErrorDetails().toString());
 		}
 	}
 }

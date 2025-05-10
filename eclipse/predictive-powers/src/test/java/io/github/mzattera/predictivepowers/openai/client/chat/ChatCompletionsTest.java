@@ -59,6 +59,7 @@ class ChatCompletionsTest {
 		return svcs.stream();
 	}
 
+	@DisplayName("Tests stop token")
 	@ParameterizedTest
 	@MethodSource("services")
 	void test01(Pair<OpenAiEndpoint, String> p) {
@@ -80,6 +81,7 @@ class ChatCompletionsTest {
 		assertEquals("stop", resp.getChoices().get(0).getFinishReason());
 	}
 
+	@DisplayName("Test setting TopP")
 	@ParameterizedTest
 	@MethodSource("services")
 	void test02(Pair<OpenAiEndpoint, String> p) {
@@ -101,7 +103,7 @@ class ChatCompletionsTest {
 				|| "length".equals(resp.getChoices().get(0).getFinishReason()));
 	}
 
-	@DisplayName("Test returning logprobs.")
+	@DisplayName("Test returning logprobs")
 	@Test
 	void testLogProbs() {
 
@@ -128,7 +130,7 @@ class ChatCompletionsTest {
 		}
 	}
 
-	@DisplayName("Testing seed and fingerprint.")
+	@DisplayName("Testing seed and fingerprint")
 	@ParameterizedTest
 	@MethodSource("services")
 	void testReproduceable(Pair<OpenAiEndpoint, String> p) {
@@ -151,7 +153,7 @@ class ChatCompletionsTest {
 			assertTrue(resp.getSystemFingerprint().length() > 0);
 	}
 
-	@DisplayName("Testing response format.")
+	@DisplayName("Testing response format")
 	@Test
 	void testResponseFormat() {
 

@@ -41,12 +41,11 @@ import io.github.mzattera.predictivepowers.TestConfiguration;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedCallType;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.CallType;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.Toolset;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
-import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
@@ -84,7 +83,7 @@ public class OpenAiChatServiceTest {
 	@DisplayName("Check completions not affecting history.")
 	@ParameterizedTest
 	@MethodSource("services")
-	public void test01(Pair<OpenAiEndpoint, String> p) throws Exception {
+	void test01(Pair<OpenAiEndpoint, String> p) throws Exception {
 		try (OpenAiChatService cs = p.getLeft().getChatService(p.getRight())) {
 			assertEquals(0, cs.getModifiableHistory().size());
 
@@ -110,7 +109,7 @@ public class OpenAiChatServiceTest {
 	@DisplayName("Check chat and history management.")
 	@ParameterizedTest
 	@MethodSource("services")
-	public void test02(Pair<OpenAiEndpoint, String> p) throws Exception {
+	void test02(Pair<OpenAiEndpoint, String> p) throws Exception {
 		OpenAiEndpoint ep = p.getLeft();
 		String model = p.getRight();
 		try (OpenAiChatService cs = ep.getChatService(model); OpenAiModelService modelService = ep.getModelService();) {
@@ -252,7 +251,7 @@ public class OpenAiChatServiceTest {
 	@DisplayName("Check chat and history management with exception.")
 	@ParameterizedTest
 	@MethodSource("services")
-	public void test03(Pair<OpenAiEndpoint, String> p) throws Exception {
+	void test03(Pair<OpenAiEndpoint, String> p) throws Exception {
 		OpenAiEndpoint ep = p.getLeft();
 		String model = p.getRight();
 		try (OpenAiChatService cs = ep.getChatService(model)) {
@@ -285,7 +284,7 @@ public class OpenAiChatServiceTest {
 
 	@DisplayName("Getters and setters.")
 	@Test
-	public void testGettersAndSetters() {
+	void testGettersAndSetters() {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
 			OpenAiChatService s = ep.getChatService();
 			String m = s.getModel();
@@ -325,10 +324,11 @@ public class OpenAiChatServiceTest {
 		if (!TestConfiguration.TEST_OPENAI_SERVICES)
 			return;
 
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint(); OpenAiChatService svc = endpoint.getChatService();) {
-			svc.setModel("gpt-4-vision-preview");
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
+				OpenAiChatService svc = endpoint.getChatService("gpt-4-turbo");) {
 
-			ChatMessage msg = new ChatMessage(Author.USER, "Is there any grass in this image?");
+			// Uses an image as input.
+			ChatMessage msg = new ChatMessage("Is there any grass in this image?");
 			msg.getParts().add(FilePart.fromUrl(
 					"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
 					"image/jpeg"));
@@ -336,26 +336,41 @@ public class OpenAiChatServiceTest {
 			System.out.println(resp.getText());
 			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
 			assertTrue(resp.getText().toUpperCase().contains("YES"));
+
+			// Sends another message to show that the image is kept in history correctly
+			resp = svc.chat("What material the pathway in the picture is made of?");
+			System.out.println(resp.getText());
+			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
+			assertTrue(resp.getText().toUpperCase().contains("WOOD"));
+
 		} // Close endpoint
 	}
 
-	@DisplayName("Test image URLs in messages.")
+	@DisplayName("Test image in messages.")
 	@Test
 	void testImgFiles() throws MalformedURLException, URISyntaxException {
 
 		if (!TestConfiguration.TEST_OPENAI_SERVICES)
 			return;
 
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint(); //
-				OpenAiChatService svc = endpoint.getChatService();) {
-			svc.setModel("gpt-4-vision-preview");
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
+				OpenAiChatService svc = endpoint.getChatService("gpt-4-turbo");) {
 
-			ChatMessage msg = new ChatMessage(Author.USER, "Is there any grass in this image?");
+			// Uses an image as input.
+			ChatMessage msg = new ChatMessage("Is there any grass in this image?");
 			msg.getParts().add(new FilePart(
-					ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk.jpg"), "image/jpeg"));
+					ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png"), "image/png"));
 			ChatCompletion resp = svc.chat(msg);
+			System.out.println(resp.getText());
 			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
 			assertTrue(resp.getText().toUpperCase().contains("YES"));
+
+			// Sends another message to show that the image is kept in history correctly
+			resp = svc.chat("What material the pathway in the picture is made of?");
+			System.out.println(resp.getText());
+			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
+			assertTrue(resp.getText().toUpperCase().contains("WOOD"));
+
 		} // Close endpoint
 	}
 
@@ -378,8 +393,8 @@ public class OpenAiChatServiceTest {
 			// Tests with functions
 			String model = null;
 			for (String modelId : modelSvc.listModels())
-				if ((modelSvc.getSupportedCallType(modelId) == SupportedCallType.FUNCTIONS)
-						&& (modelSvc.getSupportedApi(modelId) == SupportedApi.CHAT)) {
+				if ((modelSvc.getSupportedCallType(modelId) == CallType.FUNCTIONS)
+						&& modelSvc.getSupportedApis(modelId).contains(SupportedApi.CHAT)) {
 					model = modelId;
 					break;
 				}
@@ -395,8 +410,8 @@ public class OpenAiChatServiceTest {
 			// Tests with tools
 			model = null;
 			for (String modelId : modelSvc.listModels())
-				if ((modelSvc.getSupportedCallType(modelId) == SupportedCallType.TOOLS)
-						&& (modelSvc.getSupportedApi(modelId) == SupportedApi.CHAT)) {
+				if ((modelSvc.getSupportedCallType(modelId) == CallType.TOOLS)
+						&& modelSvc.getSupportedApis(modelId).contains(SupportedApi.CHAT)) {
 					model = modelId;
 					break;
 				}

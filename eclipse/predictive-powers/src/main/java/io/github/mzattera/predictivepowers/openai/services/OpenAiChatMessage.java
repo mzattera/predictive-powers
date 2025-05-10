@@ -250,6 +250,7 @@ public class OpenAiChatMessage {
 	}
 
 	/** The role of the messages author */
+	@NonNull
 	private Role role;
 
 	/**
@@ -387,11 +388,21 @@ public class OpenAiChatMessage {
 	 */
 	private FunctionCall functionCall;
 
-	public OpenAiChatMessage(Role role, String content) {
+	public OpenAiChatMessage(@NonNull String content) {
+		this(Role.USER, content, null);
+	}
+
+	// Some roles might use a null content
+	public OpenAiChatMessage(@NonNull Role role, String content) {
 		this(role, content, null);
 	}
 
-	public OpenAiChatMessage(Role role, String content, String name) {
+	public OpenAiChatMessage(@NonNull String content, String name) {
+		this(Role.USER, content, name);
+	}
+
+	// Some roles might use a null content
+	public OpenAiChatMessage(@NonNull Role role, String content, String name) {
 		this.role = role;
 		setContent(content);
 		this.name = name;

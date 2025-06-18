@@ -52,6 +52,7 @@ import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
  * This implements a generic ReAct agent.
@@ -59,6 +60,8 @@ import lombok.NonNull;
 public class ReactAgent extends OpenAiChatService {
 
 	private final static Logger LOG = LoggerFactory.getLogger(ReactAgent.class);
+
+	public static final String DEFAULT_MODEL = "gpt-4.1";
 
 	/**
 	 * Base class for {@link Tool} parameters for those tools that are available to
@@ -206,6 +209,8 @@ public class ReactAgent extends OpenAiChatService {
 			+ "You are a ReAct (Reasooning and Acting) agent; you task is to execute the below user command in <user_command> tag.\n"
 			+ "\n<user_command>\n{{question}}\n</user_command>\n" //
 //			+ "You are running inside a bigger process, the steps you and other agents already executed in the process are listed below in the <steps> tag.\n"
+			+ "\n# Additional Context and Informations\n\n" //
+			+ "{{context}}\n\n" //
 			+ "\n# Instructions\n\n" //
 			+ "  * Carefully plan the steps required to execute the user's command.\n"
 			+ "  * At each new step, use the most suitable tool at your disposal to progress towards executing the user's command. **NEVER** output a step to indicate a tall call, but call the tool directly.\n"
@@ -218,6 +223,13 @@ public class ReactAgent extends OpenAiChatService {
 			+ "\n<schema>\n" + JsonSchema.fromSchema(Step.class).asJsonSchema() + "\n</schema>\n\n" //
 //			+ "\n<step>\n{{steps}}\n</steps>\n";
 	;
+
+	/**
+	 * Any additional context you want to provide to the agent.
+	 */
+	@Getter
+	@Setter
+	private @NonNull String context = "";
 
 	/**
 	 * Last question the agent needs to answer / command to execute.
@@ -262,9 +274,12 @@ public class ReactAgent extends OpenAiChatService {
 
 	// TODO Make it a wrapper of another agent instead? A lot of code forwarding...
 
-	public ReactAgent(@NonNull String id, OpenAiEndpoint enpoint, @NonNull List<? extends Tool> tools)
+	public ReactAgent(@NonNull String id, @NonNull OpenAiEndpoint enpoint, @NonNull List<? extends Tool> tools)
 			throws ToolInitializationException {
-		super(id, enpoint);
+		
+		// TODO URGENT Better constructor or builder that takes context as well
+		
+		super(id, enpoint, DEFAULT_MODEL);
 		addCapability(new Toolset(tools));
 		setResponseFormat(Step.class);
 
@@ -277,6 +292,7 @@ public class ReactAgent extends OpenAiChatService {
 		clearConversation();
 		Map<String, String> map = new HashMap<>();
 		map.put("question", question);
+		map.put("context", context);
 		map.put("steps", JsonSchema.JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(steps));
 
 		setPersonality(CompletionService.fillSlots(PROMPT_TEMPLATE, map));
@@ -289,7 +305,7 @@ public class ReactAgent extends OpenAiChatService {
 				.observation("Execution just started") //
 				.build();
 		steps.add(step);
-		LOG.debug("Agent's prompt:\n\n" + getPersonality());
+//		LOG.debug("Agent's prompt:\n\n" + getPersonality());
 		LOG.debug(JsonSchema.JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(step));
 
 		// execution loop

@@ -113,7 +113,7 @@ public class ExecutorAgent extends ReactAgent implements Tool {
 		this.agent = agent;
 	}
 
-	public ExecutorAgent(@NonNull String id, @NonNull String description, OpenAiEndpoint enpoint,
+	public ExecutorAgent(@NonNull String id, @NonNull String description, @NonNull OpenAiEndpoint enpoint,
 			@NonNull List<? extends Tool> tools) throws ToolInitializationException, JsonProcessingException {
 		super(id, enpoint, tools);
 		this.description = description;

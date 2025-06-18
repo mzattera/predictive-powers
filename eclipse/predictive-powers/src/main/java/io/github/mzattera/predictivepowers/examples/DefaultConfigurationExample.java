@@ -27,8 +27,10 @@ public class DefaultConfigurationExample {
 				OpenAiCompletionService cs = endpoint.getCompletionService();) {
 
 			// Set "best_of" parameter in default request, this will affect all further
-			// calls
-			cs.getDefaultReq().setBestOf(3);
+			// calls. Noticve the object is immutable, so we have to copy it.
+			cs.setDefaultRequest( //
+					cs.getDefaultRequest().toBuilder().bestOf(3).build() //
+			);
 
 			// this call (and subsequent ones) now uses best_of = 3
 			System.out.println(cs.complete("Alan Turing was").getText());

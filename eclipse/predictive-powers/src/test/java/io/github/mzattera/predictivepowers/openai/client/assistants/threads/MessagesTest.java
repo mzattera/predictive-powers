@@ -51,8 +51,8 @@ public class MessagesTest {
 
 			assertEquals(thread.getId(), msg.getThreadId());
 			assertEquals(original.getRole(), msg.getRole());
-			assertEquals(1, msg.getContent().size());
-			assertEquals(original.getContent(), msg.getContent().get(0).getText().getValue());
+			assertEquals(1, msg.getTextContent().size());
+			assertEquals(original.getTextContent(), msg.getTextContent().get(0).getText().getValue());
 		}
 	}
 }

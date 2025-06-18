@@ -28,7 +28,8 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Base64;
 
-import io.github.mzattera.util.ImageUtil;
+import io.github.mzattera.predictivepowers.util.FileUtil;
+import io.github.mzattera.predictivepowers.util.ImageUtil;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -56,83 +57,106 @@ public class Base64FilePart extends FilePart {
 	@Getter
 	private String name;
 
+	/**
+	 * Constructor from file; notice the file will be inspected to determine MIME
+	 * type.
+	 */
 	public Base64FilePart(@NonNull File file) throws IOException {
 		super(file);
-		init(super.getInputStream().readAllBytes(), super.getName());
-	}
-
-	public Base64FilePart(@NonNull File file, String mimeType) throws IOException {
-		super(file, mimeType);
-		init(super.getInputStream().readAllBytes(), super.getName());
-	}
-
-	public Base64FilePart(@NonNull URL url) throws IOException {
-		super(url);
-		init(super.getInputStream().readAllBytes(), super.getName());
-	}
-
-	public Base64FilePart(@NonNull URL url, String mimeType) throws IOException {
-		super(url, mimeType);
-		init(super.getInputStream().readAllBytes(), super.getName());
-	}
-
-	public Base64FilePart(String encodedContent, String name, String mimeType) {
-		super(mimeType);
-		init(Base64.getDecoder().decode(encodedContent), name);
-	}
-
-	public Base64FilePart(InputStream in, String name, String mimeType) throws IOException {
-		super(mimeType);
-		init(in.readAllBytes(), name);
-	}
-
-	public Base64FilePart(byte[] bytes, String name, String mimeType) {
-		super(mimeType);
-		init(bytes, name);
-	}
-
-	public Base64FilePart(FilePart file) throws IOException {
-		super(file.getMimeType());
-		init(file.getInputStream().readAllBytes(), file.getName());
-	}
-
-	private void init(byte[] bytes, String name) {
-		encodedContent = Base64.getEncoder().encodeToString(bytes);
-		this.name = name;
+		init(super.getInputStream().readAllBytes(), super.getName(), super.getMimeType());
 	}
 
 	/**
-	 * Return a image scaled down for OpenAI vision models.
-	 * 
-	 * As the image is scaled down anyway before being submitted to the model, it
-	 * makes sense to scale down local images before sending them to the API. This
-	 * saves tokens and reduces latency (see
-	 * {@linkplain https://platform.openai.com/docs/guides/vision}).
-	 * 
-	 * @return The same image if it is already scaled down, or its scaled down
-	 *         version.
-	 * @throws IOException
+	 * Constructor from file.
 	 */
-	public static Base64FilePart forOpenAiImage(FilePart file) throws IOException {
+	public Base64FilePart(@NonNull File file, String mimeType) throws IOException {
+		super(file, mimeType);
+		init(super.getInputStream().readAllBytes(), super.getName(), mimeType);
+	}
 
-		BufferedImage img = ImageUtil.fromBytes(file.getInputStream());
+	/**
+	 * Constructor from URL; notice the URL will be inspected to determine MIME
+	 * type.
+	 */
+	public Base64FilePart(@NonNull URL url) throws IOException {
+		super(url);
+		init(super.getInputStream().readAllBytes(), super.getName(), super.getMimeType());
+	}
 
-		int w = img.getWidth();
-		int h = img.getHeight();
-		double scale1 = 2000d / w;
-		double scale2 = 768d / h;
-		double scale = Math.min(scale1, scale2);
+	/**
+	 * Constructor from URL.
+	 */
+	public Base64FilePart(@NonNull URL url, String mimeType) throws IOException {
+		super(url, mimeType);
+		init(super.getInputStream().readAllBytes(), super.getName(), mimeType);
+	}
 
-		if (scale < 1.0d) {
-			w *= scale;
-			h *= scale;
-			BufferedImage resizedImage = new BufferedImage(w, h, img.getType());
-			Graphics2D graphics2D = resizedImage.createGraphics();
-			graphics2D.drawImage(img, 0, 0, w, h, null);
-			graphics2D.dispose();
-			return new Base64FilePart(ImageUtil.toBytes("png", resizedImage), file.getName(), "image/png");
+	/**
+	 * Constructor from image; a name for this file must be provided.
+	 */
+	public Base64FilePart(BufferedImage image, String name) throws IOException {
+		init(ImageUtil.toBytes(image, "png"), name, "image/png");
+	}
+
+	/**
+	 * Constructor from encoded content; a name for this file must be provided.
+	 * Notice the content is inspected to determine MIME type.
+	 */
+	public Base64FilePart(String encodedContent, String name) {
+		init(Base64.getDecoder().decode(encodedContent), name, null);
+	}
+
+	/**
+	 * Constructor from encoded content; a name for this file must be provided.
+	 */
+	public Base64FilePart(String encodedContent, String name, String mimeType) {
+		init(Base64.getDecoder().decode(encodedContent), name, mimeType);
+	}
+
+	/**
+	 * Constructor from stream content; a name for this file must be provided.
+	 * Notice the content is inspected to determine MIME type.
+	 */
+	public Base64FilePart(InputStream in, String name) throws IOException {
+		init(in.readAllBytes(), name, null);
+	}
+
+	/**
+	 * Constructor from stream content; a name for this file must be provided
+	 */
+	public Base64FilePart(InputStream in, String name, String mimeType) throws IOException {
+		init(in.readAllBytes(), name, mimeType);
+	}
+
+	/**
+	 * Constructor from byte content; a name for this file must be provided. Notice
+	 * the content is inspected to determine MIME type.
+	 */
+	public Base64FilePart(byte[] bytes, String name) {
+		init(bytes, name, null);
+	}
+
+	/**
+	 * Constructor from byte content; a name for this file must be provided.
+	 */
+	public Base64FilePart(byte[] bytes, String name, String mimeType) {
+		init(bytes, name, mimeType);
+	}
+
+	/**
+	 * "Copy" constructor.
+	 */
+	public Base64FilePart(FilePart file) throws IOException {
+		init(file.getInputStream().readAllBytes(), file.getName(), file.getMimeType());
+	}
+
+	private void init(byte[] bytes, String name, String mimeType) {
+		this.name = name;
+		this.encodedContent = Base64.getEncoder().encodeToString(bytes);
+		if (mimeType == null) {
+			this.setMimeType(FileUtil.getMimeType(bytes));
 		} else {
-			return new Base64FilePart(file);
+			this.setMimeType(mimeType);
 		}
 	}
 
@@ -141,13 +165,15 @@ public class Base64FilePart extends FilePart {
 	 * 
 	 * As the image is scaled down anyway before being submitted to the model, it
 	 * makes sense to scale down local images before sending them to the API. This
-	 * saves tokens and reduces latency (see
-	 * {@linkplain https://docs.anthropic.com/claude/docs/vision}).
+	 * saves tokens and reduces latency.
+	 * 
+	 * @see <a href="https://docs.anthropic.com/claude/docs/vision">Vision guide</a>
 	 * 
 	 * @return The same image, if it is already scaled down, otherwise its scaled
 	 *         down version.
 	 * @throws IOException
 	 */
+	// TODO URGENT move it out of here
 	public static Base64FilePart forAnthropicImage(FilePart file) throws IOException {
 
 		BufferedImage img = ImageUtil.fromBytes(file.getInputStream());
@@ -166,7 +192,7 @@ public class Base64FilePart extends FilePart {
 			Graphics2D graphics2D = resizedImage.createGraphics();
 			graphics2D.drawImage(img, 0, 0, w, h, null);
 			graphics2D.dispose();
-			return new Base64FilePart(ImageUtil.toBytes("png", resizedImage), file.getName(), "image/png");
+			return new Base64FilePart(ImageUtil.toBytes(resizedImage, "png"), file.getName(), "image/png");
 		} else {
 			return new Base64FilePart(file);
 		}

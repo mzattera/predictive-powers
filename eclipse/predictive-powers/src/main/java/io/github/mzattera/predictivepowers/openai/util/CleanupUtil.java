@@ -16,18 +16,17 @@
 
 package io.github.mzattera.predictivepowers.openai.util;
 
-import java.util.List;
 import java.util.Scanner;
 
-import io.github.mzattera.predictivepowers.openai.client.DataList;
-import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
+import com.openai.client.OpenAIClient;
+import com.openai.core.JsonValue;
+import com.openai.models.beta.assistants.Assistant;
+import com.openai.models.files.FileObject;
+import com.openai.models.finetuning.jobs.FineTuningJob;
+import com.openai.models.finetuning.jobs.FineTuningJob.Status;
+import com.openai.models.models.Model;
+
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.SortOrder;
-import io.github.mzattera.predictivepowers.openai.client.assistants.Assistant;
-import io.github.mzattera.predictivepowers.openai.client.files.File;
-import io.github.mzattera.predictivepowers.openai.client.finetuning.FineTuningJob;
-import io.github.mzattera.predictivepowers.openai.client.finetuning.FineTuningJob.Status;
-import io.github.mzattera.predictivepowers.openai.client.models.Model;
 
 /**
  * Deletes all files and all model fine-tunes.
@@ -53,28 +52,27 @@ public class CleanupUtil {
 		}
 
 		try (OpenAiEndpoint ep = new OpenAiEndpoint()) {
-			OpenAiClient cli = ep.getClient();
+			OpenAIClient cli = ep.getClient();
 
 			// Cancel tuning tasks
 			System.out.println("Cancelling FineTunes...");
-			List<FineTuningJob> tasks = DataList.getCompleteList((last) -> cli.listFineTuningJobs(null, last));
-			for (FineTuningJob task : tasks) {
-				Status status = task.getStatus();
+			for (FineTuningJob task : cli.fineTuning().jobs().list().autoPager()) {
+				Status status = task.status();
 				if ((status == Status.VALIDATING_FILES) || (status == Status.RUNNING)) {
-					status = cli.cancelFineTuning(task.getId()).getStatus();
-					System.out.println("Cancelling task: " + task.getId() + " => " + status);
+					status = cli.fineTuning().jobs().cancel(task.id()).status();
+					System.out.println("Cancelling task: " + task.id() + " => " + status);
 				} else {
-					System.out.println("\tTask cannot be cancelled: " + task.getId() + " => " + status);
+					System.out.println("\tTask cannot be cancelled: " + task.id() + " => " + status);
 				}
 			}
 
 			// Delete fine tunes models
 			System.out.println("Deleting Models...");
-			for (Model m : cli.listModels()) {
-				if (!"openai".equals(m.getOwnedBy()) && !"openai-internal".equals(m.getOwnedBy())
-						&& !"system".equals(m.getOwnedBy())) // custom model
-					System.out.println("Deleting fine tuned model: " + m.getId() + " => "
-							+ cli.deleteFineTunedModel(m.getId()).isDeleted());
+			for (Model m : cli.models().list().data()) {
+				if (!"openai".equals(m.ownedBy()) && !"openai-internal".equals(m.ownedBy())
+						&& !"system".equals(m.ownedBy())) // custom model
+					System.out.println(
+							"\tDeleting fine tuned model: " + m.id() + " => " + cli.models().delete(m.id()).deleted());
 			}
 
 			// Here one should delete threads and runs, but there is no way to do it in the
@@ -82,23 +80,31 @@ public class CleanupUtil {
 
 			// Delete assistants: assistants file are cascaded deleted
 			System.out.println("Deleting Assistants...");
-			List<Assistant> l = DataList
-					.getCompleteList((last) -> cli.listAssistants(SortOrder.ASCENDING, null, null, last));
-			for (Assistant a : l) {
-				if ("true".equals(a.getMetadata().get("_persist")))
-					System.out.println("Assistant is persisted: " + a.getId());
+			for (Assistant a : cli.beta().assistants().list().autoPager()) {
+				JsonValue def = a.metadata().orElse(Assistant.Metadata.builder().build()) //
+						._additionalProperties().get("_persist");
+				boolean persist = (def.isMissing() || def.isNull()) ? false : "true".equals(def.toString());
+//				boolean persist = false;
+
+				if (persist)
+					System.out.println("\tAssistant is persisted: " + a.id());
 				else
-					System.out.println(
-							"Deleting assistant: " + a.getId() + " => " + cli.deleteAssistant(a.getId()).isDeleted());
+					try {
+					System.out.println("\tDeleting assistant: " + a.id() + " => "
+							+ cli.beta().assistants().delete(a.id()).deleted());
+					} catch (com.openai.errors.NotFoundException e) {
+						// Sometimes happens
+						System.out.println("\tDeleting assistant: " + a.id() + " => NOT FOUND!");						
+					}
 			}
 
 			// Delete uploaded files
 			System.out.println("Deleting Files...");
-			List<File> files = cli.listFiles();
-			for (File f : files) {
-				System.out.println("Deleting file: " + f.getId() + " => " + cli.deleteFile(f.getId()).isDeleted());
+			for (FileObject f : cli.files().list().autoPager()) {
+				System.out.println("\tDeleting file: " + f.id() + " => " + cli.files().delete(f.id()).deleted());
 			}
-
+			
+			System.out.println("\nCleanup completed.yes");
 		} catch (Exception e) {
 			e.printStackTrace(System.err);
 		}

@@ -18,6 +18,8 @@ package io.github.mzattera.predictivepowers.services.messages;
 
 import java.util.List;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -58,7 +60,21 @@ public class ChatCompletion {
 	 */
 	// TODO consider deprecation
 	public String getText() {
-		return message.getContent();
+		return message.getTextContent();
+	}
+
+	/**
+	 * 
+	 * @return The content of this message as an instance of given class. This
+	 *         assumes {@link #getText()} will return a properly formatted JSON
+	 *         representation of the object.
+	 * 
+	 * @throws JsonProcessingException If an error occurs while parsing the message
+	 *                                 content.
+	 */
+	public <T> T getObject(Class<T> c) throws JsonProcessingException {
+		String txt = getText();
+		return JsonSchema.JSON_MAPPER.readValue(getText(), c);
 	}
 
 	/**

@@ -36,9 +36,9 @@ public interface AgentService extends AiService {
 
 	/**
 	 * 
-	 * @return All existing agents that this service can provide.
+	 * @return IDs of existing agents that this service can provide.
 	 */
-	List<? extends Agent> listAgents();
+	List<String> getAgentIDs();
 
 	/**
 	 * Creates a new agent.
@@ -81,15 +81,6 @@ public interface AgentService extends AiService {
 	 * @return An agent from its unique ID.
 	 */
 	Agent getAgent(@NonNull String agentId);
-
-	/**
-	 * 
-	 * @param name
-	 * @return An agent by its name; notice name might not be unique. It is up to
-	 *         the implementation to return any agent or throw an exception if there
-	 *         is a name conflict.
-	 */
-	Agent getAgentByName(@NonNull String name);
 
 	/**
 	 * Deletes an agent.

@@ -15,27 +15,26 @@
  */
 package io.github.mzattera.predictivepowers.services;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
-import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
+import io.github.mzattera.predictivepowers.services.Capability.ToolAddedEvent;
+import io.github.mzattera.predictivepowers.services.Capability.ToolRemovedEvent;
 import lombok.NonNull;
 
 /**
  * This is an abstract implementation of an {@link Agent} meant to be
- * sub-classed for easier implmentation of agents.
+ * sub-classed for easier implementation of agents.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public abstract class AbstractAgent implements Agent {
+public abstract class AbstractAgent extends AbstractChatService implements Agent {
 
 	private final static Logger LOG = LoggerFactory.getLogger(AbstractAgent.class);
 
@@ -43,65 +42,58 @@ public abstract class AbstractAgent implements Agent {
 	}
 
 	/**
-	 * Available and already initialized tools. Maps each tool ID into corresponding
-	 * tool instance.
-	 */
-	protected Map<String, Tool> toolMap = new HashMap<>();
-
-	/**
 	 * Available and already initialized capabilities. Maps each capability ID into
 	 * corresponding capability instance.
 	 */
 	protected Map<String, Capability> capabilityMap = new HashMap<>();
 
+	/**
+	 * Available and already initialized tools, across all capabilities. Maps each
+	 * tool ID into corresponding tool instance.
+	 */
+	protected Map<String, Tool> toolMap = new HashMap<>();
+
 	@Override
-	public List<String> getCapabilities() {
-		return Collections.unmodifiableList(new ArrayList<>(capabilityMap.keySet()));
+	public List<String> getCapabilityIDs() {
+		return List.copyOf(capabilityMap.keySet());
 	}
 
-	/**
-	 * Adds a capability. This method automatically closes any previous instance of
-	 * a capability with same ID, removing and disposing its tools from the agent as
-	 * well. It then initializes the new capability.
-	 */
+	@Override
+	public Capability getCapability(@NonNull String capabilityId) {
+		return capabilityMap.get(capabilityId);
+	}
+
 	@Override
 	public void addCapability(@NonNull Capability capability) throws ToolInitializationException {
 
 		// Dispose any existing version of the capability
 		Capability old = capabilityMap.get(capability.getId());
 		if (old != null)
-			removeCapability(old.getId());
+			removeCapability(old);
 
+		// Register as a listener, so tools in the capability will be added
+		// automatically
+		capability.addListener(this);
 		capability.init(this);
-
-		for (String toolId : capability.getToolIds()) {
-			putTool(capability.getNewToolInstance(toolId));
-		}
-
 		capabilityMap.put(capability.getId(), capability);
 	}
 
-	/**
-	 * Removes a capability. The capability and its tools are disposed and removed
-	 * from the agent.
-	 */
 	@Override
 	public void removeCapability(@NonNull String capabilityId) {
-		removeCapability(capabilityMap.get(capabilityId));
+		Capability capability = capabilityMap.get(capabilityId);
+		if (capability != null)
+			removeCapability(capability);
 	}
 
-	private void removeCapability(Capability capability) {
-		if (capability == null)
-			return;
+	@Override
+	public void removeCapability(@NonNull Capability capability) {
 
-		for (String toolId : capability.getToolIds())
-			removeTool(toolId);
 		try {
 			capability.close();
 		} catch (Exception e) {
 			LOG.warn("Error closing capability", e.getMessage());
 		}
-
+		capability.removeListener(this);
 		capabilityMap.remove(capability.getId());
 	}
 
@@ -111,54 +103,39 @@ public abstract class AbstractAgent implements Agent {
 	 */
 	@Override
 	public void clearCapabilities() {
-		for (Capability capability : capabilityMap.values())
-			removeCapability(capability);
-		capabilityMap.clear();
-	}
-
-	/**
-	 * This is called when a tool must be added to the agent. Default implementation
-	 * disposes any existing instance of the tool, then initializes the new one and
-	 * adds it to the tool list.
-	 */
-	protected void putTool(@NonNull Tool tool) throws ToolInitializationException {
-
-		// Tries if init goes
-		tool.init(this);
-
-		// Closes older version of this tool, if any
-		removeTool(tool.getId());
-
-		toolMap.put(tool.getId(), tool);
-	}
-
-	/**
-	 * This is called when a tool must be removed from the agent. Default
-	 * implementation disposes the tool after removing it.
-	 * 
-	 * @return true if the tool has been removed (it existed in the list of agent's
-	 *         tools).
-	 */
-	protected boolean removeTool(@NonNull String toolId) {
-		Tool old = toolMap.remove(toolId);
-		if (old != null) {
-			try {
-				old.close();
-			} catch (Exception e) {
-				LOG.warn("Error closing tool", e.getMessage());
-			}
-			return true;
+		Iterator<String> it = capabilityMap.keySet().iterator();
+		while(it.hasNext()) {
+			removeCapability(it.next());			
 		}
-
-		return false;
 	}
 
+	/**
+	 * This is called when a new tool is made available. It adds the tool to the
+	 * tool map.
+	 */
 	@Override
-	public ChatCompletion chat(String msg) {
-		return chat(new ChatMessage(msg));
+	public void onToolAdded(@NonNull ToolAddedEvent evt) {
+		Tool tool = evt.getTool();
+		toolMap.put(tool.getId(), tool);
+		LOG.debug("Added tool " + evt.getTool().getId());
+	}
+
+	/**
+	 * This is called when a tool is removed. It removes the tool from the tool map.
+	 */
+	@Override
+	public void onToolRemoved(@NonNull ToolRemovedEvent evt) {
+		toolMap.remove(evt.getTool().getId());
+		LOG.debug("Removed tool " + evt.getTool().getId());
 	}
 
 	@Override
 	public void close() {
+		try {
+			clearCapabilities();
+		} catch (Exception e) {
+			// Paranoid
+			LOG.warn("Error while disposing capabiliites", e);
+		}
 	}
 }

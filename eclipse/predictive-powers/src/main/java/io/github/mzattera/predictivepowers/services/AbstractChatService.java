@@ -15,9 +15,12 @@
  */
 package io.github.mzattera.predictivepowers.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
+import io.github.mzattera.predictivepowers.services.messages.JsonSchema;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -29,18 +32,27 @@ import lombok.Setter;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@Getter
-@Setter
 @RequiredArgsConstructor
 public abstract class AbstractChatService implements ChatService {
 
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
 	// values from a Map, see CompletionService
 
+	@Getter
+	@Setter
 	private String personality = null;
 
+	@Getter
 	private int maxHistoryLength = Integer.MAX_VALUE;
 
+	@Override
+	public void setMaxHistoryLength(int l) {
+		if (l < 0)
+			throw new IllegalArgumentException();
+		maxHistoryLength = l;
+	}
+
+	@Getter
 	private int maxConversationSteps = Integer.MAX_VALUE;
 
 	@Override
@@ -50,6 +62,7 @@ public abstract class AbstractChatService implements ChatService {
 		maxConversationSteps = l;
 	}
 
+	@Getter
 	private int maxConversationTokens = Integer.MAX_VALUE;
 
 	@Override
@@ -57,6 +70,25 @@ public abstract class AbstractChatService implements ChatService {
 		if (n < 1)
 			throw new IllegalArgumentException("Must keep at least 1 token.");
 		maxConversationTokens = n;
+	}
+
+	@Getter
+	private Integer maxNewTokens;
+
+	@Override
+	public void setMaxNewTokens(Integer maxNewTokens) {
+		if ((maxNewTokens != null) && (maxNewTokens.intValue() < 1))
+			throw new IllegalArgumentException("Must generate at least 1 new token.");
+	}
+
+	@Override
+	public void setResponseFormat(Class<?> schema) {
+		setResponseFormat(JsonSchema.fromSchema(schema));
+	}
+
+	@Override
+	public void setResponseFormat(String schema) throws JsonProcessingException {
+		setResponseFormat(JsonSchema.fromSchema(schema));
 	}
 
 	@Override

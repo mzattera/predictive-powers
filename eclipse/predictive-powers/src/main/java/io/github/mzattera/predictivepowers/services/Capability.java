@@ -16,10 +16,11 @@
 
 package io.github.mzattera.predictivepowers.services;
 
-import java.util.Collection;
-import java.util.function.Supplier;
+import java.util.List;
 
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
 /**
  * A capability is a set of {@link Tool}s that work together to provide a
@@ -28,13 +29,76 @@ import lombok.NonNull;
  * In addition to the mere collection of tools forming a capability,
  * capabilities might provide additional features that the tools can leverage.
  * 
- * For example, a capability might be a local SQL database with attached a set
- * of functions that allow agents to query it.
+ * For example, a capability might be a local SQL database with a set of
+ * functions attached to allow agents to interact withit.
  * 
  * @author Massimiliano "Maxi" Zattera.
  *
  */
 public interface Capability extends AutoCloseable {
+
+	/**
+	 * Event fired before a tool is added to a Capability. Can be cancelled by the
+	 * listener.
+	 * 
+	 * 
+	 * @author Luna
+	 */
+	@RequiredArgsConstructor
+	public class ToolAddedEvent {
+
+		@Getter
+		@NonNull
+		private final Tool tool;
+
+		@Getter
+		private boolean cancelled = false;
+
+		@Getter
+		private String cancelReason;
+
+		/**
+		 * Cancels the event and records a reason.
+		 *
+		 * @param reason why the tool should not be added
+		 */
+		public void cancel(@NonNull String reason) {
+			this.cancelled = true;
+			this.cancelReason = reason;
+		}
+	}
+
+	/**
+	 * Event fired after a tool is removed from a Capability.
+	 * 
+	 * @author Luna
+	 */
+	@RequiredArgsConstructor
+	public class ToolRemovedEvent {
+
+		@Getter
+		@NonNull
+		private final Tool tool;
+	}
+
+	/**
+	 * Interface that all capability listeners must implement.
+	 * 
+	 * @author Luna
+	 */
+	public static interface Listener {
+
+		/**
+		 * Called before a tool is added. Can be cancelled via
+		 * {@link ToolAddedEvent#cancel(String)}.
+		 */
+		void onToolAdded(@NonNull ToolAddedEvent event);
+
+		/**
+		 * Called after a tool is removed.
+		 */
+		void onToolRemoved(@NonNull ToolRemovedEvent event);
+	}
 
 	/**
 	 * 
@@ -50,44 +114,55 @@ public interface Capability extends AutoCloseable {
 	String getDescription();
 
 	/**
-	 * Get tools available from this capability.
+	 * Get list of tools available from this capability.
 	 * 
-	 * Notice this is expected to be an unmodifiable list; use other methods to
-	 * populate tools list properly.
+	 * Notice this is expected to be an unmodifiable list; use
+	 * {@link #putTool(Tool)} and {@link #removeTool(Tool)} to manage the list
+	 * properly.
 	 * 
 	 * @return List of tool IDs.
 	 */
-	Collection<String> getToolIds();
+	List<Tool> getTools();
 
 	/**
-	 * Get a new instance of a tool.
-	 * 
-	 * @param toolId Unique Id for the tool;
-	 * 
-	 * @return A new instance of the tool, or null if the tool is not provided by
-	 *         this capability.
+	 * Get IDs of tools available from this capability.
 	 */
-	Tool getNewToolInstance(@NonNull String toolId);
+	List<String> getToolIds();
 
 	/**
-	 * Add one tool to the list of tools available from this capability.
+	 * Retrieves a tool from the capability.
 	 * 
-	 * @param toolId     Unique id for the tool.
-	 * @param capability A factory method to create instances of the tool, when
-	 *                   needed. capability capabilities.
+	 * @param toolId Unique ID of the tool to retrieve.
+	 * @return The required tool, or null if it cannot be found.
 	 */
-	void putTool(@NonNull String toolId, @NonNull Supplier<? extends Tool> capability);
+	Tool getTool(@NonNull String toolId);
 
 	/**
-	 * Remove one tool from list of tools available from this capability.
+	 * Add one tool to the list of tools available from this capability. If the
+	 * capability is already initialized, the tool is also initialized. This will
+	 * trigger {@link Listener#onToolAdded(Tool)}.
+	 */
+	void putTool(@NonNull Tool tool) throws ToolInitializationException;
+
+	/**
+	 * Remove one tool from list of tools provided by this capability; the tool is
+	 * automatically closed. This will trigger {@link Listener#onToolRemoved(Tool)}
+	 * before the tool is closed.
 	 * 
 	 * @param id The unique ID for the tool.
 	 */
 	void removeTool(@NonNull String toolId);
 
 	/**
-	 * Remove all tools from this capability. This does not affect tools provided by
-	 * capabilities.
+	 * Remove one tool from list of tools provided by this capability; the tool is
+	 * automatically closed. This will trigger {@link Listener#onToolRemoved(Tool)}
+	 * before the tool is closed.
+	 */
+	void removeTool(@NonNull Tool tool);
+
+	/**
+	 * Remove all tools from this capability; all tools are automatically closed.
+	 * This will trigger {@link Listener#onToolRemoved(Tool)} for each tool.
 	 */
 	void clear();
 
@@ -98,10 +173,44 @@ public interface Capability extends AutoCloseable {
 	boolean isInitialized();
 
 	/**
-	 * This must be called by the agent once and only once before the capability can
-	 * provide any tool.
+	 * This must be called by the agent once and only once before any tool provided
+	 * by the capability can be used.
+	 * 
+	 * This will in turn initialize the tools in the capability and trigger
+	 * {@link Listener#onToolAdded(Tool)} for each tool in the capability.
 	 * 
 	 * @param The agent to which this capability is attached.
+	 * @throws ToolInitializationException If any tool failed to initialize, or the
+	 *                                     capability was already initialized or
+	 *                                     closed.
 	 */
 	void init(@NonNull Agent agent) throws ToolInitializationException;
+
+	/**
+	 * Add a {@link Listener} for this capability.
+	 * 
+	 * @return true if the listener was not in the list already.
+	 */
+	boolean addListener(@NonNull Listener l);
+
+	/**
+	 * Remove given {@link Listener}.
+	 * 
+	 * @return true if the listener was in the list.
+	 */
+	boolean removeListener(@NonNull Listener l);
+
+	/**
+	 * 
+	 * @return True if the capability was already closed.
+	 */
+	boolean isClosed();
+
+	/**
+	 * Disposes this capability.
+	 * 
+	 * This will dispose tools provided by the capability as well.
+	 */
+	@Override
+	void close() throws Exception;
 }

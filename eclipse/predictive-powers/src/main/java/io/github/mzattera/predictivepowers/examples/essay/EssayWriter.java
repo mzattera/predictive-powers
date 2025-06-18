@@ -58,8 +58,8 @@ import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.EmbeddingService;
 import io.github.mzattera.predictivepowers.services.Link;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
-import io.github.mzattera.util.ExtractionUtil;
-import io.github.mzattera.util.FileUtil;
+import io.github.mzattera.predictivepowers.util.ExtractionUtil;
+import io.github.mzattera.predictivepowers.util.FileUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -673,7 +673,7 @@ public class EssayWriter implements Closeable {
 		// embedding model.
 		int writerSize = openAi.getModelService().getContextSize(WRITER_MODEL);
 		int embSize = openAi.getModelService().getContextSize(embSvc.getModel());
-		embSvc.setDefaultTextTokens(Math.min(embSize, (writerSize - SECTION_LENGTH_TOKENS) / 15));
+		embSvc.setDefaultChunkTokens(Math.min(embSize, (writerSize - SECTION_LENGTH_TOKENS) / 15));
 
 		System.out.println("Downloading page: " + link);
 

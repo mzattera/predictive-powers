@@ -53,7 +53,7 @@ public class ToolCallResult implements MessagePart {
 	/** Result of calling the tool. */
 	private Object result;
 
-	/** True of te result is an error. */
+	/** True if the result is an error. */
 	@Builder.Default
 	private boolean isError = false;
 
@@ -76,7 +76,7 @@ public class ToolCallResult implements MessagePart {
 
 	@Override
 	public String getContent() {
-		return ("ToolCallResult(" + (result == null ? "" : result.toString()) + ")");
+		return ("ToolCallResult(" + (isError ? "*ERROR* " : "") + (result == null ? "" : result.toString()) + ")");
 	}
 
 }

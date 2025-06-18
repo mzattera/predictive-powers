@@ -15,23 +15,23 @@
  */
 package io.github.mzattera.predictivepowers.openai.services;
 
-import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.openai.core.JsonMissing;
+import com.openai.errors.OpenAIServiceException;
+import com.openai.models.completions.Completion;
+import com.openai.models.completions.CompletionChoice;
+import com.openai.models.completions.CompletionCreateParams;
+
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.OpenAiException;
-import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsChoice;
-import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
-import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
+import io.github.mzattera.predictivepowers.openai.util.OpenAiUtil;
 import io.github.mzattera.predictivepowers.services.CompletionService;
-import io.github.mzattera.predictivepowers.services.ModelService;
-import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.TextCompletion;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
  * This class does completions (prompt execution).
@@ -45,26 +45,11 @@ public class OpenAiCompletionService implements CompletionService {
 
 	public static final String DEFAULT_MODEL = "davinci-002";
 
-	public OpenAiCompletionService(@NonNull OpenAiEndpoint ep) {
-		this(ep, DEFAULT_MODEL);
-	}
-
-	public OpenAiCompletionService(@NonNull OpenAiEndpoint ep, @NonNull String model) {
-		this(ep, CompletionsRequest.builder().model(model).echo(false).n(1).build());
-	}
-
-	public OpenAiCompletionService(OpenAiEndpoint ep, CompletionsRequest defaultReq) {
-		this.endpoint = ep;
-		this.modelService = ep.getModelService();
-		this.defaultReq = defaultReq;
-	}
-
 	@NonNull
 	@Getter
 	protected final OpenAiEndpoint endpoint;
 
-	@NonNull
-	private final ModelService modelService;
+	private final OpenAiModelService modelService;
 
 	/**
 	 * This request, with its parameters, is used as default setting for each call.
@@ -76,17 +61,18 @@ public class OpenAiCompletionService implements CompletionService {
 	 * request.
 	 */
 	@Getter
+	@Setter
 	@NonNull
-	private final CompletionsRequest defaultReq;
+	private CompletionCreateParams defaultRequest;
 
 	@Override
 	public String getModel() {
-		return defaultReq.getModel();
+		return defaultRequest.model().asString();
 	}
 
 	@Override
 	public void setModel(@NonNull String model) {
-		defaultReq.setModel(model);
+		defaultRequest = defaultRequest.toBuilder().model(model).build();
 	}
 
 	@Override
@@ -102,29 +88,27 @@ public class OpenAiCompletionService implements CompletionService {
 
 	@Override
 	public Double getTopP() {
-		return defaultReq.getTopP();
+		return defaultRequest.topP().orElse(null);
 	}
 
 	@Override
 	public void setTopP(Double topP) {
-		defaultReq.setTopP(topP);
+		defaultRequest = defaultRequest.toBuilder().topP(topP).build();
 	}
 
 	@Override
 	public Double getTemperature() {
 		// Must scale from [0-2] to [0-100] considering default value as well
-		if (defaultReq.getTemperature() == null)
-			return null;
-		return defaultReq.getTemperature() * 50;
+		return defaultRequest.temperature().isEmpty() ? null : defaultRequest.temperature().get() * 50;
 	}
 
 	@Override
 	public void setTemperature(Double temperature) {
 		// Must scale from [0-2] to [0-100] considering default value as well
 		if (temperature == null)
-			defaultReq.setTemperature(null);
+			defaultRequest = defaultRequest.toBuilder().temperature((Double) null).build();
 		else
-			defaultReq.setTemperature(temperature / 50);
+			defaultRequest = defaultRequest.toBuilder().temperature(temperature / 50).build();
 	}
 
 	/**
@@ -133,122 +117,99 @@ public class OpenAiCompletionService implements CompletionService {
 	 */
 	@Override
 	public Integer getMaxNewTokens() {
-		return defaultReq.getMaxTokens();
+		return defaultRequest.maxTokens().isEmpty() ? null : defaultRequest.maxTokens().get().intValue();
 	}
 
 	/**
 	 * This service will try to calculate this so to allow the longest possible
 	 * output, if it is null.
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public void setMaxNewTokens(Integer maxNewTokens) {
-		defaultReq.setMaxTokens(maxNewTokens);
+		// See https://github.com/openai/openai-java/issues/468
+		if (maxNewTokens == null)
+			defaultRequest = defaultRequest.toBuilder().maxTokens(JsonMissing.of()).build();
+		else
+			defaultRequest = defaultRequest.toBuilder().maxTokens(maxNewTokens).build();
 	}
 
 	@Override
 	public boolean getEcho() {
-		if (defaultReq.getEcho() == null)
-			return false;
-		return defaultReq.getEcho();
+		return defaultRequest.echo().orElse(null);
 	}
 
 	@Override
 	public void setEcho(boolean echo) {
-		defaultReq.setEcho(echo);
+		defaultRequest = defaultRequest.toBuilder().echo(echo).build();
+	}
+
+	public OpenAiCompletionService(@NonNull OpenAiEndpoint ep) {
+		this(ep, DEFAULT_MODEL);
+	}
+
+	@SuppressWarnings("unchecked")
+	public OpenAiCompletionService(@NonNull OpenAiEndpoint ep, @NonNull String model) {
+		this(ep, CompletionCreateParams.builder() //
+				.model(model) //
+				.prompt(JsonMissing.of()) //
+				.maxTokens(Math.min(ep.getModelService().getMaxNewTokens(model, 250), 250)) //
+				.echo(false).n(1).build());
+	}
+
+	public OpenAiCompletionService(OpenAiEndpoint ep, CompletionCreateParams defaultReq) {
+		this.endpoint = ep;
+		this.defaultRequest = defaultReq;
+		this.modelService = ep.getModelService();
 	}
 
 	@Override
 	public TextCompletion complete(String prompt) {
-		return complete(prompt, null, defaultReq);
+		return complete(prompt, defaultRequest);
 	}
 
-	/**
-	 * Completes text (executes given prompt); uses provided
-	 * {@link CompletionsRequest} to get parameters for the call.
-	 * 
-	 * Notice that if maxToxens is null, this method will try to set it
-	 * automatically, based on prompt length.
-	 */
-	public TextCompletion complete(String prompt, CompletionsRequest req) {
-		return complete(prompt, null, req);
-	}
-
-	@Override
-	public TextCompletion complete(String prompt, Map<String, Object> parameters) {
-		return complete(prompt, parameters, defaultReq);
-	}
-
-	/**
-	 * Completes text (executes given prompt).
-	 * 
-	 * @param parameters Parameters used for slot filling. See
-	 *                   {@link #fillSlots(String, Map)}.
-	 */
-	public TextCompletion complete(String prompt, Map<String, ? extends Object> parameters, CompletionsRequest req) {
-
-		String model = req.getModel();
-		req.setPrompt(CompletionService.fillSlots(prompt, parameters));
-
-		boolean autofit = (req.getMaxTokens() == null) && (modelService.getContextSize(model, -1) != -1);
-		try {
-
-			if (autofit) {
-				// Automatically set token limit, if needed
-				Tokenizer counter = modelService.getTokenizer(model);
-				int tok = counter.count(prompt);
-				int size = modelService.getContextSize(model) - tok - 5;
-				if (size <= 0)
-					throw new IllegalArgumentException(
-							"Your proompt exceeds context size: " + modelService.getContextSize(model));
-				req.setMaxTokens(Math.min(size, modelService.getMaxNewTokens(model)));
-			}
-
-			CompletionsResponse resp = null;
-			while (resp == null) { // Loop till I get an answer
-				try {
-					resp = endpoint.getClient().createCompletion(req);
-				} catch (OpenAiException e) {
-					if (e.isContextLengthExceeded()) { // Automatically recover if request is too long
-						int optimal = e.getMaxContextLength() - e.getPromptLength() - 1;
-						if (optimal > 0) {
-							LOG.warn("Reducing reply length for OpenAI completion service from " + req.getMaxTokens()
-									+ " to " + optimal);
-							req.setMaxTokens(optimal);
-						} else
-							throw e; // Context too small anyway
-					} else
-						throw e; // Not a context length issue
-				}
-			}
-
-			CompletionsChoice choice = resp.getChoices().get(0);
-			return new TextCompletion(choice.getText(), FinishReason.fromOpenAiApi(choice.getFinishReason()));
-
-		} finally {
-
-			// for next call, or maxTokens will remain fixed
-			if (autofit)
-				req.setMaxTokens(null);
-		}
-	}
-
-	/**
-	 * Inserts text between given prompt and the suffix (executes given prompt).
-	 * 
-	 * It uses {@link #getDefaultReq()} parameters.
-	 */
 	@Override
 	public TextCompletion insert(String prompt, String suffix) {
-		// After 4th Jan., 2024, modles supporting the completions API are GPT-3.5
-		// variants not recognizing the "suffix" parameter
-		throw new UnsupportedOperationException();
+		// This seems to work only with gpt-3.5-turbo-instruct, but that models error
+		// when used with the OpenAI SDK
+		CompletionCreateParams req = defaultRequest.toBuilder().suffix(suffix).build();
+		return complete(prompt, req);
 	}
 
-	@Override
-	public TextCompletion insert(String prompt, String suffix, Map<String, Object> parameters) {
-		// After 4th Jan., 2024, modles supporting the completions API are GPT-3.5
-		// variants not recognizing the "suffix" parameter
-		throw new UnsupportedOperationException();
+	private TextCompletion complete(String prompt, CompletionCreateParams req) {
+
+		req = req.toBuilder().prompt(prompt).build();
+
+		Completion resp = null;
+		while (resp == null) { // Loop till I get an answer
+			try {
+				resp = endpoint.getClient().completions().create(req);
+			} catch (OpenAIServiceException e) {
+
+				// Check for policy violations
+				if (e.getMessage().contains("violating our usage policy")) {
+					return new TextCompletion(FinishReason.INAPPROPRIATE, e.getMessage());
+				}
+
+				// Automatically recover if request is too long
+				// This makes sense as req is modified only for this call (it is immutable).
+				OpenAiUtil.OpenAiExceptionData d = OpenAiUtil.getExceptionData(e);
+				int contextSize = modelService.getContextSize(getModel(), d.getContextSize());
+				if ((contextSize > 0) && (d.getPromptLength() > 0)) {
+					int optimal = contextSize - d.getPromptLength() - 1;
+					if (optimal > 0) {
+						LOG.warn("Reducing reply length for OpenAI completion service from "
+								+ req.maxTokens().orElse(-1L) + " to " + optimal);
+						req = req.toBuilder().maxTokens(optimal).build();
+					} else
+						throw e; // Context too small anyway
+				} else
+					throw e; // Not a context length issue
+			}
+		}
+
+		CompletionChoice choice = resp.choices().get(0);
+		return new TextCompletion(OpenAiUtil.fromOpenAiApi(choice.finishReason()), choice.text());
 	}
 
 	@Override

@@ -16,10 +16,11 @@
 
 package io.github.mzattera.predictivepowers.services;
 
-import java.util.List;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
+import io.github.mzattera.predictivepowers.services.messages.JsonSchema;
 
 /**
  * This is a service capable of holding conversations with the user. It is more
@@ -27,8 +28,8 @@ import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
  * prompt and hold a conversation. It exposes method to maintain the
  * conversation history.
  * 
- * This service is not supposed to use any tool, just manage text messages back
- * and forth.
+ * Unlike {@link Agent}, this service is not supposed to use any tool, just
+ * manage text messages back and forth.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -72,19 +73,6 @@ public interface ChatService extends AiService {
 	 * probability.
 	 */
 	void setTemperature(Double temperature);
-
-	/**
-	 * These are the messages exchanged in the current chat. Implementations of this
-	 * interface are supposed to keep history updated by adding each user utterance
-	 * and the corresponding agent reply.
-	 * 
-	 * Notice is this not expected to be manipulated; see {@link #setH}
-	 * 
-	 * Notice this will grow up to {@link #getMaxHistoryLength}, unless cleared.
-	 * However, only latest messages are considered when calling the API (see
-	 * {@link getMaxConversationLength}).
-	 */
-	List<? extends ChatMessage> getHistory();
 
 	/**
 	 * Maximum number of messages to keep in chat history.
@@ -155,6 +143,41 @@ public interface ChatService extends AiService {
 	 * messages.
 	 */
 	public int getBaseTokens();
+
+	/**
+	 * This method allows to specify an output format for the model. This is used to
+	 * create structured outputs with model supporting it so that, for example, the
+	 * model returns its responses in a pre-defined JSON format.
+	 * 
+	 * @param schema A JSON schema that will be used to define the output format.
+	 *               See {@link JsonSchema#getParameters(java.lang.Class)}.
+	 * @throws JsonProcessingException 
+	 */
+	void setResponseFormat(String schema) throws JsonProcessingException;
+
+	/**
+	 * This method allows to specify an output format for the model. This is used to
+	 * create structured outputs with model supporting it so that, for example, the
+	 * model returns its responses in a pre-defined JSON format.
+	 * 
+	 * @param schema A class which schema will be used to define the output format.
+	 *               See {@link JsonSchema#getParameters(java.lang.Class)}.
+	 */
+	void setResponseFormat(Class<?> schema);
+
+	/**
+	 * This method allows to specify an output format for the model. This is used to
+	 * create structured outputs with model supporting it so that, for example, the
+	 * model returns its responses in a pre-defined JSON format.
+	 * 
+	 * @param schema A {@link JsonSchema} used to define the output format.
+	 */
+	void setResponseFormat(JsonSchema schema);
+
+	/**
+	 * This method returns a JSON schema defining the output format for the model.
+	 */
+	JsonSchema getResponseFormat();
 
 	/**
 	 * Starts a new chat, clearing current conversation.

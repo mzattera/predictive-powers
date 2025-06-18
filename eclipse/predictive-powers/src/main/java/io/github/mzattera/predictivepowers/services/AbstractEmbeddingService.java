@@ -30,18 +30,23 @@ import java.util.Map;
 import org.apache.tika.exception.TikaException;
 import org.xml.sax.SAXException;
 
-import io.github.mzattera.util.ExtractionUtil;
+import io.github.mzattera.predictivepowers.util.ExtractionUtil;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 /**
- * Abstract {@link EmbeddingService} that can be sub-classed to create other
- * services faster (hopefully).
+ * Abstract {@link EmbeddingService} that can be sub-classed to easily create
+ * other services faster (hopefully).
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class AbstractEmbeddingService implements EmbeddingService {
 
 	@NonNull
@@ -50,29 +55,29 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 	private String model;
 
 	@Getter
-	private int defaultTextTokens = 150; // Assuming a page is 500 words in 4 paragraphs
+	private int defaultChunkTokens = 800; // Just because OpenAI uses 800 tokens and chunk_overlap_tokens of 400.
 
 	@Override
-	public void setDefaultTextTokens(int defaultTokens) {
+	public void setDefaultChunkTokens(int defaultTokens) {
 		if (defaultTokens < 1)
 			throw new IllegalArgumentException(
 					"Embedded text needs to be of at least 1 token in size: " + defaultTokens);
 
-		this.defaultTextTokens = defaultTokens;
+		this.defaultChunkTokens = defaultTokens;
 	}
 
 	@Override
-	public List<EmbeddedText> embed(String text) {
-		return embed(text, defaultTextTokens, 1, 1);
+	public List<EmbeddedText> embed(@NonNull String text) {
+		return embed(text, defaultChunkTokens, 1, 1);
 	}
 
 	@Override
-	public List<EmbeddedText> embed(Collection<String> text) {
-		return embed(text, defaultTextTokens, 1, 1);
+	public List<EmbeddedText> embed(@NonNull Collection<String> text) {
+		return embed(text, defaultChunkTokens, 1, 1);
 	}
 
 	@Override
-	public List<EmbeddedText> embed(Collection<String> text, int chunkSize, int windowSize, int stride) {
+	public List<EmbeddedText> embed(@NonNull Collection<String> text, int chunkSize, int windowSize, int stride) {
 		List<EmbeddedText> result = new ArrayList<>();
 		for (String s : text)
 			result.addAll(embed(s, chunkSize, windowSize, stride));
@@ -81,12 +86,12 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 	}
 
 	@Override
-	public List<EmbeddedText> embedFile(File file) throws IOException, SAXException, TikaException {
+	public List<EmbeddedText> embedFile(@NonNull File file) throws IOException, SAXException, TikaException {
 		return embed(ExtractionUtil.fromFile(file));
 	}
 
 	@Override
-	public Map<File, List<EmbeddedText>> embedFolder(File folder) throws IOException, SAXException, TikaException {
+	public Map<File, List<EmbeddedText>> embedFolder(@NonNull File folder) throws IOException, SAXException, TikaException {
 		if (!folder.isDirectory() || !folder.canRead()) {
 			throw new IOException("Cannot read folder: " + folder.getCanonicalPath());
 		}
@@ -103,13 +108,13 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 	}
 
 	@Override
-	public List<EmbeddedText> embedURL(String url)
+	public List<EmbeddedText> embedURL(@NonNull String url)
 			throws MalformedURLException, IOException, SAXException, TikaException, URISyntaxException {
 		return embedURL((new URI(url)).toURL());
 	}
 
 	@Override
-	public List<EmbeddedText> embedURL(URL url) throws IOException, SAXException, TikaException {
+	public List<EmbeddedText> embedURL(@NonNull URL url) throws IOException, SAXException, TikaException {
 		return embed(ExtractionUtil.fromUrl(url));
 	}
 

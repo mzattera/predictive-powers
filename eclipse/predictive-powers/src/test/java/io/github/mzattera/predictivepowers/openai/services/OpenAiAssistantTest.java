@@ -43,7 +43,7 @@ import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
-import io.github.mzattera.util.ResourceUtil;
+import io.github.mzattera.predictivepowers.util.ResourceUtil;
 
 /**
  * Test the OpenAI chat API & Service
@@ -90,7 +90,7 @@ public class OpenAiAssistantTest {
 
 			Capability tools = new Toolset();
 			tools.putTool("retrieval", () -> {
-				return OpenAiTool.RETRIEVAL;
+				return OpenAiAssistantTool.RETRIEVAL;
 			});
 			bot.addCapability(tools);
 
@@ -121,7 +121,7 @@ public class OpenAiAssistantTest {
 
 			Capability tools = new Toolset();
 			tools.putTool("retrieval", () -> {
-				return OpenAiTool.RETRIEVAL;
+				return OpenAiAssistantTool.RETRIEVAL;
 			});
 			bot.addCapability(tools);
 

@@ -24,8 +24,10 @@ import java.util.Scanner;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaDescription;
 
-import io.github.mzattera.predictivepowers.anthropic.client.AnthropicEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractTool;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Toolset;
@@ -36,15 +38,15 @@ import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.NonNull;
 
 public class FunctionCallExample {
-	
+
 	static Random RND = new Random();
 
 	// This is a tool that will be accessible to the agent
 	// Notice it must be public.
 	public static class GetCurrentWeatherTool extends AbstractTool {
 
-		// This is a schema describing the function parameters
-		private static class GetCurrentWeatherParameters {
+		@JsonSchemaDescription("This is a class describing parameters for GetCurrentWeatherTool")
+		public static class Parameters {
 
 			private enum TemperatureUnits {
 				CELSIUS, FARENHEIT
@@ -58,10 +60,10 @@ public class FunctionCallExample {
 			public TemperatureUnits unit;
 		}
 
-		public GetCurrentWeatherTool() {
-			super("getCurrentWeather", 							// Function name
+		public GetCurrentWeatherTool() throws JsonProcessingException {
+			super("getCurrentWeather", // Function name
 					"Get the current weather in a given city.", // Function description
-					GetCurrentWeatherParameters.class);			// Function parameters
+					Parameters.class); // Function parameters
 		}
 
 		@Override
@@ -87,28 +89,28 @@ public class FunctionCallExample {
 	public static void main(String[] args) throws Exception {
 
 		try (
-			// This uses OpenAI API =======================================
-			// OpenAiEndpoint endpoint = new OpenAiEndpoint();
-					
-			// This code uses chat API with parallel function calls (tools)		
-			// Agent agent = endpoint.getChatService("gpt-4-1106-preview");
-					
-			// This code uses chat API with single function calls		
-			// Agent agent = endpoint.getChatService("gpt-3.5-turbo-0613"); 
-	
-			// This code uses assistants API
-			// Agent agent = endpoint.getAgentService().getAgent(); 
-	
-			// This code uses ANTHROP/C API ===============================
-			 AnthropicEndpoint endpoint = new AnthropicEndpoint();
-			 Agent agent = endpoint.getChatService(); 
-		) {
+				// This uses OpenAI API =======================================
+				OpenAiEndpoint endpoint = new OpenAiEndpoint();
+
+				// This code uses chat API with parallel function calls (tools)
+				// Agent agent = endpoint.getChatService("gpt-4-1106-preview");
+
+				// This code uses chat API with single function calls
+				// Agent agent = endpoint.getChatService("gpt-3.5-turbo-0613");
+
+				// This code uses assistants API
+				 Agent agent = endpoint.getAgentService().getAgent();
+
+				// This code uses ANTHROP/C API ===============================
+//			 AnthropicEndpoint endpoint = new AnthropicEndpoint();
+//				Agent agent = endpoint.getChatService();				
+			) {
 
 			// Set agent personality (instructions)
 			agent.setPersonality("You are an helpful assistant.");
 
 			// Tell the agent which tools it can use, by providing a capability
-			agent.addCapability(new Toolset(tools));
+			agent.addCapability(new Toolset(List.of(new GetCurrentWeatherTool())));
 
 			// Conversation loop
 			try (Scanner console = new Scanner(System.in)) {
@@ -122,6 +124,9 @@ public class FunctionCallExample {
 					while (reply.hasToolCalls()) {
 
 						List<ToolCallResult> results = new ArrayList<>();
+
+						// TODO Urgent: display any content that is not a tool call.
+						// Add a method to get all and only concatenated text?
 
 						for (ToolCall call : reply.getToolCalls()) {
 
@@ -139,10 +144,10 @@ public class FunctionCallExample {
 						}
 
 						// Pass results back to the agent
-						// Notice this might in principle generate 
+						// Notice this might in principle generate
 						// other tool calls, hence the loop
 						reply = agent.chat(new ChatMessage(results));
-						
+
 					} // while we serviced all calls
 
 					System.out.println("Assistant> " + reply.getText());

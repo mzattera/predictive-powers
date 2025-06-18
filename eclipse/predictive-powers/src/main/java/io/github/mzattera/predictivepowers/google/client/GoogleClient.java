@@ -25,12 +25,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import io.github.mzattera.predictivepowers.ApiClient;
-import io.reactivex.Single;
+import io.reactivex.rxjava3.core.Single;
 import lombok.Getter;
 import lombok.NonNull;
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
+import retrofit2.adapter.rxjava3.RxJava3CallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
 /**
@@ -150,7 +150,7 @@ public class GoogleClient implements ApiClient {
 
 		Retrofit retrofit = new Retrofit.Builder().baseUrl(API_BASE_URL).client(client)
 				.addConverterFactory(JacksonConverterFactory.create(jsonMapper))
-				.addCallAdapterFactory(RxJava2CallAdapterFactory.create()).build();
+				.addCallAdapterFactory(RxJava3CallAdapterFactory.create()).build();
 
 		api = retrofit.create(GoogleApi.class);
 	}

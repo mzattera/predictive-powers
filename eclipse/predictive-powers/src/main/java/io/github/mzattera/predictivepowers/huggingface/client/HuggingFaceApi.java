@@ -25,7 +25,7 @@ import io.github.mzattera.predictivepowers.huggingface.client.nlp.QuestionAnswer
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextClassificationResponse;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationResponse;
-import io.reactivex.Single;
+import io.reactivex.rxjava3.core.Single;
 import lombok.NonNull;
 import okhttp3.ResponseBody;
 import retrofit2.http.Body;

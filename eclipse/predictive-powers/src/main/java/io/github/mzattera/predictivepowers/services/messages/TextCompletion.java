@@ -24,7 +24,6 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import lombok.experimental.SuperBuilder;
 
 /**
  * This class encapsulates a response from a {@link CompletionService}.
@@ -38,15 +37,14 @@ import lombok.experimental.SuperBuilder;
  */
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @RequiredArgsConstructor
-@SuperBuilder
 @Getter
 @Setter
 @ToString
 public class TextCompletion {
 
 	@NonNull
-	private String text;
+	private FinishReason finishReason;
 
 	@NonNull
-	private FinishReason status;
+	private String text;
 }

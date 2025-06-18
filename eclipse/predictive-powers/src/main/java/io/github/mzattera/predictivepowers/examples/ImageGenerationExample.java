@@ -16,14 +16,14 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.ImageGenerationService;
-import io.github.mzattera.util.ImageUtil;
+import io.github.mzattera.predictivepowers.services.messages.FilePart;
+import io.github.mzattera.predictivepowers.util.ImageUtil;
 
 public class ImageGenerationExample {
 
@@ -36,24 +36,24 @@ public class ImageGenerationExample {
 
 		try (
 				// Uncomment this to use DALL-E
-				// AiEndpoint endpoint = new OpenAiEndpoint();
-				// ImageGenerationService svc = endpoint.getImageGenerationService();
+				 AiEndpoint endpoint = new OpenAiEndpoint();
+				 ImageGenerationService svc = endpoint.getImageGenerationService("dall-e-2");
 
 				// Uncomment this to use Openjourney
-				AiEndpoint endpoint = new HuggingFaceEndpoint();
-				ImageGenerationService svc = endpoint.getImageGenerationService();
+//				AiEndpoint endpoint = new HuggingFaceEndpoint();
+//				ImageGenerationService svc = endpoint.getImageGenerationService();
 		) {
 			// Generates image
-			BufferedImage img = svc.createImage(PROMPT, 1, 1024, 1024).get(0);
+			FilePart img = svc.createImage(PROMPT, 1, 1024, 1024).get(0);
 
 			// Saves it in a temporary file
 			save(img);
 		}
 	}
 
-	private static void save(BufferedImage img) throws IOException {
+	private static void save(FilePart img) throws IOException {
 		File tmp = File.createTempFile("GenAI", ".jpg");
-		ImageUtil.toFile(tmp, img);
+		ImageUtil.toFile(ImageUtil.fromBytes(img.getInputStream()), tmp);
 		System.out.println("Image saved as: " + tmp.getCanonicalPath());
 	}
 }

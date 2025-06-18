@@ -16,17 +16,18 @@
 
 package io.github.mzattera.predictivepowers.services;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonValue;
 
+import io.github.mzattera.predictivepowers.services.messages.JsonSchema;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -39,10 +40,13 @@ import lombok.ToString;
 public interface Tool extends AutoCloseable {
 
 	/**
-	 * Describes one tool parameter.
+	 * Describes a parameter used in tool calls. Notice this same data structure is
+	 * also used to represent JSON Schema (see {@link JsonSchema}).
+	 * 
+	 * {@link JsonSchema} provide methods to convert JSON schema into parameters and
+	 * vice versa, including using classes as schema templates.
 	 */
 	@NoArgsConstructor
-	@RequiredArgsConstructor
 	@AllArgsConstructor
 	@Getter
 	@Setter
@@ -50,7 +54,8 @@ public interface Tool extends AutoCloseable {
 	public static class ToolParameter {
 
 		public static enum Type {
-			INTEGER("integer"), DOUBLE("number"), BOOLEAN("boolean"), ENUMERATION("string"), STRING("string");
+			INTEGER("integer"), DOUBLE("number"), BOOLEAN("boolean"), ENUMERATION("string"), STRING("string"),
+			ARRAY("array"), OBJECT("object");
 
 			private final String label;
 
@@ -65,21 +70,39 @@ public interface Tool extends AutoCloseable {
 			}
 		}
 
-		/** Field name */
-		@NonNull
-		public String name;
+		/**
+		 * Field name. This can be null for unnamed parameters which are typically used
+		 * when defining ARRAY item type (see {@link #getArrayItemType()}).
+		 */
+		private String name;
 
 		/** Field type */
-		public Type type;
+		private Type type;
 
 		/** If field type is ENUM, this lists allowed values */
-		public List<String> emum;
+		private List<String> enumValues;
+
+		/**
+		 * If field type is an OBJECT defined through $ref, this is the referenced
+		 * schema.
+		 * 
+		 * If field type is ARRAY, this contains a definition of its item type; notice
+		 * that for items which are not OBJECTs, this is an unnamed parameter defining
+		 * the type (e.g. STRING, or ARRAY).
+		 */
+		private ToolParameter objectType;
+
+		/**
+		 * If field type is OBJECT and it was not defined through $ref, this lists its
+		 * fields.
+		 */
+		private List<ToolParameter> objectFields = new ArrayList<>();
 
 		/** A description of the field */
-		public String description;
+		private String description;
 
 		/** True if this is a required field */
-		public boolean required;
+		private boolean required;
 	}
 
 	/**
@@ -101,7 +124,7 @@ public interface Tool extends AutoCloseable {
 	 * @return A List with a description of each parameter needed when the tool is
 	 *         invoked.
 	 */
-	List<? extends ToolParameter> getParameters();
+	List<ToolParameter> getParameters();
 
 	/**
 	 * Sets the capability to which this tool belongs.
@@ -126,13 +149,21 @@ public interface Tool extends AutoCloseable {
 	boolean isInitialized();
 
 	/**
+	 * 
+	 * @return True if the tool was already closed.
+	 */
+	boolean isClosed();
+
+	/**
 	 * This must be called by the agent once and only once before any invocation to
 	 * this tool.
 	 * 
 	 * @param agent The agent that will then invoke this tool, eventually.
-	 * @param IllegalStateException if the tool was already initialized.
+	 * @throws ToolInitializationException If an error occurs while initializing the
+	 *                                     agent, or the agent was already
+	 *                                     initialized or closed.
 	 */
-	void init(@NonNull Agent agent) throws ToolInitializationException, IllegalStateException;
+	void init(@NonNull Agent agent) throws ToolInitializationException;
 
 	/**
 	 * Invokes (executes) the tool. This can be called several times.

@@ -18,16 +18,14 @@ package io.github.mzattera.predictivepowers.services;
 
 import java.util.List;
 
-import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
-import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import lombok.NonNull;
 
 /**
- * This represents an agent (assistant) handled by an {@link AgentService} which
- * is able to hold a conversation with the user.
+ * This represents an agent (sometime assistant), possiblzy handled by handled
+ * by an {@link AgentService} which is able to hold a conversation with the
+ * user.
  * 
- * It is more advanced than {#link ChatService}, as it can invoke {@link Tool}s
- * to complete its tasks and use files in chat messages.
+ * It is more advanced than {#link ChatService}, as it can invoke {@link Tool}s.
  * 
  * At the moment, the interface does not expose methods to retrieve and manage
  * stored conversations.
@@ -35,7 +33,7 @@ import lombok.NonNull;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public interface Agent extends AutoCloseable {
+public interface Agent extends ChatService, Capability.Listener {
 
 	/**
 	 * Get unique agent ID. Notice this ID is unique only inside one endpoint.
@@ -43,90 +41,66 @@ public interface Agent extends AutoCloseable {
 	String getId();
 
 	/**
-	 * The ID of the model used by the agent.
-	 */
-	String getModel();
-
-	/**
-	 * The display name of the assistant.
+	 * The display name of the agent.
 	 */
 	String getName();
 
 	/**
-	 * The display name of the assistant.
+	 * The display name of the agent.
 	 */
 	void setName(String name);
 
 	/**
-	 * The description of the assistant.
+	 * The description of the agent.
 	 */
 	String getDescription();
 
 	/**
-	 * The description of the assistant.
+	 * The description of the agent.
 	 */
 	void setDescription(String description);
 
 	/**
-	 * The personality for the agent (system instructions).
-	 */
-	String getPersonality();
-
-	/**
-	 * The personality for the agent (system instructions).
-	 */
-	void setPersonality(String personality);
-
-	/**
 	 * Get capabilities available to the agent.
 	 * 
-	 * Notice this is expected to be an unmodifiable list; use other methods to
-	 * populate tools list properly.
+	 * @return IDs of capabilities available to the agent.
 	 */
-	List<String> getCapabilities();
+	List<String> getCapabilityIDs();
 
 	/**
-	 * Add one capability to the list of capabilities available to the agent.
+	 * Get one capabilities available to the agent.
 	 * 
-	 * @throws ToolInitializationException if an error happens while initializing
+	 * @param capabilityId
+	 * @return Capability with given ID or null if it cannot be found.
+	 */
+	Capability getCapability(@NonNull String capabilityId);
+
+	/**
+	 * Adds a capability. This method automatically closes any previous instance of
+	 * a capability with same ID, removing and disposing its tools from the agent as
+	 * well. It then initializes the new capability.
+	 * 
+	 * @throws ToolInitializationException If an error happens while initializing
 	 *                                     the capability.
 	 */
 	void addCapability(@NonNull Capability capability) throws ToolInitializationException;
 
 	/**
-	 * Remove one capability from list of capabilities available to the agent.
+	 * Removes a capability. The capability and its tools are disposed and removed
+	 * from the agent.
 	 * 
 	 * @param id The unique ID for the capability.
 	 */
 	void removeCapability(@NonNull String capabilityId);
 
 	/**
+	 * Removes a capability. The capability and its tools are disposed and removed
+	 * from the agent.
+	 */
+	void removeCapability(@NonNull Capability capabilityId);
+
+	/**
 	 * Remove all capabilities available to the agent.
 	 */
 	void clearCapabilities();
-
-	// We do not add methods to trim history length, as we suppose the agent
-	// maintains it autonomously
-
-	/**
-	 * These are the messages exchanged in the current conversation.
-	 * 
-	 * Notice is this not expected to be manipulated.
-	 */
-	List<? extends ChatMessage> getHistory();
-
-	/**
-	 * Starts a new chat, clearing current conversation.
-	 */
-	void clearConversation();
-
-	/**
-	 * Continues current chat, with the provided message.
-	 */
-	ChatCompletion chat(String message);
-
-	/**
-	 * Continues current chat, with the provided message.
-	 */
-	ChatCompletion chat(ChatMessage message);
 }

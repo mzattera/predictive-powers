@@ -19,16 +19,15 @@
  */
 package io.github.mzattera.predictivepowers.openai.services;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
-import io.github.mzattera.predictivepowers.openai.client.DataList;
+import com.openai.core.JsonValue;
+import com.openai.models.beta.assistants.Assistant;
+import com.openai.models.beta.assistants.AssistantCreateParams;
+import com.openai.models.beta.assistants.AssistantCreateParams.Metadata;
+
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.SortOrder;
-import io.github.mzattera.predictivepowers.openai.client.assistants.Assistant;
-import io.github.mzattera.predictivepowers.openai.client.assistants.AssistantsRequest;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.AgentService;
 import lombok.Getter;
@@ -36,11 +35,11 @@ import lombok.NonNull;
 import lombok.Setter;
 
 /**
- * {@link AgentService} based on OpenAI assistants.
+ * {@link AgentService} based on OpenAI Assistants API.
  */
 public class OpenAiAgentService implements AgentService {
 
-	public static final String DEFAULT_MODEL = "gpt-4-turbo";
+	public static final String DEFAULT_MODEL = OpenAiChatService.DEFAULT_MODEL;
 
 	@NonNull
 	@Getter
@@ -52,14 +51,20 @@ public class OpenAiAgentService implements AgentService {
 	@Setter
 	private String model = DEFAULT_MODEL;
 
+	public OpenAiAgentService(@NonNull OpenAiEndpoint endpoint) {
+		this(endpoint, DEFAULT_MODEL);
+	}
+
+	public OpenAiAgentService(@NonNull OpenAiEndpoint endpoint, @NonNull String model) {
+		this.endpoint = endpoint;
+		this.model = model;
+	}
+
 	@Override
-	public List<OpenAiAssistant> listAgents() {
+	public List<String> getAgentIDs() {
 
-		List<Assistant> l = DataList.getCompleteList( //
-				(last) -> endpoint.getClient().listAssistants(SortOrder.ASCENDING, null, null, last) //
-		);
-
-		return l.stream().map(a -> new OpenAiAssistant(this, a)).collect(Collectors.toList());
+		return endpoint.getClient().beta().assistants().list().autoPager().stream().map(a -> a.id())
+				.collect(Collectors.toList());
 	}
 
 	@Override
@@ -105,28 +110,38 @@ public class OpenAiAgentService implements AgentService {
 			boolean persist, boolean isDefault) {
 
 		// Mark this newly created agent such that CleanupUtil does not delete it.
-		Map<String, String> metadata = new HashMap<>();
-		metadata.put("_persist", Boolean.toString(persist));
-		metadata.put("_isDefaultAgent", Boolean.toString(isDefault));
+		Metadata metadata = AssistantCreateParams.Metadata.builder() //
+				.putAdditionalProperty("_persist", JsonValue.from(persist ? "true" : "false")) //
+				.putAdditionalProperty("_isDefaultAgent", JsonValue.from(isDefault ? "true" : "false")).build();
 
-		Assistant assistant = endpoint.getClient().createAssistant(AssistantsRequest.builder() //
+		Assistant assistant = endpoint.getClient().beta().assistants().create(AssistantCreateParams.builder() //
 				.model(model == null ? this.model : model) //
 				.name(name) //
 				.description(description) //
 				.instructions(personality) //
-				.metadata(metadata) //
-				.build());
+				.metadata(metadata).build());
 
-		return new OpenAiAssistant(this, assistant);
+		return new OpenAiAssistant(this, assistant.id());
 	}
 
 	@Override
 	public OpenAiAssistant getAgent() {
 
-		for (Agent a : listAgents()) {
-			OpenAiAssistant assistant = (OpenAiAssistant) a;
-			if ("true".equals(assistant.getMetadata().get("_isDefaultAgent")) && model.equals(assistant.getModel()))
+		for (String id : getAgentIDs()) {
+			OpenAiAssistant assistant = getAgent(id);
+			if (assistant == null) // paranoid
+				continue;
+
+			// More paranoid guards
+			JsonValue def = assistant.getAssistantData().metadata().orElse(Assistant.Metadata.builder().build()) //
+					._additionalProperties().get("_isDefaultAgent");
+			boolean isDefault = (def.isMissing() || def.isNull()) ? false : "true".equals(def.toString());
+
+			if (isDefault && model.equals(assistant.getModel()))
 				return assistant;
+			else
+				assistant.close();
+			;
 		}
 
 		// Create a persisted default agent for this model
@@ -143,28 +158,8 @@ public class OpenAiAgentService implements AgentService {
 	}
 
 	@Override
-	public OpenAiAssistant getAgentByName(@NonNull String name) {
-
-		for (Agent a : listAgents()) {
-			OpenAiAssistant assistant = (OpenAiAssistant) a;
-			if (name.equals(assistant.getName()))
-				return assistant;
-		}
-		return null;
-	}
-
-	@Override
 	public boolean deleteAgent(@NonNull String agentId) {
-		return endpoint.getClient().deleteAssistant(agentId).isDeleted();
-	}
-
-	public OpenAiAgentService(@NonNull OpenAiEndpoint endpoint) {
-		this(endpoint, DEFAULT_MODEL);
-	}
-
-	public OpenAiAgentService(@NonNull OpenAiEndpoint endpoint, @NonNull String model) {
-		this.endpoint = endpoint;
-		this.model = model;
+		return endpoint.getClient().beta().assistants().delete(agentId)._deleted().asBoolean().get();
 	}
 
 	@Override

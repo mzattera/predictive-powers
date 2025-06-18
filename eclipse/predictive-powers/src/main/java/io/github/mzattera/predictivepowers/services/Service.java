@@ -26,5 +26,8 @@ import io.github.mzattera.predictivepowers.Endpoint;
  */
 public interface Service extends AutoCloseable {
 	
+	/**
+	 * Endpoint used for this service.
+	 */
 	Endpoint getEndpoint();
 }

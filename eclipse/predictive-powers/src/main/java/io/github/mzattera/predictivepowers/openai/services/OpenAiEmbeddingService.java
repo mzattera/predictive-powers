@@ -15,33 +15,28 @@
  */
 package io.github.mzattera.predictivepowers.openai.services;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.stream.Collectors;
 
-import org.apache.tika.exception.TikaException;
-import org.xml.sax.SAXException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.openai.core.JsonMissing;
+import com.openai.models.embeddings.CreateEmbeddingResponse;
+import com.openai.models.embeddings.Embedding;
+import com.openai.models.embeddings.EmbeddingCreateParams;
+import com.openai.models.embeddings.EmbeddingCreateParams.EncodingFormat;
 
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.embeddings.Embedding;
-import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsRequest;
-import io.github.mzattera.predictivepowers.openai.client.embeddings.EmbeddingsResponse;
 import io.github.mzattera.predictivepowers.services.AbstractEmbeddingService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.ModelService;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
-import io.github.mzattera.util.ChunkUtil;
-import io.github.mzattera.util.ExtractionUtil;
+import io.github.mzattera.predictivepowers.util.ChunkUtil;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
  * This class creates embeddings using OpenAI.
@@ -50,6 +45,8 @@ import lombok.NonNull;
  *
  */
 public class OpenAiEmbeddingService extends AbstractEmbeddingService {
+
+	private final static Logger LOG = LoggerFactory.getLogger(OpenAiEmbeddingService.class);
 
 	public static final String DEFAULT_MODEL = "text-embedding-3-small";
 
@@ -67,166 +64,118 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 	 * and the change will apply to all subsequent calls.
 	 */
 	@Getter
+	@Setter
 	@NonNull
-	private final EmbeddingsRequest defaultReq;
+	private EmbeddingCreateParams defaultRequest;
+
+	@Override
+	public String getModel() {
+		return defaultRequest.model().asString();
+	}
+
+	@Override
+	public void setModel(@NonNull String model) {
+		defaultRequest = defaultRequest.toBuilder().model(model).build();
+	}
 
 	public OpenAiEmbeddingService(OpenAiEndpoint ep) {
 		this(ep, DEFAULT_MODEL);
 	}
 
+	@SuppressWarnings("unchecked")
 	public OpenAiEmbeddingService(OpenAiEndpoint ep, @NonNull String model) {
-		this(ep, EmbeddingsRequest.builder().model(model).build());
+		this(ep, EmbeddingCreateParams.builder() //
+				.model(model) //
+				.input(JsonMissing.of()) //
+				.encodingFormat(EncodingFormat.FLOAT).build());
 	}
 
-	public OpenAiEmbeddingService(OpenAiEndpoint ep, EmbeddingsRequest embeddingsRequest) {
+	public OpenAiEmbeddingService(OpenAiEndpoint ep, EmbeddingCreateParams embeddingsRequest) {
 		this.endpoint = ep;
-		this.defaultReq = embeddingsRequest;
+		this.defaultRequest = embeddingsRequest;
 		this.modelService = ep.getModelService();
-	}
-
-	@Override
-	public String getModel() {
-		return defaultReq.getModel();
-	}
-
-	@Override
-	public void setModel(@NonNull String model) {
-		defaultReq.setModel(model);
-	}
-
-	Integer dimensions = null;
-
-	/**
-	 * 
-	 * @return Dimensions for the generated embeddings, or null if this is left to
-	 *         model default.
-	 */
-	public Integer getDimensions() {
-		return defaultReq.getDimensions();
-	}
-
-	/**
-	 * Set dimensions for the generated embeddings, not all models support this.
-	 * Refer to API documentation for possible values.
-	 * 
-	 * @param dimensions Dimensions for the generated embeddings, or null to use
-	 *                   model default.
-	 * @return
-	 */
-	public void setDimensions(Integer dimensions) {
-		// See https://openai.com/blog/new-embedding-models-and-api-updates
-		defaultReq.setDimensions(dimensions);
-	}
-
-	public List<EmbeddedText> embed(String text, EmbeddingsRequest req) {
-		return embed(text, getDefaultTextTokens(), 1, 1, req);
 	}
 
 	// This is the only method that one must implement when extending
 	// AbstractEmbeddingService, it makes sure the default request is passed
 	@Override
 	public List<EmbeddedText> embed(String text, int chunkSize, int windowSize, int stride) {
-		return embed(text, chunkSize, windowSize, stride, defaultReq);
-	}
 
-	public List<EmbeddedText> embed(String text, int chunkSize, int windowSize, int stride, EmbeddingsRequest req) {
-
-		String model = req.getModel();
+		String model = defaultRequest.model().toString();
 		int modelSize = modelService.getContextSize(model);
 		Tokenizer tokenizer = modelService.getTokenizer(model);
 
 		// Chunk accordingly to user's instructions
 		List<String> chunks = ChunkUtil.split(text, chunkSize, windowSize, stride, tokenizer);
+//		inspect("chunks", chunks);
 
 		// Make sure no chunk is bigger than model's supported size
 		List<String> tmp = new ArrayList<>(chunks.size() * 2);
 		for (String c : chunks)
 			tmp.addAll(ChunkUtil.split(c, modelSize, tokenizer));
 		chunks = tmp;
+//		inspect("chunks from tmp", chunks);
+
+		// Notice ChunkUtil removes empty strings already
 
 		// Embed as many pieces you can in a single call
-		req.getInput().clear();
+		List<String> input = new ArrayList<>();
 		List<EmbeddedText> result = new ArrayList<>();
 		StringBuilder sb = new StringBuilder();
 		while (chunks.size() > 0) {
 			String s = chunks.remove(0);
 
 			sb.append(s);
-			if (tokenizer.count(sb.toString()) > modelSize) {
+			// We have at most 2048 inputs or 300K tokens (with a 20tk overhead per input)
+			// ..somehow the prompt token calculation counts even more tokens; 128K seems to
+			// provide a very safe limit
+			// https://platform.openai.com/docs/api-reference/embeddings/create
+			if ((input.size() == 2048) || ((tokenizer.count(sb.toString()) + 20 * input.size()) > 128_000)) {
 				// too many tokens, embed what you have
-				result.addAll(embed(req));
-				req.getInput().clear();
+				result.addAll(embed(input));
+				input.clear();
 				sb.setLength(0);
+				sb.append(s);
 			}
 
 			// add to next request
-			req.getInput().add(s);
+			input.add(s);
 		}
 
 		// last bit
-		if (req.getInput().size() > 0) {
-			result.addAll(embed(req));
+		if (input.size() > 0) {
+			result.addAll(embed(input));
 		}
 
 		return result;
 	}
 
-	public List<EmbeddedText> embed(Collection<String> text, EmbeddingsRequest req) {
-		return embed(text, getDefaultTextTokens(), 1, 1, req);
-	}
+	private List<EmbeddedText> embed(List<String> input) {
 
-	public List<EmbeddedText> embed(Collection<String> text, int chunkSize, int windowSize, int stride,
-			EmbeddingsRequest req) {
 		List<EmbeddedText> result = new ArrayList<>();
-		for (String s : text)
-			result.addAll(embed(s, chunkSize, windowSize, stride, req));
-		return result;
 
-	}
+//		inspect("input", input);
+		EmbeddingCreateParams req = defaultRequest.toBuilder().inputOfArrayOfStrings(input).build();
+		CreateEmbeddingResponse res = endpoint.getClient().embeddings().create(req);
+		LOG.info("Called OpenAI Embedding Service: " + res.usage());
 
-	public List<EmbeddedText> embedFile(File file, EmbeddingsRequest req)
-			throws IOException, SAXException, TikaException {
-		return embed(ExtractionUtil.fromFile(file), req);
-	}
-
-	public Map<File, List<EmbeddedText>> embedFolder(File folder, EmbeddingsRequest req)
-			throws IOException, SAXException, TikaException {
-		if (!folder.isDirectory() || !folder.canRead()) {
-			throw new IOException("Cannot read folder: " + folder.getCanonicalPath());
-		}
-
-		Map<File, List<EmbeddedText>> result = new HashMap<>();
-		for (File f : folder.listFiles()) {
-			if (f.isFile())
-				result.put(f, embedFile(f, req));
-			else
-				result.putAll(embedFolder(f, req));
-		}
-
-		return result;
-	}
-
-	public List<EmbeddedText> embedURL(String url, EmbeddingsRequest req)
-			throws MalformedURLException, IOException, SAXException, TikaException, URISyntaxException {
-		return embedURL((new URI(url)).toURL(), req);
-	}
-
-	public List<EmbeddedText> embedURL(URL url, EmbeddingsRequest req) throws IOException, SAXException, TikaException {
-		return embed(ExtractionUtil.fromUrl(url), req);
-	}
-
-	private List<EmbeddedText> embed(EmbeddingsRequest req) {
-
-		List<EmbeddedText> result = new ArrayList<>(req.getInput().size());
-		EmbeddingsResponse res = endpoint.getClient().createEmbeddings(req);
-
-		for (Embedding e : res.getData()) {
-			int index = e.getIndex();
-			EmbeddedText et = EmbeddedText.builder().text(req.getInput().get(index)).embedding(e.getEmbedding())
-					.model(res.getModel()).build();
+		for (Embedding e : res.data()) {
+			int index = (int) e.index();
+			EmbeddedText et = EmbeddedText.builder() //
+					.text(input.get(index)) //
+					.embedding(e.embedding().stream().map(f -> f.doubleValue()).collect(Collectors.toList())) //
+					.model(res.model()).build();
 			result.add(et);
 		}
 
 		return result;
 	}
+
+	// For counting calls
+//	private void inspect(String name, List<String> input) {
+//		LOG.info("Created " + name + " list with " + input.size() + " strings for a total lenght of "
+//				+ Strings.join(input, ' ').length() + " chars.");
+//		for (String s:input)
+//			LOG.info("  -> "+s);
+//	}
 }

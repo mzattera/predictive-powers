@@ -22,11 +22,15 @@ package io.github.mzattera.predictivepowers.openai.services;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.openai.core.http.HttpResponse;
+import com.openai.models.chat.completions.ChatCompletionContentPart.File;
+import com.openai.models.files.FileContentParams;
 
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.files.File;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import lombok.Getter;
 import lombok.NonNull;
@@ -67,7 +71,7 @@ public class OpenAiFilePart extends FilePart {
 	@Override
 	public String getName() {
 		if (openAiFile != null)
-			return (openAiFile.getFilename() == null) ? fileId : openAiFile.getFilename();
+			return openAiFile.file().filename().isEmpty() ? fileId : openAiFile.file().filename().get();
 		return fileId;
 	}
 
@@ -75,16 +79,25 @@ public class OpenAiFilePart extends FilePart {
 	 * 
 	 * @return An stream to read content of the file.
 	 * 
-	 * @throws IOException If a valid endpoint was not provided in constructor..
+	 * @throws IOException If a valid endpoint was not provided in constructor.
 	 */
 	@Override
 	public InputStream getInputStream() throws IOException {
 		try {
 			if (endpoint == null)
 				throw new IOException("To use this method, a valid endpoint must be provided in constructor.");
+
 			java.io.File tmp = java.io.File.createTempFile("OpenAI_file_", ".dnload");
-			endpoint.getClient().retrieveFileContent(fileId, tmp);
+			FileContentParams params = FileContentParams.builder().fileId(fileId).build();
+			try (HttpResponse response = endpoint.getClient().files().content(params)) {
+				Files.copy(response.body(), tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
+			} catch (Exception e) {
+				System.out.println("Something went wrong!");
+				throw new RuntimeException(e);
+			}
+
 			return new FileInputStream(tmp);
+
 		} catch (IOException e) {
 			throw e;
 		} catch (Exception other) {
@@ -101,8 +114,7 @@ public class OpenAiFilePart extends FilePart {
 	}
 
 	public OpenAiFilePart(@NonNull File openAiFile, String mimeType, OpenAiEndpoint endpoint) {
-		super(mimeType);
-		this.fileId = openAiFile.getId();
+		this.fileId = openAiFile.file().fileId().get();
 		this.openAiFile = openAiFile;
 		this.endpoint = endpoint;
 	}
@@ -116,9 +128,9 @@ public class OpenAiFilePart extends FilePart {
 	}
 
 	public OpenAiFilePart(@NonNull String fileId, String mimeType, OpenAiEndpoint endpoint) {
-		super(mimeType);
 		this.fileId = fileId;
 		this.openAiFile = null;
 		this.endpoint = endpoint;
+		setMimeType(mimeType);
 	}
 }

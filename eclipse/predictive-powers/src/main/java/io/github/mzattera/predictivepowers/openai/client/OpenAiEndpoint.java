@@ -19,6 +19,9 @@ package io.github.mzattera.predictivepowers.openai.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.openai.client.OpenAIClient;
+import com.openai.client.okhttp.OpenAIOkHttpClient;
+
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiAgentService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
@@ -44,21 +47,68 @@ public class OpenAiEndpoint implements AiEndpoint {
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiEndpoint.class);
 
 	@Getter
-	private final OpenAiClient client;
+	private final OpenAIClient client;
 
+	/**
+	 * Creates an endpoint using the `OPENAI_API_KEY`, `OPENAI_ORG_ID`,
+	 * `OPENAI_PROJECT_ID` and `OPENAI_BASE_URL` environment variables.
+	 */
 	public OpenAiEndpoint() {
-		this(new OpenAiClient());
+		this(OpenAIOkHttpClient.fromEnv());
 	}
 
-	public OpenAiEndpoint(String apiKey) {
-		this(new OpenAiClient(apiKey));
+	/**
+	 * Creates an endpoint using the `OPENAI_ORG_ID`, `OPENAI_PROJECT_ID` and
+	 * `OPENAI_BASE_URL` environment variables.
+	 */
+	public OpenAiEndpoint(@NonNull String apiKey) {
+		this(OpenAIOkHttpClient.builder().fromEnv().apiKey(apiKey).build());
 	}
 
-	public OpenAiEndpoint(@NonNull OpenAiClient client) {
+	/**
+	 * Creates an endpoint using the `OPENAI_API_KEY` and `OPENAI_BASE_URL`
+	 * environment variable.
+	 */
+	public OpenAiEndpoint(@NonNull String organizationId, @NonNull String projectId) {
+		this(OpenAIOkHttpClient.builder().fromEnv().organization(organizationId).project(projectId).build());
+	}
+
+	/**
+	 * Creates an endpoint using the `OPENAI_BASE_URL` environment variable.
+	 */
+	public OpenAiEndpoint(@NonNull String apiKey, @NonNull String organizationId, @NonNull String projectId) {
+		this(OpenAIOkHttpClient.builder().fromEnv().apiKey(apiKey).organization(organizationId).project(projectId)
+				.build());
+	}
+
+	/**
+	 * Creates an endpoint connected to given Azure OpenAI endpoint. Gets the API
+	 * key from `AZURE_OPENAI_KEY`.
+	 * 
+	 * @param azureEndpoint
+	 */
+//	public OpenAiEndpoint(URL azureEndpoint, TokenCredential credential) {
+//		this(OpenAIOkHttpClient.builder()
+//				// Gets the API key and endpoint from the `AZURE_OPENAI_KEY` and
+//				// `OPENAI_BASE_URL` environment variables, respectively
+////				.fromEnv() //
+////				.apiKey("7d4346c5468c466a97cd75195ad5ffdd")
+//				.baseUrl("https://maxiazureopenaisw.openai.azure.com/")
+//				// Set the Azure Entra ID
+//				.credential(BearerTokenCredential.create(AuthenticationUtil.getBearerTokenSupplier(credential,
+//						"https://cognitiveservices.azure.com/.default")))
+//				.build());
+//	}
+
+	/**
+	 * Creates an endpoint using an existing client.
+	 */
+	public OpenAiEndpoint(@NonNull OpenAIClient client) {
 		this.client = client;
 	}
 
-	// Mode service is state-less, we do not need to create a new model service each
+	// Model service is state-less, we do not need to create a new model service
+	// each
 	// time.
 	private final OpenAiModelService modelService = new OpenAiModelService(this);
 
@@ -142,7 +192,7 @@ public class OpenAiEndpoint implements AiEndpoint {
 		try {
 			client.close();
 		} catch (Exception e) {
-			LOG.warn("Error while closing endpoint", e);
+			LOG.warn("Error while closing endpoint client", e);
 		}
 	}
 }

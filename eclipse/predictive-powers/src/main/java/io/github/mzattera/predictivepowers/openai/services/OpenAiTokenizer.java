@@ -16,31 +16,24 @@
 
 package io.github.mzattera.predictivepowers.openai.services;
 
-import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.knuddels.jtokkit.Encodings;
 import com.knuddels.jtokkit.api.Encoding;
 import com.knuddels.jtokkit.api.EncodingRegistry;
 import com.knuddels.jtokkit.api.EncodingType;
+import com.openai.core.JsonValue;
+import com.openai.models.chat.completions.ChatCompletionCreateParams;
+import com.openai.models.chat.completions.ChatCompletionCreateParams.Function;
+import com.openai.models.chat.completions.ChatCompletionMessageParam;
+import com.openai.models.chat.completions.ChatCompletionMessageToolCall;
+import com.openai.models.chat.completions.ChatCompletionTool;
 
-import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
-import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
-import io.github.mzattera.predictivepowers.openai.client.chat.Function;
-import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
-import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
-import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
-import io.github.mzattera.predictivepowers.services.messages.FilePart;
-import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
-import io.github.mzattera.predictivepowers.services.messages.MessagePart;
-import io.github.mzattera.util.ImageUtil;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
@@ -173,6 +166,8 @@ public class OpenAiTokenizer implements Tokenizer {
 
 		// Added
 		MODEL_TO_ENCODING.put("o4-mini", "o200k_base");
+		MODEL_TO_ENCODING.put("gpt-4o-search-preview", "o200k_base");
+		MODEL_TO_ENCODING.put("gpt-4o-mini-search-preview", "o200k_base");
 	}
 
 	private static String getEncodingName(String modelName) {
@@ -203,19 +198,115 @@ public class OpenAiTokenizer implements Tokenizer {
 	 * @param messages
 	 * @return Number of tokens needed to encode given list of messages.
 	 */
-	public int count(List<OpenAiChatMessage> messages) {
+	@SuppressWarnings("deprecation")
+	public int count(List<ChatCompletionMessageParam> messages) {
 
 		int sum = 0;
 
 		// For some models, only first message for a role counts
 		boolean firstMessage = true;
 
-		for (OpenAiChatMessage msg : messages) {
+		for (ChatCompletionMessageParam msg : messages) {
 
 			if ("gpt-3.5-turbo-0301".equals(model))
 				++sum;
 
-			String role = msg.getRole().toString();
+			String role = null;
+			String content = null;
+			String name = null;
+			if (msg.isAssistant()) {
+				role = "assistant";
+				content = msg.asAssistant().content().filter(c -> c.isText()).isPresent()
+						? msg.asAssistant().content().get().asText()
+						: null;
+
+				// Message is a function call
+				if (msg.asAssistant().functionCall().isPresent()) {
+					if ("gpt-3.5-turbo".equals(model))
+						sum += 5;
+//					else if ("gpt-3.5-turbo-0301".equals(model))
+//						sum += 2;
+					else
+						sum += 3;
+					sum += encoding.countTokens(msg.asAssistant().functionCall().get().name());
+					sum += encoding.countTokens(msg.asAssistant().functionCall().get().arguments());
+					// Too much hassle fro an old model
+//						if ("gpt-3.5-turbo".equals(model))
+//							sum -= (msg.getFunctionCall().getArguments().size() * 4);
+				}
+
+				// Message is a ftool call
+				if (msg.asAssistant().toolCalls().isPresent()) {
+					List<ChatCompletionMessageToolCall> calls = msg.asAssistant().toolCalls().get();
+					if (calls.size() > 1)
+						sum += 21;
+					else
+						sum += 3;
+
+					// This is true if all calls in the message have no parameters
+					boolean allCallsWithNoParams = true;
+
+					for (ChatCompletionMessageToolCall toolCall : calls) {
+						sum += 2;
+						// Call ID is NOT counted against total tokens
+
+						String type = (String) toolCall._type().asString().get();
+						sum += encoding.countTokens(type);
+
+						if ("function".equals(type)) {
+
+							com.openai.models.chat.completions.ChatCompletionMessageToolCall.Function functionCall = toolCall
+									.function();
+							sum += encoding.countTokens(functionCall.name());
+							sum += encoding.countTokens(functionCall.arguments());
+
+							// TODO URGENT See how it was doen before
+							if (functionCall.arguments().length() == 0)
+								++sum;
+							else
+								allCallsWithNoParams = false;
+
+//							for (Entry<String, Object> e : functionCall.getArguments().entrySet()) {
+//								sum += 2;
+//								String fName = e.getKey();
+//								sum += encoding.countTokens(fName);
+//								sum += encoding.countTokens(e.getValue().toString());
+//							}
+
+						} else
+							throw new IllegalArgumentException("Unsupported tool type: " + type);
+					} // for each tool call
+
+					if (allCallsWithNoParams) {
+						if (calls.size() > 1)
+							++sum;
+						else
+							--sum;
+					}
+				} // if we have tool calls
+
+			} else if (msg.isDeveloper()) {
+				role = "developer";
+				content = msg.asDeveloper().content().isText() ? msg.asDeveloper().content().asText() : null;
+				name = msg.asDeveloper().name().orElse(null);
+			} else if (msg.isFunction()) {
+				role = "function";
+				content = msg.asFunction().content().orElse(null);
+				name = msg.asFunction().name();
+			} else if (msg.isSystem()) {
+				role = "system";
+				content = msg.asSystem().content().isText() ? msg.asSystem().content().asText() : null;
+				name = msg.asSystem().name().orElse(null);
+			} else if (msg.isTool()) {
+				role = "tool";
+				content = msg.asTool().content().isText() ? msg.asTool().content().asText() : null;
+			} else if (msg.isUser()) {
+				role = "user";
+				content = msg.asUser().content().isText() ? msg.asUser().content().asText() : null;
+				name = msg.asUser().name().orElse(null);
+			} else
+				throw new IllegalArgumentException("Unrecognized message role: " + role);
+
 			if ("function".equals(role))
 				sum += 2;
 			else
@@ -224,22 +315,19 @@ public class OpenAiTokenizer implements Tokenizer {
 
 			// TODO urgent, what when we mix text an images? We should analyze parts
 			// separately, probably
-			try {
-				sum += encoding.countTokens(msg.getContent());
-			} catch (IllegalArgumentException e) {
-				// Message is not a simple text message
-			}
+			if (content != null)
+				sum += encoding.countTokens(content);
 
-			if (msg.getName() != null) { // Name provided //////////////////////////////////
+			if (name != null) { // Name provided //////////////////////////////////
 
-				sum += encoding.countTokens(msg.getName())+1;
+				sum += encoding.countTokens(name) + 1;
 				if (model.startsWith("o1-mini")) {
 					if (firstMessage)
-						sum-=6;
+						sum -= 6;
 					sum += 11;
 				} else if (model.startsWith("o1-preview")) {
 					if (firstMessage)
-						sum-=7;
+						sum -= 7;
 					sum += 11;
 				} else if (model.startsWith("o1")) {
 					if (firstMessage)
@@ -251,12 +339,12 @@ public class OpenAiTokenizer implements Tokenizer {
 					if (firstMessage)
 						--sum;
 					if ("assistant".equals(role))
-						sum+=2;
+						sum += 2;
 				} else if (model.startsWith("o4-mini")) {
 					if (firstMessage)
 						--sum;
 					if ("assistant".equals(role))
-						sum+=2;
+						sum += 2;
 				}
 			} else { // No name provided ///////////////////////////////////
 				if (model.startsWith("o1-mini")) {
@@ -288,114 +376,55 @@ public class OpenAiTokenizer implements Tokenizer {
 				}
 			} // here we were handling name in message
 
-			if (msg.getFunctionCall() != null) {
-				if ("gpt-3.5-turbo".equals(model))
-					sum += 5;
-				else if ("gpt-3.5-turbo-0301".equals(model))
-					sum += 2;
-				else
-					sum += 3;
-				JsonNode functionCall = OpenAiClient.getJsonMapper().valueToTree(msg.getFunctionCall());
-				sum += encoding.countTokens(functionCall.path("name").asText());
-				if (!functionCall.path("arguments").isMissingNode()) {
-					sum += encoding.countTokens(functionCall.path("arguments").asText());
-					if ("gpt-3.5-turbo".equals(model))
-						sum -= (msg.getFunctionCall().getArguments().size() * 4);
-				}
-			}
-
-			if (msg.getToolCalls() != null) {
-				if (msg.getToolCalls().size() > 1)
-					sum += 21;
-				else
-					sum += 3;
-
-				// This is true if all calls in the message have no parameters
-				boolean allCallsWithNoParams = true;
-
-				for (OpenAiToolCall toolCall : msg.getToolCalls()) {
-					sum += 2;
-					// Call ID is NOT counted against total tokens
-
-					String type = toolCall.getType().toString();
-					sum += encoding.countTokens(type);
-
-					if ("function".equals(type)) {
-
-						FunctionCall functionCall = toolCall.getFunction();
-						sum += encoding.countTokens(functionCall.getName());
-
-						if (functionCall.getArguments().size() == 0)
-							++sum;
-						else
-							allCallsWithNoParams = false;
-
-						for (Entry<String, Object> e : functionCall.getArguments().entrySet()) {
-							sum += 2;
-							String fName = e.getKey();
-							sum += encoding.countTokens(fName);
-							sum += encoding.countTokens(e.getValue().toString());
-						}
-
-					} else
-						throw new IllegalArgumentException("Unsupported tool type: " + type);
-				} // for each tool call
-
-				if (allCallsWithNoParams) {
-					if (msg.getToolCalls().size() > 1)
-						++sum;
-					else
-						--sum;
-				}
-			} // if we have tool calls
+			// TODO Add token calculation for audio
 
 			// If we use image model, calculate image tokens.
 			// See https://platform.openai.com/docs/guides/images
-			boolean firstImage = true;
-			for (MessagePart part : msg.getContentParts()) {
-				if (!(part instanceof FilePart))
-					continue;
-				FilePart file = (FilePart) part;
-				if (file.getContentType() != ContentType.IMAGE)
-					continue;
-				if (firstImage) {
-					sum += 8;
-					firstImage = false;
-				}
-				try {
-					if (!file.isLocalFile()) {
-						// For performance reasons, we do not inspect the image so we just estimate
-						// tokens
-						sum += 170 * 2 + 85; // should not happen, but if we cannot read the image put something in
-					} else {
-						// Inspect image for exact token calculation
-						BufferedImage img = ImageUtil.fromBytes(file.getInputStream());
-						int w = img.getWidth();
-						int h = img.getHeight();
-						if ((w > 2048) || (h > 2048)) {
-							double scale = 2048d / Math.max(w, h);
-							w *= scale;
-							h *= scale;
-						}
-						if ((w > 768) || (h > 768)) {
-							double scale = 768d / Math.min(w, h);
-							w *= scale;
-							h *= scale;
-						}
-						int wt = w / 512 + ((w % 512) > 0 ? 1 : 0);
-						int ht = h / 512 + ((h % 512) > 0 ? 1 : 0);
-
-						sum += 170 * wt * ht + 85;
-					}
-				} catch (Exception e) {
-					sum += 170 * 2 + 85; // should not happen, but if we cannot read the image put something in
-				}
-			}
-
-			firstMessage = false;
+//			boolean firstImage = true;
+//			for (MessagePart part : msg.getContentParts()) {
+//				if (!(part instanceof FilePart))
+//					continue;
+//				FilePart file = (FilePart) part;
+//				if (file.getContentType() != ContentType.IMAGE)
+//					continue;
+//				if (firstImage) {
+//					sum += 8;
+//					firstImage = false;
+//				}
+//				try {
+//					if (!file.isLocalFile()) {
+//						// For performance reasons, we do not inspect the image so we just estimate
+//						// tokens
+//						sum += 170 * 2 + 85; // should not happen, but if we cannot read the image put something in
+//					} else {
+//						// Inspect image for exact token calculation
+//						BufferedImage img = ImageUtil.fromBytes(file.getInputStream());
+//						int w = img.getWidth();
+//						int h = img.getHeight();
+//						if ((w > 2048) || (h > 2048)) {
+//							double scale = 2048d / Math.max(w, h);
+//							w *= scale;
+//							h *= scale;
+//						}
+//						if ((w > 768) || (h > 768)) {
+//							double scale = 768d / Math.min(w, h);
+//							w *= scale;
+//							h *= scale;
+//						}
+//						int wt = w / 512 + ((w % 512) > 0 ? 1 : 0);
+//						int ht = h / 512 + ((h % 512) > 0 ? 1 : 0);
+//
+//						sum += 170 * wt * ht + 85;
+//					}
+//				} catch (Exception e) {
+//					sum += 170 * 2 + 85; // should not happen, but if we cannot read the image put something in
+//				}
+//			}
+//
+//			firstMessage = false;
 		} // for each message
 
-		if (model.startsWith("o1-mini") && (sum>0))
+		if (model.startsWith("o1-mini") && (sum > 0))
 			--sum;
 		return sum;
 
@@ -410,10 +439,13 @@ public class OpenAiTokenizer implements Tokenizer {
 	 * @param req
 	 * @return Number of tokens used to encode given request.
 	 */
-	public int count(ChatCompletionsRequest req) {
-		int sum = count(req.getMessages());
-		sum += countFunctions(req.getFunctions());
-		sum += countTools(req.getTools());
+	@SuppressWarnings("deprecation")
+	public int count(ChatCompletionCreateParams req) {
+		int sum = count(req.messages());
+		if (req.functions().isPresent())
+			sum += countFunctions(req.functions().get());
+		if (req.tools().isPresent())
+			sum += countTools(req.tools().get());
 		sum += 3;
 		return sum;
 	}
@@ -424,30 +456,28 @@ public class OpenAiTokenizer implements Tokenizer {
 	 * @return Number of tokens needed to encode given list of Functions (=function
 	 *         descriptions).
 	 */
+	@SuppressWarnings("deprecation")
 	private int countFunctions(List<Function> functions) {
 
 		if (functions == null)
 			return 0;
 
-		JsonNode functionsArray = OpenAiClient.getJsonMapper().valueToTree(functions);
 		int sum = "gpt-3.5-turbo".equals(model) ? 8 : 4;
 
-		for (JsonNode function : functionsArray) {
-			sum += encoding.countTokens(function.path("name").asText());
+		for (Function function : functions) {
+			sum += encoding.countTokens(function.name());
 
-			JsonNode description = function.path("description");
-			if (!description.isMissingNode()) {
+			if (function.description().isPresent()) {
 				++sum;
-				sum += encoding.countTokens(function.path("description").asText());
+				sum += encoding.countTokens(function.description().get());
 			}
 
-			JsonNode parameters = function.path("parameters");
-			if (!function.path("parameters").isMissingNode()) {
+			if (function.parameters().isPresent()) {
 				sum += 3;
-				JsonNode properties = parameters.path("properties");
+				Map<String, JsonValue> properties = function.parameters().get()._additionalProperties();
 
-				if (!properties.isMissingNode()) {
-					Iterator<String> propertiesKeys = properties.fieldNames();
+				if (properties != null) {
+					Iterator<String> propertiesKeys = properties.keySet().iterator();
 
 					while (propertiesKeys.hasNext()) { // For each property, which is a function parameter
 						boolean hasDescription = false;
@@ -455,32 +485,33 @@ public class OpenAiTokenizer implements Tokenizer {
 
 						String propertiesKey = propertiesKeys.next();
 						sum += encoding.countTokens(propertiesKey);
-						JsonNode v = properties.path(propertiesKey);
+//						JsonValue v = properties.get(propertiesKey);
 
-						Iterator<String> fields = v.fieldNames();
-						while (fields.hasNext()) {
-							String field = fields.next();
-							if ("type".equals(field)) {
-								sum += 2;
-								String type = v.path("type").asText();
-								sum += encoding.countTokens(type);
-								if ("integer".equals(type))
-									isEnumOrInt = true;
-							} else if ("description".equals(field)) {
-								++sum;
-								sum += encoding.countTokens(v.path("description").asText());
-								hasDescription = true;
-							} else if ("enum".equals(field)) {
-								sum -= 3;
-								Iterator<JsonNode> enumValues = v.path("enum").elements();
-								while (enumValues.hasNext()) {
-									JsonNode enumValue = enumValues.next();
-									sum += 3;
-									sum += encoding.countTokens(enumValue.asText());
-								}
-								isEnumOrInt = true;
-							}
-						} // for each field of the property
+						// TODO URGENT Fix one day
+//						Iterator<String> fields = v.fieldNames();
+//						while (fields.hasNext()) {
+//							String field = fields.next();
+//							if ("type".equals(field)) {
+//								sum += 2;
+//								String type = v.path("type").asText();
+//								sum += encoding.countTokens(type);
+//								if ("integer".equals(type))
+//									isEnumOrInt = true;
+//							} else if ("description".equals(field)) {
+//								++sum;
+//								sum += encoding.countTokens(v.path("description").asText());
+//								hasDescription = true;
+//							} else if ("enum".equals(field)) {
+//								sum -= 3;
+//								Iterator<JsonNode> enumValues = v.path("enum").elements();
+//								while (enumValues.hasNext()) {
+//									JsonNode enumValue = enumValues.next();
+//									sum += 3;
+//									sum += encoding.countTokens(enumValue.asText());
+//								}
+//								isEnumOrInt = true;
+//							}
+//						} // for each field of the property
 
 						if (hasDescription && isEnumOrInt)
 							++sum;
@@ -501,81 +532,83 @@ public class OpenAiTokenizer implements Tokenizer {
 	 * @return Number of tokens needed to encode given list of Tools (=tools
 	 *         descriptions).
 	 */
-	private int countTools(List<OpenAiTool> tools) {
+	private int countTools(List<ChatCompletionTool> tools) {
 
-		if (tools == null)
-			return 0;
-
-		JsonNode toolsArray = OpenAiClient.getJsonMapper().valueToTree(tools);
-		int sum = 0;
-
-		for (JsonNode tool : toolsArray) {
-
-			if (!"function".equals(tool.path("type").asText()))
-				throw new IllegalArgumentException("Unsoported tool type: " + tool.path("type").asText());
-
-			JsonNode function = tool.path("function");
-			sum += encoding.countTokens(function.path("name").asText());
-
-			JsonNode description = function.path("description");
-			if (!description.isMissingNode()) {
-				++sum;
-				sum += encoding.countTokens(function.path("description").asText());
-			}
-
-			JsonNode parameters = function.path("parameters");
-			if (!function.path("parameters").isMissingNode()) {
-				JsonNode properties = parameters.path("properties");
-
-				if (!properties.isMissingNode()) {
-
-					if (properties.size() > 0)
-						sum += 3;
-
-					Iterator<String> propertiesKeys = properties.fieldNames();
-					while (propertiesKeys.hasNext()) {
-						boolean hasDescription = false;
-						boolean isDouble = false;
-
-						String propertiesKey = propertiesKeys.next();
-						sum += encoding.countTokens(propertiesKey);
-						JsonNode v = properties.path(propertiesKey);
-
-						Iterator<String> fields = v.fieldNames();
-						while (fields.hasNext()) {
-							String field = fields.next();
-							if ("type".equals(field)) {
-								sum += 2;
-								String type = v.path("type").asText();
-								sum += encoding.countTokens(type);
-								if ("number".equals(type))
-									isDouble = true;
-
-							} else if ("description".equals(field)) {
-								sum += 2;
-								sum += encoding.countTokens(v.path("description").asText());
-								hasDescription = true;
-							} else if ("enum".equals(field)) {
-								sum -= 3;
-								Iterator<JsonNode> enumValues = v.path("enum").elements();
-								while (enumValues.hasNext()) {
-									JsonNode enumValue = enumValues.next();
-									sum += 3;
-									sum += encoding.countTokens(enumValue.asText());
-								}
-							}
-						} // for each field
-
-						if (hasDescription && isDouble)
-							sum -= 1;
-					} // for each property
-				} // if there are properties
-			} // if there are parameters
-
-			sum += 11;
-		} // for each tool
-
-		sum += 16;
-		return sum;
+		// TODO URGENT
+		return 0;
+//		if (tools == null)
+//			return 0;
+//
+//		JsonNode toolsArray = OpenAiClient.getJsonMapper().valueToTree(tools);
+//		int sum = 0;
+//
+//		for (JsonNode tool : toolsArray) {
+//
+//			if (!"function".equals(tool.path("type").asText()))
+//				throw new IllegalArgumentException("Unsoported tool type: " + tool.path("type").asText());
+//
+//			JsonNode function = tool.path("function");
+//			sum += encoding.countTokens(function.path("name").asText());
+//
+//			JsonNode description = function.path("description");
+//			if (!description.isMissingNode()) {
+//				++sum;
+//				sum += encoding.countTokens(function.path("description").asText());
+//			}
+//
+//			JsonNode parameters = function.path("parameters");
+//			if (!function.path("parameters").isMissingNode()) {
+//				JsonNode properties = parameters.path("properties");
+//
+//				if (!properties.isMissingNode()) {
+//
+//					if (properties.size() > 0)
+//						sum += 3;
+//
+//					Iterator<String> propertiesKeys = properties.fieldNames();
+//					while (propertiesKeys.hasNext()) {
+//						boolean hasDescription = false;
+//						boolean isDouble = false;
+//
+//						String propertiesKey = propertiesKeys.next();
+//						sum += encoding.countTokens(propertiesKey);
+//						JsonNode v = properties.path(propertiesKey);
+//
+//						Iterator<String> fields = v.fieldNames();
+//						while (fields.hasNext()) {
+//							String field = fields.next();
+//							if ("type".equals(field)) {
+//								sum += 2;
+//								String type = v.path("type").asText();
+//								sum += encoding.countTokens(type);
+//								if ("number".equals(type))
+//									isDouble = true;
+//
+//							} else if ("description".equals(field)) {
+//								sum += 2;
+//								sum += encoding.countTokens(v.path("description").asText());
+//								hasDescription = true;
+//							} else if ("enum".equals(field)) {
+//								sum -= 3;
+//								Iterator<JsonNode> enumValues = v.path("enum").elements();
+//								while (enumValues.hasNext()) {
+//									JsonNode enumValue = enumValues.next();
+//									sum += 3;
+//									sum += encoding.countTokens(enumValue.asText());
+//								}
+//							}
+//						} // for each field
+//
+//						if (hasDescription && isDouble)
+//							sum -= 1;
+//					} // for each property
+//				} // if there are properties
+//			} // if there are parameters
+//
+//			sum += 11;
+//		} // for each tool
+//
+//		sum += 16;
+//		return sum;
 	}
 }

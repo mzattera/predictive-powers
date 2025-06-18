@@ -30,7 +30,7 @@ import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.services.QnAPair;
 import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
-import io.github.mzattera.util.ChunkUtil;
+import io.github.mzattera.predictivepowers.util.ChunkUtil;
 import lombok.NonNull;
 
 /**

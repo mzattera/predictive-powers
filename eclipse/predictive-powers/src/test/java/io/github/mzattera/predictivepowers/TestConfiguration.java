@@ -27,10 +27,10 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.services.Service;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 
 /**
- * This class is used to configure which JUnit tests are acctive.
+ * This class is used to configure which JUnit tests are active.
  */
 public final class TestConfiguration {
 
@@ -44,7 +44,8 @@ public final class TestConfiguration {
 
 	public static List<AiEndpoint> getAiEndpoints() {
 
-		// TODO URGENT Add Anthropic here and make sure all tests use the test
+		// TODO URGENT Add Anthropic and Google here and make sure all tests use the
+		// test
 		// configuration
 
 		List<AiEndpoint> result = new ArrayList<>();
@@ -53,28 +54,6 @@ public final class TestConfiguration {
 			result.add(new OpenAiEndpoint());
 		if (TEST_HF_SERVICES)
 			result.add(new HuggingFaceEndpoint());
-
-		return result;
-	}
-
-	public static List<Pair<AiEndpoint, String>> getCompletionServices() {
-
-		List<Pair<AiEndpoint, String>> result = new ArrayList<>();
-
-		for (AiEndpoint ep : getAiEndpoints()) {
-			result.add(new ImmutablePair<>(ep, ep.getCompletionService().getModel()));
-		}
-
-		return result;
-	}
-
-	public static List<Pair<AiEndpoint, String>> getChatServices() {
-
-		List<Pair<AiEndpoint, String>> result = new ArrayList<>();
-
-		for (AiEndpoint ep : getAiEndpoints()) {
-			result.add(new ImmutablePair<>(ep, ep.getChatService().getModel()));
-		}
 
 		return result;
 	}
@@ -90,32 +69,55 @@ public final class TestConfiguration {
 		return result;
 	}
 
-	public static List<Pair<AiEndpoint, String>> getImageGenerationServices() {
+	public static List<Pair<AiEndpoint, String>> getCompletionServices() {
 
 		List<Pair<AiEndpoint, String>> result = new ArrayList<>();
 
 		for (AiEndpoint ep : getAiEndpoints()) {
-			result.add(new ImmutablePair<>(ep, ep.getImageGenerationService().getModel()));
+			try {
+				result.add(new ImmutablePair<>(ep, ep.getCompletionService().getModel()));
+			} catch (UnsupportedOperationException e) {
+				// Some endpoints might miss that
+			}
 		}
 
 		return result;
 	}
 
-	public static List<Pair<AiEndpoint, String>> getTTSServices() {
+	public static List<Pair<AiEndpoint, String>> getChatServices() {
 
 		List<Pair<AiEndpoint, String>> result = new ArrayList<>();
 
-		if (TEST_OPENAI_SERVICES)
-			result.add(new ImmutablePair<>(new OpenAiEndpoint(), "tts-1"));
-		return result;
-	}
+		for (AiEndpoint ep : getAiEndpoints()) {
+			try {
+				if (ep instanceof OpenAiEndpoint) {
+					// Test the default model
+					String defModel = OpenAiChatService.DEFAULT_MODEL;
+					result.add(new ImmutablePair<>(ep, defModel));
 
-	public static List<Pair<AiEndpoint, String>> getSTTServices() {
+					// Want to test different types of models too
+					if (!"gpt-3.5-turbo".equals(defModel))
+						result.add(new ImmutablePair<>(ep, "gpt-3.5-turbo")); // FUNCTION Calls (structured) JSON Mode
+																				// output
+					if (!"gpt-4-0125-preview".equals(defModel))
+						result.add(new ImmutablePair<>(ep, "gpt-4-0125-preview")); // TOOL Calls (structured) JSON Mode
+																					// output
+					if (!"gpt-4o-mini".equals(defModel))
+						result.add(new ImmutablePair<>(ep, "gpt-4o-mini")); // TOOL Calls (structured) with structured
+																			// output
+					if (!"o3-mini".equals(defModel))
+						result.add(new ImmutablePair<>(ep, "o3-mini")); // TOOL Calls (non-strucured) with structured
+																		// output
+					// FUNCTION Calls (non-structured) do not exist
+					// TOOL Calls (non-strucured) with JSON Mode output do not exist
+				} else {
+					result.add(new ImmutablePair<>(ep, ep.getChatService().getModel()));
+				}
+			} catch (UnsupportedOperationException e) {
+				// Some endpoints might miss that
+			}
+		}
 
-		List<Pair<AiEndpoint, String>> result = new ArrayList<>();
-
-		if (TEST_OPENAI_SERVICES)
-			result.add(new ImmutablePair<>(new OpenAiEndpoint(), "whisper-1"));
 		return result;
 	}
 
@@ -134,16 +136,64 @@ public final class TestConfiguration {
 		return result;
 	}
 
-	public static void close(List<? extends AutoCloseable> resources) {
-		for (AutoCloseable r : resources) {
+	public static List<Pair<AiEndpoint, String>> getImageGenerationServices() {
+
+		List<Pair<AiEndpoint, String>> result = new ArrayList<>();
+
+		for (AiEndpoint ep : getAiEndpoints()) {
+			if (ep instanceof OpenAiEndpoint) {
+
+				// Want to try all 3 models, as they behave differently
+
+				result.add(new ImmutablePair<>(ep, "dall-e-2"));
+
+				String defModel = ep.getImageGenerationService().getModel();
+				if (!"dall-e-3".equals(defModel))
+					throw new IllegalArgumentException("You must test dall-e-3 too");
+				result.add(new ImmutablePair<>(ep, defModel)); // This to test other constructor
+//				result.add(new ImmutablePair<>(ep, "dall-e-3"));
+
+				// TODO: Need to approve organisation
+//				result.add(new ImmutablePair<>(ep, "gpt-image-1"));
+			} else {
+				try {
+					result.add(new ImmutablePair<>(ep, ep.getImageGenerationService().getModel()));
+				} catch (UnsupportedOperationException e) {
+					// Some endpoints might miss that
+				}
+			}
+		}
+
+		return result;
+	}
+
+	public static List<Pair<AiEndpoint, String>> getTTSServices() {
+
+		// TODO Expose as a proper service
+
+		List<Pair<AiEndpoint, String>> result = new ArrayList<>();
+
+		if (TEST_OPENAI_SERVICES)
+			result.add(new ImmutablePair<>(new OpenAiEndpoint(), "tts-1"));
+		return result;
+	}
+
+	public static List<Pair<AiEndpoint, String>> getSTTServices() {
+
+		// TODO Expose as a6 proper service
+
+		List<Pair<AiEndpoint, String>> result = new ArrayList<>();
+
+		if (TEST_OPENAI_SERVICES)
+			result.add(new ImmutablePair<>(new OpenAiEndpoint(), "whisper-1"));
+		return result;
+	}
+
+	public static void close(List<AiEndpoint> resources) {
+		for (AiEndpoint r : resources) {
 			try {
-				if (r instanceof Service)
-					try {
-						((Service) r).getEndpoint().close();
-					} catch (Exception se) {
-					}
 				r.close();
-			} catch (Exception re) {
+			} catch (Exception se) {
 			}
 		}
 	}

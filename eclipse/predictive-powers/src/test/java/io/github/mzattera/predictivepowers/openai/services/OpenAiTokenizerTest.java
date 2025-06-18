@@ -118,10 +118,10 @@ public class OpenAiTokenizerTest {
 		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.USER, "I"));
 		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.USER, "I", "V"));
 
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.SYSTEM, "I"));
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.SYSTEM, "I", "V"));
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.SYSTEM, "I"));
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.SYSTEM, "I", "V"));
+		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.DEVELOPER, "I"));
+		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.DEVELOPER, "I", "V"));
+		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.DEVELOPER, "I"));
+		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.DEVELOPER, "I", "V"));
 
 		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.DEVELOPER, "I"));
 		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.DEVELOPER, "I", "V"));
@@ -135,10 +135,10 @@ public class OpenAiTokenizerTest {
 		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.DEVELOPER, "I", "V"));
 		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.DEVELOPER, "I"));
 
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.SYSTEM, "I", "V"));
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.SYSTEM, "I"));
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.SYSTEM, "I", "V"));
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.SYSTEM, "I"));
+		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.DEVELOPER, "I", "V"));
+		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.DEVELOPER, "I"));
+		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.DEVELOPER, "I", "V"));
+		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.DEVELOPER, "I"));
 
 		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.USER, "I", "V"));
 		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.USER, "I"));
@@ -182,7 +182,7 @@ public class OpenAiTokenizerTest {
 			ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).messages(test).build();
 			if (model.startsWith("o1-mini") || model.startsWith("o1-preview"))
 				req.setMessages(req.getMessages().stream() //
-						.filter(m -> ((m.getRole() != Role.SYSTEM) && (m.getRole() != Role.DEVELOPER))) //
+						.filter(m -> ((m.getRole() != Role.DEVELOPER) && (m.getRole() != Role.DEVELOPER))) //
 						.collect(Collectors.toList()));
 			tokens = counter.count(req);
 			realTokens = realTokens(req);
@@ -215,31 +215,31 @@ public class OpenAiTokenizerTest {
 		call = FunctionCall.builder().name("I").arguments(params).build();
 		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
 
-//		params = new HashMap<>();
-//		params.put("s", "T");
-//		call = FunctionCall.builder().name("I").arguments(params).build();
-//		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
-//
-//		params = new HashMap<>();
-//		params.put("s", "T");
-//		params.put("i", 3);
-//		call = FunctionCall.builder().name("I").arguments(params).build();
-//		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
-//		
-//		params = new HashMap<>();
-//		params.put("s", "T");
-//		params.put("i", 3);
-//		params.put("d", 3.0d);
-//		call = FunctionCall.builder().name("I").arguments(params).build();
-//		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
-//		
-//		params = new HashMap<>();
-//		params.put("s", "T");
-//		params.put("i", 3);
-//		params.put("d", 3.0d);
-//		params.put("b", ENUM.BANANE);
-//		call = FunctionCall.builder().name("I").arguments(params).build();
-//		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
+		params = new HashMap<>();
+		params.put("s", "T");
+		call = FunctionCall.builder().name("I").arguments(params).build();
+		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
+
+		params = new HashMap<>();
+		params.put("s", "T");
+		params.put("i", 3);
+		call = FunctionCall.builder().name("I").arguments(params).build();
+		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
+
+		params = new HashMap<>();
+		params.put("s", "T");
+		params.put("i", 3);
+		params.put("d", 3.0d);
+		call = FunctionCall.builder().name("I").arguments(params).build();
+		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
+
+		params = new HashMap<>();
+		params.put("s", "T");
+		params.put("i", 3);
+		params.put("d", 3.0d);
+		params.put("b", ENUM.BANANE);
+		call = FunctionCall.builder().name("I").arguments(params).build();
+		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
 
 		List<OpenAiChatMessage> replies = new ArrayList<>();
 		for (OpenAiChatMessage msg : FUNCTION_CALL_MESSAGES) {
@@ -623,62 +623,69 @@ public class OpenAiTokenizerTest {
 	}
 
 	public static void main(String[] arg) throws JsonProcessingException {
-
 		long tokens, realTokens;
 		String[] models = new String[] { "o1-preview"
 				// , "o3-mini",
 		};
 
-		try (OpenAiEndpoint ep = new OpenAiEndpoint(); OpenAiModelService modelSvc = ep.getModelService();) {
-			for (String model : models) {
-				OpenAiModelMetaData md = modelSvc.get(model);
-				List<SupportedApi> api = md.getSupportedApis();
-				OpenAiTokenizer counter = md.getTokenizer();
 
-				List<OpenAiChatMessage> testList = new ArrayList<>(SIMPLE_MESSAGES_2);
-				if (model.startsWith("o1-mini") || model.startsWith("o1-preview"))
-					testList = testList.stream() //
-							.filter(m -> ((m.getRole() != Role.SYSTEM) && (m.getRole() != Role.DEVELOPER))) //
-							.collect(Collectors.toList());
-
-				if (api.contains(SupportedApi.CHAT)) {
-					ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).build();
-					for (int m = 0; m < testList.size(); ++m) {
-
-						req.getMessages().clear();
-						for (int i = 0; i < 3; ++i) {
-							for (int j = 0; j <= m; ++j) {
-								req.getMessages().add(testList.get(j));
-							}
-							tokens = counter.count(req);
-							realTokens = realTokens(req);
-
-							System.out.println(model + "\tfirst " + (m + 1) + " messages " + (i + 1)
-									+ " times\tTotal Messages: " + req.getMessages().size() + "\tCounted: " + tokens
-									+ "\tActual: " + realTokens + "\tDelta: " + (tokens - realTokens));
-						}
-						System.out.println();
-					}
-
-					req.getMessages().clear();
-					req.getMessages().addAll(testList);
-					tokens = counter.count(req);
-					realTokens = realTokens(req);
-
-					System.out.println(model + "\tSIMPLE_MESSAGES\tCounted: " + tokens + "\tActual: " + realTokens
-							+ "\tDelta: " + (tokens - realTokens));
-
-				} else if (api.contains(SupportedApi.COMPLETIONS)) {
-					CompletionsRequest creq = CompletionsRequest.builder() //
-							.model(model) //
-							.prompt("This is a prompt, quite short, but it's OK").build();
-					tokens = counter.count(creq.getPrompt());
-					realTokens = realTokens(creq);
-
-					System.out.println(model + "\tCounted: " + tokens + "\tActual: " + realTokens);
-				} else
-					throw new IllegalArgumentException();
-			} // For each model
-		}
-	}
+	// Below code is to run test01 step by step
+//	public static void TestTest001(String[] arg) throws JsonProcessingException {
+//		long tokens, realTokens;
+//		String[] models = new String[] { "o1-preview"
+//				// , "o3-mini",
+//		};
+//
+//		try (OpenAiEndpoint ep = new OpenAiEndpoint(); OpenAiModelService modelSvc = ep.getModelService();) {
+//			for (String model : models) {
+//				OpenAiModelMetaData md = modelSvc.get(model);
+//				List<SupportedApi> api = md.getSupportedApis();
+//				OpenAiTokenizer counter = md.getTokenizer();
+//
+//				List<OpenAiChatMessage> testList = new ArrayList<>(SIMPLE_MESSAGES_2);
+//				if (model.startsWith("o1-mini") || model.startsWith("o1-preview"))
+//					testList = testList.stream() //
+//							.filter(m -> ((m.getRole() != Role.DEVELOPER) && (m.getRole() != Role.DEVELOPER))) //
+//							.collect(Collectors.toList());
+//
+//				if (api.contains(SupportedApi.CHAT)) {
+//					ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).build();
+//					for (int m = 0; m < testList.size(); ++m) {
+//
+//						req.getMessages().clear();
+//						for (int i = 0; i < 3; ++i) {
+//							for (int j = 0; j <= m; ++j) {
+//								req.getMessages().add(testList.get(j));
+//							}
+//							tokens = counter.count(req);
+//							realTokens = realTokens(req);
+//
+//							System.out.println(model + "\tfirst " + (m + 1) + " messages " + (i + 1)
+//									+ " times\tTotal Messages: " + req.getMessages().size() + "\tCounted: " + tokens
+//									+ "\tActual: " + realTokens + "\tDelta: " + (tokens - realTokens));
+//						}
+//						System.out.println();
+//					}
+//
+//					req.getMessages().clear();
+//					req.getMessages().addAll(testList);
+//					tokens = counter.count(req);
+//					realTokens = realTokens(req);
+//
+//					System.out.println(model + "\tSIMPLE_MESSAGES\tCounted: " + tokens + "\tActual: " + realTokens
+//							+ "\tDelta: " + (tokens - realTokens));
+//
+//				} else if (api.contains(SupportedApi.COMPLETIONS)) {
+//					CompletionsRequest creq = CompletionsRequest.builder() //
+//							.model(model) //
+//							.prompt("This is a prompt, quite short, but it's OK").build();
+//					tokens = counter.count(creq.getPrompt());
+//					realTokens = realTokens(creq);
+//
+//					System.out.println(model + "\tCounted: " + tokens + "\tActual: " + realTokens);
+//				} else
+//					throw new IllegalArgumentException();
+//			} // For each model
+//		}
+//	}
 }

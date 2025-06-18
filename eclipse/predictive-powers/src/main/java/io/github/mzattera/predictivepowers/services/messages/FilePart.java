@@ -30,10 +30,9 @@ import java.net.URL;
 
 import org.apache.tika.mime.MimeTypes;
 
-import io.github.mzattera.util.FileUtil;
+import io.github.mzattera.predictivepowers.util.FileUtil;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -73,7 +72,7 @@ public class FilePart implements MessagePart {
 	@NonNull
 	private String mimeType;
 
-	protected void setMimeType(@NonNull String mimeType) {
+	protected void setMimeType(String mimeType) {
 		this.mimeType = (mimeType == null ? MimeTypes.OCTET_STREAM : mimeType);
 		this.contentType = ContentType.fromMimeType(mimeType);
 	}
@@ -93,17 +92,10 @@ public class FilePart implements MessagePart {
 	 * If this is a remote file, this is its URL.
 	 */
 	private final URL url;
-
-	/**
-	 * For AUDIO files, this can optionally contain a transcript.
-	 */
-	@Setter
-	private String transcript;
 	
-	protected FilePart(String mameType) {
+	protected FilePart() {
 		this.file = null;
 		this.url = null;
-		setMimeType(mimeType);
 	}
 
 	/**
@@ -123,7 +115,7 @@ public class FilePart implements MessagePart {
 		if (!file.isFile() || !file.canRead())
 			throw new IllegalArgumentException("File must be a readable normal file: " + file.getName());
 		this.mimeType = (mimeType == null ? FileUtil.getMimeType(file) : mimeType);
-		this.contentType = ContentType.fromMimeType(mimeType);
+		this.contentType = ContentType.fromMimeType(this.mimeType);
 	}
 
 	/**
@@ -157,7 +149,7 @@ public class FilePart implements MessagePart {
 		this.file = null;
 		this.url = url;
 		this.mimeType = (mimeType == null ? FileUtil.getMimeType(url) : mimeType);
-		this.contentType = ContentType.fromMimeType(mimeType);
+		this.contentType = ContentType.fromMimeType(this.mimeType);
 	}
 
 	/**
@@ -230,9 +222,9 @@ public class FilePart implements MessagePart {
 	public String getFormat() {
 		String result = null;
 		if (file != null)
-			result = FileUtil.getExtension(file);
+			result = FileUtil.getExtension(file).toLowerCase();
 		if (result.isBlank())
-			return FileUtil.formatFromMimeType(mimeType);
+			return FileUtil.formatFromMimeType(mimeType).toLowerCase();
 		return result;
 	}
 

@@ -91,9 +91,9 @@ public class HuggingFaceChatServiceTest {
 			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(2, cs.getHistory().size());
 			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(0).getContent(), question);
+			assertEquals(cs.getHistory().get(0).getTextContent(), question);
 			assertEquals(cs.getHistory().get(1).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(1).getContent(), resp.getText());
+			assertEquals(cs.getHistory().get(1).getTextContent(), resp.getText());
 			assertEquals(0, cs.getDefaultReq().getInputs().getPastUserInputs().size());
 			assertEquals(0, cs.getDefaultReq().getInputs().getGeneratedResponses().size());
 			assertEquals(cs.getDefaultReq().getInputs().getText(), question);
@@ -111,12 +111,12 @@ public class HuggingFaceChatServiceTest {
 			assertEquals(resp.getFinishReason(), FinishReason.COMPLETED);
 			assertEquals(2, cs.getHistory().size(), 4);
 			assertEquals(cs.getHistory().get(0).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(0).getContent(), question);
+			assertEquals(cs.getHistory().get(0).getTextContent(), question);
 			assertEquals(cs.getHistory().get(1).getAuthor(), Author.BOT);
 			assertEquals(cs.getHistory().get(2).getAuthor(), Author.USER);
-			assertEquals(cs.getHistory().get(2).getContent(), question);
+			assertEquals(cs.getHistory().get(2).getTextContent(), question);
 			assertEquals(cs.getHistory().get(3).getAuthor(), Author.BOT);
-			assertEquals(cs.getHistory().get(3).getContent(), resp.getText());
+			assertEquals(cs.getHistory().get(3).getTextContent(), resp.getText());
 			assertEquals(1, cs.getDefaultReq().getInputs().getPastUserInputs().size());
 			assertEquals(question, cs.getDefaultReq().getInputs().getPastUserInputs().get(0));
 			assertEquals(1, cs.getDefaultReq().getInputs().getGeneratedResponses().size());

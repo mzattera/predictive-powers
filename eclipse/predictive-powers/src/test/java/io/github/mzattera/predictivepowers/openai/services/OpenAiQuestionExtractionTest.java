@@ -32,7 +32,7 @@ public class OpenAiQuestionExtractionTest {
 	
 	
 	@Test
-	void test01() throws Exception {
+	public void test01() throws Exception {
 
 		// OpenAI end-point
 		// Make sure you specify your API key n OPENAI_KEY system environment variable.

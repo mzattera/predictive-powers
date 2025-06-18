@@ -27,21 +27,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.github.mzattera.predictivepowers.services.messages.JsonSchema;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import lombok.experimental.SuperBuilder;
 
 /**
  * This is an abstract class that implementations of {@link Tool}s can extend.
  * 
- * Notice tools must provide a default constructor.
+ * @author Massimiliano "Maxi" Zattera
  */
-@RequiredArgsConstructor
-@AllArgsConstructor
-@SuperBuilder
 public abstract class AbstractTool implements Tool {
 
 	@Getter
@@ -53,26 +47,28 @@ public abstract class AbstractTool implements Tool {
 
 	@Getter
 	@NonNull
-	private List<? extends ToolParameter> parameters = new ArrayList<>();
+	private List<ToolParameter> parameters = new ArrayList<>();
 
 	protected void setParameters(List<? extends ToolParameter> parameters) {
-		this.parameters = parameters;
+		this.parameters = new ArrayList<>(parameters);
 	}
 
 	/**
 	 * This method allows setting the parameters of this tool using a JSON schema.
 	 * 
 	 * See {@link io.github.mzattera.predictivepowers.examples.FunctionCallExample}
-	 * or
-	 * {@linkplain https://platform.openai.com/docs/guides/text-generation/function-calling
-	 * here}. for examples.
+	 * for examples.
+	 * 
+	 * @see <a href=
+	 *      "https://platform.openai.com/docs/guides/function-calling?api-mode=chat">function
+	 *      calling guide</a>
 	 * 
 	 * @param schema A class with JSON schema annotation, which schema will be used
 	 *               to derive parameters for this tool.
 	 * @throws JsonProcessingException
 	 */
 	protected void setParameters(Class<?> schema) throws JsonProcessingException {
-		parameters = JsonSchema.getParametersFromSchema(schema);
+		parameters = JsonSchema.getParameters(schema);
 	}
 
 	@Getter
@@ -85,41 +81,45 @@ public abstract class AbstractTool implements Tool {
 
 	@Getter
 	@Setter(AccessLevel.PROTECTED)
-	private boolean initialized = false;
-
-	@Getter
-	@Setter(AccessLevel.PROTECTED)
 	private boolean closed = false;
 
 	@Override
-	public void init(@NonNull Agent agent) {
-		if (initialized)
-			throw new IllegalStateException("Tool already initialized");
+	public boolean isInitialized() {
+		return (agent != null);
+	}
+
+	@Override
+	public void init(@NonNull Agent agent) throws ToolInitializationException {
+		if (isInitialized())
+			throw new ToolInitializationException("Tool " + id + " is already initialized");
 		if (closed)
-			throw new IllegalStateException("Tool already closed");
+			throw new ToolInitializationException("Tool " + id + " is already closed");
 		this.agent = agent;
-		initialized = true;
+	}
+
+	protected AbstractTool(@NonNull String id) {
+		this(id, id, new ArrayList<>());
 	}
 
 	protected AbstractTool(@NonNull String id, String description) {
 		this(id, description, new ArrayList<>());
 	}
 
-	protected AbstractTool(@NonNull String id, String description, @NonNull List<ToolParameter> parameters) {
+	protected AbstractTool(@NonNull String id, String description, @NonNull List<? extends ToolParameter> parameters) {
 		this.id = id;
 		this.description = description;
-		this.parameters = parameters;
+		this.parameters = new ArrayList<>(parameters);
 	}
 
 	protected AbstractTool(@NonNull String id, String description, @NonNull Class<?> schema) {
 		this.id = id;
 		this.description = description;
-		this.parameters = JsonSchema.getParametersFromSchema(schema);
+		this.parameters = JsonSchema.getParameters(schema);
 	}
 
 	@Override
 	public void close() {
-		closed=true;
+		closed = true;
 	}
 
 	// Utility methods to read parameters

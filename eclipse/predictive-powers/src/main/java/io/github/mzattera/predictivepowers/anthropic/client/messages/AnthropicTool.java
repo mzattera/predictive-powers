@@ -39,12 +39,12 @@ import lombok.NonNull;
 public class AnthropicTool implements Tool {
 
 	/**
-	 * Utility class to (de)serialize JSON schema.
-	 * This hides parametrs that are not required.
+	 * Utility class to (de)serialize JSON schema. This hides parametrs that are not
+	 * required.
 	 */
 	static class AnthropicJsonSchema extends JsonSchema {
 		AnthropicJsonSchema(@NonNull List<? extends ToolParameter> parameters) {
-			super(null, null, "object", null, parameters);
+			super(parameters);
 		}
 	}
 
@@ -69,6 +69,11 @@ public class AnthropicTool implements Tool {
 	}
 
 	@Override
+	public boolean isClosed() {
+		return wrappedTool.isClosed();
+	}
+
+	@Override
 	@JsonProperty("name")
 	public String getId() {
 		return wrappedTool.getId();
@@ -81,7 +86,7 @@ public class AnthropicTool implements Tool {
 
 	@JsonIgnore
 	@Override
-	public List<? extends ToolParameter> getParameters() {
+	public List<ToolParameter> getParameters() {
 		return wrappedTool.getParameters();
 	}
 
@@ -101,7 +106,7 @@ public class AnthropicTool implements Tool {
 	public Capability getCapability() {
 		return wrappedTool.getCapability();
 	}
-	
+
 	@JsonIgnore
 	@Override
 	public boolean isInitialized() {

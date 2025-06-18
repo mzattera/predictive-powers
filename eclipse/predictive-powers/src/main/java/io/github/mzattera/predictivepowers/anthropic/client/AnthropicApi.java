@@ -18,11 +18,10 @@ package io.github.mzattera.predictivepowers.anthropic.client;
 
 import io.github.mzattera.predictivepowers.anthropic.client.messages.MessagesRequest;
 import io.github.mzattera.predictivepowers.anthropic.client.messages.MessagesResponse;
-import io.reactivex.Single;
+import io.reactivex.rxjava3.core.Single;
 import lombok.NonNull;
 import retrofit2.http.Body;
 import retrofit2.http.POST;
-
 /**
  * Retrofit definition for Anthropic API.
  * 

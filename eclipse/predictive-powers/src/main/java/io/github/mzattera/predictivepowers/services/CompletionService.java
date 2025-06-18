@@ -22,17 +22,18 @@ import java.util.Map.Entry;
 import io.github.mzattera.predictivepowers.services.messages.TextCompletion;
 
 /**
- * A completion service provides methods to complete/generate text (prompt
- * execution). This is more basic than a {@link ChatService} in that is meant to
- * provide completions, but not to hold conversations. In addition, ChatService
- * can normally be used to execute prompts as well, hence providing more
- * functionalities.
+ * A completion service provides methods to complete text (prompt execution).
+ * This is more basic than a {@link ChatService} in that is meant to provide
+ * completions, but not to hold conversations.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
 public interface CompletionService extends AiService {
 
+	// TODO URGENT: decide whether responseFormat should also go here... maybe not;
+	// if yes, then a method is needed to deserialize the responses
+	
 	/**
 	 * Number of top tokens considered within the sample operation to create new
 	 * text.
@@ -97,26 +98,9 @@ public interface CompletionService extends AiService {
 	TextCompletion complete(String prompt);
 
 	/**
-	 * Completes text (executes given prompt).
-	 * 
-	 * @param parameters Parameters used for slot filling. See
-	 *                   {@link #fillSlots(String, Map)}.
-	 */
-	TextCompletion complete(String prompt, Map<String, Object> parameters);
-
-	/**
 	 * Inserts text between given prompt and the suffix.
 	 */
 	TextCompletion insert(String prompt, String suffix);
-
-	/**
-	 * Inserts text between given prompt and the suffix.
-	 * 
-	 * @param parameters Parameters used for slot filling. See
-	 *                   {@link #fillSlots(String, Map)}. This will be use to fill
-	 *                   slots both in the prompt and the suffix.
-	 */
-	TextCompletion insert(String prompt, String suffix, Map<String, Object> parameters);
 
 	/**
 	 * Replaces 'slots' in a prompt.
@@ -132,6 +116,7 @@ public interface CompletionService extends AiService {
 	 * @param parameters
 	 * @return
 	 */
+	// TODO URGENT Move this somewhare else (maybe in an utility class?) ->update documentation online
 	public static String fillSlots(String prompt, Map<String, ? extends Object> parameters) {
 		if ((prompt == null) || (parameters == null))
 			return prompt;

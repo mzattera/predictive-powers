@@ -39,8 +39,8 @@ import io.github.mzattera.predictivepowers.services.messages.MessagePart;
 import io.github.mzattera.predictivepowers.services.messages.TextPart;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
-import io.github.mzattera.util.ImageUtil;
-import io.github.mzattera.util.ResourceUtil;
+import io.github.mzattera.predictivepowers.util.ImageUtil;
+import io.github.mzattera.predictivepowers.util.ResourceUtil;
 import lombok.Getter;
 import lombok.NonNull;
 

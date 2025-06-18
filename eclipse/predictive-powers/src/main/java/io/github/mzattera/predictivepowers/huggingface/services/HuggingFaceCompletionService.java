@@ -142,11 +142,6 @@ public class HuggingFaceCompletionService implements CompletionService {
 		return complete(prompt, null, req);
 	}
 
-	@Override
-	public TextCompletion complete(String prompt, Map<String, Object> parameters) {
-		return complete(prompt, parameters, defaultReq);
-	}
-
 	/**
 	 * Completes text (executes given prompt).
 	 * 
@@ -163,11 +158,6 @@ public class HuggingFaceCompletionService implements CompletionService {
 
 	@Override
 	public TextCompletion insert(String prompt, String suffix) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public TextCompletion insert(String prompt, String suffix, Map<String, Object> parameters) {
 		throw new UnsupportedOperationException();
 	}
 	

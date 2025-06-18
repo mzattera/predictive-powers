@@ -36,8 +36,8 @@ import io.github.mzattera.predictivepowers.huggingface.client.nlp.QuestionAnswer
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextClassificationResponse;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationRequest;
 import io.github.mzattera.predictivepowers.huggingface.client.nlp.TextGenerationResponse;
-import io.github.mzattera.util.ImageUtil;
-import io.reactivex.Single;
+import io.github.mzattera.predictivepowers.util.ImageUtil;
+import io.reactivex.rxjava3.core.Single;
 import lombok.Getter;
 import lombok.NonNull;
 import okhttp3.Interceptor;
@@ -46,7 +46,7 @@ import okhttp3.OkHttpClient.Builder;
 import okhttp3.Response;
 import retrofit2.HttpException;
 import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
+import retrofit2.adapter.rxjava3.RxJava3CallAdapterFactory;
 import retrofit2.converter.jackson.JacksonConverterFactory;
 
 /**
@@ -212,7 +212,7 @@ public class HuggingFaceClient implements ApiClient {
 
 		Retrofit retrofit = new Retrofit.Builder().baseUrl(API_BASE_URL).client(client)
 				.addConverterFactory(JacksonConverterFactory.create(jsonMapper))
-				.addCallAdapterFactory(RxJava2CallAdapterFactory.create()).build();
+				.addCallAdapterFactory(RxJava3CallAdapterFactory.create()).build();
 
 		api = retrofit.create(HuggingFaceApi.class);
 	}

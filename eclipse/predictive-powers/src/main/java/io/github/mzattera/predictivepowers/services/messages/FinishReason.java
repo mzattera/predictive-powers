@@ -53,23 +53,6 @@ public enum FinishReason {
 	/** All finish reasons that do not fit in any other value */
 	OTHER;
 
-	public static FinishReason fromOpenAiApi(String reason) {
-		switch (reason) {
-		case "stop":
-			return FinishReason.COMPLETED;
-		case "length":
-			return FinishReason.TRUNCATED;
-		case "content_filter":
-			return FinishReason.INAPPROPRIATE;
-		case "tool_calls":
-		case "function_call":
-			return FinishReason.OTHER;
-		default:
-			throw new IllegalArgumentException("Unrecognized finish reason: " + reason);
-		}
-
-	}
-
 	public static FinishReason fromAnthropicApi(String reason) {
 		switch (reason) {
 		case "end_turn":
@@ -79,7 +62,7 @@ public enum FinishReason {
 		case "max_tokens":
 			return FinishReason.TRUNCATED;
 		default:
-			return FinishReason.OTHER;
+			throw new IllegalArgumentException("Unrecognized finish reason: " + reason);
 		}
 	}
 }

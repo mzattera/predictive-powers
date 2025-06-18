@@ -16,29 +16,60 @@
 		<maven.compiler.target>11</maven.compiler.target>
 
 		<!-- Library versions -->
-		<jackson.version>2.15.3</jackson.version>
-		<jackson.jsonschema.version>1.0.39</jackson.jsonschema.version>
 		<lombok.version>1.18.32</lombok.version>
-		<retrofit.version>2.9.0</retrofit.version>
 		<tika.version>2.9.0</tika.version>
 		<djl.tokenizers.version>0.26.0</djl.tokenizers.version>
 		<jtokkit.version>1.1.0</jtokkit.version>
+		
+		<!-- These we keep as there are conflicts with which version of OkHttp OpenAI SDK uses -->
+		<kotlin.version>2.1.21</kotlin.version>
+		<retrofit.version>2.11.0</retrofit.version>
+		<okhttp.version>4.12.0</okhttp.version>
+		
 	</properties>
+	
+	<!-- Force using same version of okhttp and kotlin across OpenAI SDK and Retrofit -->
+	<dependencyManagement>
+	    <dependencies>
+		    <dependency>
+		        <groupId>com.squareup.okhttp3</groupId>
+		        <artifactId>okhttp</artifactId>
+		        <version>${okhttp.version}</version>
+		    </dependency>
+	        <dependency>
+	            <groupId>org.jetbrains.kotlin</groupId>
+	            <artifactId>kotlin-stdlib</artifactId>
+	            <version>${kotlin.version}</version>
+	        </dependency>
+			<dependency>
+			    <groupId>org.jetbrains.kotlin</groupId>
+			    <artifactId>kotlin-reflect</artifactId>
+			    <version>${kotlin.version}</version>
+			</dependency>
+	    </dependencies>
+	</dependencyManagement>	
 	<dependencies>
-
+        
 		<!-- Jackson (JSON annotations and bindings) -->
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>${jackson.version}</version>
+			<version>2.18.2</version>
 		</dependency>
 
 		<!-- JSON schema -->
 		<dependency>
-			<groupId>com.kjetland</groupId>
-			<artifactId>mbknor-jackson-jsonschema_2.13</artifactId>
-			<version>${jackson.jsonschema.version}</version>
+		    <groupId>com.kjetland</groupId>
+		    <artifactId>mbknor-jackson-jsonschema_2.13</artifactId>
+		    <version>1.0.39</version>
 		</dependency>
+
+		<!-- Explicit inclusion of managed dependencies -->
+	    <dependency>
+	        <groupId>com.squareup.okhttp3</groupId>
+	        <artifactId>okhttp</artifactId>
+	    </dependency>
+		
 
 		<!-- lombok (POJO annotations) -->
 		<dependency>
@@ -53,16 +84,74 @@
 			<groupId>com.squareup.retrofit2</groupId>
 			<artifactId>retrofit</artifactId>
 			<version>${retrofit.version}</version>
-		</dependency>
+	        <exclusions>
+	            <exclusion>
+	                <groupId>com.squareup.okhttp3</groupId>
+	                <artifactId>okhttp</artifactId>
+	            </exclusion>
+	        </exclusions>
+        </dependency>
 		<dependency>
-			<groupId>com.squareup.retrofit2</groupId>
-			<artifactId>adapter-rxjava2</artifactId>
-			<version>${retrofit.version}</version>
+		    <groupId>com.squareup.retrofit2</groupId>
+		    <artifactId>adapter-rxjava3</artifactId>
+		    <version>${retrofit.version}</version>
+	        <exclusions>
+	            <exclusion>
+	                <groupId>com.squareup.okhttp3</groupId>
+	                <artifactId>okhttp</artifactId>
+	            </exclusion>
+	        </exclusions>
 		</dependency>
 		<dependency>
 			<groupId>com.squareup.retrofit2</groupId>
 			<artifactId>converter-jackson</artifactId>
 			<version>${retrofit.version}</version>
+	        <exclusions>
+	            <exclusion>
+	                <groupId>com.squareup.okhttp3</groupId>
+	                <artifactId>okhttp</artifactId>
+	            </exclusion>
+	        </exclusions>
+		</dependency>
+    
+		<!-- Official OpenAI Java SDK -->
+		<dependency>
+		  <groupId>com.openai</groupId>
+		  <artifactId>openai-java</artifactId>
+		  <version>2.1.0</version>
+	        <exclusions>
+	            <exclusion>
+	                <groupId>com.squareup.okhttp3</groupId>
+	                <artifactId>okhttp</artifactId>
+	            </exclusion>
+	        </exclusions>
+		</dependency>		
+		<!-- To access Azure OpenAI Gognitive Services -->
+		<dependency>
+		    <groupId>com.azure.resourcemanager</groupId>
+		    <artifactId>azure-resourcemanager-cognitiveservices</artifactId>
+		    <version>1.1.0</version>
+		</dependency>
+		<dependency>
+		    <groupId>com.azure</groupId>
+		    <artifactId>azure-identity</artifactId>
+		    <version>1.16.0</version>
+		    <scope>compile</scope>
+		</dependency>
+
+		<!-- Tokens count for OpenAI models -->
+		<dependency>
+			<groupId>com.knuddels</groupId>
+			<artifactId>jtokkit</artifactId>
+			<version>${jtokkit.version}</version>
+		</dependency>
+
+		<!-- This allows to dynamically load Hugging Face tokenizers using DJL
+		tokenizer library -->
+		<dependency>
+			<groupId>ai.djl.huggingface</groupId>
+			<artifactId>tokenizers</artifactId>
+			<version>${djl.tokenizers.version}</version>
 		</dependency>
 
 		<!-- Tika is a library to recognize and extract text from a variety of
@@ -102,21 +191,6 @@
 		  </dependency>	
   		-->
 
-		<!-- This allows to dynamically load Hugging Face tokenizers using DJL
-		tokenizer library -->
-		<dependency>
-			<groupId>ai.djl.huggingface</groupId>
-			<artifactId>tokenizers</artifactId>
-			<version>${djl.tokenizers.version}</version>
-		</dependency>
-
-		<!-- Tokens count for OpenAI models -->
-		<dependency>
-			<groupId>com.knuddels</groupId>
-			<artifactId>jtokkit</artifactId>
-			<version>${jtokkit.version}</version>
-		</dependency>
-
 		<!--
 		Below dependencies are needed to disable annoying SLF4J log
 		messages FFS!
@@ -137,19 +211,6 @@
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
 			<version>2.20.0</version>
-		</dependency>
-
-		<!-- Azure SDK for OpenAI Cognitive Service --> 
-		<dependency>
-		    <groupId>com.azure</groupId>
-		    <artifactId>azure-ai-openai</artifactId>
-		    <version>1.0.0-beta.13</version>
-		</dependency>
-		<!-- Used to use authentication tokes with Azure API -->
-		<dependency>
-		    <groupId>com.azure</groupId>
-		    <artifactId>azure-core</artifactId>
-		    <version>1.55.0</version>
 		</dependency>
 	</dependencies>
 	

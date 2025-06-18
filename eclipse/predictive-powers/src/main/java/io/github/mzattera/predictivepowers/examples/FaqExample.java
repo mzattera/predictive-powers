@@ -21,8 +21,8 @@ import java.util.List;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionExtractionService;
 import io.github.mzattera.predictivepowers.services.QnAPair;
-import io.github.mzattera.util.ChunkUtil;
-import io.github.mzattera.util.ExtractionUtil;
+import io.github.mzattera.predictivepowers.util.ChunkUtil;
+import io.github.mzattera.predictivepowers.util.ExtractionUtil;
 
 public class FaqExample {
 

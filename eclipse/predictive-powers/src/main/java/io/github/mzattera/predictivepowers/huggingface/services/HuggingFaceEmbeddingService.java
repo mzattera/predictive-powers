@@ -23,7 +23,7 @@ import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceRequest
 import io.github.mzattera.predictivepowers.huggingface.client.Options;
 import io.github.mzattera.predictivepowers.services.AbstractEmbeddingService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
-import io.github.mzattera.util.ChunkUtil;
+import io.github.mzattera.predictivepowers.util.ChunkUtil;
 import lombok.Getter;
 import lombok.NonNull;
 

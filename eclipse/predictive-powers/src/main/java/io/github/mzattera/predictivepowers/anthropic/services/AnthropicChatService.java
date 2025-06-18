@@ -218,7 +218,6 @@ public class AnthropicChatService extends AbstractAgent implements ChatService {
 
 	private final List<Message> history = new ArrayList<>();
 
-	@Override
 	public List<? extends ChatMessage> getHistory() {
 		return history.stream().map(this::fromMessage).collect(Collectors.toList());
 	}

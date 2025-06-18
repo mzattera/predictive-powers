@@ -27,8 +27,8 @@ import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
+import io.github.mzattera.predictivepowers.util.CharTokenizer;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
-import io.github.mzattera.util.CharTokenizer;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -184,7 +184,7 @@ public class HuggingFaceChatService extends AbstractChatService {
 		if (!msg.isText())
 			throw new IllegalArgumentException("This service supports only pure text messages.");
 
-		return chat(msg.getContent(), req);
+		return chat(msg.getTextContent(), req);
 	}
 
 	@Override
@@ -217,7 +217,7 @@ public class HuggingFaceChatService extends AbstractChatService {
 		if (!prompt.isText())
 			throw new IllegalArgumentException("This service supports only pure text messages.");
 
-		return complete(prompt.getContent(), req);
+		return complete(prompt.getTextContent(), req);
 	}
 
 	/**

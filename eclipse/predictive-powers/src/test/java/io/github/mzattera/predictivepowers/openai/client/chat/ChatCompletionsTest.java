@@ -122,8 +122,8 @@ class ChatCompletionsTest {
 			assertEquals(resp.getChoices().size(), 1);
 			assertEquals(resp.getChoices().get(0).getFinishReason(), "stop");
 
-			assertTrue(resp.getChoices().get(0).getLogprobs().getContent().size() > 0);
-			for (ContentToken lp : resp.getChoices().get(0).getLogprobs().getContent()) {
+			assertTrue(resp.getChoices().get(0).getLogprobs().getTextContent().size() > 0);
+			for (ContentToken lp : resp.getChoices().get(0).getLogprobs().getTextContent()) {
 				assertTrue(lp.getTopLogprobs().size() > 0);
 				assertTrue(lp.getTopLogprobs().size() <= 3);
 			}
@@ -174,13 +174,13 @@ class ChatCompletionsTest {
 			ChatCompletionsResponse resp = endpoint.getClient().createChatCompletion(cr);
 			assertEquals(resp.getChoices().size(), 1);
 			assertEquals(resp.getChoices().get(0).getFinishReason(), "stop");
-			System.out.println(resp.getChoices().get(0).getMessage().getContent());
+			System.out.println(resp.getChoices().get(0).getMessage().getTextContent());
 
 			cr.getMessages().add(new OpenAiChatMessage(Role.USER,
 					"Create fake person record in JSON format containing a name and a birth date."));
 			cr.setResponseFormat(ResponseFormat.TEXT);
 			assertEquals(ResponseFormat.TEXT, cr.getResponseFormat());
-			System.out.println(resp.getChoices().get(0).getMessage().getContent());
+			System.out.println(resp.getChoices().get(0).getMessage().getTextContent());
 
 			resp = endpoint.getClient().createChatCompletion(cr);
 			assertEquals(resp.getChoices().size(), 1);

@@ -16,10 +16,12 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
+import com.openai.client.OpenAIClient;
+import com.openai.client.okhttp.OpenAIOkHttpClient;
+
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
 
 public class AiEndpointExample {
 
@@ -42,7 +44,7 @@ public class AiEndpointExample {
 
 		// Build endpoint from an existing API client
 		// The client is created reading API key from OS environment
-		OpenAiClient cli = new OpenAiClient();
+		OpenAIClient cli = OpenAIOkHttpClient.fromEnv();
 		endpoint = new OpenAiEndpoint(cli);
 	}
 }

@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.ChatService;
@@ -51,6 +52,10 @@ public class ChatMessage {
 
 	// TODO URGENT Add parts to support citations/annotations
 
+	// TODO URGENT Add method to deserialize the response and return a POJO, great
+	// in combination w. responseFormat
+	// Add that to the website documentation
+
 	/**
 	 * The author (originator) of the message.
 	 */
@@ -60,7 +65,13 @@ public class ChatMessage {
 		USER("user"),
 
 		/** Marks messages coming from the bot/agent/assistant */
-		BOT("bot");
+		BOT("bot"),
+
+		/**
+		 * Marks messages coming from the developer. For some models, this is used to
+		 * provide instructions to the model
+		 */
+		DEVELOPER("developer");
 
 		private final String label;
 
@@ -80,6 +91,10 @@ public class ChatMessage {
 
 	@NonNull
 	private List<MessagePart> parts = new ArrayList<>();
+
+	public void setParts(List<? extends MessagePart> parts) {
+		this.parts.addAll(parts);
+	}
 
 	public ChatMessage(String content) {
 		this(Author.USER, content);
@@ -133,50 +148,55 @@ public class ChatMessage {
 
 	/**
 	 * 
-	 * @return True if this message contains at least one part which is a file.
-	 *         Notice files can be of different types (e.g. {@link IMagePart}.
+	 * @return A string representation of the content of this message. Notice the
+	 *         message could contain parts which are not easily representable as
+	 *         text (e.g. a file). See {@link #isText()}.
 	 */
-	public boolean hasFiles() {
+	public String getTextContent() {
+		StringBuilder result = new StringBuilder();
+		for (int i = 0; i < parts.size(); ++i) {
+			if (i > 0)
+				result.append("\n\n");
+			result.append(parts.get(i).getContent());
+		}
+		return result.toString(); // TODO lazy caching
+	}
+
+	/**
+	 * 
+	 * @return The content of this message as an instance of given class. This
+	 *         assumes {@link #getTextContent()} will return a properly formatted
+	 *         JSON representation of the object.
+	 * 
+	 * @throws JsonProcessingException If an error occurs while parsing the message
+	 *                                 content.
+	 */
+	public <T> T getObjectContent(Class<T> c) throws JsonProcessingException {
+		return JsonSchema.JSON_MAPPER.readValue(getTextContent(), c);
+	}
+
+	/**
+	 * 
+	 * @return True if this message contains at least one part which is a file of
+	 *         the given {@link FilePart.ContentType}.
+	 */
+	public boolean hasFileContent(ContentType type) {
 		for (MessagePart part : parts)
-			if (part instanceof FilePart)
+			if ((part instanceof FilePart) && (((FilePart) part).getContentType() == type))
 				return true;
 		return false;
 	}
 
 	/**
 	 * 
-	 * @return All files contained in this message. Notice files can be of different
-	 *         types (e.g. {@link IMagePart}.
+	 * @return All files of the given {@link FilePart.ContentType} contained in this
+	 *         message.
 	 */
-	public List<? extends FilePart> getFiles() {
+	public List<FilePart> getFileContent(ContentType type) {
 		return parts.stream() //
 				.filter(FilePart.class::isInstance) //
 				.map(FilePart.class::cast) //
-				.collect(Collectors.toList());
-	}
-
-	/**
-	 * 
-	 * @return True if this message contains at least one part which is an image
-	 *         file.
-	 */
-	public boolean hasImages() {
-		for (MessagePart part : parts)
-			if ((part instanceof FilePart) && ((FilePart) part).getContentType() == ContentType.IMAGE)
-				return true;
-		return false;
-	}
-
-	/**
-	 * 
-	 * @return All image files contained in this message.
-	 */
-	public List<? extends FilePart> getImages() {
-		return parts.stream() //
-				.filter(FilePart.class::isInstance) //
-				.map(FilePart.class::cast) //
-				.filter(e -> (e.getContentType() == ContentType.IMAGE)) //
-				.collect(Collectors.toList());
+				.filter(f -> f.getContentType() == type).collect(Collectors.toList());
 	}
 
 	/**
@@ -194,7 +214,7 @@ public class ChatMessage {
 	 * 
 	 * @return All tool invocations contained in this message.
 	 */
-	public List<? extends ToolCall> getToolCalls() {
+	public List<ToolCall> getToolCalls() {
 		return parts.stream() //
 				.filter(ToolCall.class::isInstance) //
 				.map(ToolCall.class::cast) //
@@ -216,26 +236,10 @@ public class ChatMessage {
 	 * 
 	 * @return All tool invocations contained in this message.
 	 */
-	public List<? extends ToolCallResult> getToolCallResults() {
+	public List<ToolCallResult> getToolCallResults() {
 		return parts.stream() //
 				.filter(ToolCallResult.class::isInstance) //
 				.map(ToolCallResult.class::cast) //
 				.collect(Collectors.toList());
-	}
-
-	/**
-	 * 
-	 * @return A string representation of the content of this message. Notice the
-	 *         message could contain parts which are not easily representable as
-	 *         text (e.g. a file). See {@link #isText()}.
-	 */
-	public String getContent() {
-		StringBuilder result = new StringBuilder();
-		for (int i = 0; i < parts.size(); ++i) {
-			if (i > 0)
-				result.append("\n\n");
-			result.append(parts.get(i).getContent());
-		}
-		return result.toString(); // TODO lazy caching
 	}
 }

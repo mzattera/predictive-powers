@@ -17,9 +17,9 @@
 package io.github.mzattera.predictivepowers.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -33,18 +33,24 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.openai.errors.BadRequestException;
+import com.openai.models.images.ImageCreateVariationParams.ResponseFormat;
+import com.openai.models.images.ImageModel;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.TestConfiguration;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest;
-import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest.ImageQuality;
-import io.github.mzattera.predictivepowers.openai.client.images.ImagesRequest.ImageStyle;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiImageGenerationService;
-import io.github.mzattera.util.ImageUtil;
-import io.github.mzattera.util.ResourceUtil;
+import io.github.mzattera.predictivepowers.services.messages.FilePart;
+import io.github.mzattera.predictivepowers.util.ImageUtil;
+import io.github.mzattera.predictivepowers.util.ResourceUtil;
 
 public class ImageGenerationServiceTest {
+
+	private final static Logger LOG = LoggerFactory.getLogger(ImageGenerationServiceTest.class);
 
 	private static List<Pair<AiEndpoint, String>> svcs;
 
@@ -64,69 +70,136 @@ public class ImageGenerationServiceTest {
 
 	@ParameterizedTest
 	@MethodSource("services")
-	void testCreation(Pair<AiEndpoint, String> p) throws Exception {
+	public void testGettersSetters(Pair<AiEndpoint, String> p) throws Exception {
 		try (ImageGenerationService s = p.getLeft().getImageGenerationService(p.getRight())) {
-			List<BufferedImage> r = s.createImage(
-					"full body male cyborg shaggy long gray hair shor beard green eyes| shimmering gold metal| lighning| full-length portrait| detailed face| symmetric| steampunk| cyberpunk| cyborg| intricate detailed| to scale| hyperrealistic| cinematic lighting| digital art| concept art| mdjrny-v4 style",
-					1, 1024, 1024);
-			assertEquals(1, r.size());
-			for (BufferedImage img : r) {
-				File tmp = File.createTempFile(s.getClass().getName(), ".jpg");
-				ImageUtil.toFile(tmp, img);
-				System.out.println("Image saved as: " + tmp.getCanonicalPath());
-			}
+
+			assertEquals(p.getLeft(), s.getEndpoint());
+
+			String m = s.getModel();
+			assertTrue(m != null);
+			s.setModel("banana");
+			assertEquals("banana", s.getModel());
+			s.setModel(m);
+			assertEquals(m, s.getModel());
+			assertThrows(NullPointerException.class, () -> s.setModel(null));
 		}
 	}
 
 	@ParameterizedTest
 	@MethodSource("services")
-	void testVariation(Pair<AiEndpoint, String> p) throws Exception {
+	public void testCreation(Pair<AiEndpoint, String> p) throws Exception {
 		try (ImageGenerationService s = p.getLeft().getImageGenerationService(p.getRight())) {
-			List<BufferedImage> r = s
-					.createImageVariation(ImageUtil.fromFile(ResourceUtil.getResourceFile("DALLE-2.png")), 2, 512, 512);
+			List<FilePart> r = s.createImage("Create a painting of a white puppy", 2, 1024, 1024);
 			assertEquals(2, r.size());
-
-			for (BufferedImage img : r) {
-				File tmp = File.createTempFile("variation", ".jpg");
-				ImageUtil.toFile(tmp, img);
-				System.out.println("Image saved as: " + tmp.getCanonicalPath());
-			}
-		} catch (UnsupportedOperationException e) {
-			assertFalse(p.getLeft() instanceof OpenAiEndpoint);
+			saveFiles(s, "create", r);
 		}
 	}
 
-	@DisplayName("Tests DALL E-3 parameters.")
+	@ParameterizedTest
+	@MethodSource("services")
+	public void testVariation(Pair<AiEndpoint, String> p) throws Exception {
+		try (ImageGenerationService s = p.getLeft().getImageGenerationService(p.getRight())) {
+
+			// In case we use it
+			if ("dall-e-3".equals(s.getModel()))
+				return;
+
+			List<FilePart> r = s.createImageVariation(ImageUtil.fromFile(ResourceUtil.getResourceFile("DALLE-2.png")),
+					2, 512, 512);
+			assertEquals(2, r.size());
+			saveFiles(s, "variation", r);
+		}
+	}
+
+	@ParameterizedTest
+	@MethodSource("services")
+	public void testEdit(Pair<AiEndpoint, String> p) throws Exception {
+		try (ImageGenerationService s = p.getLeft().getImageGenerationService(p.getRight())) {
+
+			// In case we use it
+			if ("dall-e-3".equals(s.getModel()))
+				return;
+
+			// TODO Fails for dall-e-2
+			// https://github.com/openai/openai-java/issues/478
+			List<FilePart> r = s.createImageEdit(ImageUtil.fromFile(ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png")),
+					"Add a puppy on the pathway", null, 2, 512, 512);
+			assertEquals(2, r.size());
+			saveFiles(s, "variation", r);
+		}
+	}
+ 
+	// TODO URGENT Rework this as a generic test like chat service
+	
 	@Test
-	void testDalle3() throws IOException {
-		String prompt = "A portrait of a blonde lady, with green eyes, holding a green apple. On the background a red wall with a window opened on a country landscape with a lake. In the sky an eagle flies. Neoromantic oil portrait style";
+	@DisplayName("OpenAI Custom Tests - getters & setters")
+	public void oaiTest() throws Exception {
 
-		try (OpenAiEndpoint oai = new OpenAiEndpoint();
-				OpenAiImageGenerationService imgSvc = oai.getImageGenerationService();) {
-			imgSvc.setModel("dall-e-3");
+		if (!TestConfiguration.TEST_OPENAI_SERVICES)
+			return;
 
-			List<BufferedImage> images = imgSvc.createImage(prompt, 1, 2048, 5120);
-			assertEquals(images.size(), 1);
-			File tmp = File.createTempFile("imageDalle3Def", ".png");
-			ImageUtil.toFile(tmp, images.get(0));
-			System.out.println("Image saved as: " + tmp.getCanonicalPath());
+		try (OpenAiEndpoint ep = new OpenAiEndpoint();
+				OpenAiImageGenerationService oaies = ep.getImageGenerationService()) {
 
-			ImagesRequest req = ImagesRequest.builder().model("dall-e-3").quality(ImageQuality.HD)
-					.style(ImageStyle.VIVID).build();
-			images = imgSvc.createImage(prompt, 1, 2048, 5120, req);
-			assertEquals(images.size(), 1);
-			tmp = File.createTempFile("imageDalle3Hi", ".png");
-			ImageUtil.toFile(tmp, images.get(0));
-			System.out.println("Image saved as: " + tmp.getCanonicalPath());
+			oaies.setModel("banana");
+			assertEquals("banana", oaies.getDefaultEditRequest().model().get()._value().asString().get());
+			assertEquals("banana", oaies.getDefaultGenerateRequest().model().get()._value().asString().get());
+			assertEquals("banana", oaies.getDefaultVariationRequest().model().get()._value().asString().get());
 
-			req = imgSvc.getDefaultReq();
-			req.setQuality(ImageQuality.HD);
-			req.setStyle(ImageStyle.VIVID);
-			images = imgSvc.createImage(prompt, 1, 2048, 5120);
-			assertEquals(images.size(), 1);
-			tmp = File.createTempFile("imageDalle3HiDef", ".png");
-			ImageUtil.toFile(tmp, images.get(0));
-			System.out.println("Image saved as: " + tmp.getCanonicalPath());
+			oaies.setDefaultEditRequest(
+					oaies.getDefaultEditRequest().toBuilder().model(ImageModel.GPT_IMAGE_1).build());
+			assertEquals(ImageModel.GPT_IMAGE_1, oaies.getDefaultEditRequest().model().get());
+			oaies.setDefaultGenerateRequest(
+					oaies.getDefaultGenerateRequest().toBuilder().model(ImageModel.GPT_IMAGE_1).build());
+			assertEquals(ImageModel.GPT_IMAGE_1, oaies.getDefaultGenerateRequest().model().get());
+			oaies.setDefaultVariationRequest(
+					oaies.getDefaultVariationRequest().toBuilder().model(ImageModel.GPT_IMAGE_1).build());
+			assertEquals(ImageModel.GPT_IMAGE_1, oaies.getDefaultVariationRequest().model().get());
+		}
+	}
+
+	@Test
+	@DisplayName("OpenAI Custom Tests - Known bug")
+	// TODO https://github.com/openai/openai-java/issues/478
+	public void oaiTest02() throws Exception {
+
+		if (!TestConfiguration.TEST_OPENAI_SERVICES)
+			return;
+
+		try (OpenAiEndpoint ep = new OpenAiEndpoint();
+				OpenAiImageGenerationService oaies = ep.getImageGenerationService("dall-e-3")) {
+
+			assertThrows(BadRequestException.class,
+					() -> oaies.createImage("Create the image of a white cyborg.", 1, 256, 256));
+		}
+	}
+
+	@Test
+	@DisplayName("OpenAI Custom Tests - Squaring an image and returning base 64")
+	public void oaiTest03() throws Exception {
+
+		if (!TestConfiguration.TEST_OPENAI_SERVICES)
+			return;
+
+		try (OpenAiEndpoint ep = new OpenAiEndpoint();
+				OpenAiImageGenerationService oaies = ep.getImageGenerationService("dall-e-2")) {
+
+			oaies.setDefaultVariationRequest(
+					oaies.getDefaultVariationRequest().toBuilder().responseFormat(ResponseFormat.B64_JSON).build());
+			List<FilePart> r = oaies.createImageVariation(ImageUtil.fromFile(ResourceUtil.getResourceFile("eagle.png")),
+					1, 256, 256);
+			assertEquals(1, r.size());
+			saveFiles(oaies, "variation", r);
+		}
+	}
+
+	// add test for non null mask (TODO?)
+
+	private void saveFiles(ImageGenerationService service, String prefix, List<FilePart> images) throws IOException {
+		for (FilePart img : images) {
+			File tmp = File.createTempFile(prefix + "_" + service.getModel() + "_", ".jpg");
+			ImageUtil.toFile(ImageUtil.fromFilePart(img), tmp);
+			LOG.info("Image saved as: " + tmp.getCanonicalPath());
 		}
 	}
 }

@@ -39,7 +39,7 @@ import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoin
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionAnsweringService;
-import io.github.mzattera.util.ResourceUtil;
+import io.github.mzattera.predictivepowers.util.ResourceUtil;
 
 public class QuestionAnsweringTest {
 

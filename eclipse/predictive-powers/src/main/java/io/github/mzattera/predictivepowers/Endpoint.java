@@ -23,10 +23,4 @@ package io.github.mzattera.predictivepowers;
  *
  */
 public interface Endpoint extends AutoCloseable {
-
-	/**
-	 * 
-	 * @return Underlying API client to perform direct API calls.
-	 */
-	ApiClient getClient();
 }

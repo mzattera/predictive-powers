@@ -34,7 +34,7 @@ import io.github.mzattera.predictivepowers.TestConfiguration;
 import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
-import io.github.mzattera.util.ResourceUtil;
+import io.github.mzattera.predictivepowers.util.ResourceUtil;
 
 /**
  * Test the OpenAI embedding service.

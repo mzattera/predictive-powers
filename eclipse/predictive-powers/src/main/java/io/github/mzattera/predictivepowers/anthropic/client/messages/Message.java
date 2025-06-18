@@ -192,10 +192,7 @@ public class Message {
 					}
 
 					// Notice tool is NOT set; this must be handled by the caller
-					parts.add(ToolCallProxy.builder() //
-							.id(part.get("id").asText()) //
-							.toolName(part.get("name").asText()) //
-							.arguments(args).build());
+					parts.add(new ToolCallProxy(part.get("id").asText(), part.get("name").asText(), null, args)); //
 				} else
 					throw new IllegalArgumentException("Unsupported message part type: " + type);
 			}
@@ -284,19 +281,4 @@ public class Message {
 	}
 
 	// TODO URGENT add constructor for images
-
-	public static void main(String[] args) {
-		String json = "{\n" + "  \"location\" : \"Zurich\",\n" + "  \"numer\": 3\n" + "}";
-
-		ObjectMapper mapper = new ObjectMapper();
-		try {
-			Map<String, Object> map = mapper.readValue(json, new TypeReference<Map<String, Object>>() {
-			});
-
-			// Print the map to see the result
-			System.out.println(map);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
 }

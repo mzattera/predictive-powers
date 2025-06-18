@@ -37,15 +37,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import com.openai.errors.BadRequestException;
+
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.TestConfiguration;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceCompletionService;
+import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.TextCompletion;
 
 /**
+ * Tests generic
+ * 
  * @author Massimiliano "Maxi" Zattera.
  */
 public class CompletionServiceTest {
@@ -72,14 +77,7 @@ public class CompletionServiceTest {
 	void test01(Pair<AiEndpoint, String> p) throws Exception {
 		try (CompletionService s = p.getLeft().getCompletionService(p.getRight())) {
 			TextCompletion resp = s.complete("Name a mammal.");
-			assertTrue(resp.getStatus() == FinishReason.COMPLETED);
-
-			s.setMaxNewTokens(1);
-			resp = s.complete("Name a mammal.");
-			if (s instanceof HuggingFaceCompletionService)
-				assertTrue(resp.getStatus() == FinishReason.COMPLETED);
-			else
-				assertTrue(resp.getStatus() == FinishReason.TRUNCATED);
+			assertTrue((resp.getFinishReason() == FinishReason.COMPLETED) || (resp.getFinishReason() == FinishReason.TRUNCATED));
 		}
 	}
 
@@ -94,17 +92,16 @@ public class CompletionServiceTest {
 			assertEquals("pippo", s.getModel());
 			s.setModel(m);
 
+			assertTrue(p.getLeft() == s.getEndpoint());
+
 			if (s instanceof OpenAiCompletionService) {
-				assertNull(s.getTopK());
-				s.setTopK(null);
-				assertNull(s.getTopK());
 				assertThrows(UnsupportedOperationException.class, () -> s.setTopK(1));
 			} else {
 				s.setTopK(1);
 				assertEquals(1, s.getTopK());
-				s.setTopK(null);
-				assertNull(s.getTopK());
 			}
+			s.setTopK(null);
+			assertNull(s.getTopK());
 
 			s.setTopP(2.0);
 			assertEquals(2.0, s.getTopP());
@@ -121,8 +118,8 @@ public class CompletionServiceTest {
 			assertEquals(4, s.getMaxNewTokens());
 			s.setMaxNewTokens(null);
 			assertNull(s.getMaxNewTokens());
-			s.setMaxNewTokens(15);
 
+			// We assume there is no echo by default
 			assertFalse(s.getEcho());
 			s.setEcho(true);
 			assertTrue(s.getEcho());
@@ -130,11 +127,14 @@ public class CompletionServiceTest {
 			assertFalse(s.getEcho());
 
 			if (s instanceof OpenAiCompletionService) {
-				((OpenAiCompletionService) s).getDefaultReq().setEcho(null);
+				@SuppressWarnings("resource")
+				OpenAiCompletionService svc = (OpenAiCompletionService) s;
+				svc.setDefaultRequest(svc.getDefaultRequest().toBuilder().echo((Boolean) null).build());
 				assertFalse(s.getEcho());
-			}
-			if (s instanceof HuggingFaceCompletionService) {
-				((HuggingFaceCompletionService) s).getDefaultReq().getParameters().setReturnFullText(null);
+			} else if (s instanceof HuggingFaceCompletionService) {
+				@SuppressWarnings("resource")
+				HuggingFaceCompletionService svc = (HuggingFaceCompletionService) s;
+				svc.getDefaultReq().getParameters().setReturnFullText(null);
 				assertFalse(s.getEcho());
 			}
 		}
@@ -145,20 +145,24 @@ public class CompletionServiceTest {
 	@MethodSource("services")
 	void test03(Pair<AiEndpoint, String> p) throws Exception {
 		try (CompletionService s = p.getLeft().getCompletionService(p.getRight())) {
-			assertThrows(UnsupportedOperationException.class, () -> s.insert("Mount Everest is ", " meters high."));
+			if (s instanceof OpenAiCompletionService) {
+				assertThrows(BadRequestException.class, () -> s.insert("Mount Everest is ", " meters high."));
+			} else {
+				TextCompletion resp = s.insert("Mount Everest is ", " meters high.");
+				assertTrue(resp.getText().trim().startsWith("8"));
+			}
 		}
 	}
 
-	@DisplayName("Getters and setters.")
+	@DisplayName("Call exercising all parameters.")
 	@ParameterizedTest
 	@MethodSource("services")
 	void test04(Pair<AiEndpoint, String> p) throws Exception {
 
 		try (CompletionService s = p.getLeft().getCompletionService(p.getRight())) {
-
-			// TODO Check response contains all parameters?
-
-			if (!(s instanceof OpenAiCompletionService)) {
+			if (s instanceof OpenAiCompletionService) {
+				assertThrows(UnsupportedOperationException.class, () -> s.setTopK(5));
+			} else {
 				s.setTopK(5);
 			}
 			s.setTopP(null);
@@ -166,7 +170,7 @@ public class CompletionServiceTest {
 			s.setMaxNewTokens(40);
 			s.setEcho(true);
 			TextCompletion resp = s.complete("Name a mammal.");
-			assertTrue((resp.getStatus() == FinishReason.COMPLETED) || (resp.getStatus() == FinishReason.TRUNCATED));
+			assertTrue((resp.getFinishReason() == FinishReason.COMPLETED) || (resp.getFinishReason() == FinishReason.TRUNCATED));
 
 			s.setTopK(null);
 			s.setTopP(0.2);
@@ -174,7 +178,7 @@ public class CompletionServiceTest {
 			s.setMaxNewTokens(40);
 			s.setEcho(false);
 			resp = s.complete("Name a mammal.");
-			assertTrue((resp.getStatus() == FinishReason.COMPLETED) || (resp.getStatus() == FinishReason.TRUNCATED));
+			assertTrue((resp.getFinishReason() == FinishReason.COMPLETED) || (resp.getFinishReason() == FinishReason.TRUNCATED));
 
 			s.setTopK(null);
 			s.setTopP(null);
@@ -182,7 +186,20 @@ public class CompletionServiceTest {
 			s.setMaxNewTokens(40);
 			s.setEcho(true);
 			resp = s.complete("Name a mammal.");
-			assertTrue((resp.getStatus() == FinishReason.COMPLETED) || (resp.getStatus() == FinishReason.TRUNCATED));
+			assertTrue((resp.getFinishReason() == FinishReason.COMPLETED) || (resp.getFinishReason() == FinishReason.TRUNCATED));
+		}
+	}
+
+	@Test
+	@DisplayName("Custom OpenAI Tests")
+	void oaiTest01(Pair<AiEndpoint, String> p) throws Exception {
+		
+		if (!TestConfiguration.TEST_OPENAI_SERVICES)
+			return;
+
+		try (OpenAiEndpoint ep = new OpenAiEndpoint(); OpenAiCompletionService s = ep.getCompletionService()) {
+			s.setMaxNewTokens(s.getEndpoint().getModelService().getMaxNewTokens(s.getModel(), 65535) * 2);
+			s.complete("hi"); // If this does not error, the recovering due to context overflow works.
 		}
 	}
 
@@ -191,7 +208,9 @@ public class CompletionServiceTest {
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+	// TODO if you move fillSlots() out of CompletionService
 	@Test
+	@DisplayName("Testing CompletionService.fillSlots()")
 	void test90() {
 		Map<String, Object> params = new HashMap<>();
 		params.put("A", null);

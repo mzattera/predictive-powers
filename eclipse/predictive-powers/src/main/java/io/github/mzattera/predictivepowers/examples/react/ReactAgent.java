@@ -155,10 +155,15 @@ public class ReactAgent extends OpenAiChatService {
 		@JsonPropertyDescription("Input for the action.")
 		public @NonNull String actionInput;
 
+		@JsonProperty(required = true)
+		@JsonPropertyDescription("In case the action for this step was delegated to another agent, this is the list of steps that agent performed to complete the action.")
+		public @NonNull List<Step> actionSteps;
+
 		private ToolCallStep(Builder builder) {
 			super(builder);
 			this.action = Objects.requireNonNull(builder.action, "action must not be null");
 			this.actionInput = Objects.requireNonNull(builder.actionInput, "actionInput must not be null");
+			this.actionSteps = new ArrayList<>(builder.actionSteps);
 		}
 
 		/**
@@ -167,6 +172,7 @@ public class ReactAgent extends OpenAiChatService {
 		public static class Builder extends Step.Builder {
 			private String action;
 			private String actionInput;
+			public List<Step> actionSteps = new ArrayList<>();
 
 			@Override
 			public Builder status(Status status) {
@@ -198,6 +204,21 @@ public class ReactAgent extends OpenAiChatService {
 				return this;
 			}
 
+			public Builder actionSteps(@NonNull List<? extends Step> steps) {
+				this.actionSteps = new ArrayList<>(steps);
+				return this;
+			}
+
+			public Builder addAllSteps(@NonNull List<? extends Step> steps) {
+				this.actionSteps.addAll(steps);
+				return this;
+			}
+
+			public Builder addStep(@NonNull Step step) {
+				this.actionSteps.add(step);
+				return this;
+			}
+
 			@Override
 			public ToolCallStep build() {
 				return new ToolCallStep(this);
@@ -206,19 +227,19 @@ public class ReactAgent extends OpenAiChatService {
 	}
 
 	public static final String PROMPT_TEMPLATE = "# Identity\n\n" //
-			+ "You are a ReAct (Reasooning and Acting) agent; you task is to execute the below user command in <user_command> tag.\n"
+			+ "You are a ReAct (Reasoning and Acting) agent; you task is to execute the below user command in <user_command> tag.\n"
 			+ "\n<user_command>\n{{question}}\n</user_command>\n" //
 //			+ "You are running inside a bigger process, the steps you and other agents already executed in the process are listed below in the <steps> tag.\n"
-			+ "\n# Additional Context and Informations\n\n" //
+			+ "\n# Additional Context and Information\n\n" //
 			+ "{{context}}\n\n" //
 			+ "\n# Instructions\n\n" //
 			+ "  * Carefully plan the steps required to execute the user's command.\n"
 			+ "  * At each new step, use the most suitable tool at your disposal to progress towards executing the user's command. **NEVER** output a step to indicate a tall call, but call the tool directly.\n"
 			+ "  * When planning the next step, carefully consider all of the steps you already executed that are contained in the conversation. Consider the thought that caused you to call each tool, usually provided as \"thought\" field in \"actionInput\" field, and observe the result of the call, before planning next step.\n"
 //			+ "  * When planning the next step, also carefully consider all of the steps already executed in the process which are stored inside <step> tag.\n"
-			+ "  * When you are done with executing the command, ouput one final step with status=\"COMPLETED\".\n"
+			+ "  * When you are done with executing the command, output one final step with status=\"COMPLETED\".\n"
 			+ "  * If you are experiencing an error, try to act differently and recover from it; if you are unable to recover, output one final step with status=\"ERROR\".\n"
-//			+ "  * If you are unsure about how to proceed, you can interact with the user by using the proper tool.\n"
+			+ "  * **IMPORTANTLY**, When you output one final step with status=\"ERROR\", clearly and in detail describe in observation field the reason of your failure. If the command lacked any necessary information, list missing information clearly and in detail. Suggest to the user any change or additions they could do to the command to help you to execute it.\n"
 			+ "  * The format of the last step to output is described in the below schema; use this very format when outputting the final step.\n" //
 			+ "\n<schema>\n" + JsonSchema.fromSchema(Step.class).asJsonSchema() + "\n</schema>\n\n" //
 //			+ "\n<step>\n{{steps}}\n</steps>\n";
@@ -241,6 +262,7 @@ public class ReactAgent extends OpenAiChatService {
 	 * The list of steps executed so far. while answering to last question /
 	 * executing last command.
 	 */
+	// TODO URGENT better engineering of this ? maybe return them with execute instead?
 	protected final @NonNull List<Step> steps = new ArrayList<>();
 
 	/**
@@ -276,11 +298,12 @@ public class ReactAgent extends OpenAiChatService {
 
 	public ReactAgent(@NonNull String id, @NonNull OpenAiEndpoint enpoint, @NonNull List<? extends Tool> tools)
 			throws ToolInitializationException {
-		
+
 		// TODO URGENT Better constructor or builder that takes context as well
-		
+
 		super(id, enpoint, DEFAULT_MODEL);
 		addCapability(new Toolset(tools));
+		setTemperature(0d);
 		setResponseFormat(Step.class);
 
 		// TODO URGENT Set max output (?)
@@ -332,8 +355,6 @@ public class ReactAgent extends OpenAiChatService {
 					}
 					results.add(result);
 
-					// TODO URGENT, if the tool called was a ReactAgent, that store its steps
-
 					// Store the call and the results in steps
 					@NonNull
 					Map<String, Object> args = new HashMap<>(call.getArguments());
@@ -344,10 +365,14 @@ public class ReactAgent extends OpenAiChatService {
 									: thought.toString()) //
 							.action("The tool \"" + call.getTool().getId() + "\" has been called") //
 							.actionInput(JsonSchema.JSON_MAPPER.writeValueAsString(args)) //
+							.actionSteps( // If the tool was another agent, store its steps too
+									(call.getTool() instanceof ReactAgent) ? ((ReactAgent) call.getTool()).getSteps()
+											: new ArrayList<>()) //
 //							.actionInput(args.entrySet().stream() //
 //									.map(e -> e.getKey() + "=" + e.getValue()) //
 //									.collect(java.util.stream.Collectors.joining("\n"))) //
 							.observation(result.getResult().toString()).build();
+
 					steps.add(step);
 					LOG.debug(JsonSchema.JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(step));
 				}

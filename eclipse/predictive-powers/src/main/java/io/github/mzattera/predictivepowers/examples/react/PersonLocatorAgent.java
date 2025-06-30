@@ -30,7 +30,7 @@ import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.NonNull;
 
-public class PersonLocatorAgent extends ExecutorAgent {
+public class PersonLocatorAgent extends ToolableReactAgent {
 
 	public static class LocatePersonTool extends AbstractTool {
 

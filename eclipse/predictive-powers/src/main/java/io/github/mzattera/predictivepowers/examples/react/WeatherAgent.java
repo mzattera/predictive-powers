@@ -31,7 +31,7 @@ import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.NonNull;
 
-public class WeatherAgent extends ExecutorAgent {
+public class WeatherAgent extends ToolableReactAgent {
 
 	static Random RND = new Random();
 

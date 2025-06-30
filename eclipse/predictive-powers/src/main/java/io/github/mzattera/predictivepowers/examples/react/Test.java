@@ -30,7 +30,7 @@ public class Test {
 						List.of(new PersonLocatorAgent(endpoint), new WeatherAgent(endpoint)));) {
 
 			agent.execute(
-					"Answer this question: Is the temperature in the town where Maxi is located the same as in Copenhagen?");
+					"Determine whether the temperature in the town where Maxi is located the same as in Copenhagen.");
 
 			System.out.println("//////////////////////////////////////////////////////////////////////");
 			

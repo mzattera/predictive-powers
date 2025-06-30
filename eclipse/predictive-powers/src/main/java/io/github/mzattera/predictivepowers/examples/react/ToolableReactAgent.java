@@ -47,7 +47,7 @@ import lombok.Setter;
  * This is a {@link ReactAgent} wrapped into a {@link Tool}, so it can be used
  * as a tool by other agents.
  */
-public class ExecutorAgent extends ReactAgent implements Tool {
+public class ToolableReactAgent extends ReactAgent implements Tool {
 
 	// TODO Maybe merge with ReactAgent? Might be a 6good idea to keep 7tool
 	// interface separated though
@@ -110,9 +110,9 @@ public class ExecutorAgent extends ReactAgent implements Tool {
 		this.agent = agent;
 	}
 
-	public ExecutorAgent(@NonNull String id, @NonNull String description, @NonNull OpenAiEndpoint enpoint,
-			@NonNull List<? extends Tool> tools) throws ToolInitializationException, JsonProcessingException {
-		super(id, enpoint, tools);
+	public ToolableReactAgent(@NonNull String id, @NonNull String description, @NonNull OpenAiEndpoint enpoint,
+			@NonNull List<? extends Tool> tools, boolean checkLastStep) throws ToolInitializationException, JsonProcessingException {
+		super(id, enpoint, tools, checkLastStep);
 		this.description = description;
 		setParameters(Parameters.class);
 	}

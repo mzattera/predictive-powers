@@ -27,16 +27,17 @@ public class Test {
 
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
 				ReactAgent agent = new ReactAgent("Orchestrator", endpoint, //
-						List.of(new PersonLocatorAgent(endpoint), new WeatherAgent(endpoint)));) {
+						List.of(new PersonLocatorAgent(endpoint), new WeatherAgent(endpoint)), false);) {
 
 			agent.execute(
 					"Determine whether the temperature in the town where Maxi is located the same as in Copenhagen.");
 
 			System.out.println("//////////////////////////////////////////////////////////////////////");
-			
+
 			System.out.println(agent.getPersonality());
 			System.out.println();
-			System.out.println(JsonSchema.JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(agent.getSteps()));
+			System.out.println(
+					JsonSchema.JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(agent.getSteps()));
 		} // Closes resources
 	}
 }

@@ -60,7 +60,7 @@ public class ExecutorModule extends OpenAiChatService {
 	/**
 	 * After this number of steps, we stop execution (to avoid loops).
 	 */
-	public final static int MAX_STEPS = 40;  // On average 20 steps for successful Scenario 01 execution (max 39 on failure)
+	public final static int MAX_STEPS = 30;  // On average 20 steps for successful Scenario 01 execution (max 39 on failure)
 
 	private static final String PROMPT_TEMPLATE = "# Identity\n\n" //
 			+ "You are a ReAct (Reasoning and Acting) agent; your task is to execute the below user command in <user_command> tag.\n"

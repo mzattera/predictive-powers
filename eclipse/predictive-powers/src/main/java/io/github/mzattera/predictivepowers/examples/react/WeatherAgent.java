@@ -81,6 +81,6 @@ public class WeatherAgent extends ToolableReactAgent {
 	public WeatherAgent(OpenAiEndpoint enpoint) throws ToolInitializationException, JsonProcessingException {
 		super(WeatherAgent.class.getSimpleName(), //
 				"This is able to find temperature in a given town.", //
-				enpoint, List.of(new GetCurrentWeatherTool()));
+				enpoint, List.of(new GetCurrentWeatherTool()), false);
 	}
 }

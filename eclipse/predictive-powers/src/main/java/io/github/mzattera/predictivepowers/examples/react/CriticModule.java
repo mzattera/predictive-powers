@@ -142,7 +142,9 @@ class CriticModule extends OpenAiChatService {
 	CriticModule(@NonNull ReactAgent agent, @NonNull List<? extends Tool> tools)
 			throws ToolInitializationException {
 
-		super(agent.getId() + "-reviewer", agent.getEndpoint(), ReactAgent.DEFAULT_MODEL);
+		// TODO URGENT: Share the executor context with critic?
+		
+		super(agent.getId() + "-critic", agent.getEndpoint(), ReactAgent.DEFAULT_MODEL);
 		this.agent = agent;
 		this.tools = new ArrayList<>(tools);
 		setTemperature(0d);

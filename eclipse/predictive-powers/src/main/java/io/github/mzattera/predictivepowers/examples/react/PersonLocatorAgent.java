@@ -69,6 +69,6 @@ public class PersonLocatorAgent extends ToolableReactAgent {
 	public PersonLocatorAgent(OpenAiEndpoint enpoint) throws ToolInitializationException, JsonProcessingException {
 		super(PersonLocatorAgent.class.getSimpleName(), //
 				"This is able to find temperature in a given town.", //
-				enpoint, List.of(new LocatePersonTool()));
+				enpoint, List.of(new LocatePersonTool()), false);
 	}
 }

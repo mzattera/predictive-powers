@@ -309,7 +309,7 @@ public class ExecutorModule extends OpenAiChatService {
 				|| (getLastStep().status == Status.IN_PROGRESS))) {
 
 			clearConversation();
-			map.put("steps", JsonSchema.JSON_MAPPER.writeValueAsString(steps));
+			map.put("steps", JsonSchema.JSON_MAPPER.writerWithView(Step.Views.Compact.class).writeValueAsString(steps));
 			map.put("suggestion", suggestion);
 			ChatCompletion reply = chat(CompletionService.fillSlots(instructions, map));
 
@@ -326,6 +326,7 @@ public class ExecutorModule extends OpenAiChatService {
 						result = call.execute();
 					} catch (Exception e) {
 						result = new ToolCallResult(call, e);
+						withError=true;
 					}
 					results.add(result);
 					// TODO We should use a more generic way?
@@ -341,10 +342,9 @@ public class ExecutorModule extends OpenAiChatService {
 									: thought.toString()) //
 							.action("The tool \"" + call.getTool().getId() + "\" has been called") //
 							.actionInput(JsonSchema.JSON_MAPPER.writeValueAsString(args)) //
-							// TODO Put that back in?
-//							.actionSteps( // If the tool was another agent, store its steps too
-//									(call.getTool() instanceof ReactAgent) ? ((ReactAgent) call.getTool()).getSteps()
-//											: new ArrayList<>()) //
+							.actionSteps( // If the tool was another agent, store its steps too
+									(call.getTool() instanceof ReactAgent) ? ((ReactAgent) call.getTool()).getSteps()
+											: new ArrayList<>()) //
 							.observation(result.getResult().toString()).build();
 
 					steps.add(step);

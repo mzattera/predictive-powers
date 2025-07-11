@@ -25,6 +25,7 @@ import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaDescription;
 
@@ -32,6 +33,7 @@ import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.messages.JsonSchema;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -64,23 +66,29 @@ public class ReactAgent extends OpenAiChatService {
 	@JsonSchemaDescription("This represent the final execution step performed by a ReAct agent.")
 	public static class Step {
 
+		public static class Views { public interface Compact {} public interface Complete extends Compact {} }
+		
 		public enum Status {
 			IN_PROGRESS, COMPLETED, ERROR
 		};
 
 		@JsonPropertyDescription("If you finish the execution or you experience an unrecoverable error, set this to either COMPLETED or ERROR respectively.")
+		@JsonView(Views.Compact.class)
 		public Status status;
 
 		// Do not remove it's OK it stays here
 		@JsonPropertyDescription("The tool or agent that executed this step. This is provided automatically, so you do not need to output it.")
+		@JsonView(Views.Compact.class)
 		public @NonNull String actor;
 
 		@JsonProperty(required = true)
 		@JsonPropertyDescription("Your reasoning about why and how accomplish this step.")
+		@JsonView(Views.Compact.class)
 		public @NonNull String thought;
 
 		@JsonProperty(required = true)
 		@JsonPropertyDescription("Any additional data, like step outcomes, error messages, etc..")
+		@JsonView(Views.Compact.class)
 		public @NonNull String observation;
 
 		// Private constructor to force use of the builder
@@ -132,14 +140,17 @@ public class ReactAgent extends OpenAiChatService {
 
 		@JsonProperty(required = true)
 		@JsonPropertyDescription("The action that was taken at this step. It is typically a tool invocation.")
+		@JsonView(Views.Compact.class)
 		public @NonNull String action;
 
-		@JsonProperty(required = true)
+		@JsonProperty(required = true, value="action_input")
 		@JsonPropertyDescription("Input for the action.")
+		@JsonView(Views.Compact.class)
 		public @NonNull String actionInput;
 
-		@JsonProperty(required = true)
+		@JsonProperty(required = true, value="action_steps")
 		@JsonPropertyDescription("In case the action for this step was delegated to another agent, this is the list of steps that agent performed to complete the action.")
+		@JsonView(Views.Complete.class)
 		public @NonNull List<Step> actionSteps;
 
 		private ToolCallStep(Builder builder) {
@@ -253,5 +264,9 @@ public class ReactAgent extends OpenAiChatService {
 
 	public List<Step> getSteps() {
 		return executor.getSteps();
+	}
+	
+	public static void main(String[] args) {
+		System.out.println(JsonSchema.getJsonSchema(ToolCallStep.class));
 	}
 }

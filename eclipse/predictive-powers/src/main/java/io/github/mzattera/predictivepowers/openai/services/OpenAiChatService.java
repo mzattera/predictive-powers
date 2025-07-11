@@ -482,9 +482,7 @@ public class OpenAiChatService extends AbstractAgent {
 		defaultRequest = defaultRequest.toBuilder().messages(messages).build();
 		ChatCompletionCreateParams req = defaultRequest;
 
-//		LOG.debug(req.toString());
-
-		com.openai.models.chat.completions.ChatCompletion resp = null;
+		com.openai.models.chat.completions.ChatCompletion resp = null;		
 		while (resp == null) {
 			try {
 				resp = endpoint.getClient().chat().completions().create(req);

@@ -43,11 +43,13 @@ import io.github.mzattera.predictivepowers.services.Tool.ToolParameter;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.Toolset;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
+import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.JsonSchema;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 
 /**
  * This agent is an executor component, part of a {@link ReactAgent}; its task
@@ -60,7 +62,9 @@ public class ExecutorModule extends OpenAiChatService {
 	/**
 	 * After this number of steps, we stop execution (to avoid loops).
 	 */
-	public final static int MAX_STEPS = 30;  // On average 20 steps for successful Scenario 01 execution (max 39 on failure)
+	// TODO Urgent: make this configurable
+	public final static int MAX_STEPS = 40; 
+
 
 	private static final String PROMPT_TEMPLATE = "# Identity\n\n" //
 			+ "You are a ReAct (Reasoning and Acting) agent; your task is to execute the below user command in <user_command> tag.\n"
@@ -215,7 +219,9 @@ public class ExecutorModule extends OpenAiChatService {
 	 * save tokens.
 	 */
 	// TODO URGENT have a more elegant way of setting this?
-	private final boolean checkLastStep;
+	@Getter
+	@Setter
+	private boolean checkLastStep;
 
 	/**
 	 * Current command being executed.
@@ -311,7 +317,32 @@ public class ExecutorModule extends OpenAiChatService {
 			clearConversation();
 			map.put("steps", JsonSchema.JSON_MAPPER.writerWithView(Step.Views.Compact.class).writeValueAsString(steps));
 			map.put("suggestion", suggestion);
-			ChatCompletion reply = chat(CompletionService.fillSlots(instructions, map));
+			String message = CompletionService.fillSlots(instructions, map);
+			ChatCompletion reply = null;
+			Exception ex = null;
+			try {
+				reply = chat(message);
+			} catch (Exception e) { // Exception calling the LLM
+				ex = e;
+				LOG.error(e.getMessage(), e);
+			}
+
+			if ((ex != null) || (reply.getFinishReason() != FinishReason.COMPLETED)) { // Something went wrogn calling the LLM
+				step = new ToolCallStep.Builder() //
+						.actor(getId()) //
+						.status(Status.ERROR) //
+						.thought("I had something in mind...") //
+						.action("LLM was called but this resulted in "
+								+ ((ex != null) ? "an error." : "a truncated message.")) //
+						.actionInput(message) //
+						.actionSteps(new ArrayList<>()) //
+						.observation(
+								(ex != null) ? ex.getMessage() : "Response finish reason: " + reply.getFinishReason()) //
+						.build();
+				steps.add(step);
+				LOG.debug(JsonSchema.JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(step));
+				break;
+			}
 
 			// Check if agent generated a function call
 			if (reply.hasToolCalls()) { // Agent called a tool
@@ -326,7 +357,7 @@ public class ExecutorModule extends OpenAiChatService {
 						result = call.execute();
 					} catch (Exception e) {
 						result = new ToolCallResult(call, e);
-						withError=true;
+						withError = true;
 					}
 					results.add(result);
 					// TODO We should use a more generic way?
@@ -338,7 +369,7 @@ public class ExecutorModule extends OpenAiChatService {
 					step = new ToolCallStep.Builder() //
 							.actor(getId()) //
 							.status(Status.IN_PROGRESS) //
-							.thought(thought == null ? "I decided to call this tool to progress execution"
+							.thought(thought == null ? "No thought passed explicitely."
 									: thought.toString()) //
 							.action("The tool \"" + call.getTool().getId() + "\" has been called") //
 							.actionInput(JsonSchema.JSON_MAPPER.writeValueAsString(args)) //

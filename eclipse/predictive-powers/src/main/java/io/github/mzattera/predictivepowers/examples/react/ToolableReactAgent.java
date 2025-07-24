@@ -73,10 +73,6 @@ public class ToolableReactAgent extends ReactAgent implements Tool {
 	// Protects us from user removing thought and question from parameters
 
 	protected void setParameters(List<? extends ToolParameter> parameters) {
-		// Our tool needs at least to support these parameters
-		Set<String> names = parameters.stream().map(ToolParameter::getName).collect(Collectors.toSet());
-		if (!names.contains("thought") || !names.contains("question"))
-			throw new IllegalArgumentException("Execution agents must accept thought and question parameters");
 		this.parameters = new ArrayList<>(parameters);
 	}
 
@@ -122,9 +118,12 @@ public class ToolableReactAgent extends ReactAgent implements Tool {
 		if (!isInitialized())
 			throw new IllegalStateException("Tool must be initialized.");
 
-		Step result = execute(getString("question", call.getArguments()));
+		String question = getString("question", call.getArguments());
+		if (question==null)
+			return new ToolCallResult(call, "ERROR: You must provide a command to execute as \"question\" parameter.");
+		
+		Step result = execute(question);
 		switch (result.status) {
-
 		case ERROR:
 			return new ToolCallResult(call, "ERROR: " + result.observation);
 		default:

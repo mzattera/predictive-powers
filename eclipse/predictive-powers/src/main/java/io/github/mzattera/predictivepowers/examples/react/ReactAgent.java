@@ -46,6 +46,7 @@ import lombok.Setter;
 public class ReactAgent extends OpenAiChatService {
 
 	public static final String DEFAULT_MODEL = "gpt-4.1";
+//	public static final String DEFAULT_MODEL = "gpt-4o";
 //	public static final String DEFAULT_MODEL = "o3";
 
 	/**
@@ -236,10 +237,10 @@ public class ReactAgent extends OpenAiChatService {
 	// TODO URGENT Check how this is used by executor and reviewer
 	private @NonNull String examples = "";
 
-	@Getter(AccessLevel.PACKAGE)
+	@Getter(AccessLevel.PROTECTED)
 	private final @NonNull ExecutorModule executor;
 
-	@Getter(AccessLevel.PACKAGE)
+	@Getter(AccessLevel.PROTECTED)
 	private final @NonNull CriticModule reviewer;
 
 	// TODO Make it a wrapper of another agent instead? A lot of code forwarding...

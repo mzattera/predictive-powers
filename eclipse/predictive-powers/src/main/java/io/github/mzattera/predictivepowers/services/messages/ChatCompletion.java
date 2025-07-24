@@ -73,7 +73,6 @@ public class ChatCompletion {
 	 *                                 content.
 	 */
 	public <T> T getObject(Class<T> c) throws JsonProcessingException {
-		String txt = getText();
 		return JsonSchema.JSON_MAPPER.readValue(getText(), c);
 	}
 
@@ -84,7 +83,7 @@ public class ChatCompletion {
 	 * @return List of tool calls in the contained message.
 	 */
 	// TODO consider deprecation
-	public List<? extends ToolCall> getToolCalls() {
+	public List<ToolCall> getToolCalls() {
 		return message.getToolCalls();
 	}
 

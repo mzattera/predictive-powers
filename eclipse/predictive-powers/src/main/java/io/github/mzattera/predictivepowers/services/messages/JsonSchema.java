@@ -46,7 +46,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
@@ -55,6 +54,7 @@ import com.kjetland.jackson.jsonSchema.JsonSchemaGenerator;
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaDescription;
 import com.openai.core.JsonValue;
 
+import io.github.mzattera.predictivepowers.examples.FunctionCallExample;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.Tool.ToolParameter;
 import io.github.mzattera.predictivepowers.services.Tool.ToolParameter.Type;
@@ -638,4 +638,7 @@ public class JsonSchema {
 		return fromSchema(c).asJsonSchema();
 	}
 
+	public static void main(String[] args) {
+		System.out.print(JsonSchema.getJsonSchema(FunctionCallExample.GetCurrentWeatherTool.Parameters.class));
+	}
 }

@@ -461,7 +461,7 @@ public class OpenAiChatService extends AbstractAgent {
 		List<ChatCompletionMessageParam> conversation = new ArrayList<>(messages);
 		trimConversation(conversation);
 
-		Pair<FinishReason, ChatCompletionMessage> result = chatCompletion(messages);
+		Pair<FinishReason, ChatCompletionMessage> result = chatCompletion(conversation);
 		return new ChatCompletion(result.getLeft(), fromOpenAiMessage(result.getRight()));
 	}
 
@@ -477,6 +477,8 @@ public class OpenAiChatService extends AbstractAgent {
 	 */
 	private Pair<FinishReason, ChatCompletionMessage> chatCompletion(List<ChatCompletionMessageParam> messages) {
 
+		// TODO URGENT Why is this returning a Pair<> instead of a ChatCompletion?
+		
 		// This ensures we can track last call messages from defaultRequest, for testing
 		// reasons
 		defaultRequest = defaultRequest.toBuilder().messages(messages).build();

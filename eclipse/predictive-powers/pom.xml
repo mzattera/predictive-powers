@@ -1,0 +1,267 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>io.github.mzattera</groupId>
+	<artifactId>predictive-powers</artifactId>
+	<version>0.6.0.preview</version>
+	<name>PredictivePowers</name>
+	<description>A Java library to (easily) create GenAI-powered autonomous
+		agents</description>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.release>11</maven.compiler.release>	
+	</properties>
+	
+	<dependencyManagement>
+	  <dependencies>
+	
+	    <!-- 1) Jackson: allinea tutta la famiglia alla linea usata dal progetto (2.20.1) -->
+	    <dependency>
+	      <groupId>com.fasterxml.jackson</groupId>
+	      <artifactId>jackson-bom</artifactId>
+	      <version>2.20.1</version>
+	      <type>pom</type>
+	      <scope>import</scope>
+	    </dependency>
+	
+	    <!-- 2) Kotlin: forza un'unica versione ed elimina il rischio 1.3.x vs 1.8+ -->
+	    <dependency>
+	      <groupId>org.jetbrains.kotlin</groupId>
+	      <artifactId>kotlin-bom</artifactId>
+	      <version>1.8.0</version>
+	      <type>pom</type>
+	      <scope>import</scope>
+	    </dependency>
+	
+	    <!-- 3) SLF4J: unica linea 2.0.x coerente col tuo direct dependency -->
+	    <dependency>
+	      <groupId>org.slf4j</groupId>
+	      <artifactId>slf4j-api</artifactId>
+	      <version>2.0.17</version>
+	    </dependency>
+	
+	    <!-- 4) Gson: scegli una versione unica (allinea tutti i rami) -->
+	    <dependency>
+	      <groupId>com.google.code.gson</groupId>
+	      <artifactId>gson</artifactId>
+	      <version>2.13.2</version>
+	    </dependency>
+	
+	    <!-- 5) Guava: blocca alla variante jre ed evita che entri android -->
+	    <dependency>
+	      <groupId>com.google.guava</groupId>
+	      <artifactId>guava</artifactId>
+	      <version>33.1.0-jre</version>
+	    </dependency>
+	
+	    <!-- 6) Error prone annotations: versione unica -->
+	    <dependency>
+	      <groupId>com.google.errorprone</groupId>
+	      <artifactId>error_prone_annotations</artifactId>
+	      <version>2.35.1</version>
+	    </dependency>
+	
+	    <!-- Apache Commons: allinea i moduli “ballerini” -->
+	    <dependency>
+	      <groupId>commons-io</groupId>
+	      <artifactId>commons-io</artifactId>
+	      <version>2.20.0</version>
+	    </dependency>
+	    <dependency>
+	      <groupId>commons-codec</groupId>
+	      <artifactId>commons-codec</artifactId>
+	      <version>1.19.0</version>
+	    </dependency>
+	    <dependency>
+	      <groupId>org.apache.commons</groupId>
+	      <artifactId>commons-compress</artifactId>
+	      <version>1.28.0</version>
+	    </dependency>
+	    <dependency>
+	      <groupId>org.apache.commons</groupId>
+	      <artifactId>commons-lang3</artifactId>
+	      <version>3.18.0</version>
+	    </dependency>
+	    <dependency>
+	      <groupId>org.apache.commons</groupId>
+	      <artifactId>commons-collections4</artifactId>
+	      <version>4.5.0</version>
+	    </dependency>
+	
+	    <!-- commons-logging: evita 1.2 vs 1.3.5 -->
+	    <dependency>
+	      <groupId>commons-logging</groupId>
+	      <artifactId>commons-logging</artifactId>
+	      <version>1.3.5</version>
+	    </dependency>
+	
+	  </dependencies>
+	</dependencyManagement>
+
+	<dependencies>
+
+		<!-- lombok (POJO annotations) -->
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>1.18.42</version>
+			<scope>provided</scope>
+		</dependency>
+        
+		<!-- Jackson (JSON annotations and bindings) 
+		This is an old version but avoids possible conflicts ith transitive dependencies
+		-->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+		</dependency>
+		<!--
+		<dependency>
+		    <groupId>tools.jackson.core</groupId>
+		    <artifactId>jackson-databind</artifactId>
+		    <version>3.0.3</version>
+		</dependency>
+		-->
+		
+		<!-- JSON schema -->
+		<dependency>
+		    <groupId>com.kjetland</groupId>
+		    <artifactId>mbknor-jackson-jsonschema_2.13</artifactId>
+		    <version>1.0.39</version>
+		</dependency>
+		
+		<!-- Hugging Face Client API -->
+		<dependency>
+		  <groupId>io.github.mzattera</groupId>
+		  <artifactId>hf-inference-api</artifactId>
+		  <version>6.0.0</version>
+		</dependency>		
+		<!-- This allows to dynamically load Hugging Face tokenizers using DJL
+		tokenizer library -->
+		<dependency>
+			<groupId>ai.djl.huggingface</groupId>
+			<artifactId>tokenizers</artifactId>
+			<version>0.36.0</version>
+		</dependency>
+    
+		<!-- Official OpenAI Java SDK -->
+		<dependency>
+		  <groupId>com.openai</groupId>
+		  <artifactId>openai-java</artifactId>
+		  <version>2.1.0</version>
+		</dependency>		
+		<!-- To access Azure OpenAI Gognitive Services
+		<dependency>
+		    <groupId>com.azure.resourcemanager</groupId>
+		    <artifactId>azure-resourcemanager-cognitiveservices</artifactId>
+		    <version>1.1.0</version>
+		</dependency>
+		<dependency>
+		    <groupId>com.azure</groupId>
+		    <artifactId>azure-identity</artifactId>
+		    <version>1.16.0</version>
+		    <scope>compile</scope>
+		</dependency>
+        -->         
+		<!-- Tokens count for OpenAI models -->
+		<dependency>
+			<groupId>com.knuddels</groupId>
+			<artifactId>jtokkit</artifactId>
+			<version>1.1.0</version>
+		</dependency>
+
+		<!-- Google Serach API, for Google  -SearchEndpoint 
+		Notice latest version of custom search depends on client 1.25.0
+		-->
+	    <dependency>
+	        <groupId>com.google.api-client</groupId>
+	        <artifactId>google-api-client</artifactId>
+	        <version>1.25.0</version>
+	    </dependency>
+		<dependency>
+		    <groupId>com.google.api-client</groupId>
+		    <artifactId>google-api-client-gson</artifactId>
+		    <version>1.25.0</version>
+		</dependency>
+		<dependency>
+		    <groupId>com.google.apis</groupId>
+		    <artifactId>google-api-services-customsearch</artifactId>
+		    <version>v1-rev86-1.25.0</version>
+		</dependency>
+    		
+		<!-- Tika is a library to recognize and extract text from a variety of
+		file types -->
+		<dependency>
+			<groupId>org.apache.tika</groupId>
+			<artifactId>tika-core</artifactId>
+			<version>3.2.3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.tika</groupId>
+			<artifactId>tika-parsers-standard-package</artifactId>
+			<version>3.2.3</version>
+		</dependency>
+
+		<!--
+		Below dependencies are needed to disable annoying SLF4J log
+		messages FFS!
+		Notice also a logback.xml file must be in the project
+		resources to disable all logging.
+		-->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>1.5.22</version>
+			<scope>test</scope>
+		</dependency>
+		<!--
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+		</dependency>
+		-->
+	</dependencies>
+	
+	<build>
+	    <pluginManagement>
+	        <plugins>
+	            <plugin>
+	                <groupId>org.apache.maven.plugins</groupId>
+	                <artifactId>maven-dependency-plugin</artifactId>
+	                <version>3.8.0</version>
+	            </plugin>
+	            <plugin>
+	                <groupId>org.apache.maven.plugins</groupId>
+	                <artifactId>maven-assembly-plugin</artifactId>
+	                <version>3.8.0</version>
+	            </plugin>
+	        </plugins>
+	    </pluginManagement>
+	
+	    <plugins>
+	        <plugin>
+	            <groupId>org.apache.maven.plugins</groupId>
+	            <artifactId>maven-assembly-plugin</artifactId>
+	            <configuration>
+	                <descriptorRefs>
+	                    <descriptorRef>jar-with-dependencies</descriptorRef>
+	                </descriptorRefs>
+	            </configuration>
+	            <executions>
+	                <execution>
+	                    <id>make-assembly</id>
+	                    <phase>package</phase>
+	                    <goals>
+	                        <goal>single</goal>
+	                    </goals>
+	                </execution>
+	            </executions>
+	        </plugin>
+	    </plugins>
+	</build>
+</project>

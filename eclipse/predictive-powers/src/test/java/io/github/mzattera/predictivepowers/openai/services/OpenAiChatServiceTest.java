@@ -35,6 +35,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -55,7 +56,6 @@ import com.openai.models.chat.completions.ChatCompletionUserMessageParam;
 
 import io.github.mzattera.predictivepowers.TestConfiguration;
 import io.github.mzattera.predictivepowers.examples.FunctionCallExample.GetCurrentWeatherTool;
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.CallType;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.Tool;
@@ -82,7 +82,7 @@ public class OpenAiChatServiceTest {
 	// TODO add tests to check all the methods to manipulate tools -> in generic
 	// agent test
 
-	private static List<ImmutablePair<OpenAiEndpoint, String>> svcs;
+	private static List<Pair<OpenAiEndpoint, String>> svcs;
 
 	@BeforeAll
 	static void init() {
@@ -97,7 +97,7 @@ public class OpenAiChatServiceTest {
 		TestConfiguration.close(svcs.stream().map(p -> p.getLeft()).collect(Collectors.toList()));
 	}
 
-	static Stream<ImmutablePair<OpenAiEndpoint, String>> services() {
+	static Stream<Pair<OpenAiEndpoint, String>> services() {
 		return svcs.stream();
 	}
 
@@ -181,12 +181,8 @@ public class OpenAiChatServiceTest {
 	@ParameterizedTest
 	@MethodSource("defaultModel")
 	@DisplayName("Check chat and history management.")
+	@Disabled // // TODO URGENT Remove after tokenizer is fixed
 	public void testHistoryChat(String model) throws Exception {
-
-		// TODO URGENT
-		// Remove after tokenizer is fixed
-		if (1 == 1)
-			return;
 
 		try (OpenAiEndpoint ep = new OpenAiEndpoint();
 				OpenAiChatService cs = ep.getChatService(model);

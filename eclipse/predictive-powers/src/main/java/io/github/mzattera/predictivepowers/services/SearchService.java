@@ -18,6 +18,7 @@ package io.github.mzattera.predictivepowers.services;
 
 import java.util.List;
 
+import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.SearchEndpoint;
 import lombok.NonNull;
 
@@ -41,14 +42,14 @@ public interface SearchService extends Service {
 	 * @param query The search to perform.
 	 * @return List of search results.
 	 */
-	List<Link> search(@NonNull String query);
+	List<Link> search(@NonNull String query) throws EndpointException;
 
 	/**
 	 * Performs an online search.
 	 * 
 	 * @param query The search to perform.
-	 * @param n Number of results to return at most.
+	 * @param n     Number of results to return at most.
 	 * @return List of search results.
 	 */
-	List<Link> search(@NonNull String query, int n);
+	List<Link> search(@NonNull String query, int n) throws EndpointException;
 }

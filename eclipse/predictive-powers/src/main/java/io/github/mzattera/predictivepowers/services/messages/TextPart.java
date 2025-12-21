@@ -19,6 +19,7 @@
  */
 package io.github.mzattera.predictivepowers.services.messages;
 
+import io.github.mzattera.predictivepowers.services.messages.MessagePart.Type;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -43,4 +44,9 @@ public class TextPart implements MessagePart {
 
 	@NonNull
 	private String content;
+	
+	@Override
+	public Type getType() {
+		return Type.TEXT;
+	}
 }

@@ -21,9 +21,8 @@ import java.util.List;
 import lombok.NonNull;
 
 /**
- * This represents an agent (sometime assistant), possiblzy handled by handled
- * by an {@link AgentService} which is able to hold a conversation with the
- * user.
+ * This represents an agent (sometime assistant), possibly handled by an
+ * {@link AgentService} which is able to hold a conversation with the user.
  * 
  * It is more advanced than {#link ChatService}, as it can invoke {@link Tool}s.
  * 

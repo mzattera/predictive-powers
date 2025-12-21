@@ -24,19 +24,18 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.openai.core.JsonValue;
 import com.openai.errors.BadRequestException;
 import com.openai.errors.OpenAIException;
+import com.openai.errors.OpenAIServiceException;
 import com.openai.models.FunctionParameters;
 import com.openai.models.images.Image;
 
+import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.services.Tool.ToolParameter;
 import io.github.mzattera.predictivepowers.services.messages.Base64FilePart;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
@@ -136,6 +135,24 @@ public final class OpenAiUtil {
 	}
 
 	/**
+	 * 
+	 * @return An EndpointException wrapper for any exception happening when
+	 *         invoking OpenAI API.
+	 */
+	public static EndpointException toEndpointException(Exception e) {
+
+		if (e instanceof EndpointException)
+			return (EndpointException) e;
+
+		if (e instanceof OpenAIServiceException) {
+			OpenAIServiceException oaie = (OpenAIServiceException) e;
+			return EndpointException.fromHttpException(oaie.statusCode(), e, oaie.body().toString());
+		}
+
+		return new EndpointException(e);
+	}
+
+	/**
 	 * Translates SDK finish reason into library one.
 	 */
 	public static FinishReason fromOpenAiApi(
@@ -216,34 +233,5 @@ public final class OpenAiUtil {
 		FunctionParameters.Builder builder = FunctionParameters.builder();
 		schema.entrySet().forEach(e -> builder.putAdditionalProperty(e.getKey(), JsonValue.from(e.getValue())));
 		return builder.build();
-	}
-
-	/**
-	 * Because of the idiotic way SDK defined function parameters instead of just
-	 * getting a schema, we must translate a list of {@link ToolParameter}s into
-	 * {@link FunctionParameters} and back.
-	 * 
-	 * @author Massimiliano "Maxi" Zattera
-	 * 
-	 * @param params Definition of parameters for the function.
-	 * @throws JsonProcessingException
-	 */
-	public static List<ToolParameter> fromFunctionParameters(FunctionParameters params) throws JsonProcessingException {
-
-		StringBuilder schema = new StringBuilder();
-		schema.append("{\n");
-		int size = params._additionalProperties().size();
-		int idx = 1;
-		for (Entry<String, JsonValue> e : params._additionalProperties().entrySet()) {
-			schema.append("\"").append(e.getKey().toString()).append("\": ");
-			schema.append(e.getValue().toString());
-			if (++idx < size)
-				schema.append(",\n");
-			else
-				schema.append("\n");
-		}
-		schema.append("}\n");
-
-		return JsonSchema.fromSchema(schema.toString()).asParameters();
 	}
 }

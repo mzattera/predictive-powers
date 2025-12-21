@@ -44,7 +44,8 @@ public class Link implements Serializable {
 	private static final long serialVersionUID = -7975999709641989742L;
 
 	String title;
-
+	String snippet;
+	
 	@NonNull
 	URL url;
 
@@ -53,7 +54,7 @@ public class Link implements Serializable {
 
 	@Override
 	public String toString() {
-		return (title == null ? "" : title + " ") + "[" + url + "]";
+		return (title == null ? "" : title + " ") + "[" + url + "]" + (snippet == null ? "" : " - " + snippet);
 	}
 
 	@Override

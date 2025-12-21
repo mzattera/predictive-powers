@@ -93,6 +93,11 @@ public class FilePart implements MessagePart {
 	 */
 	private final URL url;
 	
+	@Override
+	public Type getType() {
+		return Type.FILE;
+	}
+	
 	protected FilePart() {
 		this.file = null;
 		this.url = null;

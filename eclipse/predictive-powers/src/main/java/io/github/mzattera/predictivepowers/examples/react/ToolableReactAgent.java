@@ -22,15 +22,13 @@ package io.github.mzattera.predictivepowers.examples.react;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaDescription;
 
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Capability;
 import io.github.mzattera.predictivepowers.services.Tool;

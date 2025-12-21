@@ -18,6 +18,7 @@ package io.github.mzattera.predictivepowers.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.JsonSchema;
@@ -151,7 +152,7 @@ public interface ChatService extends AiService {
 	 * 
 	 * @param schema A JSON schema that will be used to define the output format.
 	 *               See {@link JsonSchema#getParameters(java.lang.Class)}.
-	 * @throws JsonProcessingException 
+	 * @throws JsonProcessingException
 	 */
 	void setResponseFormat(String schema) throws JsonProcessingException;
 
@@ -182,21 +183,21 @@ public interface ChatService extends AiService {
 	/**
 	 * Starts a new chat, clearing current conversation.
 	 */
-	void clearConversation();
+	void clearConversation() throws EndpointException;
 
 	/**
 	 * Continues current chat, with the provided message.
 	 * 
 	 * The exchange is added to the conversation history.
 	 */
-	ChatCompletion chat(String msg);
+	ChatCompletion chat(String msg) throws EndpointException;
 
 	/**
 	 * Continues current chat, with the provided message.
 	 * 
 	 * The exchange is added to the conversation history.
 	 */
-	ChatCompletion chat(ChatMessage msg);
+	ChatCompletion chat(ChatMessage msg) throws EndpointException;
 
 	/**
 	 * Completes text outside a conversation (executes given prompt ignoring and
@@ -205,7 +206,7 @@ public interface ChatService extends AiService {
 	 * Notice this does not consider or affects chat history but bot personality is
 	 * used, if provided.
 	 */
-	ChatCompletion complete(String prompt);
+	ChatCompletion complete(String prompt) throws EndpointException;
 
 	/**
 	 * Completes text outside a conversation (executes given prompt ignoring and
@@ -214,5 +215,5 @@ public interface ChatService extends AiService {
 	 * Notice this does not consider or affects chat history but bot personality is
 	 * used, if provided.
 	 */
-	ChatCompletion complete(ChatMessage prompt);
+	ChatCompletion complete(ChatMessage prompt) throws EndpointException;
 }

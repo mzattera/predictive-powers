@@ -19,7 +19,7 @@ package io.github.mzattera.predictivepowers.services;
 import java.util.List;
 import java.util.Map;
 
-import io.github.mzattera.predictivepowers.services.ModelService.ModelMetaData.Mode;
+import io.github.mzattera.predictivepowers.services.ModelService.ModelMetaData.Modality;
 import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +42,22 @@ public abstract class AbstractModelService implements ModelService {
 	@NonNull
 	protected final Map<String, ModelMetaData> data;
 
+	/**
+	 * @return null, as there is no model associated with this service.
+	 */
+	@Override
+	public String getModel() {
+		return null;
+	}
+
+	/**
+	 * Unsupported, as there is no model associated with this service.
+	 */
+	@Override
+	public void setModel(@NonNull String model) {
+		throw new UnsupportedOperationException();
+	}
+	
 	@Override
 	public ModelMetaData get(@NonNull String model) {
 		return data.get(model);
@@ -126,7 +142,7 @@ public abstract class AbstractModelService implements ModelService {
 	 * @return Input modes supported by the model.
 	 */
 	@Override
-	public List<Mode> getInputModes(@NonNull String model) {
+	public List<Modality> getInputModes(@NonNull String model) {
 		return get(model).getInputModes();
 	}
 
@@ -136,7 +152,7 @@ public abstract class AbstractModelService implements ModelService {
 	 * @return Output modes supported by the model.
 	 */
 	@Override
-	public List<Mode> getOutputModes(@NonNull String model) {
+	public List<Modality> getOutputModes(@NonNull String model) {
 		return get(model).getOutputModes();
 	}
 

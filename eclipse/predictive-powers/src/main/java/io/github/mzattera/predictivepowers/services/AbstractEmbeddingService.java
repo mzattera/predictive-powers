@@ -17,19 +17,14 @@ package io.github.mzattera.predictivepowers.services;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.tika.exception.TikaException;
-import org.xml.sax.SAXException;
-
+import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.util.ExtractionUtil;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -67,55 +62,74 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 	}
 
 	@Override
-	public List<EmbeddedText> embed(@NonNull String text) {
+	public List<EmbeddedText> embed(@NonNull String text) throws EndpointException {
 		return embed(text, defaultChunkTokens, 1, 1);
 	}
 
 	@Override
-	public List<EmbeddedText> embed(@NonNull Collection<String> text) {
+	public List<EmbeddedText> embed(@NonNull Collection<String> text) throws EndpointException {
 		return embed(text, defaultChunkTokens, 1, 1);
 	}
 
 	@Override
-	public List<EmbeddedText> embed(@NonNull Collection<String> text, int chunkSize, int windowSize, int stride) {
-		List<EmbeddedText> result = new ArrayList<>();
-		for (String s : text)
-			result.addAll(embed(s, chunkSize, windowSize, stride));
-		return result;
-
+	public List<EmbeddedText> embed(String text, int chunkSize, int windowSize, int stride) throws EndpointException {
+		return embed(List.of(text), chunkSize, windowSize, stride);
 	}
 
 	@Override
-	public List<EmbeddedText> embedFile(@NonNull File file) throws IOException, SAXException, TikaException {
-		return embed(ExtractionUtil.fromFile(file));
-	}
-
-	@Override
-	public Map<File, List<EmbeddedText>> embedFolder(@NonNull File folder) throws IOException, SAXException, TikaException {
-		if (!folder.isDirectory() || !folder.canRead()) {
-			throw new IOException("Cannot read folder: " + folder.getCanonicalPath());
+	public List<EmbeddedText> embedFile(@NonNull File file) throws EndpointException {
+		try {
+			return embed(ExtractionUtil.fromFile(file));
+		} catch (Exception e) {
+			if (e instanceof EndpointException)
+				throw (EndpointException) e;
+			throw new EndpointException(e);
 		}
+	}
 
-		Map<File, List<EmbeddedText>> result = new HashMap<>();
-		for (File f : folder.listFiles()) {
-			if (f.isFile())
-				result.put(f, embedFile(f));
-			else
-				result.putAll(embedFolder(f));
+	@Override
+	public Map<File, List<EmbeddedText>> embedFolder(@NonNull File folder) throws EndpointException {
+		try {
+			if (!folder.isDirectory() || !folder.canRead()) {
+				throw new IOException("Cannot read folder: " + folder.getCanonicalPath());
+			}
+
+			Map<File, List<EmbeddedText>> result = new HashMap<>();
+			for (File f : folder.listFiles()) {
+				if (f.isFile())
+					result.put(f, embedFile(f));
+				else
+					result.putAll(embedFolder(f));
+			}
+
+			return result;
+		} catch (Exception e) {
+			if (e instanceof EndpointException)
+				throw (EndpointException) e;
+			throw new EndpointException(e);
 		}
-
-		return result;
 	}
 
 	@Override
-	public List<EmbeddedText> embedURL(@NonNull String url)
-			throws MalformedURLException, IOException, SAXException, TikaException, URISyntaxException {
-		return embedURL((new URI(url)).toURL());
+	public List<EmbeddedText> embedURL(@NonNull String url) throws EndpointException {
+		try {
+			return embedURL((new URI(url)).toURL());
+		} catch (Exception e) {
+			if (e instanceof EndpointException)
+				throw (EndpointException) e;
+			throw new EndpointException(e);
+		}
 	}
 
 	@Override
-	public List<EmbeddedText> embedURL(@NonNull URL url) throws IOException, SAXException, TikaException {
-		return embed(ExtractionUtil.fromUrl(url));
+	public List<EmbeddedText> embedURL(@NonNull URL url) throws EndpointException {
+		try {
+			return embed(ExtractionUtil.fromUrl(url));
+		} catch (Exception e) {
+			if (e instanceof EndpointException)
+				throw (EndpointException) e;
+			throw new EndpointException(e);
+		}
 	}
 
 	@Override

@@ -24,7 +24,7 @@ import com.openai.models.completions.Completion;
 import com.openai.models.completions.CompletionChoice;
 import com.openai.models.completions.CompletionCreateParams;
 
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.openai.util.OpenAiUtil;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
@@ -164,52 +164,56 @@ public class OpenAiCompletionService implements CompletionService {
 	}
 
 	@Override
-	public TextCompletion complete(String prompt) {
+	public TextCompletion complete(String prompt) throws EndpointException {
 		return complete(prompt, defaultRequest);
 	}
 
 	@Override
-	public TextCompletion insert(String prompt, String suffix) {
+	public TextCompletion insert(String prompt, String suffix) throws EndpointException {
 		// This seems to work only with gpt-3.5-turbo-instruct, but that models error
 		// when used with the OpenAI SDK
 		CompletionCreateParams req = defaultRequest.toBuilder().suffix(suffix).build();
 		return complete(prompt, req);
 	}
 
-	private TextCompletion complete(String prompt, CompletionCreateParams req) {
+	private TextCompletion complete(String prompt, CompletionCreateParams req) throws EndpointException {
 
-		req = req.toBuilder().prompt(prompt).build();
+		try {
+			req = req.toBuilder().prompt(prompt).build();
 
-		Completion resp = null;
-		while (resp == null) { // Loop till I get an answer
-			try {
-				resp = endpoint.getClient().completions().create(req);
-			} catch (OpenAIServiceException e) {
+			Completion resp = null;
+			while (resp == null) { // Loop till I get an answer
+				try {
+					resp = endpoint.getClient().completions().create(req);
+				} catch (OpenAIServiceException e) {
 
-				// Check for policy violations
-				if (e.getMessage().contains("violating our usage policy")) {
-					return new TextCompletion(FinishReason.INAPPROPRIATE, e.getMessage());
-				}
+					// Check for policy violations
+					if (e.getMessage().contains("violating our usage policy")) {
+						return new TextCompletion(FinishReason.INAPPROPRIATE, e.getMessage());
+					}
 
-				// Automatically recover if request is too long
-				// This makes sense as req is modified only for this call (it is immutable).
-				OpenAiUtil.OpenAiExceptionData d = OpenAiUtil.getExceptionData(e);
-				int contextSize = modelService.getContextSize(getModel(), d.getContextSize());
-				if ((contextSize > 0) && (d.getPromptLength() > 0)) {
-					int optimal = contextSize - d.getPromptLength() - 1;
-					if (optimal > 0) {
-						LOG.warn("Reducing reply length for OpenAI completion service from "
-								+ req.maxTokens().orElse(-1L) + " to " + optimal);
-						req = req.toBuilder().maxTokens(optimal).build();
+					// Automatically recover if request is too long
+					// This makes sense as req is modified only for this call (it is immutable).
+					OpenAiUtil.OpenAiExceptionData d = OpenAiUtil.getExceptionData(e);
+					int contextSize = modelService.getContextSize(getModel(), d.getContextSize());
+					if ((contextSize > 0) && (d.getPromptLength() > 0)) {
+						int optimal = contextSize - d.getPromptLength() - 1;
+						if (optimal > 0) {
+							LOG.warn("Reducing reply length for OpenAI completion service from "
+									+ req.maxTokens().orElse(-1L) + " to " + optimal);
+							req = req.toBuilder().maxTokens(optimal).build();
+						} else
+							throw e; // Context too small anyway
 					} else
-						throw e; // Context too small anyway
-				} else
-					throw e; // Not a context length issue
+						throw e; // Not a context length issue
+				}
 			}
-		}
 
-		CompletionChoice choice = resp.choices().get(0);
-		return new TextCompletion(OpenAiUtil.fromOpenAiApi(choice.finishReason()), choice.text());
+			CompletionChoice choice = resp.choices().get(0);
+			return new TextCompletion(OpenAiUtil.fromOpenAiApi(choice.finishReason()), choice.text());
+		} catch (Exception e) {
+			throw OpenAiUtil.toEndpointException(e);
+		}
 	}
 
 	@Override

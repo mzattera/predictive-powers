@@ -18,10 +18,10 @@ package io.github.mzattera.predictivepowers.services.messages;
 
 import io.github.mzattera.predictivepowers.services.CompletionService;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -36,7 +36,7 @@ import lombok.ToString;
  *
  */
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@RequiredArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
 @ToString

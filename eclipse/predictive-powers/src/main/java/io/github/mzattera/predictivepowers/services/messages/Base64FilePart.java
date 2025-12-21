@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Base64;
 
+import io.github.mzattera.predictivepowers.services.messages.MessagePart.Type;
 import io.github.mzattera.predictivepowers.util.FileUtil;
 import io.github.mzattera.predictivepowers.util.ImageUtil;
 import lombok.Getter;
@@ -56,6 +57,11 @@ public class Base64FilePart extends FilePart {
 
 	@Getter
 	private String name;
+
+	@Override
+	public Type getType() {
+		return Type.BASE64_FILE;
+	}
 
 	/**
 	 * Constructor from file; notice the file will be inspected to determine MIME
@@ -93,6 +99,7 @@ public class Base64FilePart extends FilePart {
 
 	/**
 	 * Constructor from image; a name for this file must be provided.
+	 * The image is encoded as base64 PNG.
 	 */
 	public Base64FilePart(BufferedImage image, String name) throws IOException {
 		init(ImageUtil.toBytes(image, "png"), name, "image/png");

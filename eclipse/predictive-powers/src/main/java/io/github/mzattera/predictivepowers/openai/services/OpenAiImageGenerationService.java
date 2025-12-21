@@ -23,8 +23,6 @@ import java.util.List;
 
 import com.openai.core.JsonMissing;
 import com.openai.core.MultipartField;
-import com.openai.core.http.Headers;
-import com.openai.errors.BadRequestException;
 import com.openai.errors.OpenAIInvalidDataException;
 import com.openai.models.images.ImageCreateVariationParams;
 import com.openai.models.images.ImageEditParams;
@@ -33,7 +31,7 @@ import com.openai.models.images.ImageGenerateParams;
 import com.openai.models.images.ImageModel;
 import com.openai.models.images.ImagesResponse;
 
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.openai.util.OpenAiUtil;
 import io.github.mzattera.predictivepowers.services.AbstractImageGenerationService;
 import io.github.mzattera.predictivepowers.services.messages.Base64FilePart;
@@ -96,123 +94,138 @@ public class OpenAiImageGenerationService extends AbstractImageGenerationService
 	}
 
 	@Override
-	public List<FilePart> createImage(@NonNull String prompt, int n, int width, int height) throws IOException {
-
-		ImageModel model = defaultGenerateRequest.model().isEmpty() ? ImageModel.DALL_E_2
-				: defaultGenerateRequest.model().get();
-
-		ImageGenerateParams.Size size;
-		switch (model.value()) {
-		case DALL_E_2:
-			if (Math.max(width, height) <= 256)
-				size = ImageGenerateParams.Size._256X256;
-			else if (Math.max(width, height) <= 512)
-				size = ImageGenerateParams.Size._512X512;
-			else
-				size = ImageGenerateParams.Size._1024X1024;
-			break;
-		case DALL_E_3:
-			if (width == height)
-				size = ImageGenerateParams.Size._1024X1024;
-			else if (width > height)
-				size = ImageGenerateParams.Size._1792X1024;
-			else
-				size = ImageGenerateParams.Size._1024X1792;
-			break;
-		default: // Catches gpt-image-1 and future cases too (hopefully)
-			if (width == height)
-				size = ImageGenerateParams.Size._1024X1024;
-			else if (width > height)
-				size = ImageGenerateParams.Size._1536X1024;
-			else
-				size = ImageGenerateParams.Size._1024X1536;
-			break;
-		}
+	public List<FilePart> createImage(@NonNull String prompt, int n, int width, int height) throws EndpointException {
 
 		try {
-			com.openai.models.images.ImageGenerateParams.Builder b = defaultGenerateRequest.toBuilder() //
-					.prompt(prompt).size(size);
-			if (ImageModel.DALL_E_3.equals(model)) {
-				b.n(1);
-				List<FilePart> result = new ArrayList<>(n);
-				for (int i = 0; i < n; ++i) {
-					ImagesResponse resp = endpoint.getClient().images().generate(b.build());
-					result.addAll(OpenAiUtil.readImages(resp.data().get()));
-				}
-				return result;
-			} else {
-				b.n(n);
-				ImagesResponse resp = endpoint.getClient().images().generate(b.build());
-				return OpenAiUtil.readImages(resp.data().get());
+			ImageModel model = defaultGenerateRequest.model().isEmpty() ? ImageModel.DALL_E_2
+					: defaultGenerateRequest.model().get();
+
+			ImageGenerateParams.Size size;
+			switch (model.value()) {
+			case DALL_E_2:
+				if (Math.max(width, height) <= 256)
+					size = ImageGenerateParams.Size._256X256;
+				else if (Math.max(width, height) <= 512)
+					size = ImageGenerateParams.Size._512X512;
+				else
+					size = ImageGenerateParams.Size._1024X1024;
+				break;
+			case DALL_E_3:
+				if (width == height)
+					size = ImageGenerateParams.Size._1024X1024;
+				else if (width > height)
+					size = ImageGenerateParams.Size._1792X1024;
+				else
+					size = ImageGenerateParams.Size._1024X1792;
+				break;
+			default: // Catches gpt-image-1 and future cases too (hopefully)
+				if (width == height)
+					size = ImageGenerateParams.Size._1024X1024;
+				else if (width > height)
+					size = ImageGenerateParams.Size._1536X1024;
+				else
+					size = ImageGenerateParams.Size._1024X1536;
+				break;
 			}
-		} catch (OpenAIInvalidDataException e) {
-			// TODO https://github.com/openai/openai-java/issues/478
-			// "Create the image of a white cyborg." throws this exception
-			// Exception in thread "main" com.openai.errors.OpenAIInvalidDataException:
-			// `message` is null
-			// at com.openai.core.JsonField.getRequired$openai_java_core(Values.kt:175)
-			if (e.getMessage().contains("`message` is null"))
-				throw BadRequestException.builder().cause(e).headers(Headers.builder().build()).build();
-			throw e;
+
+			try {
+				com.openai.models.images.ImageGenerateParams.Builder b = defaultGenerateRequest.toBuilder() //
+						.prompt(prompt).size(size);
+				if (ImageModel.DALL_E_3.equals(model)) {
+					b.n(1);
+					List<FilePart> result = new ArrayList<>(n);
+					for (int i = 0; i < n; ++i) {
+						ImagesResponse resp = endpoint.getClient().images().generate(b.build());
+						result.addAll(OpenAiUtil.readImages(resp.data().get()));
+					}
+					return result;
+				} else {
+					b.n(n);
+					ImagesResponse resp = endpoint.getClient().images().generate(b.build());
+					return OpenAiUtil.readImages(resp.data().get());
+				}
+			} catch (OpenAIInvalidDataException e) {
+				// TODO https://github.com/openai/openai-java/issues/478
+				// "Create the image of a white cyborg." throws this exception
+				// Exception in thread "main" com.openai.errors.OpenAIInvalidDataException:
+				// `message` is null
+				// at com.openai.core.JsonField.getRequired$openai_java_core(Values.kt:175)
+				if (e.getMessage().contains("`message` is null"))
+					throw io.github.mzattera.predictivepowers.BadRequestException.badRequestBuilder() //
+							.cause(e) //
+							.message(e.getMessage()).build();
+				throw e;
+			}
+		} catch (Exception e) {
+			throw OpenAiUtil.toEndpointException(e);
 		}
 	}
 
 	@Override
 	public List<FilePart> createImageVariation(@NonNull FilePart prompt, int n, int width, int height)
-			throws IOException {
+			throws EndpointException {
 
-		// For DALL-E-2 make image squared by padding it
-		ImageModel model = defaultVariationRequest.model().get();
-		if (ImageModel.DALL_E_2.equals(model)) {
-			prompt = new Base64FilePart(ImageUtil.padImageToSquare(prompt.getInputStream()), "prompt.png", "image/png");
+		try {
+			// For DALL-E-2 make image squared by padding it
+			ImageModel model = defaultVariationRequest.model().get();
+			if (ImageModel.DALL_E_2.equals(model)) {
+				prompt = new Base64FilePart(ImageUtil.padImageToSquare(prompt.getInputStream()), "prompt.png",
+						"image/png");
+			}
+
+			ImageCreateVariationParams.Size size;
+			if (Math.max(width, height) <= 256)
+				size = ImageCreateVariationParams.Size._256X256;
+			else if (Math.max(width, height) <= 512)
+				size = ImageCreateVariationParams.Size._512X512;
+			else
+				size = ImageCreateVariationParams.Size._1024X1024;
+
+			ImageCreateVariationParams req = defaultVariationRequest.toBuilder() //
+					.image(toMultipartStream(prompt)) //
+					.n(n).size(size).build();
+			ImagesResponse resp = endpoint.getClient().images().createVariation(req);
+			return OpenAiUtil.readImages(resp.data().get());
+		} catch (Exception e) {
+			throw OpenAiUtil.toEndpointException(e);
 		}
-
-		ImageCreateVariationParams.Size size;
-		if (Math.max(width, height) <= 256)
-			size = ImageCreateVariationParams.Size._256X256;
-		else if (Math.max(width, height) <= 512)
-			size = ImageCreateVariationParams.Size._512X512;
-		else
-			size = ImageCreateVariationParams.Size._1024X1024;
-
-		ImageCreateVariationParams req = defaultVariationRequest.toBuilder() //
-				.image(toMultipartStream(prompt)) //
-				.n(n).size(size).build();
-		ImagesResponse resp = endpoint.getClient().images().createVariation(req);
-		return OpenAiUtil.readImages(resp.data().get());
 	}
 
 	@Override
 	public List<FilePart> createImageEdit(@NonNull FilePart image, @NonNull String prompt, FilePart mask, int n,
-			int width, int height) throws IOException {
+			int width, int height) throws EndpointException {
 
-		ImageEditParams.Size size;
-		switch (defaultEditRequest.model().get().value()) {
-		case DALL_E_2:
-			if (Math.max(width, height) <= 256)
-				size = ImageEditParams.Size._256X256;
-			else if (Math.max(width, height) <= 512)
-				size = ImageEditParams.Size._512X512;
-			else
-				size = ImageEditParams.Size._1024X1024;
-			break;
-		default: // Catches gpt-image-1 and future cases too (hopefully)
-			if (width == height)
-				size = ImageEditParams.Size._1024X1024;
-			else if (width > height)
-				size = ImageEditParams.Size._1536X1024;
-			else
-				size = ImageEditParams.Size._1024X1536;
-			break;
+		try {
+			ImageEditParams.Size size;
+			switch (defaultEditRequest.model().get().value()) {
+			case DALL_E_2:
+				if (Math.max(width, height) <= 256)
+					size = ImageEditParams.Size._256X256;
+				else if (Math.max(width, height) <= 512)
+					size = ImageEditParams.Size._512X512;
+				else
+					size = ImageEditParams.Size._1024X1024;
+				break;
+			default: // Catches gpt-image-1 and future cases too (hopefully)
+				if (width == height)
+					size = ImageEditParams.Size._1024X1024;
+				else if (width > height)
+					size = ImageEditParams.Size._1536X1024;
+				else
+					size = ImageEditParams.Size._1024X1536;
+				break;
+			}
+
+			Builder b = defaultEditRequest.toBuilder().image(toMultipartImage(image)).prompt(prompt);
+			if (mask != null)
+				b.mask(toMultipartStream(mask));
+			b.n(n).size(size);
+
+			ImagesResponse resp = endpoint.getClient().images().edit(b.build());
+			return OpenAiUtil.readImages(resp.data().get());
+		} catch (Exception e) {
+			throw OpenAiUtil.toEndpointException(e);
 		}
-
-		Builder b = defaultEditRequest.toBuilder().image(toMultipartImage(image)).prompt(prompt);
-		if (mask != null)
-			b.mask(toMultipartStream(mask));
-		b.n(n).size(size);
-
-		ImagesResponse resp = endpoint.getClient().images().edit(b.build());
-		return OpenAiUtil.readImages(resp.data().get());
 	}
 
 	// TODO Uncomment this and all others once we know how to use

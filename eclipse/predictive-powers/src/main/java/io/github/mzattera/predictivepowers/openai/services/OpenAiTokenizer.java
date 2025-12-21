@@ -105,13 +105,20 @@ public class OpenAiTokenizer implements Tokenizer {
 	// https://github.com/openai/tiktoken/blob/main/tiktoken/model.py
 	private static final Map<String, String> MODEL_PREFIX_TO_ENCODING = new HashMap<>();
 	static {
+		MODEL_PREFIX_TO_ENCODING.put("gpt-5-", "o200k_base");
+
 		MODEL_PREFIX_TO_ENCODING.put("gpt-4-", "cl100k_base");
+		MODEL_PREFIX_TO_ENCODING.put("gpt-4.1-", "o200k_base");
+		MODEL_PREFIX_TO_ENCODING.put("gpt-4.5-", "o200k_base");
 		MODEL_PREFIX_TO_ENCODING.put("gpt-4o-", "o200k_base");
 		MODEL_PREFIX_TO_ENCODING.put("chatgpt-4o-", "o200k_base");
+
 		MODEL_PREFIX_TO_ENCODING.put("gpt-3.5-turbo-", "cl100k_base");
 		MODEL_PREFIX_TO_ENCODING.put("gpt-35-turbo-", "cl100k_base");
+
 		MODEL_PREFIX_TO_ENCODING.put("o1-", "o200k_base");
 		MODEL_PREFIX_TO_ENCODING.put("o3-", "o200k_base");
+		MODEL_PREFIX_TO_ENCODING.put("o4-mini-", "o200k_base");
 	}
 
 	private static final Map<String, String> MODEL_TO_ENCODING = new HashMap<>();
@@ -128,6 +135,13 @@ public class OpenAiTokenizer implements Tokenizer {
 		MODEL_TO_ENCODING.put("text-embedding-3-large", "cl100k_base");
 		MODEL_TO_ENCODING.put("text-embedding-3-small", "cl100k_base");
 		MODEL_TO_ENCODING.put("text-embedding-ada-002", "cl100k_base");
+
+		MODEL_TO_ENCODING.put("o1", "o200k_base");
+		MODEL_TO_ENCODING.put("o3", "o200k_base");
+		MODEL_TO_ENCODING.put("o4-mini", "o200k_base");
+
+		MODEL_TO_ENCODING.put("gpt-5", "o200k_base");
+		MODEL_TO_ENCODING.put("gpt-4.1", "o200k_base");
 
 		MODEL_TO_ENCODING.put("text-davinci-003", "p50k_base");
 		MODEL_TO_ENCODING.put("text-davinci-002", "p50k_base");
@@ -161,13 +175,8 @@ public class OpenAiTokenizer implements Tokenizer {
 		MODEL_TO_ENCODING.put("code-search-babbage-code-001", "r50k_base");
 		MODEL_TO_ENCODING.put("code-search-ada-code-001", "r50k_base");
 
-		MODEL_TO_ENCODING.put("o1", "o200k_base");
-		MODEL_TO_ENCODING.put("o3", "o200k_base");
-
 		// Added
 		MODEL_TO_ENCODING.put("o4-mini", "o200k_base");
-		MODEL_TO_ENCODING.put("gpt-4o-search-preview", "o200k_base");
-		MODEL_TO_ENCODING.put("gpt-4o-mini-search-preview", "o200k_base");
 	}
 
 	private static String getEncodingName(String modelName) {
@@ -202,12 +211,15 @@ public class OpenAiTokenizer implements Tokenizer {
 	public int count(List<ChatCompletionMessageParam> messages) {
 
 		int sum = 0;
+		
+//		if ("cl100k_base".equals(encoding.getName()))
+//			sum+=4;
 
 		// For some models, only first message for a role counts
 		boolean firstMessage = true;
 
 		for (ChatCompletionMessageParam msg : messages) {
-
+				
 			if ("gpt-3.5-turbo-0301".equals(model))
 				++sum;
 
@@ -320,7 +332,7 @@ public class OpenAiTokenizer implements Tokenizer {
 
 			if (name != null) { // Name provided //////////////////////////////////
 
-				sum += encoding.countTokens(name) + 1;
+				sum += encoding.countTokens(name) + 3;
 				if (model.startsWith("o1-mini")) {
 					if (firstMessage)
 						sum -= 6;

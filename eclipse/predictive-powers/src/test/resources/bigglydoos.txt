@@ -1,3 +1,7 @@
 Bigglydoos are a strange specie of rodents.
 They are similar to mices, but they are somewhat bigger and have a purple fur.
 Bigglydoos like to eat fruits and they are fond of white grapes.
+
+Friggles are a strange specie of reptiles.
+They are similar to gekos, but they are somewhat bigger and are not nocturnal.
+Friggles like to eat fish.

@@ -17,21 +17,17 @@
 package io.github.mzattera.predictivepowers.services;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.tika.exception.TikaException;
-import org.xml.sax.SAXException;
-
+import io.github.mzattera.predictivepowers.EndpointException;
 import lombok.NonNull;
 
 /**
- * A service that provides text embedding.
- * It exposes some functionalities for automatic chunking of text to embed.
+ * A service that provides text embedding. It exposes some functionalities for
+ * automatic chunking of text to embed.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
@@ -57,7 +53,7 @@ public interface EmbeddingService extends AiService {
 	 * As embedding model might have a maximum length for text being embedded, the
 	 * input might be further split into several parts before embedding.
 	 */
-	List<EmbeddedText> embed(@NonNull String text);
+	List<EmbeddedText> embed(@NonNull String text) throws EndpointException;
 
 	/**
 	 * Create embeddings for given text. Before embedding, the text is chunked
@@ -67,7 +63,7 @@ public interface EmbeddingService extends AiService {
 	 * As embedding model might have a maximum length for text being embedded, each
 	 * resulting chunk might be further split into several parts before embedding.
 	 */
-	List<EmbeddedText> embed(@NonNull String text, int chunkSize, int windowSize, int stride);
+	List<EmbeddedText> embed(@NonNull String text, int chunkSize, int windowSize, int stride) throws EndpointException;
 
 	/**
 	 * Create embeddings for given set of texts. Each text is split in chunks of
@@ -77,7 +73,7 @@ public interface EmbeddingService extends AiService {
 	 * chunk might be further split into several parts before embeddings are
 	 * returned.
 	 */
-	List<EmbeddedText> embed(@NonNull Collection<String> text);
+	List<EmbeddedText> embed(@NonNull Collection<String> text) throws EndpointException;
 
 	/**
 	 * Create embeddings for given set of texts. Before embedding, each text in the
@@ -88,28 +84,29 @@ public interface EmbeddingService extends AiService {
 	 * chunk might be further split into several parts before embeddings are
 	 * returned.
 	 */
-	List<EmbeddedText> embed(@NonNull Collection<String> text, int chunkSize, int windowSize, int stride);
+	List<EmbeddedText> embed(@NonNull Collection<String> text, int chunkSize, int windowSize, int stride)
+			throws EndpointException;
 
 	// TODO add the same methods below but with sliding window for chunking?
 
 	/**
 	 * Same as calling {@link #embed(String)} using content of given file as input.
 	 */
-	List<EmbeddedText> embedFile(@NonNull File file) throws IOException, SAXException, TikaException;
+	List<EmbeddedText> embedFile(@NonNull File file) throws EndpointException;
 
 	/**
 	 * Same as calling {@link #embed(String)} using content of each file in given
 	 * folder, including contents of its sub-folders.
 	 */
-	Map<File, List<EmbeddedText>> embedFolder(@NonNull File folder) throws IOException, SAXException, TikaException;
+	Map<File, List<EmbeddedText>> embedFolder(@NonNull File folder) throws EndpointException;
 
 	/**
 	 * Same as calling {@link #embed(String)} using content at given URL.
 	 */
-	List<EmbeddedText> embedURL(@NonNull String url) throws IOException, SAXException, TikaException, URISyntaxException;
+	List<EmbeddedText> embedURL(@NonNull String url) throws EndpointException;
 
 	/**
 	 * Same as calling {@link #embed(String)} using content at given URL.
 	 */
-	List<EmbeddedText> embedURL(@NonNull URL url) throws IOException, SAXException, TikaException;
+	List<EmbeddedText> embedURL(@NonNull URL url) throws EndpointException;
 }

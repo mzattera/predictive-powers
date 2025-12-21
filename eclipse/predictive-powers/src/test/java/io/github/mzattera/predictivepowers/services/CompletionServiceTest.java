@@ -41,9 +41,8 @@ import com.openai.errors.BadRequestException;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.TestConfiguration;
-import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceCompletionService;
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.TextCompletion;
@@ -126,15 +125,11 @@ public class CompletionServiceTest {
 			s.setEcho(false);
 			assertFalse(s.getEcho());
 
+			// TODO move it on a separate test?
 			if (s instanceof OpenAiCompletionService) {
 				@SuppressWarnings("resource")
 				OpenAiCompletionService svc = (OpenAiCompletionService) s;
 				svc.setDefaultRequest(svc.getDefaultRequest().toBuilder().echo((Boolean) null).build());
-				assertFalse(s.getEcho());
-			} else if (s instanceof HuggingFaceCompletionService) {
-				@SuppressWarnings("resource")
-				HuggingFaceCompletionService svc = (HuggingFaceCompletionService) s;
-				svc.getDefaultReq().getParameters().setReturnFullText(null);
 				assertFalse(s.getEcho());
 			}
 		}

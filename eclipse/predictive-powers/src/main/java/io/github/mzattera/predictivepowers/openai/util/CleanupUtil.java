@@ -26,7 +26,7 @@ import com.openai.models.finetuning.jobs.FineTuningJob;
 import com.openai.models.finetuning.jobs.FineTuningJob.Status;
 import com.openai.models.models.Model;
 
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
 
 /**
  * Deletes all files and all model fine-tunes.
@@ -40,6 +40,8 @@ public class CleanupUtil {
 
 	public static void main(String[] args) {
 
+		// TODO URGENT Delete vector stores tih names startign with... (see OpenAiAgent test).
+		
 		try (Scanner console = new Scanner(System.in)) {
 
 			System.out.print(

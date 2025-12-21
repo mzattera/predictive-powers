@@ -16,19 +16,14 @@
 
 package io.github.mzattera.predictivepowers.google.services;
 
-import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.google.api.services.customsearch.v1.Customsearch;
+import com.google.api.services.customsearch.v1.model.Result;
 
-import io.github.mzattera.predictivepowers.google.client.GoogleClient;
-import io.github.mzattera.predictivepowers.google.client.GoogleEndpoint;
-import io.github.mzattera.predictivepowers.google.client.Result;
-import io.github.mzattera.predictivepowers.google.client.Search;
+import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.services.Link;
 import io.github.mzattera.predictivepowers.services.SearchService;
 import lombok.Getter;
@@ -44,20 +39,17 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GoogleSearchService implements SearchService {
 
-	// TODO Add more methods
+	private final @NonNull String apiKey;
+	private final @NonNull String engineId;
 
-	public GoogleSearchService(GoogleEndpoint endpoint) {
-		this(endpoint, endpoint.getClient());
+	@Getter
+	protected final @NonNull GoogleEndpoint endpoint;
+
+	public GoogleSearchService(GoogleEndpoint endpoint, String apiKey, String engineId) {
+		this.endpoint = endpoint;
+		this.apiKey = apiKey;
+		this.engineId = engineId;
 	}
-
-	private final static Logger LOG = LoggerFactory.getLogger(GoogleSearchService.class);
-
-	@NonNull
-	@Getter
-	protected final GoogleEndpoint endpoint;
-
-	@Getter
-	private final GoogleClient client;
 
 	@Override
 	public List<Link> search(@NonNull String query) {
@@ -66,18 +58,32 @@ public class GoogleSearchService implements SearchService {
 
 	@Override
 	public List<Link> search(@NonNull String query, int n) {
-		Search search = endpoint.getClient().list(query, n);
-		List<Link> result = new ArrayList<>(search.getItems().size());
-		for (Result i : search.getItems()) {
-			try {
-				// TODO add all fields to SearchResult
-				result.add(Link.builder().title(i.getTitle()).url((new URI(i.getLink())).toURL()).build());
-			} catch (MalformedURLException | URISyntaxException e) {
-				LOG.error("Malformed URL in search result: " + i.getLink(), e);
-			}
-		}
+		try {
+			List<Link> links = new ArrayList<>();
 
-		return result;
+			Customsearch.Cse.List listRequest = endpoint.getClient().cse()
+					.list();
+			listRequest.setKey(apiKey);
+			listRequest.setCx(engineId);
+			listRequest.setQ(query);
+			listRequest.setNum(n);
+			java.util.List<Result> results = listRequest.execute().getItems();
+
+			if (results != null) {
+				for (Result result : results) {
+					links.add(Link.builder().fileFormat(result.getFileFormat()) //
+							.mime(result.getMime()) //
+							.snippet(result.getSnippet()) //
+							.title(result.getTitle()) //
+							.url(URI.create(result.getLink()).toURL()) //
+							.build());
+				}
+			}
+
+			return links;
+		} catch (Exception e) {
+			throw new EndpointException(e);
+		}
 	}
 
 	@Override

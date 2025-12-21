@@ -20,7 +20,7 @@ import java.io.File;
 import java.io.IOException;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.ImageGenerationService;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.util.ImageUtil;

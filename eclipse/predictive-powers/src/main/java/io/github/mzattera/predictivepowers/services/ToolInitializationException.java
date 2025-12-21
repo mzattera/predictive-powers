@@ -20,9 +20,9 @@
 package io.github.mzattera.predictivepowers.services;
 
 /**
- * This exception is thrown when a {@link Tool} fails to initialize. 
+ * This exception is thrown when a {@link Tool} fails to initialize.
  */
-public class ToolInitializationException extends Exception {
+public class ToolInitializationException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
 

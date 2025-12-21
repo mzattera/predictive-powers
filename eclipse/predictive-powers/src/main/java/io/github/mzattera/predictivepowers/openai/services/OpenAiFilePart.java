@@ -19,19 +19,25 @@
  */
 package io.github.mzattera.predictivepowers.openai.services;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.openai.core.MultipartField;
 import com.openai.core.http.HttpResponse;
 import com.openai.models.chat.completions.ChatCompletionContentPart.File;
 import com.openai.models.files.FileContentParams;
+import com.openai.models.files.FileCreateParams;
+import com.openai.models.files.FileObject;
+import com.openai.models.files.FilePurpose;
 
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
+import io.github.mzattera.predictivepowers.util.FileUtil;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
@@ -132,5 +138,54 @@ public class OpenAiFilePart extends FilePart {
 		this.openAiFile = null;
 		this.endpoint = endpoint;
 		setMimeType(mimeType);
+	}
+
+	/**
+	 * Uploads given file and returns corresponding part.
+	 * 
+	 * @param endpoint
+	 * @param purpose
+	 * @param inFile
+	 * @return
+	 */
+	public static OpenAiFilePart create(@NonNull OpenAiEndpoint endpoint, java.io.File inFile, FilePurpose purpose) {
+		try {
+			return create(endpoint, inFile.getName(), new FileInputStream(inFile), purpose);
+		} catch (FileNotFoundException e) {
+			return null;
+		}
+	}
+
+	/**
+	 * Uploads given content as a file and returns corresponding part.
+	 * 
+	 * @param endpoint
+	 * @param purpose
+	 * @return
+	 */
+	public static OpenAiFilePart create(@NonNull OpenAiEndpoint endpoint, String fileName, byte[] bytes,
+			FilePurpose purpose) {
+		return create(endpoint, fileName, new ByteArrayInputStream(bytes), purpose);
+	}
+
+	/**
+	 * /** Uploads given content as a file and returns corresponding part.
+	 * 
+	 * @param endpoint
+	 * @param purpose
+	 */
+	public static OpenAiFilePart create(@NonNull OpenAiEndpoint endpoint, String fileName, InputStream in,
+			FilePurpose purpose) {
+
+		// File upload does not work without specifying a name; maybe it is used to
+		// determine the file type...
+		MultipartField<InputStream> f = MultipartField.<InputStream>builder() //
+				.value(in) //
+				.filename(fileName) //
+				.build();
+		
+		FileCreateParams params = FileCreateParams.builder().file(f).purpose(purpose).build();
+		FileObject fileObject = endpoint.getClient().files().create(params);
+		return new OpenAiFilePart(fileObject.id(), FileUtil.getMimeType(in), endpoint);
 	}
 }

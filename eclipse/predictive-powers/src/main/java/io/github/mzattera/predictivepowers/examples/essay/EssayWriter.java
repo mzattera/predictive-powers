@@ -43,15 +43,13 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
+import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.examples.essay.EssayWriter.Essay.Section;
-import io.github.mzattera.predictivepowers.google.client.GoogleClient;
-import io.github.mzattera.predictivepowers.google.client.GoogleEndpoint;
+import io.github.mzattera.predictivepowers.google.services.GoogleEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiTokenizer;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
@@ -83,18 +81,14 @@ public class EssayWriter implements Closeable {
 	// Our internal log; is uses logback, so it can easily be configured.
 	private final static Logger LOG = LoggerFactory.getLogger(EssayWriter.class);
 
-	// You must create a Google Programmable Search Engine, to be used for web
-	// searches and put its ID in the OS environment variable ""GOOGLE_ENGINE_ID"
-	private final static String GOOGLE_ENGINE_ID = GoogleClient.getEngineId();
-
 	/** Approximate length of an essay session in tokens */
 	private final static int SECTION_LENGTH_TOKENS = 1000; // 1000tk ~ 1 page of text)
 
 	/** Model to use for text completion. */
-	private static final String COMPLETION_MODEL = "gpt-3.5-turbo";
+	private static final String COMPLETION_MODEL = "gpt-4o";
 
 	/** Model to use for writing content. */
-	private final static String WRITER_MODEL = "gpt-3.5-turbo-16k";
+	private final static String WRITER_MODEL = "gpt-4o";
 
 	/** When googling for a section, how many links do we ask for? */
 	private static final int LINKS_PER_QUERY = 5;
@@ -302,7 +296,7 @@ public class EssayWriter implements Closeable {
 
 	private void initializeEndPoints() {
 		openAi = new OpenAiEndpoint();
-		google = new GoogleEndpoint(new GoogleClient(GOOGLE_ENGINE_ID, GoogleClient.getApiKey()));
+		google = new GoogleEndpoint();
 	}
 
 	/**
@@ -312,6 +306,9 @@ public class EssayWriter implements Closeable {
 	public static void main(String[] args) {
 
 		try {
+
+			if (args.length < 1)
+				throw new IllegalArgumentException("Must provide at least one argument");
 
 			switch (args[0]) {
 			case "-s":
@@ -358,7 +355,7 @@ public class EssayWriter implements Closeable {
 				System.out.println("Essay completed: " + essay.getCanonicalPath());
 				break;
 			default:
-				throw new IllegalArgumentException();
+				throw new IllegalArgumentException("Unrecognised arguments");
 			}
 		} catch (Exception e) {
 			LOG.error("Error!", e);
@@ -471,7 +468,7 @@ public class EssayWriter implements Closeable {
 						+ "			\"summary\": \"Summary of this section\"\n" + "		}, {\n"
 						+ "			\"title\": \"Title for second section of second chapter\",\n"
 						+ "			\"summary\": \"Summary of this section\"\n" + "		}]\n" + "	}]\n" + "}\n" + "\n"
-						+ "Do not create sections inside sections. Titles must not include section numbering or 'Chapter' or 'Section'.");
+						+ "Do not create sections inside sections. Titles must not include section numbering or 'Chapter' or 'Section'. Strictly, do not wrap output into markdown, just output the JSON.");
 
 		// Invoke the agent to create the structure,
 		// using the draft in description
@@ -575,13 +572,15 @@ public class EssayWriter implements Closeable {
 		OpenAiChatService chatSvc = openAi.getChatService();
 		chatSvc.setModel(COMPLETION_MODEL);
 		chatSvc.setTemperature(50.0);
+		chatSvc.setPersonality(
+				"You are an assistant helping a researcher in finding web pages that are relevant for the essay section they are writing.");
 
 		// Dynamically build the prompt
 		final String prompt = "Given the below chapter summary, section title and section summary, provided in XML tags, generate a list of search engine queries that can be used to search the topic corresponding to the section on the Internet."
 				+ " Each query is a short sentence or a short list of key terms relevant for the section topic."
 				+ " Include terms to provide a context for the topic, as described by the chapter summary, so that the query is clearly related to the chapter content."
 				+ " Be creative and provide exactly 5 queries."
-				+ " Strictly provide results as a JSON array of strings.\n\n"
+				+ " Strictly provide results as a JSON array of strings; do *NOT* wrap it into markdown, just return the string array.\n\n"
 				+ "<chapter_summary>{{chapter_summary}}</chapter_summary>\n\n"
 				+ "<section_title>{{section_title}}</section_title>\n\n"
 				+ "<section_summary>{{section_summary}}</section_summary>";
@@ -592,20 +591,19 @@ public class EssayWriter implements Closeable {
 		params.put("section_title", section.title);
 		params.put("section_summary", section.summary);
 
-		// Prepares the conversation; notice the call to fill the slots in the prompt
-		// template
-		List<OpenAiChatMessage> msgs = new ArrayList<>();
-		msgs.add(new OpenAiChatMessage(Role.DEVELOPER,
-				"You are an assistant helping a researcher in finding web pages that are relevant for the essay section they are writing."));
-		msgs.add(new OpenAiChatMessage(Role.USER, CompletionService.fillSlots(prompt, params)));
-
 		// Loops until the section has been successfully googled
 		List<String> queries;
 		while (true) {
 			try {
-				queries = JSON_MAPPER.readValue(chatSvc.complete(msgs).getText(), new TypeReference<List<String>>() {
+				String reply = chatSvc.complete(CompletionService.fillSlots(prompt, params)).getText();
+				queries = JSON_MAPPER.readValue(reply, new TypeReference<List<String>>() {
 				});
 				break;
+			} catch (EndpointException e) { // Retry if GPT returned bad JSON
+				if (e.getCause() instanceof JsonProcessingException)
+					LOG.warn("Retrying because of malformed JSON while googling section " + section.id, e);
+				else
+					throw e;
 			} catch (JsonProcessingException e) { // Retry if GPT returned bad JSON
 				LOG.warn("Retrying because of malformed JSON while googling section " + section.id, e);
 			}
@@ -737,23 +735,18 @@ public class EssayWriter implements Closeable {
 		OpenAiChatService chatSvc = openAi.getChatService();
 		chatSvc.setModel(WRITER_MODEL);
 		chatSvc.setTemperature(0.0);
-
-		String prompt = "<context>{{context}}</context>\n\n" + "<summary>{{summary}}</summary>";
-		Map<String, String> params = new HashMap<>();
-		params.put("summary", section.summary);
-
-		// This is the prompt used for creating the section
-		List<OpenAiChatMessage> msgs = new ArrayList<>();
-		msgs.add(new OpenAiChatMessage(Role.DEVELOPER,
+		chatSvc.setPersonality(
 				"You will be provided with a context and the summary of a section of an essay, both delimited by XML tags."
 						+ " Your task is to use the content of the context to write the entire section of the essay."
 						+ " Use a professional style." + " Avoid content repetitions but be detailed."
 						+ " Output only the section content, not its title, do not create subsections."
 						+ " Do not make up missing information or put placeholders for data you do not have."
 						+ " Only if enough information is available in the content, produce a text at least "
-						+ SECTION_LENGTH_TOKENS + " tokens long.\n\n"));
-		OpenAiChatMessage ctxMsg = new OpenAiChatMessage(Role.USER, "");
-		msgs.add(ctxMsg); // Placeholder
+						+ SECTION_LENGTH_TOKENS + " tokens long.\n\n");
+
+		String prompt = "<context>{{context}}</context>\n\n" + "<summary>{{summary}}</summary>";
+		Map<String, String> params = new HashMap<>();
+		params.put("summary", section.summary);
 
 		// Searches the knowledge base for relevant content
 		// (= builds the context)
@@ -761,9 +754,9 @@ public class EssayWriter implements Closeable {
 
 		// See how much context can fit the prompt
 		OpenAiTokenizer counter = openAi.getModelService().getTokenizer(chatSvc.getModel());
-		int ctxSize = openAi.getModelService().getContextSize(chatSvc.getModel());
+		int ctxSize = openAi.getModelService().getContextSize(chatSvc.getModel()) - chatSvc.getBaseTokens();
 		StringBuilder buf = new StringBuilder();
-		String context = ""; 
+		String context = "";
 		int i = 0;
 		for (; i < knowledge.size(); ++i) {
 
@@ -772,18 +765,15 @@ public class EssayWriter implements Closeable {
 			String c = cleanup(buf.toString());
 			params.put("context", c);
 
-			ctxMsg.setContent(CompletionService.fillSlots(prompt, params));
-
-			if (((int) (SECTION_LENGTH_TOKENS * 1.5) + counter.count(msgs)) > ctxSize)
+			if (((int) (SECTION_LENGTH_TOKENS * 1.5)
+					+ counter.count(CompletionService.fillSlots(prompt, params))) > ctxSize)
 				break;
 			context = c; // Saves last context that would fit
 		}
 
 		// OK, now build the actual context
-		ctxMsg.setContent(context);
-
 		// Add generated content to the section
-		section.content = chatSvc.complete(msgs).getText();
+		section.content = chatSvc.complete(context).getText();
 
 		// Save context (references) from most similar to the context (it means it was
 		// used to cret it)

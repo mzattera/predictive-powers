@@ -26,32 +26,30 @@ import com.openai.models.vectorstores.VectorStore;
 import com.openai.models.vectorstores.VectorStoreCreateParams;
 import com.openai.models.vectorstores.files.FileCreateParams;
 
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
-import lombok.Getter;
 import lombok.NonNull;
 
 /**
- * This wraps a OpenAI Vector Store providing some convenience methods.
+ * Provides methods to handle vector stores.
  */
-public class OpenAiVectorStore {
+public final class OpenAiVectorStore {
 
-	@Getter
-	private final String id;
-
-	private final OpenAiEndpoint endpoint;
-
-	public OpenAiVectorStore(@NonNull OpenAiEndpoint endpoint, @NonNull String id) {
-		this.id = id;
-		this.endpoint = endpoint;
+	private OpenAiVectorStore() {
 	}
 
 	/**
-	 * Creates a new vector store and returns it.
 	 * 
 	 * @param endpoint
-	 * @return
+	 * @param id
+	 * @return The {@link VectorStore} with given ID.
 	 */
-	public static OpenAiVectorStore create(@NonNull OpenAiEndpoint endpoint, String name) {
+	public static VectorStore get(@NonNull OpenAiEndpoint endpoint, @NonNull String id) {
+		return endpoint.getClient().vectorStores().retrieve(id);
+	}
+
+	/**
+	 * Creates a new {@link VectorStore} and returns it.
+	 */
+	public static VectorStore create(@NonNull OpenAiEndpoint endpoint, String name) {
 		VectorStoreCreateParams.Builder b = VectorStoreCreateParams.builder();
 		if (name != null)
 			b.name(name);
@@ -59,21 +57,28 @@ public class OpenAiVectorStore {
 	}
 
 	/**
-	 * Creates a new vector store and returns it.
-	 * 
-	 * @param endpoint
-	 * @return
+	 * Creates a new {@link VectorStore} and returns it. It wait until all files
+	 * have been processed before returning.
 	 */
-	public static OpenAiVectorStore create(@NonNull OpenAiEndpoint endpoint, String name,
+	public static VectorStore create(@NonNull OpenAiEndpoint endpoint, String name,
 			List<? extends OpenAiFilePart> files) {
-		OpenAiVectorStore vs = create(endpoint, name);
+		VectorStore vs = create(endpoint, name);
 		if (files != null) { // Upload files
 			for (OpenAiFilePart file : files)
 				endpoint.getClient().vectorStores().files().create(FileCreateParams.builder() //
 						.fileId(file.getFileId()) //
-						.vectorStoreId(vs.getId()).build() //
+						.vectorStoreId(vs.id()).build() //
 				);
 		}
+
+		// Waits for all files to be processed
+		while (endpoint.getClient().vectorStores().retrieve(vs.id()).fileCounts().inProgress() > 0) {
+			try {
+				Thread.sleep(1 * 1000);
+			} catch (InterruptedException e) {
+			}
+		}
+
 		return vs;
 	}
 
@@ -83,8 +88,8 @@ public class OpenAiVectorStore {
 	 * @param endpoint
 	 * @return
 	 */
-	public static OpenAiVectorStore create(@NonNull OpenAiEndpoint endpoint, VectorStoreCreateParams params) {
-		return new OpenAiVectorStore(endpoint, endpoint.getClient().vectorStores().create(params).id());
+	public static VectorStore create(@NonNull OpenAiEndpoint endpoint, VectorStoreCreateParams params) {
+		return endpoint.getClient().vectorStores().create(params);
 	}
 
 	/**

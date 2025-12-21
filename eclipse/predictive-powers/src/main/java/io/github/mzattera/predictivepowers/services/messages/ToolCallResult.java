@@ -16,6 +16,7 @@
 
 package io.github.mzattera.predictivepowers.services.messages;
 
+import io.github.mzattera.predictivepowers.services.messages.MessagePart.Type;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -56,6 +57,11 @@ public class ToolCallResult implements MessagePart {
 	/** True if the result is an error. */
 	@Builder.Default
 	private boolean isError = false;
+
+	@Override
+	public Type getType() {
+		return Type.TOOL_CALL_RESULT;
+	}
 
 	public ToolCallResult(@NonNull ToolCall call, String result) {
 		toolCallId = call.getId();

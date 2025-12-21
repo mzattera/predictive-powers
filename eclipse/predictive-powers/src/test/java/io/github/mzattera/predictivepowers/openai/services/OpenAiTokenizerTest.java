@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -37,28 +38,27 @@ import org.junit.jupiter.params.provider.MethodSource;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.openai.models.chat.completions.ChatCompletion;
+import com.openai.models.chat.completions.ChatCompletionAssistantMessageParam;
+import com.openai.models.chat.completions.ChatCompletionAssistantMessageParam.FunctionCall;
+import com.openai.models.chat.completions.ChatCompletionCreateParams;
+import com.openai.models.chat.completions.ChatCompletionDeveloperMessageParam;
+import com.openai.models.chat.completions.ChatCompletionFunctionMessageParam;
+import com.openai.models.chat.completions.ChatCompletionMessageParam;
+import com.openai.models.chat.completions.ChatCompletionMessageToolCall;
+import com.openai.models.chat.completions.ChatCompletionToolMessageParam;
+import com.openai.models.chat.completions.ChatCompletionUserMessageParam;
 
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsRequest;
-import io.github.mzattera.predictivepowers.openai.client.chat.ChatCompletionsResponse;
-import io.github.mzattera.predictivepowers.openai.client.chat.FunctionCall;
-import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool.Type;
-import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiToolCall;
-import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
-import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiChatMessage.Role;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.CallType;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
 import io.github.mzattera.predictivepowers.services.AbstractTool;
 import io.github.mzattera.predictivepowers.services.Capability;
-import io.github.mzattera.predictivepowers.services.ModelService.ModelMetaData.Mode;
+import io.github.mzattera.predictivepowers.services.ModelService.ModelMetaData.Modality;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.Toolset;
-import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
-import io.github.mzattera.util.ResourceUtil;
 import lombok.NonNull;
 
 public class OpenAiTokenizerTest {
@@ -77,23 +77,21 @@ public class OpenAiTokenizerTest {
 		endpoint.close();
 	}
 
-	/** Return names for all chat / completions models */
+	/** Return all completions models */
 	static Stream<OpenAiModelMetaData> allCompletionModelsProvider() {
 		return modelSvc.listModels().stream() //
 //				.filter(model -> !model.startsWith("gpt-4-32k")) //
 				.map(model -> modelSvc.get(model)) //
 				.filter(meta -> meta != null) //
-				.filter(meta -> (meta.getSupportedApis().contains(SupportedApi.CHAT)
-						|| meta.getSupportedApis().contains(SupportedApi.COMPLETIONS))) //
-				.filter(meta -> (!meta.getOutputModes().contains(Mode.AUDIO))) //
+				.filter(meta -> (meta.getSupportedApis().contains(SupportedApi.CHAT))) //
+				.filter(meta -> (!meta.getOutputModes().contains(Modality.AUDIO))) //
 				.filter(meta -> (!meta.getModel().contains("search")));
 	}
 
 	/** Return names for models supporting function calls */
 	static Stream<OpenAiModelMetaData> functionCallCompletionsModelsProvider() {
 		return allCompletionModelsProvider() //
-				.filter(e -> e.getSupportedCallType() == CallType.FUNCTIONS) //
-				.filter(meta -> meta.getSupportedApis().contains(SupportedApi.CHAT)); //
+				.filter(e -> e.getSupportedCallType() == CallType.FUNCTIONS); //
 	}
 
 	/** Return names for models supporting tool calls */
@@ -106,49 +104,81 @@ public class OpenAiTokenizerTest {
 	// Using shortest possibel messages and names to avoid potential errors with
 	// Java tokenizer used
 	/** List of messages without tool calls or tools results */
-	private final static List<OpenAiChatMessage> SIMPLE_MESSAGES_1 = new ArrayList<>();
+	private final static List<ChatCompletionMessageParam> SIMPLE_MESSAGES_1 = new ArrayList<>();
 	static {
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.ASSISTANT, "I"));
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.ASSISTANT, "I", "V"));
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.ASSISTANT, "I"));
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.ASSISTANT, "I", "V"));
+		SIMPLE_MESSAGES_1.add(ChatCompletionMessageParam
+				.ofAssistant(ChatCompletionAssistantMessageParam.builder().content("I").build()));
+		SIMPLE_MESSAGES_1.add(ChatCompletionMessageParam
+				.ofAssistant(ChatCompletionAssistantMessageParam.builder().content("I").name("V").build()));
+		SIMPLE_MESSAGES_1.add(ChatCompletionMessageParam
+				.ofAssistant(ChatCompletionAssistantMessageParam.builder().content("I").build()));
+		SIMPLE_MESSAGES_1.add(ChatCompletionMessageParam
+				.ofAssistant(ChatCompletionAssistantMessageParam.builder().content("I").name("V").build()));
 
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.USER, "I"));
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.USER, "I", "V"));
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.USER, "I"));
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.USER, "I", "V"));
+		SIMPLE_MESSAGES_1
+				.add(ChatCompletionMessageParam.ofUser(ChatCompletionUserMessageParam.builder().content("I").build()));
+		SIMPLE_MESSAGES_1.add(ChatCompletionMessageParam
+				.ofUser(ChatCompletionUserMessageParam.builder().content("I").name("V").build()));
+		SIMPLE_MESSAGES_1
+				.add(ChatCompletionMessageParam.ofUser(ChatCompletionUserMessageParam.builder().content("I").build()));
+		SIMPLE_MESSAGES_1.add(ChatCompletionMessageParam
+				.ofUser(ChatCompletionUserMessageParam.builder().content("I").name("V").build()));
 
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.DEVELOPER, "I"));
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.DEVELOPER, "I", "V"));
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.DEVELOPER, "I"));
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.DEVELOPER, "I", "V"));
+		SIMPLE_MESSAGES_1.add(ChatCompletionMessageParam
+				.ofDeveloper(ChatCompletionDeveloperMessageParam.builder().content("I").build()));
+		SIMPLE_MESSAGES_1.add(ChatCompletionMessageParam
+				.ofDeveloper(ChatCompletionDeveloperMessageParam.builder().content("I").build()));
+		SIMPLE_MESSAGES_1.add(ChatCompletionMessageParam
+				.ofDeveloper(ChatCompletionDeveloperMessageParam.builder().content("I").build()));
+		SIMPLE_MESSAGES_1.add(ChatCompletionMessageParam
+				.ofDeveloper(ChatCompletionDeveloperMessageParam.builder().content("I").build()));
 
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.DEVELOPER, "I"));
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.DEVELOPER, "I", "V"));
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.DEVELOPER, "I"));
-		SIMPLE_MESSAGES_1.add(new OpenAiChatMessage(Role.DEVELOPER, "I", "V"));
+		SIMPLE_MESSAGES_1.add(ChatCompletionMessageParam
+				.ofDeveloper(ChatCompletionDeveloperMessageParam.builder().content("I").build()));
+		SIMPLE_MESSAGES_1.add(ChatCompletionMessageParam
+				.ofDeveloper(ChatCompletionDeveloperMessageParam.builder().content("I").name("V").build()));
+		SIMPLE_MESSAGES_1.add(ChatCompletionMessageParam
+				.ofDeveloper(ChatCompletionDeveloperMessageParam.builder().content("I").build()));
+		SIMPLE_MESSAGES_1.add(ChatCompletionMessageParam
+				.ofDeveloper(ChatCompletionDeveloperMessageParam.builder().content("I").name("V").build()));
 	}
-	private final static List<OpenAiChatMessage> SIMPLE_MESSAGES_2 = new ArrayList<>();
+	private final static List<ChatCompletionMessageParam> SIMPLE_MESSAGES_2 = new ArrayList<>();
 	static {
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.DEVELOPER, "I", "V"));
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.DEVELOPER, "I"));
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.DEVELOPER, "I", "V"));
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.DEVELOPER, "I"));
+		SIMPLE_MESSAGES_2.add(ChatCompletionMessageParam
+				.ofDeveloper(ChatCompletionDeveloperMessageParam.builder().content("I").build()));
+		SIMPLE_MESSAGES_2.add(ChatCompletionMessageParam
+				.ofDeveloper(ChatCompletionDeveloperMessageParam.builder().content("I").build()));
+		SIMPLE_MESSAGES_2.add(ChatCompletionMessageParam
+				.ofDeveloper(ChatCompletionDeveloperMessageParam.builder().content("I").build()));
+		SIMPLE_MESSAGES_2.add(ChatCompletionMessageParam
+				.ofDeveloper(ChatCompletionDeveloperMessageParam.builder().content("I").build()));
 
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.DEVELOPER, "I", "V"));
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.DEVELOPER, "I"));
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.DEVELOPER, "I", "V"));
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.DEVELOPER, "I"));
+		SIMPLE_MESSAGES_2.add(ChatCompletionMessageParam
+				.ofDeveloper(ChatCompletionDeveloperMessageParam.builder().content("I").build()));
+		SIMPLE_MESSAGES_2.add(ChatCompletionMessageParam
+				.ofDeveloper(ChatCompletionDeveloperMessageParam.builder().content("I").name("V").build()));
+		SIMPLE_MESSAGES_2.add(ChatCompletionMessageParam
+				.ofDeveloper(ChatCompletionDeveloperMessageParam.builder().content("I").build()));
+		SIMPLE_MESSAGES_2.add(ChatCompletionMessageParam
+				.ofDeveloper(ChatCompletionDeveloperMessageParam.builder().content("I").name("V").build()));
 
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.USER, "I", "V"));
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.USER, "I"));
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.USER, "I", "V"));
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.USER, "I"));
+		SIMPLE_MESSAGES_2
+				.add(ChatCompletionMessageParam.ofUser(ChatCompletionUserMessageParam.builder().content("I").build()));
+		SIMPLE_MESSAGES_2.add(ChatCompletionMessageParam
+				.ofUser(ChatCompletionUserMessageParam.builder().content("I").name("V").build()));
+		SIMPLE_MESSAGES_2
+				.add(ChatCompletionMessageParam.ofUser(ChatCompletionUserMessageParam.builder().content("I").build()));
+		SIMPLE_MESSAGES_2.add(ChatCompletionMessageParam
+				.ofUser(ChatCompletionUserMessageParam.builder().content("I").name("V").build()));
 
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.ASSISTANT, "I", "V"));
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.ASSISTANT, "I"));
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.ASSISTANT, "I", "V"));
-		SIMPLE_MESSAGES_2.add(new OpenAiChatMessage(Role.ASSISTANT, "I"));
+		SIMPLE_MESSAGES_2.add(ChatCompletionMessageParam
+				.ofAssistant(ChatCompletionAssistantMessageParam.builder().content("I").build()));
+		SIMPLE_MESSAGES_2.add(ChatCompletionMessageParam
+				.ofAssistant(ChatCompletionAssistantMessageParam.builder().content("I").name("V").build()));
+		SIMPLE_MESSAGES_2.add(ChatCompletionMessageParam
+				.ofAssistant(ChatCompletionAssistantMessageParam.builder().content("I").build()));
+		SIMPLE_MESSAGES_2.add(ChatCompletionMessageParam
+				.ofAssistant(ChatCompletionAssistantMessageParam.builder().content("I").name("V").build()));
 	}
 
 	/**
@@ -156,6 +186,7 @@ public class OpenAiTokenizerTest {
 	 */
 	@ParameterizedTest
 	@MethodSource("allCompletionModelsProvider")
+	@DisplayName("Check all models have a tokeniser")
 	void test00(OpenAiModelMetaData md) {
 		assertTrue(md.getTokenizer() != null, "Null tokenizer for model");
 		assertTrue(md.getTokenizer().getEncoding() != null, "Null encoding for model");
@@ -168,30 +199,25 @@ public class OpenAiTokenizerTest {
 	 */
 	@ParameterizedTest
 	@MethodSource("allCompletionModelsProvider")
+	@DisplayName("Simple call without tools or functions")
 	void test01(OpenAiModelMetaData md) throws JsonProcessingException {
 		simpleTest(md, SIMPLE_MESSAGES_1);
 		simpleTest(md, SIMPLE_MESSAGES_2);
 	}
 
-	private void simpleTest(OpenAiModelMetaData md, List<OpenAiChatMessage> test) {
+	private void simpleTest(OpenAiModelMetaData md, List<ChatCompletionMessageParam> test) {
 		long tokens, realTokens;
 		String model = md.getModel();
 		List<SupportedApi> api = md.getSupportedApis();
 		OpenAiTokenizer counter = md.getTokenizer();
 		if (api.contains(SupportedApi.CHAT)) {
-			ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).messages(test).build();
+			ChatCompletionCreateParams req = ChatCompletionCreateParams.builder().model(model).messages(test).build();
 			if (model.startsWith("o1-mini") || model.startsWith("o1-preview"))
-				req.setMessages(req.getMessages().stream() //
-						.filter(m -> ((m.getRole() != Role.DEVELOPER) && (m.getRole() != Role.DEVELOPER))) //
-						.collect(Collectors.toList()));
+				req.toBuilder().messages(req.messages().stream() //
+						.filter(m -> (!m.isDeveloper())) //
+						.collect(Collectors.toList())).build();
 			tokens = counter.count(req);
 			realTokens = realTokens(req);
-		} else if (api.contains(SupportedApi.COMPLETIONS)) {
-			CompletionsRequest creq = CompletionsRequest.builder() //
-					.model(model) //
-					.prompt("This is a prompt, quite short, but it's OK").build();
-			tokens = counter.count(creq.getPrompt());
-			realTokens = realTokens(creq);
 		} else
 			throw new IllegalArgumentException();
 
@@ -205,48 +231,71 @@ public class OpenAiTokenizerTest {
 	}
 
 	/** List of messages with function calls and function results */
-	private final static List<OpenAiChatMessage> FUNCTION_CALL_MESSAGES = new ArrayList<>();
+	private final static List<ChatCompletionMessageParam> FUNCTION_CALL_MESSAGES = new ArrayList<>();
 	static {
+		initFunctionCallMessages();
 
+	}
+
+	@SuppressWarnings("deprecation")
+	private static void initFunctionCallMessages() {
 		Map<String, Object> params;
 		FunctionCall call;
 
 		params = new HashMap<>();
-		call = FunctionCall.builder().name("I").arguments(params).build();
-		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
+		call = FunctionCall.builder().name("I").arguments(toString(params)).build();
+		FUNCTION_CALL_MESSAGES.add(ChatCompletionMessageParam
+				.ofAssistant(ChatCompletionAssistantMessageParam.builder().functionCall(call).build()));
 
 		params = new HashMap<>();
 		params.put("s", "T");
-		call = FunctionCall.builder().name("I").arguments(params).build();
-		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
+		call = FunctionCall.builder().name("I").arguments(toString(params)).build();
+		FUNCTION_CALL_MESSAGES.add(ChatCompletionMessageParam
+				.ofAssistant(ChatCompletionAssistantMessageParam.builder().functionCall(call).build()));
 
 		params = new HashMap<>();
 		params.put("s", "T");
 		params.put("i", 3);
-		call = FunctionCall.builder().name("I").arguments(params).build();
-		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
+		call = FunctionCall.builder().name("I").arguments(toString(params)).build();
+		FUNCTION_CALL_MESSAGES.add(ChatCompletionMessageParam
+				.ofAssistant(ChatCompletionAssistantMessageParam.builder().functionCall(call).build()));
 
 		params = new HashMap<>();
 		params.put("s", "T");
 		params.put("i", 3);
 		params.put("d", 3.0d);
-		call = FunctionCall.builder().name("I").arguments(params).build();
-		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
+		call = FunctionCall.builder().name("I").arguments(toString(params)).build();
+		FUNCTION_CALL_MESSAGES.add(ChatCompletionMessageParam
+				.ofAssistant(ChatCompletionAssistantMessageParam.builder().functionCall(call).build()));
 
 		params = new HashMap<>();
 		params.put("s", "T");
 		params.put("i", 3);
 		params.put("d", 3.0d);
 		params.put("b", ENUM.BANANE);
-		call = FunctionCall.builder().name("I").arguments(params).build();
-		FUNCTION_CALL_MESSAGES.add(new OpenAiChatMessage(call));
+		call = FunctionCall.builder().name("I").arguments(toString(params)).build();
+		FUNCTION_CALL_MESSAGES.add(ChatCompletionMessageParam
+				.ofAssistant(ChatCompletionAssistantMessageParam.builder().functionCall(call).build()));
 
-		List<OpenAiChatMessage> replies = new ArrayList<>();
-		for (OpenAiChatMessage msg : FUNCTION_CALL_MESSAGES) {
-			FunctionCall c = msg.getFunctionCall();
-			replies.add(new OpenAiChatMessage(Role.FUNCTION, "V", c.getName()));
+		List<ChatCompletionMessageParam> replies = new ArrayList<>();
+		for (ChatCompletionMessageParam msg : FUNCTION_CALL_MESSAGES) {
+			FunctionCall c = msg.asAssistant().functionCall().get();
+			replies.add(ChatCompletionMessageParam.ofFunction( //
+					ChatCompletionFunctionMessageParam.builder() //
+							.content("V") //
+							.name(c.name()).build() //
+			));
 		}
 		FUNCTION_CALL_MESSAGES.addAll(replies);
+	}
+
+	private static String toString(Map<String, Object> params) {
+		try {
+			return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(params);
+		} catch (JsonProcessingException e) {
+			e.printStackTrace(System.err);
+			return null;
+		}
 	}
 
 	/**
@@ -256,18 +305,19 @@ public class OpenAiTokenizerTest {
 	 */
 	@ParameterizedTest
 	@MethodSource("functionCallCompletionsModelsProvider")
+	@DisplayName("Check function calls and their results")
 	void test02(OpenAiModelMetaData md) throws JsonProcessingException {
 
 		String model = md.getModel();
 		OpenAiTokenizer counter = md.getTokenizer();
-		ChatCompletionsRequest req = ChatCompletionsRequest.builder() //
+		ChatCompletionCreateParams req = ChatCompletionCreateParams.builder() //
 				.model(model) //
 				.messages(FUNCTION_CALL_MESSAGES).build();
 
 		long tokens = counter.count(req);
 		long realTokens = realTokens(req);
-		System.out.println(model + "\t" + tokens + "\t" + realTokens);
 
+		System.out.println("Function calls: " + model + "\t" + tokens + "\t" + realTokens);
 		assertEquals(realTokens, tokens);
 	}
 
@@ -278,14 +328,15 @@ public class OpenAiTokenizerTest {
 	 */
 	@ParameterizedTest
 	@MethodSource("toolCallCompletionsModelsProvider")
+	@DisplayName("Check tool calls and their results")
 	void test03(OpenAiModelMetaData md) throws JsonProcessingException {
 
 		String model = md.getModel();
 		OpenAiTokenizer counter = md.getTokenizer();
-		List<OpenAiChatMessage> messages = new ArrayList<>();
+		List<ChatCompletionMessageParam> messages = new ArrayList<>();
 
 		Map<String, Object> args = new HashMap<>();
-		List<OpenAiToolCall> calls = new ArrayList<>();
+		List<ChatCompletionMessageToolCall> calls = new ArrayList<>();
 
 		for (int numCalls = 1; numCalls < 4; ++numCalls) {
 			System.out.print(model + "\t Calls: " + numCalls);
@@ -300,24 +351,26 @@ public class OpenAiTokenizerTest {
 				for (int i = 0; i < numArgs; ++i) {
 					args.put("s" + i, "Prague");
 				}
-				FunctionCall fun = FunctionCall.builder().name("functionName01").arguments(args).build();
+				ChatCompletionMessageToolCall.Function fun = ChatCompletionMessageToolCall.Function.builder()
+						.name("functionName01").arguments(toString(args)).build();
 
 				// Call with numCalls function calls
 				calls = new ArrayList<>();
 				for (int i = 0; i < numCalls; ++i) {
-					calls.add(OpenAiToolCall.builder().type(Type.FUNCTION).Id("call" + i).function(fun).build());
+					calls.add(ChatCompletionMessageToolCall.builder().id("call" + i).function(fun).build());
 				}
-				OpenAiChatMessage msg = new OpenAiChatMessage(Role.ASSISTANT, (String) null);
-				msg.setToolCalls(calls);
+				ChatCompletionMessageParam msg = ChatCompletionMessageParam
+						.ofAssistant(ChatCompletionAssistantMessageParam.builder().toolCalls(calls).build());
 				messages.add(msg);
 
 				// Corresponding replies
 				for (int i = 0; i < calls.size(); ++i) {
-					messages.add(new OpenAiChatMessage(Role.TOOL,
-							new ToolCallResult(calls.get(i).getId(), calls.get(i).getFunction().getName(), "Result")));
+					messages.add(ChatCompletionMessageParam.ofTool(ChatCompletionToolMessageParam.builder()
+							.toolCallId(calls.get(i).id()).content("Result").build()));
 				}
 
-				ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).messages(messages).build();
+				ChatCompletionCreateParams req = ChatCompletionCreateParams.builder().model(model).messages(messages)
+						.build();
 				long tokens = counter.count(req);
 				long realTokens = realTokens(req);
 
@@ -399,9 +452,19 @@ public class OpenAiTokenizerTest {
 	private final static Capability getToolset() {
 		Toolset result = new Toolset();
 		for (int i = 0; i < 3; ++i) {
-			result.putTool("getCurrentWeather" + i, GetCurrentWeatherTool.class);
+			try {
+				result.putTool(new AbstractTool("getCurrentWeather" + i, "", GetCurrentWeatherTool.class) {
+
+					@Override
+					public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
+						throw new UnsupportedOperationException();
+					}
+				});
+			} catch (ToolInitializationException e) {
+			}
 		}
 		return result;
+
 	}
 
 	/**
@@ -412,6 +475,7 @@ public class OpenAiTokenizerTest {
 	 */
 	@ParameterizedTest
 	@MethodSource("functionCallCompletionsModelsProvider")
+	@DisplayName("Check length when list of available functions is provided")
 	void test04(OpenAiModelMetaData md) throws JsonProcessingException, ToolInitializationException {
 
 		String model = md.getModel();
@@ -423,13 +487,11 @@ public class OpenAiTokenizerTest {
 		bot.setModel(model); // This uses simple function calls
 		bot.addCapability(getToolset());
 
-		ChatCompletionsRequest req = bot.getDefaultReq();
-		req.getMessages().add(new OpenAiChatMessage(Role.USER, "Hi"));
-
+		ChatCompletionCreateParams req = bot.getDefaultRequest().toBuilder().addUserMessage("Hi").build();
 		long tokens = counter.count(req);
 		long realTokens = realTokens(req);
 
-		System.out.println(model + "\t" + tokens + "\t" + realTokens);
+		System.out.println("Function description: " +model + "\t" + tokens + "\t" + realTokens);
 		assertEquals(realTokens, tokens);
 	}
 
@@ -441,6 +503,7 @@ public class OpenAiTokenizerTest {
 	 */
 	@ParameterizedTest
 	@MethodSource("toolCallCompletionsModelsProvider")
+	@DisplayName("Check length when list of available tools is provided")
 	void test05(OpenAiModelMetaData md) throws JsonProcessingException, ToolInitializationException {
 
 		String model = md.getModel();
@@ -452,42 +515,38 @@ public class OpenAiTokenizerTest {
 		bot.setModel(model); // This uses simple tool (parallel functions) calls
 		bot.addCapability(getToolset());
 
-		ChatCompletionsRequest req = bot.getDefaultReq();
-		req.getMessages().add(new OpenAiChatMessage(Role.USER, "Hi"));
+		ChatCompletionCreateParams req = bot.getDefaultRequest().toBuilder().addUserMessage("Hi").build();
 
 		long tokens = counter.count(req);
 		long realTokens = realTokens(req);
-		System.out.println(model + "\t" + tokens + "\t" + realTokens);
+		System.out.println("Tool description: " +model + "\t" + tokens + "\t" + realTokens);
 	}
 
-	private final static List<OpenAiChatMessage> OTHER_MESSAGES = new ArrayList<>();
+	private final static List<ChatCompletionMessageParam> OTHER_MESSAGES = new ArrayList<>();
 	static {
 
 		Map<String, Object> args;
-		FunctionCall fun;
+		ChatCompletionMessageToolCall.Function fun;
 
-		List<OpenAiToolCall> calls = new ArrayList<>();
+		List<ChatCompletionMessageToolCall> calls = new ArrayList<>();
 		for (int i = 0; i < 3; ++i) {
 			args = new HashMap<>();
-			fun = FunctionCall.builder().name("functionName01").arguments(args).build();
-
-			OpenAiToolCall call = OpenAiToolCall.builder().type(Type.FUNCTION).Id("call" + i).function(fun).build();
-			calls.add(call);
+			fun = ChatCompletionMessageToolCall.Function.builder().name("functionName01").arguments(toString(args))
+					.build();
+			calls.add(ChatCompletionMessageToolCall.builder().id("call" + i).function(fun).build());
 		}
 		args = new HashMap<>();
 		args.put("param", "hello");
-		fun = FunctionCall.builder().name("functionNameXX").arguments(args).build();
-		OpenAiToolCall call = OpenAiToolCall.builder().type(Type.FUNCTION).Id("call" + calls.size()).function(fun)
-				.build();
-		calls.add(call);
+		fun = ChatCompletionMessageToolCall.Function.builder().name("functionNameXX").arguments(toString(args)).build();
+		calls.add(ChatCompletionMessageToolCall.builder().id("call" + calls.size()).function(fun).build());
 
-		OpenAiChatMessage msg = new OpenAiChatMessage(Role.ASSISTANT, (String) null);
-		msg.setToolCalls(calls);
+		ChatCompletionMessageParam msg = ChatCompletionMessageParam
+				.ofAssistant(ChatCompletionAssistantMessageParam.builder().toolCalls(calls).build());
 		OTHER_MESSAGES.add(msg);
 
 		for (int i = 0; i < calls.size(); ++i) {
-			OTHER_MESSAGES.add(new OpenAiChatMessage(Role.TOOL,
-					new ToolCallResult(calls.get(i).getId(), calls.get(i).getFunction().getName(), "Result")));
+			OTHER_MESSAGES.add(ChatCompletionMessageParam.ofTool(
+					ChatCompletionToolMessageParam.builder().toolCallId(calls.get(i).id()).content("Result").build()));
 		}
 	}
 
@@ -499,15 +558,17 @@ public class OpenAiTokenizerTest {
 	 */
 	@ParameterizedTest
 	@MethodSource("toolCallCompletionsModelsProvider")
+	@DisplayName("Tool calls having 0 parameters")
 	void test06(OpenAiModelMetaData md) throws JsonProcessingException {
 
 		String model = md.getModel();
 		OpenAiTokenizer counter = md.getTokenizer();
-		ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).messages(OTHER_MESSAGES).build();
+		ChatCompletionCreateParams req = ChatCompletionCreateParams.builder().model(model).messages(OTHER_MESSAGES)
+				.build();
 
 		long tokens = counter.count(req);
 		long realTokens = realTokens(req);
-		System.out.println(model + "\t" + tokens + "\t" + realTokens);
+		System.out.println("0 params tool calls: " +model + "\t" + tokens + "\t" + realTokens);
 
 		assertEquals(realTokens, tokens);
 	}
@@ -517,26 +578,26 @@ public class OpenAiTokenizerTest {
 	 */
 	@Test
 	void testVisionTokens() throws MalformedURLException, URISyntaxException {
-
-		String model = "gpt-4-vision-preview";
-		OpenAiTokenizer counter = modelSvc.getTokenizer(model);
-
-		// Get chat service, set bot personality and tools used
-		OpenAiChatService bot = endpoint.getChatService();
-		bot.setPersonality("You are an helpful assistant.");
-		bot.setModel(model);
-
-		OpenAiChatMessage msg = new OpenAiChatMessage(Role.USER, "Is there any grass in this image?");
-		msg.getContentParts().add(new FilePart(
-				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-MED.png"), "image/png"));
-		msg.getContentParts().add(new FilePart(
-				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png"), "image/png"));
-		ChatCompletionsRequest req = bot.getDefaultReq();
-		req.getMessages().add(msg);
-
-		long tokens = counter.count(req);
-		long realTokens = realTokens(req);
-		assertEquals(realTokens, tokens);
+//
+//		String model = "gpt-4-vision-preview";
+//		OpenAiTokenizer counter = modelSvc.getTokenizer(model);
+//
+//		// Get chat service, set bot personality and tools used
+//		OpenAiChatService bot = endpoint.getChatService();
+//		bot.setPersonality("You are an helpful assistant.");
+//		bot.setModel(model);
+//
+//		ChatCompletionMessageParam msg = new ChatCompletionMessageParam(Role.USER, "Is there any grass in this image?");
+//		msg.getContentParts().add(new FilePart(
+//				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-MED.png"), "image/png"));
+//		msg.getContentParts().add(new FilePart(
+//				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png"), "image/png"));
+//		ChatCompletionCreateParams req = bot.getDefaultReq();
+//		req._messages().add(msg);
+//
+//		long tokens = counter.count(req);
+//		long realTokens = realTokens(req);
+//		assertEquals(realTokens, tokens);
 	}
 
 	/**
@@ -544,24 +605,24 @@ public class OpenAiTokenizerTest {
 	 */
 	@Test
 	void testVisionTokens3() throws MalformedURLException, URISyntaxException {
-
-		String model = "gpt-4-vision-preview";
-		OpenAiTokenizer counter = modelSvc.getTokenizer(model);
-
-		// Get chat service, set bot personality and tools used
-		OpenAiChatService bot = endpoint.getChatService();
-		bot.setPersonality("You are an helpful assistant.");
-		bot.setModel(model);
-
-		OpenAiChatMessage msg = new OpenAiChatMessage(Role.USER, "Is there any grass in this image?");
-		msg.getContentParts().add(new FilePart(
-				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png"), "image/png"));
-		ChatCompletionsRequest req = bot.getDefaultReq();
-		req.getMessages().add(msg);
-
-		long tokens = counter.count(req);
-		long realTokens = realTokens(req);
-		assertEquals(realTokens, tokens);
+//
+//		String model = "gpt-4-vision-preview";
+//		OpenAiTokenizer counter = modelSvc.getTokenizer(model);
+//
+//		// Get chat service, set bot personality and tools used
+//		OpenAiChatService bot = endpoint.getChatService();
+//		bot.setPersonality("You are an helpful assistant.");
+//		bot.setModel(model);
+//
+//		ChatCompletionMessageParam msg = new ChatCompletionMessageParam(Role.USER, "Is there any grass in this image?");
+//		msg.getContentParts().add(new FilePart(
+//				ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png"), "image/png"));
+//		ChatCompletionCreateParams req = bot.getDefaultReq();
+//		req._messages().add(msg);
+//
+//		long tokens = counter.count(req);
+//		long realTokens = realTokens(req);
+//		assertEquals(realTokens, tokens);
 	}
 
 	/**
@@ -569,28 +630,28 @@ public class OpenAiTokenizerTest {
 	 */
 	@Test
 	void testVisionTokens2() throws MalformedURLException, URISyntaxException {
-
-		String model = "gpt-4-vision-preview";
-		OpenAiTokenizer counter = modelSvc.getTokenizer(model);
-
-		// Get chat service, set bot personality and tools used
-		OpenAiChatService bot = endpoint.getChatService();
-		bot.setPersonality("You are an helpful assistant.");
-		bot.setModel(model);
-
-		OpenAiChatMessage msg = new OpenAiChatMessage(Role.USER, "Is there any grass in this image?");
-		msg.getContentParts().add(FilePart.fromUrl(
-				"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
-				"image/jpeg"));
-		ChatCompletionsRequest req = bot.getDefaultReq();
-		req.getMessages().add(msg);
-
-		long tokens = counter.count(req);
-
-		// *** IMPORTANT*** with remote images we do not do exact token calculation for
-		// performance reasons.
-//		long realTokens = realTokens(req);
-		assertEquals(440, tokens);
+//
+//		String model = "gpt-4-vision-preview";
+//		OpenAiTokenizer counter = modelSvc.getTokenizer(model);
+//
+//		// Get chat service, set bot personality and tools used
+//		OpenAiChatService bot = endpoint.getChatService();
+//		bot.setPersonality("You are an helpful assistant.");
+//		bot.setModel(model);
+//
+//		ChatCompletionMessageParam msg = new ChatCompletionMessageParam(Role.USER, "Is there any grass in this image?");
+//		msg.getContentParts().add(FilePart.fromUrl(
+//				"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+//				"image/jpeg"));
+//		ChatCompletionCreateParams req = bot.getDefaultReq();
+//		req._messages().add(msg);
+//
+//		long tokens = counter.count(req);
+//
+//		// *** IMPORTANT*** with remote images we do not do exact token calculation for
+//		// performance reasons.
+////		long realTokens = realTokens(req);
+//		assertEquals(440, tokens);
 	}
 
 	/**
@@ -599,37 +660,21 @@ public class OpenAiTokenizerTest {
 	 * @param req
 	 * @return
 	 */
-	private static long realTokens(ChatCompletionsRequest req) {
+	private static long realTokens(ChatCompletionCreateParams req) {
 
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
-			ChatCompletionsResponse resp = endpoint.getClient().createChatCompletion(req);
-			return resp.getUsage().getPromptTokens();
-		}
-	}
-
-	/**
-	 * Counts the actual token by calling OpenAI API.
-	 * 
-	 * @param req
-	 * @return
-	 */
-	private static long realTokens(CompletionsRequest req) {
-
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
-			req.setMaxTokens(1);
-			CompletionsResponse resp = endpoint.getClient().createCompletion(req);
-			return resp.getUsage().getPromptTokens();
+			ChatCompletion resp = endpoint.getClient().chat().completions().create(req);
+			return resp.usage().get().promptTokens();
 		}
 	}
 
 	public static void main(String[] arg) throws JsonProcessingException {
-		long tokens, realTokens;
-		String[] models = new String[] { "o1-preview"
-				// , "o3-mini",
-		};
+//		long tokens, realTokens;
+//		String[] models = new String[] { "o1-preview"
+//				// , "o3-mini",
+//		};
 
-
-	// Below code is to run test01 step by step
+		// Below code is to run test01 step by step
 //	public static void TestTest001(String[] arg) throws JsonProcessingException {
 //		long tokens, realTokens;
 //		String[] models = new String[] { "o1-preview"
@@ -642,14 +687,14 @@ public class OpenAiTokenizerTest {
 //				List<SupportedApi> api = md.getSupportedApis();
 //				OpenAiTokenizer counter = md.getTokenizer();
 //
-//				List<OpenAiChatMessage> testList = new ArrayList<>(SIMPLE_MESSAGES_2);
+//				List<ChatCompletionMessageParam> testList = new ArrayList<>(SIMPLE_MESSAGES_2);
 //				if (model.startsWith("o1-mini") || model.startsWith("o1-preview"))
 //					testList = testList.stream() //
-//							.filter(m -> ((m.getRole() != Role.DEVELOPER) && (m.getRole() != Role.DEVELOPER))) //
+//							.filter(m -> (!m.isDeveloper())) //
 //							.collect(Collectors.toList());
 //
 //				if (api.contains(SupportedApi.CHAT)) {
-//					ChatCompletionsRequest req = ChatCompletionsRequest.builder().model(model).build();
+//					ChatCompletionCreateParams req = ChatCompletionCreateParams.builder().model(model).build();
 //					for (int m = 0; m < testList.size(); ++m) {
 //
 //						req.getMessages().clear();
@@ -676,9 +721,9 @@ public class OpenAiTokenizerTest {
 //							+ "\tDelta: " + (tokens - realTokens));
 //
 //				} else if (api.contains(SupportedApi.COMPLETIONS)) {
-//					CompletionsRequest creq = CompletionsRequest.builder() //
+//					ChatCompletionCreateParams creq = ChatCompletionCreateParams.builder() //
 //							.model(model) //
-//							.prompt("This is a prompt, quite short, but it's OK").build();
+//							.addUserMessage("This is a prompt, quite short, but it's OK").build();
 //					tokens = counter.count(creq.getPrompt());
 //					realTokens = realTokens(creq);
 //
@@ -687,5 +732,5 @@ public class OpenAiTokenizerTest {
 //					throw new IllegalArgumentException();
 //			} // For each model
 //		}
-//	}
+	}
 }

@@ -16,84 +16,103 @@
 
 package io.github.mzattera.predictivepowers.huggingface.services;
 
-import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.client.Options;
-import io.github.mzattera.predictivepowers.huggingface.client.SingleHuggingFaceRequest;
-import io.github.mzattera.predictivepowers.services.ImageGenerationService;
+import io.github.mzattera.hfinferenceapi.client.model.ImageGenerationRequest;
+import io.github.mzattera.hfinferenceapi.client.model.ImageGenerationRequestParameters;
+import io.github.mzattera.hfinferenceapi.client.model.ImageGenerationResponseDataInner;
+import io.github.mzattera.predictivepowers.EndpointException;
+import io.github.mzattera.predictivepowers.huggingface.util.HuggingFaceUtil;
+import io.github.mzattera.predictivepowers.services.AbstractImageGenerationService;
+import io.github.mzattera.predictivepowers.services.messages.Base64FilePart;
+import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 /**
- * Image generation service over Hugging Face.
+ * OpenAI implementation of image generation service.
  * 
  * @author Massimiliano "Maxi" Zattera
+ *
  */
-@RequiredArgsConstructor
-public class HuggingFaceImageGenerationService implements ImageGenerationService {
+public class HuggingFaceImageGenerationService extends AbstractImageGenerationService {
 
-	// This was the first one I found that works fine
-	public static final String DEFAULT_MODEL = "prompthero/openjourney-v4";
+	public static final String DEFAULT_MODEL = "stabilityai/stable-diffusion-xl-base-1.0:nscale";
 
-	public HuggingFaceImageGenerationService(HuggingFaceEndpoint ep) {
-		 // TODO remove? Improve?
-		this(ep, new SingleHuggingFaceRequest("", Options.builder().useCache(false).waitForModel(true).build()));
-	}
-
-	@NonNull
 	@Getter
+	@NonNull
 	protected final HuggingFaceEndpoint endpoint;
 
-	@NonNull
 	@Getter
 	@Setter
-	private String model = DEFAULT_MODEL;
-
-	/**
-	 * This request, with its parameters, is used as default setting for each call.
-	 * 
-	 * You can change any parameter to change these defaults (e.g. the model used)
-	 * and the change will apply to all subsequent calls.
-	 */
-	@Getter
 	@NonNull
-	private final SingleHuggingFaceRequest defaultReq;
+	private ImageGenerationRequest defaultRequest;
 
-	@Override
-	public List<BufferedImage> createImage(String prompt, int n, int width, int height) throws IOException {
-		return createImage(prompt, n, width, height, defaultReq);
+	public HuggingFaceImageGenerationService(@NonNull HuggingFaceEndpoint endpoint) {
+		this(endpoint, DEFAULT_MODEL);
 	}
 
-	public List<BufferedImage> createImage(String prompt, int n, int width, int height, SingleHuggingFaceRequest req)
-			throws IOException {
+	public HuggingFaceImageGenerationService(@NonNull HuggingFaceEndpoint endpoint, @NonNull String model) {
+		super.setModel(model);
+		this.endpoint = endpoint;
+		this.defaultRequest = new ImageGenerationRequest().model(model).n(1).parameters(new ImageGenerationRequestParameters());
+	}
 
-		req.setInputs(prompt);
-		List<BufferedImage> result = new ArrayList<>(n);
-		for (int i = 0; i < n; ++i) {
-			result.add(endpoint.getClient().textToImage(model, defaultReq));
+	@Override
+	public void setModel(@NonNull String model) {
+		super.setModel(model);
+		defaultRequest.setModel(model);
+	}
+
+	@Override
+	public List<FilePart> createImage(@NonNull String prompt, int n, int width, int height) throws EndpointException {
+
+		String model = defaultRequest.getModel();
+		List<FilePart> result = new ArrayList<>();
+
+		try {
+			String[] parts = HuggingFaceUtil.parseModel(model);
+			defaultRequest.setModel(parts[0]);
+			defaultRequest.setPrompt(prompt);
+			defaultRequest.setN(n);
+
+			ImageGenerationRequestParameters params = defaultRequest.getParameters();
+			if (params == null) { // paranoid
+				params = new ImageGenerationRequestParameters();
+				defaultRequest.setParameters(params);
+			}
+			params.setWidth(width);
+			params.setHeight(height);		
+
+			List<ImageGenerationResponseDataInner> response = endpoint.getClient().textToImage(parts[1], defaultRequest)
+					.getData();
+
+			for (int i = 0; i < response.size(); ++i) {
+				ImageGenerationResponseDataInner data = response.get(i);
+				result.add(new Base64FilePart(data.getB64Json(), "Image_" + i));
+			}
+
+			return result;
+
+		} catch (Exception e) {
+			throw HuggingFaceUtil.toEndpointException(e);
+		} finally {
+			// Restore model value
+			defaultRequest.setModel(model);
 		}
-
-		return result;
 	}
 
 	@Override
-	public List<BufferedImage> createImageVariation(BufferedImage prompt, int n, int width, int height)
-			throws IOException {
-		return createImageVariation(prompt, n, width, height, defaultReq);
-	}
-
-	public List<BufferedImage> createImageVariation(BufferedImage prompt, int n, int width, int height,
-			SingleHuggingFaceRequest req) throws IOException {
-		throw new UnsupportedOperationException();
+	public List<FilePart> createImageVariation(@NonNull FilePart prompt, int n, int width, int height)
+			throws EndpointException {
+		throw new EndpointException(new UnsupportedOperationException());
 	}
 
 	@Override
-	public void close() {
+	public List<FilePart> createImageEdit(@NonNull FilePart image, @NonNull String prompt, FilePart mask, int n,
+			int width, int height) throws EndpointException {
+		throw new EndpointException(new UnsupportedOperationException());
 	}
 }

@@ -19,7 +19,8 @@ package io.github.mzattera.predictivepowers.services;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.github.mzattera.predictivepowers.services.ModelService.ModelMetaData.Mode;
+import io.github.mzattera.predictivepowers.EndpointException;
+import io.github.mzattera.predictivepowers.services.ModelService.ModelMetaData.Modality;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
@@ -69,8 +70,12 @@ public interface ModelService extends AiService {
 		/**
 		 * Input/Output modalities a model supports.
 		 */
-		public enum Mode {
-			TEXT, IMAGE, AUDIO, EMBEDDINGS
+		public enum Modality {
+			TEXT, IMAGE, AUDIO, EMBEDDINGS, VIDEO
+		}
+
+		public static Builder builder() {
+			return new Builder();
 		}
 
 		public static final class Builder {
@@ -80,7 +85,7 @@ public interface ModelService extends AiService {
 			}
 
 			public Builder model(String model) {
-				meta.model = java.util.Objects.requireNonNull(model, "model obbligatorio");
+				meta.model = java.util.Objects.requireNonNull(model, "model mandatory");
 				return this;
 			}
 
@@ -99,12 +104,12 @@ public interface ModelService extends AiService {
 				return this;
 			}
 
-			public Builder addInputMode(Mode mode) {
+			public Builder addInputMode(Modality mode) {
 				meta.inputModes.add(java.util.Objects.requireNonNull(mode));
 				return this;
 			}
 
-			public Builder addOutputMode(Mode mode) {
+			public Builder addOutputMode(Modality mode) {
 				meta.outputModes.add(java.util.Objects.requireNonNull(mode));
 				return this;
 			}
@@ -143,43 +148,43 @@ public interface ModelService extends AiService {
 
 		/** The input modes this model supports */
 		@NonNull
-		private List<Mode> inputModes = new ArrayList<>();
+		private List<Modality> inputModes = new ArrayList<>();
 
 		/** The output modes this model supports */
 		@NonNull
-		private List<Mode> outputModes = new ArrayList<>();
+		private List<Modality> outputModes = new ArrayList<>();
 
 		protected ModelMetaData() {
 		}
 
 		public boolean supportsImageInput() {
-			return inputModes.contains(Mode.IMAGE);
+			return inputModes.contains(Modality.IMAGE);
 		}
 
 		public boolean supportsAudioInput() {
-			return inputModes.contains(Mode.AUDIO);
+			return inputModes.contains(Modality.AUDIO);
 		}
 
 		public boolean supportsImageOutput() {
-			return outputModes.contains(Mode.IMAGE);
+			return outputModes.contains(Modality.IMAGE);
 		}
 
 		public boolean supportsAudioOutput() {
-			return outputModes.contains(Mode.AUDIO);
+			return outputModes.contains(Modality.AUDIO);
 		}
 	}
 
 	/**
 	 * @return List IDs for all available models at this endpoint.
 	 */
-	List<String> listModels();
+	List<String> listModels() throws EndpointException;
 
 	/**
 	 * 
 	 * @param model
 	 * @return {@link ModelMetaData} for given model, or null if it cannot be found.
 	 */
-	ModelMetaData get(@NonNull String model);
+	ModelMetaData get(@NonNull String model) throws EndpointException;
 
 	/**
 	 * Sets the {@link ModelMetaData} for given model.
@@ -254,12 +259,12 @@ public interface ModelService extends AiService {
 	 * @param model
 	 * @return Input modes supported by the model.
 	 */
-	List<Mode> getInputModes(@NonNull String model);
+	List<Modality> getInputModes(@NonNull String model);
 
 	/**
 	 * 
 	 * @param model
 	 * @return Output modes supported by the model.
 	 */
-	List<Mode> getOutputModes(@NonNull String model);
+	List<Modality> getOutputModes(@NonNull String model);
 }

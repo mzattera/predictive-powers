@@ -20,6 +20,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.List;
 
+import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import lombok.NonNull;
 
@@ -41,10 +42,10 @@ public interface ImageGenerationService extends AiService {
 	 * @param height Image height (actual implementations might return different
 	 *               size, typically smaller).
 	 * 
-	 * @return Generated image(s) as a list of {@link FilePart}; this allows more efficient handling of images when they are returned by URLs.
-	 * @throws IOException If an error occurs while downloading the images.
+	 * @return Generated image(s) as a list of {@link FilePart}; this allows more
+	 *         efficient handling of images when they are returned by URLs.
 	 */
-	List<FilePart> createImage(@NonNull String prompt, int n, int width, int height) throws IOException;
+	List<FilePart> createImage(@NonNull String prompt, int n, int width, int height) throws EndpointException;
 
 	/**
 	 * Creates variations from given image, used as a prompt.
@@ -56,11 +57,11 @@ public interface ImageGenerationService extends AiService {
 	 * @param height Image height (actual implementations might return different
 	 *               size, typically smaller).
 	 * 
-	 * @return Generated image(s) as a list of {@link FilePart}; this allows more efficient handling of images when they are returned by URLs.
+	 * @return Generated image(s) as a list of {@link FilePart}; this allows more
 	 * @throws IOException If an error occurs while downloading the images.
 	 */
 	List<FilePart> createImageVariation(@NonNull BufferedImage prompt, int n, int width, int height)
-			throws IOException;
+			throws EndpointException;
 
 	/**
 	 * Creates variations from given image, used as a prompt.
@@ -72,11 +73,11 @@ public interface ImageGenerationService extends AiService {
 	 * @param height Image height (actual implementations might return different
 	 *               size, typically smaller).
 	 * 
-	 * @return Generated image(s) as a list of {@link FilePart}; this allows more efficient handling of images when they are returned by URLs.
-	 * @throws IOException If an error occurs while downloading the images.
+	 * @return Generated image(s) as a list of {@link FilePart}; this allows more
+	 *         efficient handling of images when they are returned by URLs.
 	 */
 	List<FilePart> createImageVariation(@NonNull FilePart prompt, int n, int width, int height)
-			throws IOException;
+			throws EndpointException;
 
 	/**
 	 * Edits given image by following instructions in the prompt.
@@ -91,11 +92,12 @@ public interface ImageGenerationService extends AiService {
 	 * @param height Image height (actual implementations might return different
 	 *               size, typically smaller).
 	 * 
-	 * @return Generated image(s) as a list of {@link FilePart}; this allows more efficient handling of images when they are returned by URLs.
+	 * @return Generated image(s) as a list of {@link FilePart}; this allows more
+	 *         efficient handling of images when they are returned by URLs.
 	 * @throws IOException If an error occurs while downloading the images.
 	 */
-	List<FilePart> createImageEdit(@NonNull BufferedImage image, @NonNull String prompt,
-			BufferedImage mask, int n, int width, int height) throws IOException;
+	List<FilePart> createImageEdit(@NonNull BufferedImage image, @NonNull String prompt, BufferedImage mask, int n,
+			int width, int height) throws EndpointException;
 
 	/**
 	 * Edits given image by following instructions in the prompt.
@@ -110,9 +112,10 @@ public interface ImageGenerationService extends AiService {
 	 * @param height Image height (actual implementations might return different
 	 *               size, typically smaller).
 	 * 
-	 * @return Generated image(s) as a list of {@link FilePart}; this allows more efficient handling of images when they are returned by URLs.
+	 * @return Generated image(s) as a list of {@link FilePart}; this allows more
+	 *         efficient handling of images when they are returned by URLs.
 	 * @throws IOException If an error occurs while downloading the images.
 	 */
-	List<FilePart> createImageEdit(@NonNull FilePart image, @NonNull String prompt,
-			FilePart mask, int n, int width, int height) throws IOException;
+	List<FilePart> createImageEdit(@NonNull FilePart image, @NonNull String prompt, FilePart mask, int n, int width,
+			int height) throws EndpointException;
 }

@@ -28,17 +28,15 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
 import javax.imageio.ImageIO;
-import javax.xml.bind.DatatypeConverter;
 
 import io.github.mzattera.predictivepowers.services.messages.Base64FilePart;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import lombok.NonNull;
-import okhttp3.MediaType;
-import okhttp3.RequestBody;
 
 /**
  * Image utilities to read and write images.
@@ -96,8 +94,7 @@ public final class ImageUtil {
 	 * Reads Java image from its base64 representation.
 	 */
 	public static BufferedImage fromBase64(String base64Image) throws IOException {
-		return ImageIO.read(new ByteArrayInputStream(DatatypeConverter.parseBase64Binary(base64Image)));
-	}
+		return ImageIO.read(new ByteArrayInputStream(Base64.getDecoder().decode(base64Image)));	}
 
 	/**
 	 * Reads Java image from a stream.
@@ -143,17 +140,6 @@ public final class ImageUtil {
 			ImageIO.write(image, ext, baos);
 			return baos.toByteArray();
 		}
-	}
-
-	/**
-	 * Write Java image into an HTTP request body.
-	 * 
-	 * @param image
-	 * @param ext   An extension specifying the format of the saved image (e.g.
-	 *              "jpg" or "png").
-	 */
-	public static RequestBody toRequestBody(BufferedImage image, String ext) throws IOException {
-		return RequestBody.create(toBytes(image, ext), MediaType.get("image/" + ext));
 	}
 
 	/**

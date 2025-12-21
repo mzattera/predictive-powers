@@ -281,12 +281,6 @@ Currently, following services are provided by `AiEndpoint`s:
      	 
   * `EmbeddingService`: embeds text and calculates semantic (cosine) similarity between texts; it takes care of automatically splitting long texts when needed.
 	 
-  * `QuestionAnsweringService`: answers questions, using an user-provided context. The context can be a list of embeddings from a [knowledge base](#kb).
-     	 
-  * `QuestionExtractionService`: extracts different kinds of questions from a text (e.g. true/false question, multiple choices quizzes, etc.). It automatically handles long texts.
-  
-     Provided only over OpenAI endpoint for now.
-	 
   * `ImageGenerationService`: to create images.
  
      Provided over both OpenAI (DALL-E) and Hugging Face (Openjourney) endpoints.

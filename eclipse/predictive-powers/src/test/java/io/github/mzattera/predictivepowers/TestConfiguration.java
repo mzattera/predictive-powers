@@ -25,29 +25,26 @@ import java.util.List;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
-import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.google.services.GoogleEndpoint;
+import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.services.SearchService;
 
 /**
  * This class is used to configure which JUnit tests are active.
  */
 public final class TestConfiguration {
 
-	public final static boolean TEST_GOOGLE_SERVICES = false;
+	public final static boolean TEST_GOOGLE_SERVICES = true;
 
 	public final static boolean TEST_HF_SERVICES = false;
 
-	public final static boolean TEST_KNOWLEDGE_BASE = false;
-
 	public final static boolean TEST_OPENAI_SERVICES = true;
 
+	public static final boolean TEST_KNOWLEDGE_BASE = false;
+
 	public static List<AiEndpoint> getAiEndpoints() {
-
-		// TODO URGENT Add Anthropic and Google here and make sure all tests use the
-		// test
-		// configuration
-
 		List<AiEndpoint> result = new ArrayList<>();
 
 		if (TEST_OPENAI_SERVICES)
@@ -58,12 +55,25 @@ public final class TestConfiguration {
 		return result;
 	}
 
+	public static List<SearchEndpoint> getSearchEndpoints() {
+		List<SearchEndpoint> result = new ArrayList<>();
+
+		if (TEST_GOOGLE_SERVICES)
+			result.add(new GoogleEndpoint());
+
+		return result;
+	}
+
 	public static List<Pair<AiEndpoint, String>> getEmbeddingServices() {
 
 		List<Pair<AiEndpoint, String>> result = new ArrayList<>();
 
 		for (AiEndpoint ep : getAiEndpoints()) {
-			result.add(new ImmutablePair<>(ep, ep.getEmbeddingService().getModel()));
+			try {
+				result.add(new ImmutablePair<>(ep, ep.getEmbeddingService().getModel()));
+			} catch (UnsupportedOperationException e) {
+				// Some endpoints might miss that
+			}
 		}
 
 		return result;
@@ -141,26 +151,26 @@ public final class TestConfiguration {
 		List<Pair<AiEndpoint, String>> result = new ArrayList<>();
 
 		for (AiEndpoint ep : getAiEndpoints()) {
-			if (ep instanceof OpenAiEndpoint) {
+			try {
+				if (ep instanceof OpenAiEndpoint) {
 
-				// Want to try all 3 models, as they behave differently
+					// Want to try all 3 models, as they behave differently
 
-				result.add(new ImmutablePair<>(ep, "dall-e-2"));
+					result.add(new ImmutablePair<>(ep, "dall-e-2"));
 
-				String defModel = ep.getImageGenerationService().getModel();
-				if (!"dall-e-3".equals(defModel))
-					throw new IllegalArgumentException("You must test dall-e-3 too");
-				result.add(new ImmutablePair<>(ep, defModel)); // This to test other constructor
+					String defModel = ep.getImageGenerationService().getModel();
+					if (!"dall-e-3".equals(defModel))
+						throw new IllegalArgumentException("You must test dall-e-3 too");
+					result.add(new ImmutablePair<>(ep, defModel)); // This to test other constructor
 //				result.add(new ImmutablePair<>(ep, "dall-e-3"));
 
-				// TODO: Need to approve organisation
+					// TODO: Need to approve organisation
 //				result.add(new ImmutablePair<>(ep, "gpt-image-1"));
-			} else {
-				try {
+				} else {
 					result.add(new ImmutablePair<>(ep, ep.getImageGenerationService().getModel()));
-				} catch (UnsupportedOperationException e) {
-					// Some endpoints might miss that
 				}
+			} catch (UnsupportedOperationException e) {
+				// Some endpoints might miss that
 			}
 		}
 
@@ -180,7 +190,7 @@ public final class TestConfiguration {
 
 	public static List<Pair<AiEndpoint, String>> getSTTServices() {
 
-		// TODO Expose as a6 proper service
+		// TODO Expose as a proper service
 
 		List<Pair<AiEndpoint, String>> result = new ArrayList<>();
 
@@ -189,8 +199,8 @@ public final class TestConfiguration {
 		return result;
 	}
 
-	public static void close(List<AiEndpoint> resources) {
-		for (AiEndpoint r : resources) {
+	public static void close(List<Endpoint> resources) {
+		for (Endpoint r : resources) {
 			try {
 				r.close();
 			} catch (Exception se) {

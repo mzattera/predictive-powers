@@ -17,6 +17,7 @@ package io.github.mzattera.predictivepowers.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
@@ -92,12 +93,12 @@ public abstract class AbstractChatService implements ChatService {
 	}
 
 	@Override
-	public ChatCompletion chat(String msg) {
+	public ChatCompletion chat(String msg) throws EndpointException {
 		return chat(new ChatMessage(Author.USER, msg));
 	}
 
 	@Override
-	public ChatCompletion complete(String prompt) {
+	public ChatCompletion complete(String prompt) throws EndpointException {
 		return complete(new ChatMessage(Author.USER, prompt));
 	}
 

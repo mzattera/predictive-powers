@@ -27,6 +27,15 @@ package io.github.mzattera.predictivepowers.services.messages;
  */
 public interface MessagePart {
 
+	// Not really used now, but in case serialisation is needed in the future
+	public static enum Type {TEXT, FILE, BASE64_FILE, TOOL_CALL, TOOL_CALL_RESULT};
+	
+	/**
+	 * 
+	 * @return Unique value identifying the type of this message part.
+	 */
+	Type getType();
+	
 	/**
 	 * 
 	 * @return A string representation of the content of this message part. Notice

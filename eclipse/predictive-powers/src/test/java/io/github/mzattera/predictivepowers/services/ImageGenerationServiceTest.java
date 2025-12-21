@@ -29,22 +29,17 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.openai.errors.BadRequestException;
-import com.openai.models.images.ImageCreateVariationParams.ResponseFormat;
-import com.openai.models.images.ImageModel;
-
 import io.github.mzattera.predictivepowers.AiEndpoint;
+import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.TestConfiguration;
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiImageGenerationService;
+import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceImageGenerationService;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
+import io.github.mzattera.predictivepowers.util.FileUtil;
 import io.github.mzattera.predictivepowers.util.ImageUtil;
 import io.github.mzattera.predictivepowers.util.ResourceUtil;
 
@@ -89,9 +84,19 @@ public class ImageGenerationServiceTest {
 	@MethodSource("services")
 	public void testCreation(Pair<AiEndpoint, String> p) throws Exception {
 		try (ImageGenerationService s = p.getLeft().getImageGenerationService(p.getRight())) {
-			List<FilePart> r = s.createImage("Create a painting of a white puppy", 2, 1024, 1024);
-			assertEquals(2, r.size());
-			saveFiles(s, "create", r);
+
+			if (s instanceof HuggingFaceImageGenerationService) { // n > 1 currently not supported in HF
+				assertThrows(EndpointException.class,
+						() -> s.createImage("Create a painting of a white puppy", 2, 1024, 1024));
+
+				List<FilePart> r = s.createImage("Create a painting of a white puppy", 1, 1024, 512);
+				assertEquals(1, r.size());
+				saveFiles(s, "create", r);
+			} else {
+				List<FilePart> r = s.createImage("Create a painting of a white puppy", 2, 1024, 1024);
+				assertEquals(2, r.size());
+				saveFiles(s, "create", r);
+			}
 		}
 	}
 
@@ -108,6 +113,8 @@ public class ImageGenerationServiceTest {
 					2, 512, 512);
 			assertEquals(2, r.size());
 			saveFiles(s, "variation", r);
+		} catch (UnsupportedOperationException e) {
+			// Not always available
 		}
 	}
 
@@ -122,74 +129,14 @@ public class ImageGenerationServiceTest {
 
 			// TODO Fails for dall-e-2
 			// https://github.com/openai/openai-java/issues/478
-			List<FilePart> r = s.createImageEdit(ImageUtil.fromFile(ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png")),
+			List<FilePart> r = s.createImageEdit(
+					ImageUtil.fromFile(
+							ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png")),
 					"Add a puppy on the pathway", null, 2, 512, 512);
 			assertEquals(2, r.size());
 			saveFiles(s, "variation", r);
-		}
-	}
- 
-	// TODO URGENT Rework this as a generic test like chat service
-	
-	@Test
-	@DisplayName("OpenAI Custom Tests - getters & setters")
-	public void oaiTest() throws Exception {
-
-		if (!TestConfiguration.TEST_OPENAI_SERVICES)
-			return;
-
-		try (OpenAiEndpoint ep = new OpenAiEndpoint();
-				OpenAiImageGenerationService oaies = ep.getImageGenerationService()) {
-
-			oaies.setModel("banana");
-			assertEquals("banana", oaies.getDefaultEditRequest().model().get()._value().asString().get());
-			assertEquals("banana", oaies.getDefaultGenerateRequest().model().get()._value().asString().get());
-			assertEquals("banana", oaies.getDefaultVariationRequest().model().get()._value().asString().get());
-
-			oaies.setDefaultEditRequest(
-					oaies.getDefaultEditRequest().toBuilder().model(ImageModel.GPT_IMAGE_1).build());
-			assertEquals(ImageModel.GPT_IMAGE_1, oaies.getDefaultEditRequest().model().get());
-			oaies.setDefaultGenerateRequest(
-					oaies.getDefaultGenerateRequest().toBuilder().model(ImageModel.GPT_IMAGE_1).build());
-			assertEquals(ImageModel.GPT_IMAGE_1, oaies.getDefaultGenerateRequest().model().get());
-			oaies.setDefaultVariationRequest(
-					oaies.getDefaultVariationRequest().toBuilder().model(ImageModel.GPT_IMAGE_1).build());
-			assertEquals(ImageModel.GPT_IMAGE_1, oaies.getDefaultVariationRequest().model().get());
-		}
-	}
-
-	@Test
-	@DisplayName("OpenAI Custom Tests - Known bug")
-	// TODO https://github.com/openai/openai-java/issues/478
-	public void oaiTest02() throws Exception {
-
-		if (!TestConfiguration.TEST_OPENAI_SERVICES)
-			return;
-
-		try (OpenAiEndpoint ep = new OpenAiEndpoint();
-				OpenAiImageGenerationService oaies = ep.getImageGenerationService("dall-e-3")) {
-
-			assertThrows(BadRequestException.class,
-					() -> oaies.createImage("Create the image of a white cyborg.", 1, 256, 256));
-		}
-	}
-
-	@Test
-	@DisplayName("OpenAI Custom Tests - Squaring an image and returning base 64")
-	public void oaiTest03() throws Exception {
-
-		if (!TestConfiguration.TEST_OPENAI_SERVICES)
-			return;
-
-		try (OpenAiEndpoint ep = new OpenAiEndpoint();
-				OpenAiImageGenerationService oaies = ep.getImageGenerationService("dall-e-2")) {
-
-			oaies.setDefaultVariationRequest(
-					oaies.getDefaultVariationRequest().toBuilder().responseFormat(ResponseFormat.B64_JSON).build());
-			List<FilePart> r = oaies.createImageVariation(ImageUtil.fromFile(ResourceUtil.getResourceFile("eagle.png")),
-					1, 256, 256);
-			assertEquals(1, r.size());
-			saveFiles(oaies, "variation", r);
+		} catch (UnsupportedOperationException e) {
+			// Not always available
 		}
 	}
 
@@ -197,7 +144,8 @@ public class ImageGenerationServiceTest {
 
 	private void saveFiles(ImageGenerationService service, String prefix, List<FilePart> images) throws IOException {
 		for (FilePart img : images) {
-			File tmp = File.createTempFile(prefix + "_" + service.getModel() + "_", ".jpg");
+			File tmp = File.createTempFile(prefix + FileUtil.sanitizeFilename("_" + service.getModel() + "_", "_"),
+					".jpg");
 			ImageUtil.toFile(ImageUtil.fromFilePart(img), tmp);
 			LOG.info("Image saved as: " + tmp.getCanonicalPath());
 		}

@@ -31,8 +31,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import io.github.mzattera.predictivepowers.TestConfiguration;
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.util.ResourceUtil;
 

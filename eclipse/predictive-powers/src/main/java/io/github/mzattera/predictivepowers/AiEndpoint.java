@@ -22,8 +22,6 @@ import io.github.mzattera.predictivepowers.services.CompletionService;
 import io.github.mzattera.predictivepowers.services.EmbeddingService;
 import io.github.mzattera.predictivepowers.services.ImageGenerationService;
 import io.github.mzattera.predictivepowers.services.ModelService;
-import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
-import io.github.mzattera.predictivepowers.services.QuestionExtractionService;
 import lombok.NonNull;
 
 /**
@@ -57,14 +55,6 @@ public interface AiEndpoint extends Endpoint {
 	AgentService getAgentService();
 
 	AgentService getAgentService(@NonNull String model);
-
-	QuestionExtractionService getQuestionExtractionService();
-
-	QuestionExtractionService getQuestionExtractionService(@NonNull String model);
-
-	QuestionAnsweringService getQuestionAnsweringService();
-
-	QuestionAnsweringService getQuestionAnsweringService(@NonNull String model);
 
 	ImageGenerationService getImageGenerationService();
 

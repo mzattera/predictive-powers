@@ -16,9 +16,8 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
-import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.anthropic.client.AnthropicEndpoint;
-import io.github.mzattera.predictivepowers.services.ChatService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 
@@ -27,13 +26,8 @@ public class VisionApiExample {
 	public static void main(String[] args) throws Exception {
 
 		try (
-				// Uncomment the below code to use OpenAI
-				// OpenAiEndpoint endpoint = new OpenAiEndpoint();
-				// Agent bot = endpoint.getChatService("gpt-4-vision-preview");
-
-				// Uncomment the below code to use ANTHROP\C API
-				AiEndpoint endpoint = new AnthropicEndpoint();
-				ChatService bot = endpoint.getChatService();
+				 OpenAiEndpoint endpoint = new OpenAiEndpoint();
+				 Agent bot = endpoint.getChatService("gpt-4-vision-preview");
 		) {
 
 			// Build the message to send

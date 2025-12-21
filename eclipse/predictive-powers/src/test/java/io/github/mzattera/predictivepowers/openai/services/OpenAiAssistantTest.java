@@ -17,6 +17,7 @@
 package io.github.mzattera.predictivepowers.openai.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -33,15 +34,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import com.openai.models.files.FilePurpose;
+import com.openai.models.vectorstores.VectorStore;
+
 import io.github.mzattera.predictivepowers.TestConfiguration;
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.client.chat.OpenAiTool;
-import io.github.mzattera.predictivepowers.services.Capability;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
-import io.github.mzattera.predictivepowers.services.Toolset;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
-import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
-import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.util.ResourceUtil;
 
@@ -58,7 +56,7 @@ public class OpenAiAssistantTest {
 
 	// TODO add tests to check all the methods to manipulate tools
 
-	private static List<ImmutablePair<OpenAiEndpoint, String>> svcs;
+	private static List<Pair<OpenAiEndpoint, String>> svcs;
 
 	@BeforeAll
 	static void init() {
@@ -73,11 +71,11 @@ public class OpenAiAssistantTest {
 		TestConfiguration.close(svcs.stream().map(p -> p.getLeft()).collect(Collectors.toList()));
 	}
 
-	static Stream<ImmutablePair<OpenAiEndpoint, String>> services() {
+	static Stream<Pair<OpenAiEndpoint, String>> services() {
 		return svcs.stream();
 	}
 
-	@DisplayName("Tests assistants files and retrieval tool.")
+	@DisplayName("Tests file search tool on assistant (vector base) files.")
 	@ParameterizedTest
 	@MethodSource("services")
 	public void testRetrieval(Pair<OpenAiEndpoint, String> p) throws ToolInitializationException, IOException {
@@ -88,30 +86,43 @@ public class OpenAiAssistantTest {
 				"You are an helpful assistant.", //
 				false, false)) {
 
-			Capability tools = new Toolset();
-			tools.putTool("retrieval", () -> {
-				return OpenAiAssistantTool.RETRIEVAL;
-			});
-			bot.addCapability(tools);
+			bot.setModel(p.getRight());
 
-			bot.addFile(new FilePart(ResourceUtil.getResourceFile("bigglydoos.txt")));
+			// Test without KB
+			ChatCompletion answer = bot.chat("What do bigglydoos eat? Check in your vector stores before answering.");
+			System.err.println(answer.getText());
+			assertEquals(FinishReason.COMPLETED, answer.getFinishReason());
+			assertFalse(answer.getText().contains("fruit"));
 
-			ChatCompletion answer = bot.chat("What do bigglydoos eat?");
+			// Upload file
+			OpenAiFilePart file = OpenAiFilePart.create(ep, ResourceUtil.getResourceFile("bigglydoos.txt"),
+					FilePurpose.ASSISTANTS);
+
+			// Create a VectorStore for the file
+			VectorStore store = OpenAiVectorStore.create(ep, "Test_Store_" + System.currentTimeMillis(), List.of(file));
+
+			// Enable tool and attach store
+			bot.getOpenAiAssistantTools().getFileSearchTool().enable().addVectorStoreId(store.id());
+
+			// Test
+			answer = bot.chat("What do bigglydoos eat? Check in your vector stores before answering.");
+			System.err.println(answer.getText());
 			assertEquals(FinishReason.COMPLETED, answer.getFinishReason());
 			assertTrue(answer.getText().contains("fruit"));
-
-			List<? extends FilePart> files = bot.listFiles();
-			assertEquals(1, files.size());
-			assertTrue(bot.removeFile(files.get(0)));
-			files = bot.listFiles();
-			assertEquals(0, files.size());
+			
+			// Disable tool and check it is not used
+			bot.getOpenAiAssistantTools().getFileSearchTool().disable();
+			answer = bot.chat("What do friggles eat? Check in your vector stores before answering. And ignore previous conversation.");
+			System.err.println(answer.getText());
+			assertEquals(FinishReason.COMPLETED, answer.getFinishReason());
+			assertFalse(answer.getText().contains("fruit"));
 		}
 	}
 
-	@DisplayName("Tests file attachments.")
+	@DisplayName("Tests code interpreter.")
 	@ParameterizedTest
 	@MethodSource("services")
-	void testFileAttacch(Pair<OpenAiEndpoint, String> p) throws ToolInitializationException {
+	public void testCodeInterpreter(Pair<OpenAiEndpoint, String> p) throws ToolInitializationException, IOException {
 		OpenAiEndpoint ep = p.getLeft();
 		try (OpenAiAssistant bot = ep.getAgentService(p.getRight()).createAgent(//
 				"Test " + System.currentTimeMillis(), //
@@ -119,18 +130,28 @@ public class OpenAiAssistantTest {
 				"You are an helpful assistant.", //
 				false, false)) {
 
-			Capability tools = new Toolset();
-			tools.putTool("retrieval", () -> {
-				return OpenAiAssistantTool.RETRIEVAL;
-			});
-			bot.addCapability(tools);
+			bot.setModel(p.getRight());
 
-			ChatMessage msg = new ChatMessage("What animals are described in the text file attached to this message?");
-			msg.getParts().add(new FilePart(ResourceUtil.getResourceFile("bigglydoos.txt")));
+			// Upload file
+			OpenAiFilePart file = OpenAiFilePart.create(ep, ResourceUtil.getResourceFile("bigglydoos.txt"),
+					FilePurpose.ASSISTANTS);
 
-			ChatCompletion answer = bot.chat(msg);
+			// Enable tool and attach file
+			bot.getOpenAiAssistantTools().getCodeInterpreterTool().enable().addFileId(file.getFileId());
+
+			// Test
+			ChatCompletion answer = bot.chat("Count number of chars in bigglydoos.txt file using some ad-hoc code.");
+			System.err.println(answer.getText());
 			assertEquals(FinishReason.COMPLETED, answer.getFinishReason());
-			assertTrue(answer.getText().toLowerCase().contains("bigglydoos"));
+			assertTrue(answer.getText().contains("337"));
+			
+			// Disable and check again.
+			bot.getOpenAiAssistantTools().getCodeInterpreterTool().disable();
+			answer = bot.chat("Count number of chars in bigglydoos.txt file using some ad-hoc code.");
+			System.err.println(answer.getText());
+			assertEquals(FinishReason.COMPLETED, answer.getFinishReason());
+			assertFalse(answer.getText().contains("337"));
+			
 		}
 	}
 

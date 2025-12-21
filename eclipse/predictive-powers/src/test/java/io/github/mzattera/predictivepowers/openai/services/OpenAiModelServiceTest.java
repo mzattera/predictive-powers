@@ -16,6 +16,7 @@
 package io.github.mzattera.predictivepowers.openai.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -49,7 +50,6 @@ import com.openai.models.chat.completions.ChatCompletionUserMessageParam;
 
 import io.github.mzattera.predictivepowers.TestConfiguration;
 import io.github.mzattera.predictivepowers.examples.FunctionCallExample.GetCurrentWeatherTool;
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
 import io.github.mzattera.predictivepowers.openai.util.OpenAiUtil;
@@ -105,11 +105,12 @@ class OpenAiModelServiceTest {
 				assertEquals(model, md.getModel(), "Model mismatch: " + model + " " + md.getModel());
 
 				// Check that tokenizer and context size are provided
-				if (!md.getSupportedApis().contains(SupportedApi.CHAT)
+				if ((!md.getSupportedApis().contains(SupportedApi.CHAT)
 						&& !md.getSupportedApis().contains(SupportedApi.ASSISTANTS) //
-						&& !md.getSupportedApis().contains(SupportedApi.RESPONSES) //
+						&& !md.getSupportedApis().contains(SupportedApi.RESPONSES)) //
 						|| "codex-mini-latest".equals(model) // TODO Add tokenizer once we find out what it is
-						|| model.startsWith("computer-use-preview")) // TODO Add tokenizer once we find out what it is
+						|| model.startsWith("computer-use-preview") // TODO Add tokenizer once we find out what it is
+						|| model.startsWith("gpt-realtime")) // TODO Add tokenizer once we find out what it is
 					continue;
 				assertTrue(modelSvc.getTokenizer(model) != null);
 				assertTrue(modelSvc.getContextSize(model, -1) > 0);
@@ -135,7 +136,7 @@ class OpenAiModelServiceTest {
 
 	@ParameterizedTest
 	@MethodSource("services")
-	@DisplayName("Check function call mode incl. strict")
+	@DisplayName("Check function call mode incl. strict mode support")
 	@SuppressWarnings({ "deprecation", "unchecked" })
 	public void testCallMode(OpenAiModelService modelSvc) throws Exception {
 		try (modelSvc;
@@ -145,6 +146,9 @@ class OpenAiModelServiceTest {
 			List<String> oaiModels = modelSvc.listModels();
 			for (String model : oaiModels) {
 
+				// TODO URGENT REMOVE
+//				if (!"gpt-5-mini-2025-08-07".equals(model)) continue;
+				
 				if (OLD_MODELS.contains(model))
 					continue; // Skip old models
 
@@ -249,8 +253,8 @@ class OpenAiModelServiceTest {
 
 	@ParameterizedTest
 	@MethodSource("services")
-	@DisplayName("Check strict mode format")
-	public void testStrictMode(OpenAiModelService modelSvc) throws JsonProcessingException {
+	@DisplayName("Check strict mode format for responses")
+	public void testStrictOutputFormatMode(OpenAiModelService modelSvc) throws JsonProcessingException {
 		try (modelSvc; OpenAiChatService chatSvc = modelSvc.getEndpoint().getChatService();) {
 
 			JsonSchema schema = JsonSchema.fromSchema(GetCurrentWeatherTool.Parameters.class);
@@ -273,6 +277,8 @@ class OpenAiModelServiceTest {
 			List<String> oaiModels = modelSvc.listModels();
 			for (String model : oaiModels) {
 
+//				if (!"gpt-4o-search".equals(model)) continue;
+				
 				if (OLD_MODELS.contains(model))
 					continue; // Skip old models
 
@@ -311,6 +317,7 @@ class OpenAiModelServiceTest {
 
 		try (modelSvc; OpenAiChatService chatSvc = modelSvc.getEndpoint().getChatService();) {
 
+			boolean error = false;
 			List<String> oaiModels = modelSvc.listModels();
 			for (String model : oaiModels) {
 
@@ -326,32 +333,38 @@ class OpenAiModelServiceTest {
 					continue; // TODO test audio models
 
 				chatSvc.setModel(model);
-				String prompt = ". /".repeat(modelSvc.getContextSize(model));
+				String prompt = "T0KKns".repeat(modelSvc.getContextSize(model) / 4 + 10);
 
 				try {
 					chatSvc.chat(prompt);
 					assertTrue(false, "Call should have failed.");
 				} catch (OpenAIException e) {
 					int max = OpenAiUtil.getExceptionData(e).getContextSize();
-					System.out.println(model + " context is " + max);
 					if (max < 0) {
 						// we cannot test
 						System.out.println("\t--" + e.getMessage());
 						continue;
 					}
-					assertEquals(max, md.getContextSize());
+
+					if (max != md.getContextSize()) {
+						System.err.println(model + " context is " + max + " and now set to " + md.getContextSize());
+						error = true;
+					}
 				}
-			} // Close endpoint
-		}
+			}
+
+			assertFalse(error, "An error occurred testing model context lenght; check error console.");
+		} // Close endpoint
 	}
 
-@ParameterizedTest
+	@ParameterizedTest
 	@MethodSource("services")
 	@DisplayName("Check max new tokens")
 	public void testMaxNewTkn(OpenAiModelService modelSvc) {
 
 		try (modelSvc; OpenAiChatService chatSvc = modelSvc.getEndpoint().getChatService();) {
 
+			boolean error = false;
 			List<String> oaiModels = modelSvc.listModels();
 			for (String model : oaiModels) {
 
@@ -386,60 +399,19 @@ class OpenAiModelServiceTest {
 						System.out.println("\t--" + e.getMessage());
 						continue;
 					}
-					assertEquals(max, md.getMaxNewTokens());
+
+					if (max != md.getMaxNewTokens()) {
+						System.err.println(
+								model + " max new token is " + max + " and now set to " + md.getMaxNewTokens());
+						error = true;
+					}
 				}
-			} // Close endpoint
-		}
+			}
+
+			assertFalse(error, "An error occurred testing model max output lenght; check error console.");
+		} // Close endpoint
 	}
-	
+
 // TODO URGENT Test that vision and audio support are set correctly by sending images & audio
 // If you do, probably you can remove testing audio files
-
-//	@ParameterizedTest
-//	@MethodSource("services")
-	@DisplayName("Check audio and video support")
-	public void testAudioVideo(OpenAiModelService modelSvc) {
-
-		try (modelSvc; OpenAiChatService chatSvc = modelSvc.getEndpoint().getChatService();) {
-
-			List<String> oaiModels = modelSvc.listModels();
-			for (String model : oaiModels) {
-
-				if (OLD_MODELS.contains(model))
-					continue; // Skip old models
-
-				OpenAiModelMetaData md = modelSvc.get(model);
-				assertTrue(md != null, "Missing model: " + model);
-
-				if (!md.supportsApi(SupportedApi.CHAT))
-					continue; // TODO test with ASSISTANTS or RESPONSE
-				if (md.supportsAudioInput() || md.supportsAudioOutput())
-					continue; // TODO test audio models
-
-				chatSvc.setModel(model);
-				chatSvc.setMaxNewTokens(1_047_576 * 5);
-				chatSvc.setDefaultRequest(
-						chatSvc.getDefaultRequest().toBuilder()
-								.messages(List.of(ChatCompletionMessageParam
-										.ofUser(ChatCompletionUserMessageParam.builder().content("Hello").build())))
-								.build());
-				System.out.println(model + " max new tokens is " + md.getMaxNewTokens());
-
-				try {
-					// Must bypass the call to cause exception
-					modelSvc.getEndpoint().getClient().chat().completions().create(chatSvc.getDefaultRequest());
-					assertTrue(false, "Call should have failed.");
-				} catch (OpenAIException e) {
-					int max = OpenAiUtil.getExceptionData(e).getMaxNewTokens();
-					if (max < 0) {
-						// we cannot test
-						System.out.println("\t--" + e.getMessage());
-						continue;
-					}
-					assertEquals(max, md.getMaxNewTokens());
-				}
-			} // Close endpoint
-		}
-	}
-	
 }

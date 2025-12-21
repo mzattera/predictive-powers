@@ -25,6 +25,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Tool;
+import io.github.mzattera.predictivepowers.services.messages.MessagePart.Type;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -34,7 +35,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 /**
- * {@link Agent}s can invoke tools. This interface represents a single tool
+ * {@link Agent}s can invoke tools. This class represents a single tool
  * invocation, as part of a message.
  * 
  * @author Massimiliano "Maxi" Zattera
@@ -137,6 +138,12 @@ public class ToolCall implements MessagePart {
 	 */
 	@NonNull
 	private Map<String, Object> arguments = new HashMap<>();
+	
+	@Override
+	public Type getType() {
+		return Type.TOOL_CALL;
+	}
+	
 
 	/**
 	 * 

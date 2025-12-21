@@ -20,9 +20,9 @@
 package io.github.mzattera.predictivepowers.services;
 
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.List;
 
+import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.util.ImageUtil;
 import lombok.AccessLevel;
@@ -47,16 +47,28 @@ public abstract class AbstractImageGenerationService implements ImageGenerationS
 
 	@Override
 	public List<FilePart> createImageVariation(@NonNull BufferedImage prompt, int n, int width, int height)
-			throws IOException {
+			throws EndpointException {
 
-		return createImageVariation(ImageUtil.toFilePart(prompt), n, width, height);
+		try {
+			return createImageVariation(ImageUtil.toFilePart(prompt), n, width, height);
+		} catch (Exception e) {
+			if (e instanceof EndpointException)
+				throw (EndpointException) e;
+			throw new EndpointException(e);
+		}
 	}
 
 	@Override
 	public List<FilePart> createImageEdit(@NonNull BufferedImage image, @NonNull String prompt, BufferedImage mask,
-			int n, int width, int height) throws IOException {
+			int n, int width, int height) throws EndpointException {
 
-		return createImageEdit(ImageUtil.toFilePart(image), prompt, ImageUtil.toFilePart(mask), n, width, height);
+		try {
+			return createImageEdit(ImageUtil.toFilePart(image), prompt, ImageUtil.toFilePart(mask), n, width, height);
+		} catch (Exception e) {
+			if (e instanceof EndpointException)
+				throw (EndpointException) e;
+			throw new EndpointException(e);
+		}
 	}
 
 	@Override

@@ -18,6 +18,7 @@ package io.github.mzattera.predictivepowers.services;
 
 import java.util.List;
 
+import io.github.mzattera.predictivepowers.EndpointException;
 import lombok.NonNull;
 
 /**
@@ -38,7 +39,7 @@ public interface AgentService extends AiService {
 	 * 
 	 * @return IDs of existing agents that this service can provide.
 	 */
-	List<String> getAgentIDs();
+	List<String> getAgentIDs() throws EndpointException;
 
 	/**
 	 * Creates a new agent.
@@ -49,7 +50,7 @@ public interface AgentService extends AiService {
 	 * 
 	 * @return Newly created agent.
 	 */
-	Agent createAgent(@NonNull String name, String description, String personality);
+	Agent createAgent(@NonNull String name, String description, String personality) throws EndpointException;
 
 	/**
 	 * Creates a new agent.
@@ -62,7 +63,8 @@ public interface AgentService extends AiService {
 	 * 
 	 * @return Newly created agent.
 	 */
-	Agent createAgent(@NonNull String name, String description, String personality, String model);
+	Agent createAgent(@NonNull String name, String description, String personality, String model)
+			throws EndpointException;
 
 	/**
 	 * Gets the "default" agent. The purpose if this method is return an agent any
@@ -73,14 +75,14 @@ public interface AgentService extends AiService {
 	 *         implementation a new agent might be created, or an existing one
 	 *         reused.
 	 */
-	Agent getAgent();
+	Agent getAgent() throws EndpointException;
 
 	/**
 	 * 
 	 * @param agentId
 	 * @return An agent from its unique ID.
 	 */
-	Agent getAgent(@NonNull String agentId);
+	Agent getAgent(@NonNull String agentId) throws EndpointException;
 
 	/**
 	 * Deletes an agent.
@@ -88,5 +90,5 @@ public interface AgentService extends AiService {
 	 * @param agentId
 	 * @return True if and only if agent was successfully deleted.
 	 */
-	boolean deleteAgent(@NonNull String agentId);
+	boolean deleteAgent(@NonNull String agentId) throws EndpointException;
 }

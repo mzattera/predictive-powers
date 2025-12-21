@@ -19,6 +19,7 @@ package io.github.mzattera.predictivepowers.services;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.services.messages.TextCompletion;
 
 /**
@@ -33,7 +34,7 @@ public interface CompletionService extends AiService {
 
 	// TODO URGENT: decide whether responseFormat should also go here... maybe not;
 	// if yes, then a method is needed to deserialize the responses
-	
+
 	/**
 	 * Number of top tokens considered within the sample operation to create new
 	 * text.
@@ -95,12 +96,12 @@ public interface CompletionService extends AiService {
 	/**
 	 * Completes text (executes given prompt).
 	 */
-	TextCompletion complete(String prompt);
+	TextCompletion complete(String prompt) throws EndpointException;
 
 	/**
 	 * Inserts text between given prompt and the suffix.
 	 */
-	TextCompletion insert(String prompt, String suffix);
+	TextCompletion insert(String prompt, String suffix) throws EndpointException;
 
 	/**
 	 * Replaces 'slots' in a prompt.
@@ -116,7 +117,8 @@ public interface CompletionService extends AiService {
 	 * @param parameters
 	 * @return
 	 */
-	// TODO URGENT Move this somewhare else (maybe in an utility class?) ->update documentation online
+	// TODO URGENT Move this somewhare else (maybe in an utility class?) ->update
+	// documentation online
 	public static String fillSlots(String prompt, Map<String, ? extends Object> parameters) {
 		if ((prompt == null) || (parameters == null))
 			return prompt;

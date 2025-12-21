@@ -17,7 +17,7 @@
 package io.github.mzattera.predictivepowers.examples;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.client.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 
 public class CompletionExample {

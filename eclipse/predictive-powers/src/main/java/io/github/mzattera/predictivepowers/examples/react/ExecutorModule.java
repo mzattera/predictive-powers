@@ -91,7 +91,8 @@ public class ExecutorModule extends OpenAiChatService {
 			+ "  * **IMPORTANTLY**, when you output a final step with status=\"ERROR\", clearly and in detail describe in the \"observation\" field the reason of your failure. If the command lacked any necessary information, list missing information clearly and in detail. Suggest to the user any change or additions they could do to the command to help you to execute it.\n"
 			+ "  * **IMPORTANTLY**, in all other cases, use status=\"IN_PROGRESS\", **STRICTLY** try to avoid this, rather use tool calls if you still have steps left to execute."
 			+ "  * The format of the last step to output is described by the below JSON schema in <output_schema> tag; use this very format when outputting the final step.\n" //
-			+ "\n<output_schema>\n" + JsonSchema.getJsonSchema(Step.class) + "\n</output_schema>\n" + "\n# Examples\n\n" //
+			+ "\n<output_schema>\n" + JsonSchema.getJsonSchema(Step.class) + "\n</output_schema>\n" //
+			+ "\n# Examples\n\n" //
 			+ "Input & Context:\n\n" //
 			+ "<user_command>Update J. Doe data with newest information.</user_command> and you realize data for J. Doe is already up-to-date.\n" //
 			+ "\nCorrect Output:\n\n" //
@@ -142,11 +143,31 @@ public class ExecutorModule extends OpenAiChatService {
 			+ "<Issuing a tool call to send the email>\n" //
 			+ "\nIncorrect Output:\n\n" //
 			+ "{\n" //
+			+ "	 \"status\" : \"IN_PROGRESS\",\n" //
 			+ "  \"actor\" : <your ID here>,\n" //
 			+ "  \"thought\" : \"The process requires that I must send an email to the user.\",\n" //
 			+ "  \"observation\" : \"Proceeding to send an email to user.\"\n" //
 			+ "}\n" //
 			+ "\n---\n\n" //
+			+ "Input & Context:\n\n" //
+			+ "<steps>[...<several steps before last one>\n" //
+			+ "{\n" //
+			+ "	 \"status\" : \"IN_PROGRESS\",\n" //
+			+ "  \"actor\" : <your ID here>,\n" //
+			+ "  \"thought\" : \"The process requires that I must send an email to the user.\",\n" //
+			+ "  \"observation\" : \"Proceeding to send an email to user.\"\n" //
+			+ "}\n" //
+			+ "</steps>\n" //
+			+ "\nCorrect Output:\n\n" //
+			+ "<Issuing a tool call to send the email>\n" //
+			+ "\nIncorrect Output:\n\n" //
+			+ "{\n" //
+			+ "	 \"status\" : \"IN_PROGRESS\",\n" //
+			+ "  \"actor\" : <your ID here>,\n" //
+			+ "  \"thought\" : \"The process requires that I must send an email to the user.\",\n" //
+			+ "  \"observation\" : \"Proceeding to send an email to user.\"\n" //
+			+ "}\n" //
+			+ "\n---\n\n" //		
 			+ "Input & Context:\n\n" //
 			+ "<steps>[{\n" //
 			+ "  \"actor\" : <your ID here>,\n" //
@@ -223,6 +244,8 @@ public class ExecutorModule extends OpenAiChatService {
 	@Setter
 	private boolean checkLastStep;
 
+	// TODO URGENT move command and steps to the main agent ....everything accessible globally should go there
+	
 	/**
 	 * Current command being executed.
 	 */

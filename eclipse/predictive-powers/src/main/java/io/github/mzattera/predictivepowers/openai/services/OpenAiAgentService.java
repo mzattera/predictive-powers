@@ -27,7 +27,8 @@ import com.openai.models.beta.assistants.Assistant;
 import com.openai.models.beta.assistants.AssistantCreateParams;
 import com.openai.models.beta.assistants.AssistantCreateParams.Metadata;
 
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.EndpointException;
+import io.github.mzattera.predictivepowers.openai.util.OpenAiUtil;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.AgentService;
 import lombok.Getter;
@@ -61,10 +62,14 @@ public class OpenAiAgentService implements AgentService {
 	}
 
 	@Override
-	public List<String> getAgentIDs() {
+	public List<String> getAgentIDs() throws EndpointException {
 
-		return endpoint.getClient().beta().assistants().list().autoPager().stream().map(a -> a.id())
-				.collect(Collectors.toList());
+		try {
+			return endpoint.getClient().beta().assistants().list().autoPager().stream().map(a -> a.id())
+					.collect(Collectors.toList());
+		} catch (Exception e) {
+			throw OpenAiUtil.toEndpointException(e);
+		}
 	}
 
 	@Override
@@ -107,59 +112,75 @@ public class OpenAiAgentService implements AgentService {
 	 * @return
 	 */
 	public OpenAiAssistant createAgent(@NonNull String name, String description, String model, String personality,
-			boolean persist, boolean isDefault) {
+			boolean persist, boolean isDefault) throws EndpointException {
 
-		// Mark this newly created agent such that CleanupUtil does not delete it.
-		Metadata metadata = AssistantCreateParams.Metadata.builder() //
-				.putAdditionalProperty("_persist", JsonValue.from(persist ? "true" : "false")) //
-				.putAdditionalProperty("_isDefaultAgent", JsonValue.from(isDefault ? "true" : "false")).build();
+		try {
+			// Mark this newly created agent such that CleanupUtil does not delete it.
+			Metadata metadata = AssistantCreateParams.Metadata.builder() //
+					.putAdditionalProperty("_persist", JsonValue.from(persist ? "true" : "false")) //
+					.putAdditionalProperty("_isDefaultAgent", JsonValue.from(isDefault ? "true" : "false")).build();
 
-		Assistant assistant = endpoint.getClient().beta().assistants().create(AssistantCreateParams.builder() //
-				.model(model == null ? this.model : model) //
-				.name(name) //
-				.description(description) //
-				.instructions(personality) //
-				.metadata(metadata).build());
+			Assistant assistant = endpoint.getClient().beta().assistants().create(AssistantCreateParams.builder() //
+					.model(model == null ? this.model : model) //
+					.name(name) //
+					.description(description) //
+					.instructions(personality) //
+					.metadata(metadata).build());
 
-		return new OpenAiAssistant(this, assistant.id());
-	}
-
-	@Override
-	public OpenAiAssistant getAgent() {
-
-		for (String id : getAgentIDs()) {
-			OpenAiAssistant assistant = getAgent(id);
-			if (assistant == null) // paranoid
-				continue;
-
-			// More paranoid guards
-			JsonValue def = assistant.getAssistantData().metadata().orElse(Assistant.Metadata.builder().build()) //
-					._additionalProperties().get("_isDefaultAgent");
-			boolean isDefault = (def.isMissing() || def.isNull()) ? false : "true".equals(def.toString());
-
-			if (isDefault && model.equals(assistant.getModel()))
-				return assistant;
-			else
-				assistant.close();
-			;
+			return new OpenAiAssistant(this, assistant.id());
+		} catch (Exception e) {
+			throw OpenAiUtil.toEndpointException(e);
 		}
-
-		// Create a persisted default agent for this model
-		return createAgent("OpenAI Assistant [" + model + "]", //
-				"This is the \"default\" assistant implemented using OpenAI " + model
-						+ " model and the assistants API.", //
-				"You are an helpful and polite assistant.", //
-				true, true);
 	}
 
 	@Override
-	public OpenAiAssistant getAgent(@NonNull String agentId) {
-		return new OpenAiAssistant(this, agentId);
+	public OpenAiAssistant getAgent() throws EndpointException {
+
+		try {
+			for (String id : getAgentIDs()) {
+				OpenAiAssistant assistant = getAgent(id);
+				if (assistant == null) // paranoid
+					continue;
+
+				// More paranoid guards
+				JsonValue def = assistant.getAssistantData().metadata().orElse(Assistant.Metadata.builder().build()) //
+						._additionalProperties().get("_isDefaultAgent");
+				boolean isDefault = (def.isMissing() || def.isNull()) ? false : "true".equals(def.toString());
+
+				if (isDefault && model.equals(assistant.getModel()))
+					return assistant;
+				else
+					assistant.close();
+				;
+			}
+
+			// Create a persisted default agent for this model
+			return createAgent("OpenAI Assistant [" + model + "]", //
+					"This is the \"default\" assistant implemented using OpenAI " + model
+							+ " model and the assistants API.", //
+					"You are an helpful and polite assistant.", //
+					true, true);
+		} catch (Exception e) {
+			throw OpenAiUtil.toEndpointException(e);
+		}
 	}
 
 	@Override
-	public boolean deleteAgent(@NonNull String agentId) {
-		return endpoint.getClient().beta().assistants().delete(agentId)._deleted().asBoolean().get();
+	public OpenAiAssistant getAgent(@NonNull String agentId) throws EndpointException {
+		try {
+			return new OpenAiAssistant(this, agentId);
+		} catch (Exception e) {
+			throw OpenAiUtil.toEndpointException(e);
+		}
+	}
+
+	@Override
+	public boolean deleteAgent(@NonNull String agentId) throws EndpointException {
+		try {
+			return endpoint.getClient().beta().assistants().delete(agentId)._deleted().asBoolean().get();
+		} catch (Exception e) {
+			throw OpenAiUtil.toEndpointException(e);
+		}
 	}
 
 	@Override

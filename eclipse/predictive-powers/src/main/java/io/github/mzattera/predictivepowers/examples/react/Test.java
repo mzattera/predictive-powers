@@ -18,7 +18,7 @@ package io.github.mzattera.predictivepowers.examples.react;
 
 import java.util.List;
 
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.messages.JsonSchema;
 
 public class Test {

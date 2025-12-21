@@ -26,11 +26,12 @@ import java.util.stream.Collectors;
 
 import com.openai.models.models.Model;
 
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.CallType;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
+import io.github.mzattera.predictivepowers.openai.util.OpenAiUtil;
 import io.github.mzattera.predictivepowers.services.AbstractModelService;
-import io.github.mzattera.predictivepowers.services.ModelService.ModelMetaData.Mode;
+import io.github.mzattera.predictivepowers.services.ModelService.ModelMetaData.Modality;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
@@ -43,6 +44,10 @@ import lombok.ToString;
  */
 public class OpenAiModelService extends AbstractModelService {
 
+	// TODO URGENT: When introducing Azure this need to be changed so deployments
+	// can be mapped
+	// into actual modes to get their parameters
+
 	@ToString(callSuper = true)
 	public static class OpenAiModelMetaData extends ModelMetaData {
 
@@ -52,7 +57,7 @@ public class OpenAiModelService extends AbstractModelService {
 
 		public enum SupportedApi {
 			CHAT, RESPONSES, REALTIME, ASSISTANTS, BATCH, FINE_TUNING, EMBEDDINGS, IMAGES, SPEECH_GENERATION,
-			TRANSCRIPTION, TRANSLATION, MODERATION, COMPLETIONS
+			TRANSCRIPTION, TRANSLATION, MODERATION, COMPLETIONS, VIDEOS
 		}
 
 		public static final class Builder {
@@ -82,22 +87,22 @@ public class OpenAiModelService extends AbstractModelService {
 				return this;
 			}
 
-			public Builder inputModes(List<Mode> modes) {
+			public Builder inputModes(List<Modality> modes) {
 				meta.setInputModes(java.util.Objects.requireNonNull(modes));
 				return this;
 			}
 
-			public Builder addInputMode(Mode mode) {
+			public Builder addInputMode(Modality mode) {
 				meta.getInputModes().add(java.util.Objects.requireNonNull(mode));
 				return this;
 			}
 
-			public Builder outputModes(List<Mode> modes) {
+			public Builder outputModes(List<Modality> modes) {
 				meta.setOutputModes(java.util.Objects.requireNonNull(modes));
 				return this;
 			}
 
-			public Builder addOutputMode(Mode mode) {
+			public Builder addOutputMode(Modality mode) {
 				meta.getOutputModes().add(java.util.Objects.requireNonNull(mode));
 				return this;
 			}
@@ -234,12 +239,13 @@ public class OpenAiModelService extends AbstractModelService {
 	private static final List<SupportedApi> BATCH_EMBEDDINGS = List.of(SupportedApi.BATCH, SupportedApi.EMBEDDINGS);
 	private static final List<SupportedApi> MODERATION = List.of(SupportedApi.MODERATION);
 
-	private static final List<Mode> TEXT = List.of(Mode.TEXT);
-	private static final List<Mode> IMAGE = List.of(Mode.IMAGE);
-	private static final List<Mode> AUDIO = List.of(Mode.AUDIO);
-	private static final List<Mode> EMBEDDINGS = List.of(Mode.EMBEDDINGS);
-	private static final List<Mode> TEXT_IMAGE = List.of(Mode.TEXT, Mode.IMAGE);
-	private static final List<Mode> TEXT_AUDIO = List.of(Mode.TEXT, Mode.AUDIO);
+	private static final List<Modality> TEXT = List.of(Modality.TEXT);
+	private static final List<Modality> IMAGE = List.of(Modality.IMAGE);
+	private static final List<Modality> AUDIO = List.of(Modality.AUDIO);
+	private static final List<Modality> EMBEDDINGS = List.of(Modality.EMBEDDINGS);
+	private static final List<Modality> TEXT_IMAGE = List.of(Modality.TEXT, Modality.IMAGE);
+	private static final List<Modality> TEXT_AUDIO = List.of(Modality.TEXT, Modality.AUDIO);
+	private static final List<Modality> TEXT_IMAGE_AUDIO = List.of(Modality.TEXT, Modality.AUDIO, Modality.IMAGE);
 
 	/* ====================================================================== */
 	/* MODEL CONFIGURATION */
@@ -270,13 +276,6 @@ public class OpenAiModelService extends AbstractModelService {
 				.strictModeToolCall(false).supportedApis(CHAT_RESPONSES_ASSISTANTS_BATCH) //
 				.supportedCallType(CallType.TOOLS).build());
 
-		MODEL_CONFIG.put("o1-preview",
-				new OpenAiModelMetaData.Builder().model("o1-preview")
-						.tokenizer(OpenAiTokenizer.getTokenizer("o1-preview")).contextSize(128_000).maxNewTokens(32_768)
-						.inputModes(TEXT).outputModes(TEXT).supportedApis(CHAT_ASSISTANTS)
-						.supportedCallType(CallType.NONE)
-						.structuredOutput(false).build());
-
 		MODEL_CONFIG.put("o1-pro",
 				new OpenAiModelMetaData.Builder().model("o1-pro").tokenizer(OpenAiTokenizer.getTokenizer("o1-pro"))
 						.contextSize(200_000).maxNewTokens(100_000).inputModes(TEXT_IMAGE).outputModes(TEXT_IMAGE)
@@ -286,6 +285,12 @@ public class OpenAiModelService extends AbstractModelService {
 				new OpenAiModelMetaData.Builder().model("codex-mini-latest")
 						.tokenizer(OpenAiTokenizer.getTokenizer("codex-mini-latest")).contextSize(200_000)
 						.maxNewTokens(100_000).inputModes(TEXT_IMAGE).outputModes(TEXT)
+						.supportedApis(List.of(SupportedApi.RESPONSES)).supportedCallType(CallType.TOOLS).build());
+
+		MODEL_CONFIG.put("gpt-5-codex",
+				new OpenAiModelMetaData.Builder().model("gpt-5-codex")
+						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-5-codex")).contextSize(400_000)
+						.maxNewTokens(128_000).inputModes(TEXT_IMAGE).outputModes(TEXT)
 						.supportedApis(List.of(SupportedApi.RESPONSES)).supportedCallType(CallType.TOOLS).build());
 
 		// Flagship Chat Models
@@ -302,8 +307,9 @@ public class OpenAiModelService extends AbstractModelService {
 
 		// Structured output and max new tokens different than 4o
 		MODEL_CONFIG.put("gpt-4o-2024-05-13",
-				new OpenAiModelMetaData.Builder().model("gpt-4o-2024-05-13").tokenizer(OpenAiTokenizer.getTokenizer("gpt-4o"))
-						.contextSize(128_000).maxNewTokens(4096).inputModes(TEXT_IMAGE).outputModes(TEXT_IMAGE)
+				new OpenAiModelMetaData.Builder().model("gpt-4o-2024-05-13")
+						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-4o")).contextSize(128_000).maxNewTokens(4096)
+						.inputModes(TEXT_IMAGE).outputModes(TEXT_IMAGE)
 						.supportedApis(CHAT_RESPONSES_ASSISTANTS_BATCH_FINE_TUNING).supportedCallType(CallType.TOOLS)
 						.structuredOutput(false).build());
 
@@ -313,12 +319,39 @@ public class OpenAiModelService extends AbstractModelService {
 						.maxNewTokens(16_384).inputModes(TEXT_AUDIO).outputModes(TEXT_AUDIO).supportedApis(CHAT)
 						.supportedCallType(CallType.TOOLS).build());
 
-		MODEL_CONFIG.put("chatgpt-4o-latest",
-				new OpenAiModelMetaData.Builder().model("chatgpt-4o-latest")
-						.tokenizer(OpenAiTokenizer.getTokenizer("chatgpt-4o-latest")).contextSize(128_000)
-						.maxNewTokens(16_384).inputModes(TEXT_IMAGE).outputModes(TEXT_IMAGE)
-						.supportedApis(CHAT_RESPONSES).supportedCallType(CallType.NONE)
-						.structuredOutput(false).build());
+		MODEL_CONFIG.put("chatgpt-4o-latest", new OpenAiModelMetaData.Builder().model("chatgpt-4o-latest")
+				.tokenizer(OpenAiTokenizer.getTokenizer("chatgpt-4o-latest")).contextSize(128_000).maxNewTokens(16_384)
+				.inputModes(TEXT_IMAGE).outputModes(TEXT_IMAGE).supportedApis(CHAT_RESPONSES)
+				.supportedCallType(CallType.NONE).structuredOutput(false).build());
+
+		MODEL_CONFIG.put("gpt-5",
+				new OpenAiModelMetaData.Builder().model("gpt-5").tokenizer(OpenAiTokenizer.getTokenizer("gpt-5"))
+						.contextSize(272_000).maxNewTokens(128_000).inputModes(TEXT_IMAGE).outputModes(TEXT)
+						.supportedApis(CHAT_RESPONSES_BATCH).supportedCallType(CallType.TOOLS).build());
+
+		MODEL_CONFIG.put("gpt-5-mini",
+				new OpenAiModelMetaData.Builder().model("gpt-5-mini")
+						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-5-mini")).contextSize(272_000)
+						.maxNewTokens(128_000).inputModes(TEXT_IMAGE).outputModes(TEXT)
+						.supportedApis(CHAT_RESPONSES_BATCH).supportedCallType(CallType.TOOLS).build());
+
+		MODEL_CONFIG.put("gpt-5-nano",
+				new OpenAiModelMetaData.Builder().model("gpt-5-nano")
+						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-5-nano")).contextSize(272_000)
+						.maxNewTokens(128_000).inputModes(TEXT_IMAGE).outputModes(TEXT)
+						.supportedApis(CHAT_RESPONSES_BATCH).supportedCallType(CallType.TOOLS).build());
+
+		MODEL_CONFIG.put("gpt-5-pro",
+				new OpenAiModelMetaData.Builder().model("gpt-5-pro")
+						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-5-pro")).contextSize(400_000).maxNewTokens(272_000)
+						.inputModes(TEXT_IMAGE).outputModes(TEXT).supportedApis(RESPONSES_BATCH)
+						.supportedCallType(CallType.TOOLS).build());
+
+		MODEL_CONFIG.put("gpt-5-chat-latest",
+				new OpenAiModelMetaData.Builder().model("gpt-5-chat-latest")
+						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-5-chat-latest")).contextSize(128_000)
+						.maxNewTokens(16_384).inputModes(TEXT_IMAGE).outputModes(TEXT).supportedApis(CHAT_RESPONSES)
+						.supportedCallType(CallType.TOOLS).build());
 
 		// Cost-optimized Models
 		MODEL_CONFIG.put("o4-mini", new OpenAiModelMetaData.Builder() //
@@ -351,6 +384,16 @@ public class OpenAiModelService extends AbstractModelService {
 				.strictModeToolCall(false).supportedApis(CHAT_RESPONSES_ASSISTANTS_BATCH) //
 				.supportedCallType(CallType.TOOLS).build());
 
+		MODEL_CONFIG.put("o3-pro", new OpenAiModelMetaData.Builder() //
+				.model("o3-pro") //
+				.tokenizer(OpenAiTokenizer.getTokenizer("o3-pro")) //
+				.contextSize(200_000) //
+				.maxNewTokens(100_000) //
+				.inputModes(TEXT_IMAGE) //
+				.outputModes(TEXT) //
+				.strictModeToolCall(false).supportedApis(RESPONSES_BATCH) //
+				.supportedCallType(CallType.TOOLS).build());
+
 		MODEL_CONFIG.put("gpt-4o-mini", new OpenAiModelMetaData.Builder().model("gpt-4o-mini")
 				.tokenizer(OpenAiTokenizer.getTokenizer("gpt-4o-mini")).contextSize(128_000).maxNewTokens(16_384)
 				.inputModes(TEXT_IMAGE).outputModes(TEXT_IMAGE)
@@ -381,10 +424,21 @@ public class OpenAiModelService extends AbstractModelService {
 						.maxNewTokens(4_096).inputModes(TEXT_AUDIO).outputModes(TEXT_AUDIO).supportedApis(REALTIME)
 						.supportedCallType(CallType.TOOLS).build());
 
+		MODEL_CONFIG.put("gpt-realtime-mini",
+				new OpenAiModelMetaData.Builder().model("gpt-realtime-mini")
+						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-realtime-mini")).contextSize(32_000)
+						.maxNewTokens(4_096).inputModes(TEXT_IMAGE_AUDIO).outputModes(TEXT_AUDIO)
+						.supportedApis(REALTIME).supportedCallType(CallType.TOOLS).build());
+
 		// DALL-E
 		MODEL_CONFIG.put("gpt-image-1", new OpenAiModelMetaData.Builder().model("gpt-image-1")
 				.tokenizer(OpenAiTokenizer.getTokenizer("gpt-image-1")).contextSize(32_000).inputModes(TEXT_IMAGE)
 				.outputModes(IMAGE).supportedApis(IMAGES).supportedCallType(CallType.NONE).build());
+
+		MODEL_CONFIG.put("gpt-image-1-mini",
+				new OpenAiModelMetaData.Builder().model("gpt-image-1-mini")
+						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-image-1-mini")).inputModes(TEXT_IMAGE)
+						.outputModes(IMAGE).supportedApis(IMAGES).supportedCallType(CallType.NONE).build());
 
 		MODEL_CONFIG.put("dall-e-2",
 				new OpenAiModelMetaData.Builder().model("dall-e-2").tokenizer(OpenAiTokenizer.getTokenizer("dall-e-2"))
@@ -395,6 +449,46 @@ public class OpenAiModelService extends AbstractModelService {
 				new OpenAiModelMetaData.Builder().model("dall-e-3").tokenizer(OpenAiTokenizer.getTokenizer("dall-e-3"))
 						.contextSize(2_000).inputModes(TEXT).outputModes(IMAGE).supportedApis(IMAGES)
 						.supportedCallType(CallType.NONE).build());
+
+		// Video (SORA)
+		MODEL_CONFIG.put("sora-2",
+				new OpenAiModelMetaData.Builder().model("sora-2").tokenizer(OpenAiTokenizer.getTokenizer("sora-2"))
+						.inputModes(TEXT_IMAGE).outputModes(List.of(Modality.AUDIO, Modality.VIDEO))
+						.supportedApis(List.of(SupportedApi.VIDEOS)).supportedCallType(CallType.NONE).build());
+
+		MODEL_CONFIG.put("sora-2-pro",
+				new OpenAiModelMetaData.Builder().model("sora-2-pro")
+						.tokenizer(OpenAiTokenizer.getTokenizer("sora-2-pro")).inputModes(TEXT_IMAGE)
+						.outputModes(List.of(Modality.AUDIO, Modality.VIDEO)).supportedApis(List.of(SupportedApi.VIDEOS))
+						.supportedCallType(CallType.NONE).build());
+
+		// Audio
+		// TODO URGENT fix tokeniser for this model
+		MODEL_CONFIG.put("gpt-audio",
+				new OpenAiModelMetaData.Builder().model("gpt-audio").tokenizer(new OpenAiTokenizer("gpt-audio", null))
+						.contextSize(128_000).maxNewTokens(16_384).inputModes(TEXT_AUDIO).outputModes(TEXT_AUDIO)
+						.supportedApis(CHAT).structuredOutput(false).supportedCallType(CallType.TOOLS).build());
+
+		// TODO URGENT fix tokeniser for this model
+		MODEL_CONFIG.put("gpt-audio-mini",
+				new OpenAiModelMetaData.Builder().model("gpt-audio-mini")
+						.tokenizer(new OpenAiTokenizer("gpt-audio", null)).contextSize(128_000).maxNewTokens(16_384)
+						.inputModes(TEXT_AUDIO).outputModes(TEXT_AUDIO).supportedApis(CHAT).structuredOutput(false)
+						.supportedCallType(CallType.TOOLS).build());
+
+		// TODO URGENT fix tokeniser for this model
+		MODEL_CONFIG.put("gpt-realtime",
+				new OpenAiModelMetaData.Builder().model("gpt-realtime")
+						.tokenizer(new OpenAiTokenizer("gpt-realtime", null)).contextSize(32_000).maxNewTokens(4_096)
+						.inputModes(TEXT_IMAGE_AUDIO).outputModes(TEXT_AUDIO).supportedApis(REALTIME)
+						.structuredOutput(false).supportedCallType(CallType.TOOLS).build());
+
+		// TODO URGENT fix tokeniser for this model
+		MODEL_CONFIG.put("gpt-realtime-mini",
+				new OpenAiModelMetaData.Builder().model("gpt-realtime-mini")
+						.tokenizer(new OpenAiTokenizer("gpt-realtime-mini", null)).contextSize(32_000)
+						.maxNewTokens(4_096).inputModes(TEXT_IMAGE_AUDIO).outputModes(TEXT_AUDIO)
+						.supportedApis(REALTIME).structuredOutput(false).supportedCallType(CallType.TOOLS).build());
 
 		// TTS
 		MODEL_CONFIG.put("gpt-4o-mini-tts",
@@ -433,6 +527,12 @@ public class OpenAiModelService extends AbstractModelService {
 				new OpenAiModelMetaData.Builder().model("gpt-4o-mini-transcribe")
 						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-4o-mini-transcribe")).contextSize(16_000)
 						.maxNewTokens(2_000).inputModes(TEXT_AUDIO).outputModes(TEXT)
+						.supportedApis(List.of(SupportedApi.TRANSCRIPTION)).supportedCallType(CallType.NONE).build());
+
+		MODEL_CONFIG.put("gpt-4o-transcribe-diarize",
+				new OpenAiModelMetaData.Builder().model("gpt-4o-transcribe-diarize")
+						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-4o-transcribe-diarize")).contextSize(16_000)
+						.maxNewTokens(2_000).inputModes(TEXT_AUDIO).outputModes(TEXT)
 						.supportedApis(REALTIME_TRANSCRIPTION).supportedCallType(CallType.NONE).build());
 
 		MODEL_CONFIG.put("whisper-1", new OpenAiModelMetaData.Builder().model("whisper-1")
@@ -440,19 +540,35 @@ public class OpenAiModelService extends AbstractModelService {
 				.outputModes(TEXT).supportedApis(TRANSLATION_TRANSCRIPTION).supportedCallType(CallType.NONE).build());
 
 		// Tool-specific models
+
+		// TODO URGENT fix this definition
+		MODEL_CONFIG.put("gpt-5-search-api", new OpenAiModelMetaData.Builder().model("gpt-5-search-api")
+				.tokenizer(OpenAiTokenizer.getTokenizer("gpt-5-search-api")).contextSize(200_000).maxNewTokens(100_000)
+				.inputModes(TEXT).outputModes(TEXT).supportedApis(CHAT).supportedCallType(CallType.NONE).build());
+
 		MODEL_CONFIG.put("gpt-4o-search-preview",
 				new OpenAiModelMetaData.Builder().model("gpt-4o-search-preview")
 						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-4o-search-preview")).contextSize(128_000)
 						.maxNewTokens(16_384).inputModes(TEXT).outputModes(TEXT).supportedApis(CHAT)
-						.supportedCallType(CallType.NONE)
-						.structuredOutput(false).build());
+						.supportedCallType(CallType.NONE).build());
 
 		MODEL_CONFIG.put("gpt-4o-mini-search-preview",
 				new OpenAiModelMetaData.Builder().model("gpt-4o-mini-search-preview")
 						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-4o-mini-search-preview")).contextSize(128_000)
 						.maxNewTokens(16_384).inputModes(TEXT).outputModes(TEXT).supportedApis(CHAT)
-						.supportedCallType(CallType.NONE)
-						.structuredOutput(false).build());
+						.supportedCallType(CallType.NONE).build());
+
+		MODEL_CONFIG.put("o4-mini-deep-research",
+				new OpenAiModelMetaData.Builder().model("o4-mini-deep-research")
+						.tokenizer(OpenAiTokenizer.getTokenizer("o4-mini-deep-research")).contextSize(200_000)
+						.maxNewTokens(100_000).inputModes(TEXT_IMAGE).outputModes(TEXT).supportedApis(RESPONSES_BATCH)
+						.supportedCallType(CallType.NONE).structuredOutput(false).build());
+
+		MODEL_CONFIG.put("o3-deep-research",
+				new OpenAiModelMetaData.Builder().model("o3-deep-research")
+						.tokenizer(OpenAiTokenizer.getTokenizer("o3-deep-research")).contextSize(200_000)
+						.maxNewTokens(100_000).inputModes(TEXT_IMAGE).outputModes(TEXT).supportedApis(RESPONSES_BATCH)
+						.supportedCallType(CallType.NONE).structuredOutput(false).build());
 
 		MODEL_CONFIG.put("computer-use-preview",
 				new OpenAiModelMetaData.Builder().model("computer-use-preview")
@@ -487,26 +603,20 @@ public class OpenAiModelService extends AbstractModelService {
 						.supportedCallType(CallType.NONE).build());
 
 		// Older GPT Models
-		MODEL_CONFIG.put("gpt-3.5-turbo",
-				new OpenAiModelMetaData.Builder().model("gpt-3.5-turbo")
-						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-3.5-turbo")).contextSize(16_385)
-						.maxNewTokens(4_096).inputModes(TEXT).outputModes(TEXT)
-						.supportedApis(CHAT_RESPONSES_BATCH_FINE_TUNING).supportedCallType(CallType.FUNCTIONS)
-						.structuredOutput(false).build());
+		MODEL_CONFIG.put("gpt-3.5-turbo", new OpenAiModelMetaData.Builder().model("gpt-3.5-turbo")
+				.tokenizer(OpenAiTokenizer.getTokenizer("gpt-3.5-turbo")).contextSize(16_385).maxNewTokens(4_096)
+				.inputModes(TEXT).outputModes(TEXT).supportedApis(CHAT_RESPONSES_BATCH_FINE_TUNING)
+				.supportedCallType(CallType.FUNCTIONS).structuredOutput(false).build());
 
-		MODEL_CONFIG.put("gpt-3.5-turbo-0125",
-				new OpenAiModelMetaData.Builder().model("gpt-3.5-turbo-0125")
-						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-3.5-turbo-0125")).contextSize(16_385)
-						.maxNewTokens(4_096).inputModes(TEXT).outputModes(TEXT)
-						.supportedApis(CHAT_RESPONSES_BATCH_FINE_TUNING).supportedCallType(CallType.FUNCTIONS)
-						.structuredOutput(false).build());
+		MODEL_CONFIG.put("gpt-3.5-turbo-0125", new OpenAiModelMetaData.Builder().model("gpt-3.5-turbo-0125")
+				.tokenizer(OpenAiTokenizer.getTokenizer("gpt-3.5-turbo-0125")).contextSize(16_385).maxNewTokens(4_096)
+				.inputModes(TEXT).outputModes(TEXT).supportedApis(CHAT_RESPONSES_BATCH_FINE_TUNING)
+				.supportedCallType(CallType.FUNCTIONS).structuredOutput(false).build());
 
-		MODEL_CONFIG.put("gpt-3.5-turbo-1106",
-				new OpenAiModelMetaData.Builder().model("gpt-3.5-turbo-1106")
-						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-3.5-turbo-1106")).contextSize(16_385)
-						.maxNewTokens(4_096).inputModes(TEXT).outputModes(TEXT)
-						.supportedApis(CHAT_RESPONSES_BATCH_FINE_TUNING).supportedCallType(CallType.FUNCTIONS)
-						.structuredOutput(false).build());
+		MODEL_CONFIG.put("gpt-3.5-turbo-1106", new OpenAiModelMetaData.Builder().model("gpt-3.5-turbo-1106")
+				.tokenizer(OpenAiTokenizer.getTokenizer("gpt-3.5-turbo-1106")).contextSize(16_385).maxNewTokens(4_096)
+				.inputModes(TEXT).outputModes(TEXT).supportedApis(CHAT_RESPONSES_BATCH_FINE_TUNING)
+				.supportedCallType(CallType.FUNCTIONS).structuredOutput(false).build());
 
 		MODEL_CONFIG.put("gpt-3.5-turbo-instruct",
 				new OpenAiModelMetaData.Builder().model("gpt-3.5-turbo-instruct")
@@ -524,53 +634,40 @@ public class OpenAiModelService extends AbstractModelService {
 				new OpenAiModelMetaData.Builder().model("gpt-4-turbo")
 						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-4-turbo")).contextSize(128_000).maxNewTokens(4_096)
 						.inputModes(TEXT_IMAGE).outputModes(TEXT_IMAGE).supportedApis(CHAT_RESPONSES_ASSISTANTS_BATCH)
-						.supportedCallType(CallType.TOOLS)
-						.structuredOutput(false).build());
+						.supportedCallType(CallType.TOOLS).structuredOutput(false).build());
 
 		MODEL_CONFIG.put("gpt-4-turbo-preview",
 				new OpenAiModelMetaData.Builder().model("gpt-4-turbo-preview")
 						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-4-turbo-preview")).contextSize(128_000)
 						.maxNewTokens(4_096).inputModes(TEXT).outputModes(TEXT).supportedApis(CHAT_RESPONSES_ASSISTANTS)
-						.supportedCallType(CallType.TOOLS)
-						.structuredOutput(false).build());
+						.supportedCallType(CallType.TOOLS).structuredOutput(false).build());
 
 		MODEL_CONFIG.put("gpt-4-0125-preview",
 				new OpenAiModelMetaData.Builder().model("gpt-4-0125-preview")
 						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-4-0125-preview")).contextSize(128_000)
 						.maxNewTokens(4_096).inputModes(TEXT).outputModes(TEXT).supportedApis(CHAT_RESPONSES_ASSISTANTS)
-						.supportedCallType(CallType.TOOLS)
-						.structuredOutput(false).build());
+						.supportedCallType(CallType.TOOLS).structuredOutput(false).build());
 
 		MODEL_CONFIG.put("gpt-4",
 				new OpenAiModelMetaData.Builder().model("gpt-4").tokenizer(OpenAiTokenizer.getTokenizer("gpt-4"))
 						.contextSize(8_192).maxNewTokens(8_192).inputModes(TEXT).outputModes(TEXT)
 						.supportedApis(CHAT_RESPONSES_ASSISTANTS_BATCH_FINE_TUNING)
-						.supportedCallType(CallType.FUNCTIONS)
-						.structuredOutput(false).build());
+						.supportedCallType(CallType.FUNCTIONS).structuredOutput(false).build());
 
 		MODEL_CONFIG.put("gpt-4-1106-preview",
 				new OpenAiModelMetaData.Builder().model("gpt-4-1106-preview")
 						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-4-1106-preview")).contextSize(128_000)
 						.maxNewTokens(4_096).inputModes(TEXT).outputModes(TEXT).supportedApis(CHAT_ASSISTANTS)
-						.supportedCallType(CallType.TOOLS)
-						.structuredOutput(false).build());
+						.supportedCallType(CallType.TOOLS).structuredOutput(false).build());
 
-		MODEL_CONFIG.put("gpt-4-0613",
-				new OpenAiModelMetaData.Builder().model("gpt-4-0613") //
-						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-4-0613")) //
-						.contextSize(8_192) //
-						.maxNewTokens(8_192)
-						.inputModes(TEXT) //
-						.outputModes(TEXT) //
-						.supportedApis(CHAT_RESPONSES_ASSISTANTS_BATCH_FINE_TUNING) //
-						.supportedCallType(CallType.FUNCTIONS) //
-						.structuredOutput(false).build());
-
-		MODEL_CONFIG.put("gpt-4.5-preview",
-				new OpenAiModelMetaData.Builder().model("gpt-4.5-preview")
-						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-4.5-preview")).contextSize(128_000)
-						.maxNewTokens(16_384).inputModes(TEXT_IMAGE).outputModes(TEXT)
-						.supportedApis(CHAT_RESPONSES_ASSISTANTS).supportedCallType(CallType.TOOLS).build());
+		MODEL_CONFIG.put("gpt-4-0613", new OpenAiModelMetaData.Builder().model("gpt-4-0613") //
+				.tokenizer(OpenAiTokenizer.getTokenizer("gpt-4-0613")) //
+				.contextSize(8_192) //
+				.maxNewTokens(8_192).inputModes(TEXT) //
+				.outputModes(TEXT) //
+				.supportedApis(CHAT_RESPONSES_ASSISTANTS_BATCH_FINE_TUNING) //
+				.supportedCallType(CallType.FUNCTIONS) //
+				.structuredOutput(false).build());
 
 		// GPT Base Models
 		MODEL_CONFIG.put("babbage-002",
@@ -601,18 +698,12 @@ public class OpenAiModelService extends AbstractModelService {
 	}
 
 	@Override
-	public List<String> listModels() {
-		return endpoint.getClient().models().list().autoPager().stream().map(Model::id).collect(Collectors.toList());
-	}
-
-	@Override
-	public String getModel() {
-		return null;
-	} // not applicable
-
-	@Override
-	public void setModel(@NonNull String model) {
-		throw new UnsupportedOperationException();
+	public List<String> listModels() throws EndpointException {
+		try {
+			return endpoint.getClient().models().list().data().stream().map(Model::id).collect(Collectors.toList());
+		} catch (Exception e) {
+			throw OpenAiUtil.toEndpointException(e);
+		}
 	}
 
 	private final static Pattern P = Pattern.compile("^(.+)-(\\d{4}-\\d{2}-\\d{2})$");

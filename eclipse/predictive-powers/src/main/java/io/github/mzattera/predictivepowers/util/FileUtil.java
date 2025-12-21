@@ -18,7 +18,10 @@ package io.github.mzattera.predictivepowers.util;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +31,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Pattern;
 
 import org.apache.tika.Tika;
 import org.apache.tika.mime.MimeTypes;
@@ -203,10 +207,9 @@ public final class FileUtil {
 	 */
 	public static String getMimeType(File file) {
 		try {
-			String type = new Tika().detect(file);
-			return (type == null) ? MimeTypes.OCTET_STREAM : type;
-		} catch (IOException e) {
-			return MimeTypes.OCTET_STREAM;
+			return getMimeType(new FileInputStream(file));
+		} catch (FileNotFoundException e) {
+			return null;
 		}
 	}
 
@@ -214,12 +217,10 @@ public final class FileUtil {
 	 * 
 	 * @param url
 	 * @return MIME type for file at given URL.
-	 * @throws IOException
 	 */
 	public static String getMimeType(URL url) {
 		try {
-			String type = new Tika().detect(url);
-			return (type == null) ? MimeTypes.OCTET_STREAM : type;
+			return getMimeType(url.openStream());
 		} catch (IOException e) {
 			return MimeTypes.OCTET_STREAM;
 		}
@@ -227,13 +228,25 @@ public final class FileUtil {
 
 	/**
 	 * 
-	 * @param url
 	 * @return MIME type for content represented by these bytes.
 	 * @throws IOException
 	 */
 	public static String getMimeType(byte[] bytes) {
-		String type = new Tika().detect(bytes);
-		return (type == null) ? MimeTypes.OCTET_STREAM : type;
+		return getMimeType(new ByteArrayInputStream(bytes));
+	}
+
+	/**
+	 * 
+	 * @return MIME type for content in given stream.
+	 * @throws IOException
+	 */
+	public static String getMimeType(InputStream in) {
+		try {
+			String type = new Tika().detect(in);
+			return (type == null) ? MimeTypes.OCTET_STREAM : type;
+		} catch (IOException e) {
+			return MimeTypes.OCTET_STREAM;
+		}
 	}
 
 	/**
@@ -255,5 +268,27 @@ public final class FileUtil {
 		} else {
 			return parts[0].toLowerCase(); // generic type, e.g. audio, image
 		}
+	}
+
+	// Regex: Matches all characters considered illegal or problematic
+	// [\\/:*?\"<>|] -> Reserved characters on Windows/Unix
+	// [\\x00-\\x1F] -> Control characters (U+0000 to U+001F)
+	private static final Pattern ILLEGAL_CHARS = Pattern.compile("[\\/:*?\"<>|\\x00-\\x1F]");
+
+	/**
+	 * Sanitizes a string for use as a cross-platform filename by replacing illegal
+	 * characters with a replacement string (e.g., an underscore).
+	 * 
+	 * @param originalName The string to sanitize.
+	 * @param replacement  The string to replace illegal characters with (e.g.,
+	 *                     "_").
+	 * @return The sanitized filename.
+	 */
+	public static String sanitizeFilename(@NonNull String originalName, @NonNull String replacement) {
+		String safeName = ILLEGAL_CHARS.matcher(originalName).replaceAll(replacement);
+		if (safeName.length() > 255) {
+			safeName = safeName.substring(0, 255);
+		}
+		return safeName.isEmpty() ? "untitled" : safeName;
 	}
 }

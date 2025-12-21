@@ -53,7 +53,7 @@ import com.openai.models.chat.completions.ChatCompletionTool;
 import com.openai.models.chat.completions.ChatCompletionToolMessageParam;
 import com.openai.models.chat.completions.ChatCompletionUserMessageParam;
 
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.CallType;
 import io.github.mzattera.predictivepowers.openai.util.OpenAiUtil;
 import io.github.mzattera.predictivepowers.services.AbstractAgent;
@@ -93,7 +93,7 @@ public class OpenAiChatService extends AbstractAgent {
 
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiChatService.class);
 
-	public static final String DEFAULT_MODEL = "gpt-4.1";
+	public static final String DEFAULT_MODEL = "gpt-4o";
 
 	private final OpenAiModelService modelService;
 
@@ -185,8 +185,7 @@ public class OpenAiChatService extends AbstractAgent {
 
 	@Override
 	public void setTopK(Integer topK) {
-		if (topK != null)
-			throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -419,7 +418,7 @@ public class OpenAiChatService extends AbstractAgent {
 	 * Notice that this list will be processed accordingly to conversation limits
 	 * before being sent and that personality, if any, will be added on top.
 	 */
-	public ChatCompletion chat(List<ChatCompletionMessageParam> msg) {
+	public ChatCompletion chat(List<ChatCompletionMessageParam> msg) throws EndpointException {
 
 		// Add messages to conversation and trims it
 		List<ChatCompletionMessageParam> conversation = new ArrayList<>(history.build().messages());
@@ -445,7 +444,7 @@ public class OpenAiChatService extends AbstractAgent {
 	}
 
 	@Override
-	public ChatCompletion complete(ChatMessage prompt) {
+	public ChatCompletion complete(ChatMessage prompt) throws EndpointException {
 		return complete(fromChatMessage(prompt));
 	}
 
@@ -456,7 +455,7 @@ public class OpenAiChatService extends AbstractAgent {
 	 * conversation limits before being sent and that personality, if any, will be
 	 * added on top.
 	 */
-	public ChatCompletion complete(List<ChatCompletionMessageParam> messages) {
+	public ChatCompletion complete(List<ChatCompletionMessageParam> messages) throws EndpointException {
 
 		List<ChatCompletionMessageParam> conversation = new ArrayList<>(messages);
 		trimConversation(conversation);
@@ -471,20 +470,18 @@ public class OpenAiChatService extends AbstractAgent {
 	 * Notice this does not consider or affects chat history. In addition, agent
 	 * personality is NOT considered, but can be injected as first message in the
 	 * list.
-	 * 
-	 * @param toolMap List of tools that can be called (this can be empty to prevent
-	 *                tool calls, or null to use the list of default tools).
 	 */
-	private Pair<FinishReason, ChatCompletionMessage> chatCompletion(List<ChatCompletionMessageParam> messages) {
+	private Pair<FinishReason, ChatCompletionMessage> chatCompletion(List<ChatCompletionMessageParam> messages)
+			throws EndpointException {
 
 		// TODO URGENT Why is this returning a Pair<> instead of a ChatCompletion?
-		
+
 		// This ensures we can track last call messages from defaultRequest, for testing
 		// reasons
 		defaultRequest = defaultRequest.toBuilder().messages(messages).build();
 		ChatCompletionCreateParams req = defaultRequest;
 
-		com.openai.models.chat.completions.ChatCompletion resp = null;		
+		com.openai.models.chat.completions.ChatCompletion resp = null;
 		while (resp == null) {
 			try {
 				resp = endpoint.getClient().chat().completions().create(req);
@@ -495,6 +492,7 @@ public class OpenAiChatService extends AbstractAgent {
 					return new ImmutablePair<>(FinishReason.INAPPROPRIATE,
 							ChatCompletionMessage.builder().content(e.getMessage()).build());
 				}
+
 				// Automatically recover if request is too long
 				// This makes sense as req is modified only for this call (it is immutable).
 				OpenAiUtil.OpenAiExceptionData d = OpenAiUtil.getExceptionData(e);
@@ -506,13 +504,15 @@ public class OpenAiChatService extends AbstractAgent {
 								+ req.maxCompletionTokens().orElse(-1L) + " to " + optimal);
 						req = req.toBuilder().maxCompletionTokens(optimal).build();
 					} else
-						throw e; // Context too small anyway
+						throw OpenAiUtil.toEndpointException(e); // Context too small anyway
 				} else
-					throw e; // Not a context length issue
+					throw OpenAiUtil.toEndpointException(e); // Not a context length issue
+				
+			} catch (Exception e) {
+				throw OpenAiUtil.toEndpointException(e);
 			}
 		} // Until call succeeds
 
-		// Stores sot
 		Choice choice = resp.choices().get(0);
 		return new ImmutablePair<>(OpenAiUtil.fromOpenAiApi(choice.finishReason()), choice.message());
 	}

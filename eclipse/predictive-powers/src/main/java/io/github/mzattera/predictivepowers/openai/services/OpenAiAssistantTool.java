@@ -27,74 +27,53 @@ import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
-import lombok.Getter;
 import lombok.NonNull;
 
 /**
- * Common base class for built-in tools available to OpenAiAssistants.
+ * Common base class for built-in server-side tools available to
+ * OpenAiAssistants.
  * 
- * 
+ * These tools cannot be added or removed, just enabled or disabled, as they are
+ * always available to OpenAI assistants.
  */
-public class OpenAiAssistantTool extends AbstractTool {
-
-	/**
-	 * If true, tool will be enabled and available to the assistant.
-	 */
-	@Getter
-	private boolean enabled = false;
+public abstract class OpenAiAssistantTool extends AbstractTool {
 
 	/**
 	 * Enables this tool making it available to the assistant.
 	 * 
 	 * @return This tool.
 	 */
-	public OpenAiAssistantTool enable() {
-		enabled = true;
-		return this;
-	}
+	public abstract OpenAiAssistantTool enable();
 
 	/**
-	 * Disables the tool such that the assistant won-t use it.
+	 * Disables the tool such that the assistant won't use it.
 	 */
-	public void disable() {
-		enabled = false;
-	}
+	public abstract void disable();
 
-	protected OpenAiAssistantTool(@NonNull String id) {
-		this(id, id, new ArrayList<>());
-	}
+	/**
+	 * 
+	 * @returns True if the tool is enabled.
+	 */
+	public abstract boolean isEnabled();
 
 	protected OpenAiAssistantTool(@NonNull String id, String description) {
-		this(id, description, new ArrayList<>());
-	}
-
-	protected OpenAiAssistantTool(@NonNull String id, String description, @NonNull List<? extends ToolParameter> parameters) {
-		super(id, description, parameters);
-	}
-
-	protected OpenAiAssistantTool(@NonNull String id, String description, @NonNull Class<?> schema) {
-		super(id, description, schema);
+		super(id, description, new ArrayList<>());
 	}
 
 	@Override
-	protected OpenAiAssistant getAgent() {
-		return (OpenAiAssistant) super.getAgent();
+	public List<ToolParameter> getParameters() {
+		// TODO maybe in a future far far away we implement this...
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	protected void setAgent(Agent agent) {
-		if (agent instanceof OpenAiAssistant)
-			super.setAgent(agent);
-		else
-			throw new IllegalArgumentException("This tool can only be used by an OpenAiAssistant instance");
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public void init(@NonNull Agent agent) throws ToolInitializationException {
-		if (agent instanceof OpenAiAssistant)
-			super.init(agent);
-		else
-			throw new IllegalArgumentException("This tool can only be used by an OpenAiAssistant instance");
+		throw new UnsupportedOperationException();
 	}
 
 	@Override

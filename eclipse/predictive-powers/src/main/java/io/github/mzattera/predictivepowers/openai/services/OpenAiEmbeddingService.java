@@ -16,6 +16,7 @@
 package io.github.mzattera.predictivepowers.openai.services;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,7 +29,8 @@ import com.openai.models.embeddings.Embedding;
 import com.openai.models.embeddings.EmbeddingCreateParams;
 import com.openai.models.embeddings.EmbeddingCreateParams.EncodingFormat;
 
-import io.github.mzattera.predictivepowers.openai.client.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.EndpointException;
+import io.github.mzattera.predictivepowers.openai.util.OpenAiUtil;
 import io.github.mzattera.predictivepowers.services.AbstractEmbeddingService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.ModelService;
@@ -84,37 +86,32 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 
 	@SuppressWarnings("unchecked")
 	public OpenAiEmbeddingService(OpenAiEndpoint ep, @NonNull String model) {
-		this(ep, EmbeddingCreateParams.builder() //
+		this.endpoint = ep;
+		this.defaultRequest = EmbeddingCreateParams.builder() //
 				.model(model) //
 				.input(JsonMissing.of()) //
-				.encodingFormat(EncodingFormat.FLOAT).build());
-	}
-
-	public OpenAiEmbeddingService(OpenAiEndpoint ep, EmbeddingCreateParams embeddingsRequest) {
-		this.endpoint = ep;
-		this.defaultRequest = embeddingsRequest;
+				.encodingFormat(EncodingFormat.FLOAT).build();
 		this.modelService = ep.getModelService();
 	}
 
-	// This is the only method that one must implement when extending
-	// AbstractEmbeddingService, it makes sure the default request is passed
 	@Override
-	public List<EmbeddedText> embed(String text, int chunkSize, int windowSize, int stride) {
+	public List<EmbeddedText> embed(@NonNull Collection<String> text, int chunkSize, int windowSize, int stride)
+			throws EndpointException {
 
 		String model = defaultRequest.model().toString();
 		int modelSize = modelService.getContextSize(model);
 		Tokenizer tokenizer = modelService.getTokenizer(model);
 
 		// Chunk accordingly to user's instructions
-		List<String> chunks = ChunkUtil.split(text, chunkSize, windowSize, stride, tokenizer);
-//		inspect("chunks", chunks);
+		List<String> chunks = new ArrayList<>();
+		for (String t : text)
+			chunks.addAll(ChunkUtil.split(t, chunkSize, windowSize, stride, tokenizer));
 
 		// Make sure no chunk is bigger than model's supported size
 		List<String> tmp = new ArrayList<>(chunks.size() * 2);
 		for (String c : chunks)
 			tmp.addAll(ChunkUtil.split(c, modelSize, tokenizer));
 		chunks = tmp;
-//		inspect("chunks from tmp", chunks);
 
 		// Notice ChunkUtil removes empty strings already
 
@@ -150,32 +147,27 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 		return result;
 	}
 
-	private List<EmbeddedText> embed(List<String> input) {
+	private List<EmbeddedText> embed(List<String> input) throws EndpointException {
 
-		List<EmbeddedText> result = new ArrayList<>();
+		try {
+			List<EmbeddedText> result = new ArrayList<>();
 
-//		inspect("input", input);
-		EmbeddingCreateParams req = defaultRequest.toBuilder().inputOfArrayOfStrings(input).build();
-		CreateEmbeddingResponse res = endpoint.getClient().embeddings().create(req);
-		LOG.info("Called OpenAI Embedding Service: " + res.usage());
+			EmbeddingCreateParams req = defaultRequest.toBuilder().inputOfArrayOfStrings(input).build();
+			CreateEmbeddingResponse res = endpoint.getClient().embeddings().create(req);
+			LOG.info("Called OpenAI Embedding Service: " + res.usage());
 
-		for (Embedding e : res.data()) {
-			int index = (int) e.index();
-			EmbeddedText et = EmbeddedText.builder() //
-					.text(input.get(index)) //
-					.embedding(e.embedding().stream().map(f -> f.doubleValue()).collect(Collectors.toList())) //
-					.model(res.model()).build();
-			result.add(et);
+			for (Embedding e : res.data()) {
+				int index = (int) e.index();
+				EmbeddedText et = EmbeddedText.builder() //
+						.text(input.get(index)) //
+						.embedding(e.embedding().stream().map(f -> f.doubleValue()).collect(Collectors.toList())) //
+						.model(res.model()).build();
+				result.add(et);
+			}
+
+			return result;
+		} catch (Exception e) {
+			throw OpenAiUtil.toEndpointException(e);
 		}
-
-		return result;
 	}
-
-	// For counting calls
-//	private void inspect(String name, List<String> input) {
-//		LOG.info("Created " + name + " list with " + input.size() + " strings for a total lenght of "
-//				+ Strings.join(input, ' ').length() + " chars.");
-//		for (String s:input)
-//			LOG.info("  -> "+s);
-//	}
 }

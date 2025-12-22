@@ -43,17 +43,20 @@ import java.net.URL;
  * 
  * <li>Maven project</li>
  * <ul>
- * <li>Both when running in Eclipse or from a .jar, it can get URLs for files in /src/main/java and /src/main/resources and their sub-folders.
- * They can be addressed with their names (e.g. '/f.txt', 
- * 'io/github/mzattera/util/util.txt', 'resource.txt', 'resources/resource.txt').<br/>
+ * <li>Both when running in Eclipse or from a .jar, it can get URLs for files in
+ * /src/main/java and /src/main/resources and their sub-folders. They can be
+ * addressed with their names (e.g. '/f.txt',
+ * 'io/github/mzattera/util/util.txt', 'resource.txt',
+ * 'resources/resource.txt').<br/>
  * </li>
  * 
  * </ul>
  * 
  * </ul>
  * 
- * A valid URL can always be converted into an InputStream with getResourceStream(), but it can be converted
- * in a File with getResourceFile() only if the code is not running inside a .jar. <br/>
+ * A valid URL can always be converted into an InputStream with
+ * getResourceStream(), but it can be converted in a File with getResourceFile()
+ * only if the code is not running inside a .jar. <br/>
  * <br/>
  * 
  * @author Massimiliano "Maxi" Zattera

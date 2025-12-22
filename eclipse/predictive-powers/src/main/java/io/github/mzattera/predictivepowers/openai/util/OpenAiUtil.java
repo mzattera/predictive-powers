@@ -93,6 +93,8 @@ public final class OpenAiUtil {
 			.compile("This model supports at most ([0-9]+) completion tokens, whereas you provided ([0-9]+)");
 	private static Pattern PATTERN03 = Pattern.compile( // Notice this must be evaluated after PATTERN01
 			"This model's maximum context length is ([0-9]+)");
+	private static Pattern PATTERN04 = Pattern.compile(
+			"Input tokens exceed the configured limit of ([0-9]+) tokens");
 
 	/**
 	 * 
@@ -125,6 +127,12 @@ public final class OpenAiUtil {
 			}
 
 			m = PATTERN03.matcher(ex.getMessage());
+			if (m.find()) {
+				d.contextSize = Integer.parseInt(m.group(1));
+				return d;
+			}
+
+			m = PATTERN04.matcher(ex.getMessage());
 			if (m.find()) {
 				d.contextSize = Integer.parseInt(m.group(1));
 				return d;

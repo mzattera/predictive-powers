@@ -29,6 +29,7 @@ import java.util.List;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import io.github.mzattera.predictivepowers.TestConfiguration;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
@@ -44,12 +45,15 @@ import io.github.mzattera.predictivepowers.util.ResourceUtil;
  */
 public class KnowledgeBaseTest {
 
-	@DisplayName("Insert some strings in the KB and checks search finds them.")
-	@Test
-	public void testSearch() {
+	// Must be static unless using @TestInstance(Lifecycle.PER_CLASS)
+	static boolean hasServices() {
+		return TestConfiguration.TEST_KNOWLEDGE_BASE;
+	}
 
-		if (!TestConfiguration.TEST_KNOWLEDGE_BASE)
-			return;
+	@Test
+	@DisplayName("Insert some strings in the KB and checks search finds them.")
+	@EnabledIf("hasServices")
+	public void testSearch() {
 
 		try (OpenAiEndpoint ep = new OpenAiEndpoint();
 				OpenAiEmbeddingService es = ep.getEmbeddingService();
@@ -130,12 +134,10 @@ public class KnowledgeBaseTest {
 		}
 	}
 
-	@DisplayName("Matcher tests.")
 	@Test
+	@DisplayName("Matcher tests.")
+	@EnabledIf("hasServices")
 	public void testMatcher() throws ClassNotFoundException, IOException {
-
-		if (!TestConfiguration.TEST_KNOWLEDGE_BASE)
-			return;
 
 		try (KnowledgeBase kb = KnowledgeBase.load(ResourceUtil.getResourceFile("kb.object"))) {
 
@@ -161,12 +163,10 @@ public class KnowledgeBaseTest {
 		}
 	}
 
-	@DisplayName("Test using text instead of embeddings.")
 	@Test
+	@DisplayName("Test using text instead of embeddings.")
+	@EnabledIf("hasServices")
 	public void test03() {
-
-		if (!TestConfiguration.TEST_KNOWLEDGE_BASE)
-			return;
 
 		try (OpenAiEndpoint ep = new OpenAiEndpoint();
 				OpenAiEmbeddingService es = ep.getEmbeddingService();
@@ -217,12 +217,10 @@ public class KnowledgeBaseTest {
 		}
 	}
 
-	@DisplayName("Test null parameters.")
 	@Test
+	@DisplayName("Test null parameters.")
+	@EnabledIf("hasServices")
 	public void testNullParameters() {
-
-		if (!TestConfiguration.TEST_KNOWLEDGE_BASE)
-			return;
 
 		try (OpenAiEndpoint ep = new OpenAiEndpoint();
 				OpenAiEmbeddingService es = ep.getEmbeddingService();

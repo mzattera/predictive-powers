@@ -11,12 +11,13 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.release>11</maven.compiler.release>	
+		
+		<kotlin.version>2.1.21</kotlin.version>
+		<okhttp.version>4.12.0</okhttp.version>		
 	</properties>
 	
 	<dependencyManagement>
 	  <dependencies>
-	
-	    <!-- 1) Jackson: allinea tutta la famiglia alla linea usata dal progetto (2.20.1) -->
 	    <dependency>
 	      <groupId>com.fasterxml.jackson</groupId>
 	      <artifactId>jackson-bom</artifactId>
@@ -24,45 +25,39 @@
 	      <type>pom</type>
 	      <scope>import</scope>
 	    </dependency>
+
+	    <dependency>
+	        <groupId>com.squareup.okhttp3</groupId>
+	        <artifactId>okhttp</artifactId>
+	        <version>${okhttp.version}</version>
+	    </dependency>
 	
-	    <!-- 2) Kotlin: forza un'unica versione ed elimina il rischio 1.3.x vs 1.8+ -->
 	    <dependency>
 	      <groupId>org.jetbrains.kotlin</groupId>
 	      <artifactId>kotlin-bom</artifactId>
-	      <version>1.8.0</version>
+	      <version>${kotlin.version}</version>
 	      <type>pom</type>
 	      <scope>import</scope>
 	    </dependency>
-	
-	    <!-- 3) SLF4J: unica linea 2.0.x coerente col tuo direct dependency -->
-	    <dependency>
-	      <groupId>org.slf4j</groupId>
-	      <artifactId>slf4j-api</artifactId>
-	      <version>2.0.17</version>
-	    </dependency>
-	
-	    <!-- 4) Gson: scegli una versione unica (allinea tutti i rami) -->
+
 	    <dependency>
 	      <groupId>com.google.code.gson</groupId>
 	      <artifactId>gson</artifactId>
 	      <version>2.13.2</version>
 	    </dependency>
 	
-	    <!-- 5) Guava: blocca alla variante jre ed evita che entri android -->
 	    <dependency>
 	      <groupId>com.google.guava</groupId>
 	      <artifactId>guava</artifactId>
 	      <version>33.1.0-jre</version>
 	    </dependency>
 	
-	    <!-- 6) Error prone annotations: versione unica -->
 	    <dependency>
 	      <groupId>com.google.errorprone</groupId>
 	      <artifactId>error_prone_annotations</artifactId>
 	      <version>2.35.1</version>
 	    </dependency>
 	
-	    <!-- Apache Commons: allinea i moduli “ballerini” -->
 	    <dependency>
 	      <groupId>commons-io</groupId>
 	      <artifactId>commons-io</artifactId>
@@ -89,13 +84,28 @@
 	      <version>4.5.0</version>
 	    </dependency>
 	
-	    <!-- commons-logging: evita 1.2 vs 1.3.5 -->
 	    <dependency>
 	      <groupId>commons-logging</groupId>
 	      <artifactId>commons-logging</artifactId>
 	      <version>1.3.5</version>
 	    </dependency>
-	
+
+		<dependency>
+		    <groupId>org.apache.logging.log4j</groupId>
+		    <artifactId>log4j-bom</artifactId>
+		    <version>2.25.3</version> <type>pom</type>
+		    <scope>import</scope>
+		</dependency>
+	    <dependency>
+	      <groupId>org.slf4j</groupId>
+	      <artifactId>slf4j-api</artifactId>
+	      <version>2.0.17</version>
+	    </dependency>
+		<dependency>
+		    <groupId>org.slf4j</groupId>
+		    <artifactId>jcl-over-slf4j</artifactId>
+  		    <version>2.0.17</version>
+		</dependency>
 	  </dependencies>
 	</dependencyManagement>
 
@@ -110,19 +120,13 @@
 		</dependency>
         
 		<!-- Jackson (JSON annotations and bindings) 
-		This is an old version but avoids possible conflicts ith transitive dependencies
+		This is an old version but avoids possible conflicts with transitive dependencies.
+		This is now moved to tools.jackson.core
 		-->
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 		</dependency>
-		<!--
-		<dependency>
-		    <groupId>tools.jackson.core</groupId>
-		    <artifactId>jackson-databind</artifactId>
-		    <version>3.0.3</version>
-		</dependency>
-		-->
 		
 		<!-- JSON schema -->
 		<dependency>
@@ -203,15 +207,18 @@
 			<version>3.2.3</version>
 		</dependency>
 
-		<!--
-		Below dependencies are needed to disable annoying SLF4J log
-		messages FFS!
-		Notice also a logback.xml file must be in the project
-		resources to disable all logging.
-		-->
+		<!-- Logging, including support for dependencies using sl4j -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-api</artifactId>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.logging.log4j</groupId>
+		    <artifactId>log4j-to-slf4j</artifactId>
+		</dependency>
+		<dependency>
+		    <groupId>org.slf4j</groupId>
+		    <artifactId>jcl-over-slf4j</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>ch.qos.logback</groupId>
@@ -219,12 +226,6 @@
 			<version>1.5.22</version>
 			<scope>test</scope>
 		</dependency>
-		<!--
-		<dependency>
-			<groupId>org.apache.logging.log4j</groupId>
-			<artifactId>log4j-core</artifactId>
-		</dependency>
-		-->
 	</dependencies>
 	
 	<build>

@@ -23,15 +23,17 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.openai.errors.BadRequestException;
 import com.openai.models.images.ImageCreateVariationParams.ResponseFormat;
 import com.openai.models.images.ImageModel;
 
+import io.github.mzattera.predictivepowers.BadRequestException;
 import io.github.mzattera.predictivepowers.TestConfiguration;
 import io.github.mzattera.predictivepowers.services.ImageGenerationService;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
@@ -41,16 +43,17 @@ import io.github.mzattera.predictivepowers.util.ResourceUtil;
 
 public class OpenAiImageGenerationServiceTest {
 
-	// TODO Think about how to disable this if we are not testing OpenAI (otherwise it still runs and shows green)
-	
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiImageGenerationServiceTest.class);
+
+	static boolean isEnabled() {
+		return TestConfiguration.TEST_OPENAI_SERVICES;
+	}
 
 	@Test
 	@DisplayName("OpenAI Custom Tests - getters & setters")
+	@EnabledIf("isEnabled")
+	@Disabled
 	public void oaiTest() throws Exception {
-
-		if (!TestConfiguration.TEST_OPENAI_SERVICES)
-			return;
 
 		try (OpenAiEndpoint ep = new OpenAiEndpoint();
 				OpenAiImageGenerationService oaies = ep.getImageGenerationService()) {
@@ -74,14 +77,16 @@ public class OpenAiImageGenerationServiceTest {
 
 	@Test
 	@DisplayName("OpenAI Custom Tests - Known bug")
+	@EnabledIf("isEnabled")
 	// TODO https://github.com/openai/openai-java/issues/478
 	public void oaiTest02() throws Exception {
 
-		if (!TestConfiguration.TEST_OPENAI_SERVICES)
-			return;
+		System.out.println("Active Threads: " + Thread.activeCount());
 
 		try (OpenAiEndpoint ep = new OpenAiEndpoint();
 				OpenAiImageGenerationService oaies = ep.getImageGenerationService("dall-e-3")) {
+
+			System.out.println("Entered!");
 
 			assertThrows(BadRequestException.class,
 					() -> oaies.createImage("Create the image of a white cyborg.", 1, 256, 256));
@@ -90,13 +95,15 @@ public class OpenAiImageGenerationServiceTest {
 
 	@Test
 	@DisplayName("OpenAI Custom Tests - Squaring an image and returning base 64")
+	@EnabledIf("isEnabled")
 	public void oaiTest03() throws Exception {
 
-		if (!TestConfiguration.TEST_OPENAI_SERVICES)
-			return;
-
+		System.out.println("Active Threads: " + Thread.activeCount());
+		
 		try (OpenAiEndpoint ep = new OpenAiEndpoint();
 				OpenAiImageGenerationService oaies = ep.getImageGenerationService("dall-e-2")) {
+
+			System.out.println("Entered!");
 
 			oaies.setDefaultVariationRequest(
 					oaies.getDefaultVariationRequest().toBuilder().responseFormat(ResponseFormat.B64_JSON).build());

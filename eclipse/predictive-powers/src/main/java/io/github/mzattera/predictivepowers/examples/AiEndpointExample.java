@@ -45,6 +45,7 @@ public class AiEndpointExample {
 		// Build endpoint from an existing API client
 		// The client is created reading API key from OS environment
 		OpenAIClient cli = OpenAIOkHttpClient.fromEnv();
+		// Client can be configured here...
 		endpoint = new OpenAiEndpoint(cli);
 	}
 }

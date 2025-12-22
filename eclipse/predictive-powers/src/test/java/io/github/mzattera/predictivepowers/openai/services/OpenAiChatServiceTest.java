@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -37,6 +38,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -101,12 +103,20 @@ public class OpenAiChatServiceTest {
 		return svcs.stream();
 	}
 
+	static boolean hasServices() {
+		return services().findAny().isPresent();
+	}
+
 	// Reasoning services to be tested (for refusal)
 	static Stream<String> reasoning() {
 		List<String> l = new ArrayList<>();
 		if (TestConfiguration.TEST_OPENAI_SERVICES)
 			l.add("o3-mini");
 		return l.stream();
+	}
+
+	static boolean hasReasoning() {
+		return reasoning().findAny().isPresent();
 	}
 
 	// Default service (for things we need to check once)
@@ -117,12 +127,19 @@ public class OpenAiChatServiceTest {
 		return l.stream();
 	}
 
+	static boolean hasDefaultModel() {
+		return defaultModel().findAny().isPresent();
+	}
+
 	//////////////////////////////////////////////////////////////////////
 	/// HISTORY
 	//////////////////////////////////////////////////////////////////////
 
+	// TODO Once we have shared conversation memory, move this into generic test
+
 	@ParameterizedTest
 	@MethodSource("defaultModel")
+	@EnabledIf("hasDefaultModel")
 	@DisplayName("Check completions not affecting history.")
 	public void testHistoryComplete(String model) throws Exception {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint(); OpenAiChatService cs = ep.getChatService(model);) {
@@ -180,6 +197,7 @@ public class OpenAiChatServiceTest {
 
 	@ParameterizedTest
 	@MethodSource("defaultModel")
+	@EnabledIf("hasDefaultModel")
 	@DisplayName("Check chat and history management.")
 	@Disabled // // TODO URGENT Remove after tokenizer is fixed
 	public void testHistoryChat(String model) throws Exception {
@@ -322,6 +340,7 @@ public class OpenAiChatServiceTest {
 
 	@ParameterizedTest
 	@MethodSource("defaultModel")
+	@EnabledIf("hasDefaultModel")
 	@DisplayName("Check chat and history management with exception.")
 	public void testHistoryException(String model) {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint(); OpenAiChatService cs = ep.getChatService(model);) {
@@ -360,6 +379,7 @@ public class OpenAiChatServiceTest {
 	@SuppressWarnings("deprecation")
 	@ParameterizedTest
 	@MethodSource("defaultModel")
+	@EnabledIf("hasDefaultModel")
 	public void testCallResultsOnTop(String model) throws JsonProcessingException, ToolInitializationException {
 
 		try (OpenAiEndpoint ep = new OpenAiEndpoint();
@@ -422,6 +442,10 @@ public class OpenAiChatServiceTest {
 		return l.stream();
 	}
 
+	static boolean hasParallelCalls() {
+		return parallelCalls().findAny().isPresent();
+	}
+
 	@ToString
 	private static class Pojo {
 		@JsonProperty(required = true)
@@ -431,6 +455,7 @@ public class OpenAiChatServiceTest {
 
 	@ParameterizedTest
 	@MethodSource("parallelCalls")
+	@EnabledIf("hasParallelCalls")
 	@DisplayName("Tests multiple tool calls")
 	public void testParallelCalls(String model) throws ToolInitializationException, JsonProcessingException {
 
@@ -461,60 +486,10 @@ public class OpenAiChatServiceTest {
 	/// DIVERSE FILE TYPES
 	//////////////////////////////////////////////////////////////////////
 
-	@DisplayName("Test image URLs in messages.")
-	@ParameterizedTest
-	@MethodSource("defaultModel")
-	public void testImgUrls(String model) throws MalformedURLException, URISyntaxException {
-
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint(); OpenAiChatService svc = endpoint.getChatService(model);) {
-
-			// Uses an image as input.
-			ChatMessage msg = new ChatMessage("Is there any grass in this image?");
-			msg.getParts().add(FilePart.fromUrl(
-					"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
-					"image/jpeg"));
-			ChatCompletion resp = svc.chat(msg);
-			System.out.println(resp.getText());
-			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
-			assertTrue(resp.getText().toUpperCase().contains("YES"));
-
-			// Sends another message to show that the image is kept in history correctly
-			resp = svc.chat("What material the pathway in the picture is made of?");
-			System.out.println(resp.getText());
-			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
-			assertTrue(resp.getText().toUpperCase().contains("WOOD"));
-
-		} // Close endpoint
-	}
-
-	@DisplayName("Test image in messages.")
-	@ParameterizedTest
-	@MethodSource("defaultModel")
-	public void testImgFiles(String model) throws MalformedURLException, URISyntaxException {
-
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint(); OpenAiChatService svc = endpoint.getChatService(model);) {
-
-			// Uses an image as input.
-			ChatMessage msg = new ChatMessage("Is there any grass in this image?");
-			msg.getParts().add(new FilePart(
-					ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png"), "image/png"));
-			ChatCompletion resp = svc.chat(msg);
-			System.out.println(resp.getText());
-			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
-			assertTrue(resp.getText().toUpperCase().contains("YES"));
-
-			// Sends another message to show that the image is kept in history correctly
-			resp = svc.chat("What material the pathway in the picture is made of?");
-			System.out.println(resp.getText());
-			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
-			assertTrue(resp.getText().toUpperCase().contains("WOOD"));
-
-		} // Close endpoint
-	}
-
 	@DisplayName("Test PDF in messages.")
 	@ParameterizedTest
 	@MethodSource("defaultModel")
+	@EnabledIf("hasDefaultModel")
 	public void testPdfFiles(String model) throws MalformedURLException, URISyntaxException {
 
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint(); OpenAiChatService svc = endpoint.getChatService(model);) {
@@ -543,9 +518,16 @@ public class OpenAiChatServiceTest {
 		return l.stream();
 	}
 
+	static boolean hasAudioModels() {
+		return audioModels().findAny().isPresent();
+	}
+
+	// TODO If we have other modles supporting audio, move this to generic tests
+
 	@DisplayName("Test audio in messages.")
 	@ParameterizedTest
 	@MethodSource("audioModels")
+	@EnabledIf("hasAudioModels")
 	public void testIAudioFiles(String model) throws MalformedURLException, URISyntaxException {
 
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint(); OpenAiChatService svc = endpoint.getChatService(model);) {
@@ -570,6 +552,7 @@ public class OpenAiChatServiceTest {
 	@DisplayName("Test audio creation.")
 	@ParameterizedTest
 	@MethodSource("audioModels")
+	@EnabledIf("hasAudioModels")
 	public void testIAudioCreation(String model) throws URISyntaxException, IOException {
 
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint(); OpenAiChatService svc = endpoint.getChatService(model);) {
@@ -590,7 +573,9 @@ public class OpenAiChatServiceTest {
 			assertTrue(resp.getMessage().hasFileContent(ContentType.AUDIO));
 			for (FilePart part : resp.getMessage().getFileContent(ContentType.AUDIO)) {
 				File tmp = File.createTempFile("audio_" + model + "_", ".mp3");
-				Files.copy(part.getInputStream(), tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
+				try (InputStream s = part.getInputStream()) {
+					Files.copy(s, tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
+				}
 				System.out.println(tmp.getCanonicalPath());
 			}
 		} // Close endpoint
@@ -602,6 +587,7 @@ public class OpenAiChatServiceTest {
 
 	@ParameterizedTest
 	@MethodSource("reasoning")
+	@EnabledIf("hasReasoning")
 	@DisplayName("Test refusal")
 	public void testRefusal(String model) throws JsonProcessingException {
 		try (OpenAiEndpoint ep = new OpenAiEndpoint(); OpenAiChatService cs = ep.getChatService(model);) {
@@ -630,8 +616,13 @@ public class OpenAiChatServiceTest {
 		return l.stream();
 	}
 
+	static boolean hasSmallCtxModel() {
+		return smallCtxModel().findAny().isPresent();
+	}
+
 	@ParameterizedTest
 	@MethodSource("smallCtxModel")
+	@EnabledIf("hasSmallCtxModel")
 	@DisplayName("Test automated recovery from length limits too high")
 	public void testMaxTknLimit(String model) throws Exception {
 

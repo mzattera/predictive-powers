@@ -141,7 +141,8 @@ public class OpenAiModelService extends AbstractModelService {
 		}
 
 		@Getter
-		private CallType supportedCallType;
+		@NonNull
+		private CallType supportedCallType = CallType.NONE;
 
 		@NonNull
 		@Getter
@@ -305,14 +306,14 @@ public class OpenAiModelService extends AbstractModelService {
 						.supportedApis(CHAT_RESPONSES_ASSISTANTS_BATCH_FINE_TUNING).supportedCallType(CallType.TOOLS)
 						.build());
 
-		// Structured output and max new tokens different than 4o
+		// Needed because structured output and ctx size are different than gpt-4o
 		MODEL_CONFIG.put("gpt-4o-2024-05-13",
-				new OpenAiModelMetaData.Builder().model("gpt-4o-2024-05-13")
-						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-4o")).contextSize(128_000).maxNewTokens(4096)
-						.inputModes(TEXT_IMAGE).outputModes(TEXT_IMAGE)
-						.supportedApis(CHAT_RESPONSES_ASSISTANTS_BATCH_FINE_TUNING).supportedCallType(CallType.TOOLS)
-						.structuredOutput(false).build());
+				new OpenAiModelMetaData.Builder().model("gpt-4o-2024-05-13").tokenizer(OpenAiTokenizer.getTokenizer("gpt-4o"))
+						.contextSize(128_000).maxNewTokens(4096).inputModes(TEXT_IMAGE).outputModes(TEXT_IMAGE)
+						.supportedApis(CHAT_RESPONSES_ASSISTANTS_BATCH_FINE_TUNING).supportedCallType(CallType.TOOLS).structuredOutput(false)
+						.build());
 
+		// Structured output and max new tokens different than 4o
 		MODEL_CONFIG.put("gpt-4o-audio-preview",
 				new OpenAiModelMetaData.Builder().model("gpt-4o-audio-preview")
 						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-4o-audio-preview")).contextSize(128_000)
@@ -352,6 +353,86 @@ public class OpenAiModelService extends AbstractModelService {
 						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-5-chat-latest")).contextSize(128_000)
 						.maxNewTokens(16_384).inputModes(TEXT_IMAGE).outputModes(TEXT).supportedApis(CHAT_RESPONSES)
 						.supportedCallType(CallType.TOOLS).build());
+
+		MODEL_CONFIG.put("gpt-5.1", new OpenAiModelMetaData.Builder().model("gpt-5.1") //
+				.tokenizer(OpenAiTokenizer.getTokenizer("gpt-5.1")) //
+				.contextSize(272_000) //
+				.maxNewTokens(128_000) //
+				.inputModes(TEXT_IMAGE) //
+				.outputModes(TEXT) //
+				.supportedApis(CHAT_RESPONSES) //
+				.supportedCallType(CallType.TOOLS) //
+				.structuredOutput(true).build());
+
+		MODEL_CONFIG.put("gpt-5.1-chat-latest", new OpenAiModelMetaData.Builder().model("gpt-5.1-chat-latest") //
+				.tokenizer(OpenAiTokenizer.getTokenizer("gpt-5.1-chat-latest")) //
+				.contextSize(272_000) //
+				.maxNewTokens(131_072) //
+				.inputModes(TEXT_IMAGE) //
+				.outputModes(TEXT) //
+				.supportedApis(CHAT_RESPONSES) //
+				.supportedCallType(CallType.TOOLS) //
+				.structuredOutput(true).build());
+
+		MODEL_CONFIG.put("gpt-5.1-codex", new OpenAiModelMetaData.Builder().model("gpt-5.1-codex") //
+				.tokenizer(OpenAiTokenizer.getTokenizer("gpt-5.1-codex")) //
+				.contextSize(400_000) //
+				.maxNewTokens(128_000) //
+				.inputModes(TEXT_IMAGE) //
+				.outputModes(TEXT) //
+				.supportedApis(List.of(SupportedApi.RESPONSES)) //
+				.supportedCallType(CallType.TOOLS) //
+				.structuredOutput(true).build());
+
+		MODEL_CONFIG.put("gpt-5.1-codex-max", new OpenAiModelMetaData.Builder().model("gpt-5.1-codex-max") //
+				.tokenizer(OpenAiTokenizer.getTokenizer("gpt-5.1-codex-max")) //
+				.contextSize(400_000) //
+				.maxNewTokens(128_000) //
+				.inputModes(TEXT_IMAGE) //
+				.outputModes(TEXT) //
+				.supportedApis(List.of(SupportedApi.RESPONSES)) //
+				.supportedCallType(CallType.TOOLS) //
+				.structuredOutput(true).build());
+
+		MODEL_CONFIG.put("gpt-5.1-codex-mini", new OpenAiModelMetaData.Builder().model("gpt-5.1-codex-mini") //
+				.tokenizer(OpenAiTokenizer.getTokenizer("gpt-5.1-codex-mini")) //
+				.contextSize(400_000) //
+				.maxNewTokens(128_000) //
+				.inputModes(TEXT_IMAGE) //
+				.outputModes(TEXT) //
+				.supportedApis(List.of(SupportedApi.RESPONSES)) //
+				.supportedCallType(CallType.TOOLS) //
+				.structuredOutput(true).build());
+
+		MODEL_CONFIG.put("gpt-5.2", new OpenAiModelMetaData.Builder().model("gpt-5.2") //
+				.tokenizer(OpenAiTokenizer.getTokenizer("gpt-5.2")) //
+				.contextSize(272_000) //
+				.maxNewTokens(128_000) //
+				.inputModes(TEXT_IMAGE) //
+				.outputModes(TEXT) //
+				.supportedApis(CHAT_RESPONSES) //
+				.supportedCallType(CallType.TOOLS) //
+				.structuredOutput(true).build());
+
+		MODEL_CONFIG.put("gpt-5.2-pro", new OpenAiModelMetaData.Builder().model("gpt-5.2-pro") //
+				.tokenizer(OpenAiTokenizer.getTokenizer("gpt-5.2-pro")) //
+				.contextSize(400_000) //
+				.maxNewTokens(128_000) //
+				.inputModes(TEXT_IMAGE) //
+				.outputModes(TEXT) //
+				.supportedApis(List.of(SupportedApi.RESPONSES)) //
+				.supportedCallType(CallType.TOOLS) //
+				.structuredOutput(false).build());
+
+		MODEL_CONFIG.put("gpt-5.2-chat-latest", new OpenAiModelMetaData.Builder().model("gpt-5.2-chat-latest") //
+				.tokenizer(OpenAiTokenizer.getTokenizer("gpt-5.2-chat-latest")) //
+				.contextSize(272_000) //
+				.maxNewTokens(128_000) //
+				.inputModes(TEXT_IMAGE) //
+				.outputModes(TEXT) //
+				.supportedApis(CHAT_RESPONSES) //
+				.supportedCallType(CallType.TOOLS) //
+				.structuredOutput(true).build());
 
 		// Cost-optimized Models
 		MODEL_CONFIG.put("o4-mini", new OpenAiModelMetaData.Builder() //
@@ -405,12 +486,6 @@ public class OpenAiModelService extends AbstractModelService {
 						.maxNewTokens(16_384).inputModes(TEXT_AUDIO).outputModes(TEXT_AUDIO).supportedApis(CHAT)
 						.supportedCallType(CallType.TOOLS).build());
 
-		MODEL_CONFIG.put("o1-mini",
-				new OpenAiModelMetaData.Builder().model("o1-mini").tokenizer(OpenAiTokenizer.getTokenizer("o1-mini"))
-						.contextSize(128_000).maxNewTokens(65_536).inputModes(TEXT).outputModes(TEXT)
-						.supportedApis(CHAT_RESPONSES_ASSISTANTS).supportedCallType(CallType.NONE)
-						.structuredOutput(false).build());
-
 		// Realtime Models
 		MODEL_CONFIG.put("gpt-4o-realtime-preview",
 				new OpenAiModelMetaData.Builder().model("gpt-4o-realtime-preview")
@@ -449,6 +524,26 @@ public class OpenAiModelService extends AbstractModelService {
 				new OpenAiModelMetaData.Builder().model("dall-e-3").tokenizer(OpenAiTokenizer.getTokenizer("dall-e-3"))
 						.contextSize(2_000).inputModes(TEXT).outputModes(IMAGE).supportedApis(IMAGES)
 						.supportedCallType(CallType.NONE).build());
+
+		MODEL_CONFIG.put("chatgpt-image-latest", new OpenAiModelMetaData.Builder().model("chatgpt-image-latest") //
+				.tokenizer(OpenAiTokenizer.getTokenizer("chatgpt-image-latest")) //
+//				.contextSize(8_192) //
+//				.maxNewTokens(8_192) //
+				.inputModes(TEXT_IMAGE) //
+				.outputModes(TEXT_IMAGE) //
+				.supportedApis(IMAGES) //
+				.supportedCallType(CallType.NONE) //
+				.structuredOutput(false).build());
+
+		MODEL_CONFIG.put("gpt-image-1.5", new OpenAiModelMetaData.Builder().model("gpt-image-1.5") //
+				.tokenizer(OpenAiTokenizer.getTokenizer("gpt-image-1.5")) //
+//				.contextSize(8_192) //
+//				.maxNewTokens(8_192) //
+				.inputModes(TEXT_IMAGE) //
+				.outputModes(TEXT_IMAGE) //
+				.supportedApis(IMAGES) //
+				.supportedCallType(CallType.NONE) //
+				.structuredOutput(false).build());
 
 		// Video (SORA)
 		MODEL_CONFIG.put("sora-2",

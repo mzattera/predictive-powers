@@ -169,8 +169,9 @@ public class OpenAiImageGenerationService extends AbstractImageGenerationService
 			// For DALL-E-2 make image squared by padding it
 			ImageModel model = defaultVariationRequest.model().get();
 			if (ImageModel.DALL_E_2.equals(model)) {
-				prompt = new Base64FilePart(ImageUtil.padImageToSquare(prompt.getInputStream()), "prompt.png",
-						"image/png");
+				try (InputStream s = prompt.getInputStream()){
+				prompt = new Base64FilePart(ImageUtil.padImageToSquare(s), "prompt.png",
+						"image/png");}
 			}
 
 			ImageCreateVariationParams.Size size;

@@ -21,7 +21,6 @@ import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -206,10 +205,10 @@ public final class FileUtil {
 	 * @return MIME type for given file.
 	 */
 	public static String getMimeType(File file) {
-		try {
-			return getMimeType(new FileInputStream(file));
-		} catch (FileNotFoundException e) {
-			return null;
+		try (InputStream s = new FileInputStream(file)) {
+			return getMimeType(s);
+		} catch (IOException e) {
+			return MimeTypes.OCTET_STREAM;
 		}
 	}
 
@@ -219,8 +218,8 @@ public final class FileUtil {
 	 * @return MIME type for file at given URL.
 	 */
 	public static String getMimeType(URL url) {
-		try {
-			return getMimeType(url.openStream());
+		try (InputStream s = WebUtil.getInputStream(url)) {
+			return getMimeType(s);
 		} catch (IOException e) {
 			return MimeTypes.OCTET_STREAM;
 		}

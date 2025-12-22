@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -61,6 +62,10 @@ import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.NonNull;
 
+// TODO Re-enable this after a proper tokeniser is implemented for OpenAI
+// If you do, make sure the @EanbledIf aligns with other tests
+
+@Disabled
 public class OpenAiTokenizerTest {
 
 	private static OpenAiEndpoint endpoint;

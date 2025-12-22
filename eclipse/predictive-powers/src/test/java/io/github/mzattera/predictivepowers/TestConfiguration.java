@@ -29,14 +29,13 @@ import io.github.mzattera.predictivepowers.google.services.GoogleEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.services.SearchService;
 
 /**
  * This class is used to configure which JUnit tests are active.
  */
 public final class TestConfiguration {
 
-	public final static boolean TEST_GOOGLE_SERVICES = true;
+	public final static boolean TEST_GOOGLE_SERVICES = false;
 
 	public final static boolean TEST_HF_SERVICES = false;
 

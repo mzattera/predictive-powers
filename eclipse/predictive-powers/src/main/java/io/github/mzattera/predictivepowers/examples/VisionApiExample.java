@@ -25,17 +25,18 @@ public class VisionApiExample {
 
 	public static void main(String[] args) throws Exception {
 
-		try (
-				 OpenAiEndpoint endpoint = new OpenAiEndpoint();
-				 Agent bot = endpoint.getChatService("gpt-4-vision-preview");
-		) {
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
+				Agent bot = endpoint.getChatService("gpt-4-turbo");) {
 
 			// Build the message to send
-			ChatMessage msg = new ChatMessage("Is there any grass in this image?");
+			ChatMessage msg = new ChatMessage("What is depicted in this image?");
 
 			// Provide an URL to the the image to inspect
-			msg.getParts().add(FilePart.fromUrl(
-					"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"));
+			msg.addPart(FilePart.fromUrl(
+					"https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Alan_turing_header.jpg/500px-Alan_turing_header.jpg"));
+
+			// An image can also be created from file
+//			msg.addPart(FilePart.fromFileName("C:\\myImage.png"));
 
 			// Interact with the bot and print its response
 			System.out.println(bot.chat(msg).getText());

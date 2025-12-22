@@ -23,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -31,6 +33,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -39,8 +42,12 @@ import com.openai.errors.BadRequestException;
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.TestConfiguration;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
+import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
+import io.github.mzattera.predictivepowers.util.ResourceUtil;
 
 /**
  * Tests chat services.
@@ -190,6 +197,60 @@ public class ChatServiceTest {
 				assertTrue(p.getRight().equals("o1") || p.getRight().equals("o3-mini"));
 			}
 		}
+	}
+
+	make sure only models supporting images are tested
+
+	@DisplayName("Test image URLs in messages.")
+	@ParameterizedTest
+	@MethodSource("defaultModel")
+	@EnabledIf("hasDefaultModel")
+	public void testImgUrls(String model) throws MalformedURLException, URISyntaxException {
+
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint(); OpenAiChatService svc = endpoint.getChatService(model);) {
+
+			// Uses an image as input.
+			ChatMessage msg = new ChatMessage("Is there any grass in this image?");
+			msg.getParts().add(FilePart.fromUrl(
+					"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
+					"image/jpeg"));
+			ChatCompletion resp = svc.chat(msg);
+			System.out.println(resp.getText());
+			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
+			assertTrue(resp.getText().toUpperCase().contains("YES"));
+
+			// Sends another message to show that the image is kept in history correctly
+			resp = svc.chat("What material the pathway in the picture is made of?");
+			System.out.println(resp.getText());
+			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
+			assertTrue(resp.getText().toUpperCase().contains("WOOD"));
+
+		} // Close endpoint
+	}
+
+	@DisplayName("Test image in messages.")
+	@ParameterizedTest
+	@MethodSource("defaultModel")
+	public void testImgFiles(String model) throws MalformedURLException, URISyntaxException {
+
+		try (OpenAiEndpoint endpoint = new OpenAiEndpoint(); OpenAiChatService svc = endpoint.getChatService(model);) {
+
+			// Uses an image as input.
+			ChatMessage msg = new ChatMessage("Is there any grass in this image?");
+			msg.getParts().add(new FilePart(
+					ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png"), "image/png"));
+			ChatCompletion resp = svc.chat(msg);
+			System.out.println(resp.getText());
+			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
+			assertTrue(resp.getText().toUpperCase().contains("YES"));
+
+			// Sends another message to show that the image is kept in history correctly
+			resp = svc.chat("What material the pathway in the picture is made of?");
+			System.out.println(resp.getText());
+			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());
+			assertTrue(resp.getText().toUpperCase().contains("WOOD"));
+
+		} // Close endpoint
 	}
 
 }

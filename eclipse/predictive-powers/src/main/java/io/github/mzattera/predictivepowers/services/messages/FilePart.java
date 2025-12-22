@@ -31,6 +31,7 @@ import java.net.URL;
 import org.apache.tika.mime.MimeTypes;
 
 import io.github.mzattera.predictivepowers.util.FileUtil;
+import io.github.mzattera.predictivepowers.util.WebUtil;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.experimental.SuperBuilder;
@@ -92,12 +93,12 @@ public class FilePart implements MessagePart {
 	 * If this is a remote file, this is its URL.
 	 */
 	private final URL url;
-	
+
 	@Override
 	public Type getType() {
 		return Type.FILE;
 	}
-	
+
 	protected FilePart() {
 		this.file = null;
 		this.url = null;
@@ -150,7 +151,7 @@ public class FilePart implements MessagePart {
 	 * Constructor. Notice the content at given URL is inspected to determine its
 	 * content type if mimeType==null.
 	 */
-	public FilePart(@NonNull URL url, @NonNull String mimeType) {
+	public FilePart(@NonNull URL url, String mimeType) {
 		this.file = null;
 		this.url = url;
 		this.mimeType = (mimeType == null ? FileUtil.getMimeType(url) : mimeType);
@@ -214,8 +215,8 @@ public class FilePart implements MessagePart {
 	public InputStream getInputStream() throws IOException {
 		if (file != null)
 			return new FileInputStream(file);
-		if (url != null)
-			return url.openStream();
+		if (url != null) 
+			return WebUtil.getInputStream(url);
 		return null;
 	}
 

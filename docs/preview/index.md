@@ -1,7 +1,7 @@
 # predictive-powers PRE-RELEASE
 
 **These instructions refer to latest version of the code available in the repository (pre-release).
-They are updated as the implementation  progresses and, as such, might be slightly out of sync with changes made to the library.**
+They are updated as the implementation progresses and, as such, might be slightly out of sync with changes made to the library.**
 
 **If you are using latest release of the library, please refer to the [release documentation](../).**
 
@@ -17,47 +17,43 @@ Advantages of using this library:
      
   2. Hides a lot of the underlying API complexity. For example:
   
-     * Automated handling of context sizes, with exact token calculations.
+     * Automated handling of context sizes.
      
      * Automated handling of chat history, with customizable length.
     
      * Uniform interface to add tools (function calls) to models, regardless the mechanism they use
-     (e.g. single or parallel function calling for OpenAI models).
+     (e.g. function calling and tool calling for OpenAI models are treated in the same way).
      This includes a modular approach to adding tools to agents. 
     
      * Multi-part chat messages that support using files and images through same API.
 	 
 	 * Automated scaling down and caching of images in chats, tailored to each service provider, to reduce latency and costs.
-  
-  3. Still allows direct, low-level, access to underlying API from Java.
 
-  4. Provides access to several capabilities in addition to chat completion, including image generation, STT, TTS, and web search.
+  3. Provides access to several capabilities in addition to chat completion, including image generation, STT, TTS, and web search.
   
-  5. Provides a serializable in-memory vector database.
+  4. Provides a naive serializable in-memory vector database.
 
-  6. Offers methods to easily read, chunk, and embed textual content from web pages and files in different formats (MS Office, PDF, HTML, etc.).
+  5. Offers methods to easily read, chunk, and embed textual content from web pages and files in different formats (MS Office, PDF, HTML, etc.).
   
 ## 1. - Quick Start
 
+### Usage
+
+`predictive-powers` requires Java 11 or higher. It can be added to your project as a Maven dependency:
+
+```
+TODO add Maven Link
+```
+
 ### Installation
 
-`predictive-powers` requires Java 11 or higher.
-
-For the time being, this library comes as a (huge) `.jar` file containing all the required dependencies.
-The source is a [Maven](https://maven.apache.org/) project inside the `eclipse` folder.
+Library source can be found as a [Maven](https://maven.apache.org/) project inside the `eclipse` folder.
 
 The code depends, among others, on [Lomboc](https://projectlombok.org/) which is correctly referenced within the `pom.xml` file for this project.
 However, to have Lomboc to work in the Eclipse editor, you need to install it inside Eclipse (or any other IDE you are using), as explained on Lomboc website.
 
-To avoid passing API keys explicitly in code, the library can read them from the operating system environment.
+To avoid passing any API keys explicitly in code, the library can read them from the operating system environment.
 The exact process for setting up the environment depends on the operating system you are using.
-
-### Logging
-
-`predictive-powers` uses [logback](https://logback.qos.ch/index.html) for logging. 
-
-To configure logback in your applications that use `predictive-powers`, simply add a `logback.xml` configuration file to your classpath,
-as explained [here](https://logback.qos.ch/manual/configuration.html).
 
 ### <a name="chatintroduction"></a>Your First Chat with an Agent
  
@@ -68,20 +64,22 @@ The below code handles conversation with a very depressed entity similar to the 
  ```java
 import java.util.Scanner;
 
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.services.Agent;
+import io.github.mzattera.predictivepowers.AiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.services.ChatService;
 
 public class ChatExample {
 
 	public static void main(String[] args) throws Exception {
 
-		// Get chat service and set its personality
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
-				Agent agent = endpoint.getChatService();) {
-			
+		try (
+			AiEndpoint endpoint = new OpenAiEndpoint();
+			ChatService agent = endpoint.getChatService();
+		) {
+
+			// Give instructions to agent
 			agent.setPersonality("You are a very sad and depressed robot. "
-					+ "Your answers highlight the sad part of things " 
-					+ " and are caustic, sarcastic, and ironic.");
+					+ "Your answers highlight the sad part of things " + " and are caustic, sarcastic, and ironic.");
 
 			// Conversation loop
 			try (Scanner console = new Scanner(System.in)) {
@@ -89,9 +87,9 @@ public class ChatExample {
 					System.out.print("User     > ");
 					String s = console.nextLine();
 					System.out.println("Assistant> " + agent.chat(s).getText());
-				}			
+				}
 			}
-		} // Close resources 
+		} // Close resources
 	}
 }
 ```
@@ -114,98 +112,13 @@ All the code snippets in this section can be found in the
 
 ### API Clients
 
-API clients are the lowest-level components of this library; they allow you to perform direct API calls to service providers. 
-For example, you can access OpenAI API directly by instantiating an `OpenAiClient` and calling its methods.
-
-API clients in the library automatically intercept HTTP errors 429, 500, 503, and 504, which normally indicate temporarily unavailability of APIs,
-and retry calls after a random and exponentially increasing wait time ([exponential backoff strategy](https://platform.openai.com/docs/guides/rate-limits/error-mitigation)).
-This feature can be easily disabled, if desired.
-
-Class constructors typically allow you to pass your API key, which will be used in all subsequent calls.
-Alternatively, default constructors will try to read the key from your system environment;
-please refer to the below examples, the [endpoint](#endpoints) section, or the JavaDoc for more details.
-
-After the client is instantiated, you can call the provider API directly; 
-this part of code might not be heavily documented but it is meant to match exactly API definitions from service providers.
-
-```java
-import io.github.mzattera.predictivepowers.openai.client.OpenAiClient;
-import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsRequest;
-import io.github.mzattera.predictivepowers.openai.client.completions.CompletionsResponse;
-
-public class OpenAiClientExample {
-
-	public static void main(String[] args) {
-
-		// Get API key from OS environment variable "OPENAI_API_KEY"
-		try (OpenAiClient client = new OpenAiClient()) {
-			
-			// Complete a sentence
-			// see https://platform.openai.com/docs/api-reference/completions
-			CompletionsRequest req = CompletionsRequest.builder()
-					.model("davinci-002")
-					.maxTokens(50)
-					.prompt("Alan Turing was")
-					.build();
-			CompletionsResponse resp = client.createCompletion(req);
-
-			// Prints result
-			System.out.println(resp.getChoices().get(0).getText());
-			
-		} // closes client
-	}
-}
-```
-
-will output something like:
-
-```console
- a British mathematician, computer scientist, logician, cryptanalyst, philosopher,
- and theoretical biologist who was highly influential in the development
- of theoretical computer science and artificial intelligence.
-```
-
-#### Customization
-
-API clients rely on an underlying `OkHttpClient` which provides features like connection pools, etc.
-You can create a customized `OkHttpClient` (e.g. to provide logging) to be used in your API client, by following the below steps:
-
-  1. Create a pre-configured version of `OkHttpClient` with `ApiClient.getDefaultHttpClient()`.
-     Notice that at this step you will have to provide an API key.
-  2. Configure the `OkHttpClient` as desired.
-  3. Pass it to your API client constructor.
-
-The below example shows how to configure an `OpenAiClient` to use a proxy.
-
-```java
-[...]
-	// Reads API key from OS environment
-	String key = System.getenv(OpenAiClient.OS_ENV_VAR_NAME);;
-	String host = "<Your proxy host name goes here>";
-	int port = 80; // your proxy port goes here
-
-	Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(host, port));
-	OkHttpClient http = ApiClient.getDefaultHttpClient(
-				key,
-				OpenAiClient.DEFAULT_TIMEOUT_MILLIS,
-				OpenAiClient.DEFAULT_MAX_RETRIES,
-				OpenAiClient.DEFAULT_KEEP_ALIVE_MILLIS,
-				OpenAiClient.DEFAULT_MAX_IDLE_CONNECTIONS
-			)
-			.newBuilder()
-			.proxy(proxy)
-			.build();
-	OpenAiClient cli = new OpenAiClient(http);
-		
-	//... use client here ...
-		
-	cli.close();
-[...]
-```
+The library leverages existing API clients such as [OpenAI Java SDK](https://github.com/openai/openai-java) or [hf-inference-api](https://github.com/mzattera/hf-inference-api) to access models and service.
 
 ### <a name="endpoints"></a>Endpoints
 
-An endpoint uses an API client to provide some capabilities in form of services.
+An `Endpoint` uses an API client to provide some capabilities in form of services.
+
+Normally, you can create an endpoint either from it default constructor (which typically reads configuration parameters from the environment) or by passing an API client. Latter option allows you to configure an API client accordingly to your needs (e.g. setting up a proxy) before using it. Endpoints normally provide a `getClient()` method to access underlying API client.
 
 Currently, there are two types of endpoints:
 
@@ -227,22 +140,26 @@ The example below shows how to create instances of these endpoints.
 ```java
 [...]
 
-	// Creates a HuggingFaceEndpoint
-	// Get API key from OS environment variable "HUGGING_FACE_API_KEY"
-	endpoint = new HuggingFaceEndpoint();
+		AiEndpoint endpoint;
 
-	// Creates a OpenAiEndpoint
+		// Creates a HuggingFaceEndpoint
+		// Get API key from OS environment variable "HUGGING_FACE_API_KEY"
+		endpoint = new HuggingFaceEndpoint();
+
+		// Creates a OpenAiEndpoint
+
+		// Get API key from OS environment variable "OPENAI_API_KEY"
+		endpoint = new OpenAiEndpoint();
+
+		// Pass API key explicitly (NOT the best practice)
+		endpoint = new OpenAiEndpoint("sk-H0a...Yo1");
+
+		// Build endpoint from an existing API client
+		// The client is created reading API key from OS environment
+		OpenAIClient cli = OpenAIOkHttpClient.fromEnv();
+		// Client can be configured here...
+		endpoint = new OpenAiEndpoint(cli);
 		
-	// Get API key from OS environment variable "OPENAI_API_KEY"
-	endpoint = new OpenAiEndpoint();
-
-	// Pass API key explicitly (NOT the best practice)
-	endpoint = new OpenAiEndpoint("sk-H0a...Yo1");
-
-	// Build endpoint from an existing API client
-	// The client is created reading API key from OS environment
-	OpenAiClient cli = new OpenAiClient();
-	endpoint = new OpenAiEndpoint(cli);					
 [...]
 ```
 
@@ -265,9 +182,9 @@ Alternatively, you can use the default constructor which will try to read these 
 
 Once the endpoint is created, it can be used to access "services" which are high-level capabilities.
 Services abstract capabilities, allowing you to use different providers (endpoints) to perform a task.
-For [example](#imgGen), one could use an `OpenAiEndpoint` to obtain an `ImageGenerationService` instance to generate images using DALL-E;
+For [example](#imgGen), one could use an `OpenAiEndpoint` to obtain an `ImageGenerationService` instance to generate images using OpenAI models;
 alternatively, getting the `ImageGenerationService` instance through an `HuggingFaceEndpoint` will provide the same service,
-through same interface, using OpenJourney hosted on Hugging Face.
+through same interface, using models hosted on Hugging Face.
 
 Currently, following services are provided by `AiEndpoint`s:
 
@@ -275,15 +192,15 @@ Currently, following services are provided by `AiEndpoint`s:
 	 
   * `CompletionService`: text completion: basically, it executes given text prompt.
 	 
-  * `ChatService`: handles conversations with an agent, taking care of agent personality and conversation history.
+  * `ChatService`: handles conversations with a chatbot, taking care of its personality and conversation history.
+	 
+  * `AgentService`: allows you to access agents; these are chatbot capable of tool calling. The library handles transparently the details of tool call mechanisms providing an uniform interfce across providers.
   
-     OpenAI implementation supports function calls as well.
+	 In current implementation, OpenAI agents are created and their configuration stored server-side through the assistants API.
      	 
-  * `EmbeddingService`: embeds text and calculates semantic (cosine) similarity between texts; it takes care of automatically splitting long texts when needed.
+  * `EmbeddingService`: provide service to embed text, including automated chunking.
 	 
   * `ImageGenerationService`: to create images.
- 
-     Provided over both OpenAI (DALL-E) and Hugging Face (Openjourney) endpoints.
      
 Unsurprisingly (?), `SearchEndpoint` provides only one service:
   
@@ -293,24 +210,18 @@ The below example shows how to get the `CompletionService` to complete a sentenc
 Notice how service abstraction allows you to switch between two different service providers, only by changing a single line of code.
 
 ```java
+package io.github.mzattera.predictivepowers.examples;
+
 import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 
 public class CompletionExample {
 
 	public static void main(String[] args) throws Exception {
+		try (AiEndpoint endpoint = new OpenAiEndpoint(); 
+				CompletionService cs = endpoint.getCompletionService();) {
 
-		// Uncomment the below to use OpenAI
-		AiEndpoint endpoint = new OpenAiEndpoint();
-
-		// Uncomment the below to use Hugging Face
-		// AiEndpoint endpoint = new HuggingFaceEndpoint();
-
-		try (endpoint;
-			CompletionService cs = endpoint.getCompletionService(); ) {			
-			
 			System.out.println(cs.complete("Alan Turing was").getText());
 		}
 	}
@@ -326,28 +237,31 @@ Below we provide some [examples](#examples) about using services.
 #### Service Configuration
   
 Service providers typically expose a rich set of parameters for each of their API calls, which are specific to each provider.
-In order to access these parameters, services typically expose a "default request" object.
+In order to access these non-standard parameters, services typically expose a "default request" object specific for each provider through a `getDefaultRequest()` method.
 This object is used when the service calls the client API. Changing parameters on this object will affect all subsequent calls to the API.
 
 An example is provided below:
  
  ```java
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
 
 public class DefaultConfigurationExample {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
 				OpenAiCompletionService cs = endpoint.getCompletionService();) {
 
-			// Set "best_of" parameter in default request, this will affect all further calls
-			cs.getDefaultReq().setBestOf(3);
+			// Set "best_of" parameter in default request, this will affect all further
+			// calls. Notice the object is immutable, so we have to copy it.
+			cs.setDefaultRequest( //
+					cs.getDefaultRequest().toBuilder().bestOf(3).build() //
+			);
 
 			// this call (and subsequent ones) now uses best_of = 3
 			System.out.println(cs.complete("Alan Turing was").getText());
-			
+
 		} // closes resources
 	}
 }

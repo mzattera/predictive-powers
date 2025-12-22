@@ -106,6 +106,8 @@ public class OpenAiTokenizer implements Tokenizer {
 	private static final Map<String, String> MODEL_PREFIX_TO_ENCODING = new HashMap<>();
 	static {
 		MODEL_PREFIX_TO_ENCODING.put("gpt-5-", "o200k_base");
+		MODEL_PREFIX_TO_ENCODING.put("gpt-5.1-", "o200k_base");
+		MODEL_PREFIX_TO_ENCODING.put("gpt-5.2-", "o200k_base");
 
 		MODEL_PREFIX_TO_ENCODING.put("gpt-4-", "cl100k_base");
 		MODEL_PREFIX_TO_ENCODING.put("gpt-4.1-", "o200k_base");
@@ -123,6 +125,10 @@ public class OpenAiTokenizer implements Tokenizer {
 
 	private static final Map<String, String> MODEL_TO_ENCODING = new HashMap<>();
 	static {
+		MODEL_TO_ENCODING.put("gpt-5", "o200k_base");
+		MODEL_TO_ENCODING.put("gpt-5.1", "o200k_base");
+		MODEL_TO_ENCODING.put("gpt-5.2", "o200k_base");
+		
 		MODEL_TO_ENCODING.put("gpt-4", "cl100k_base");
 		MODEL_TO_ENCODING.put("gpt-4o", "o200k_base");
 		MODEL_TO_ENCODING.put("gpt-3.5-turbo", "cl100k_base");

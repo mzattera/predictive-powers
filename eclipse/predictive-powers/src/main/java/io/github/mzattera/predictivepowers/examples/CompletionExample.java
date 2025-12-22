@@ -17,22 +17,15 @@
 package io.github.mzattera.predictivepowers.examples;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 
 public class CompletionExample {
 
 	public static void main(String[] args) throws Exception {
+		try (AiEndpoint endpoint = new OpenAiEndpoint(); 
+				CompletionService cs = endpoint.getCompletionService();) {
 
-		// Uncomment the below to use OpenAI API
-		// AiEndpoint endpoint = new OpenAiEndpoint();
-
-		// Uncomment the below to use Hugging Face API
-		AiEndpoint endpoint = new HuggingFaceEndpoint();
-
-		try (endpoint;
-			CompletionService cs = endpoint.getCompletionService(); ) {			
-			
 			System.out.println(cs.complete("Alan Turing was").getText());
 		}
 	}

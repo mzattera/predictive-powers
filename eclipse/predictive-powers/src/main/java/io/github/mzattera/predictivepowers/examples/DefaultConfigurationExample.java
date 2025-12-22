@@ -27,7 +27,7 @@ public class DefaultConfigurationExample {
 				OpenAiCompletionService cs = endpoint.getCompletionService();) {
 
 			// Set "best_of" parameter in default request, this will affect all further
-			// calls. Noticve the object is immutable, so we have to copy it.
+			// calls. Notice the object is immutable, so we have to copy it.
 			cs.setDefaultRequest( //
 					cs.getDefaultRequest().toBuilder().bestOf(3).build() //
 			);

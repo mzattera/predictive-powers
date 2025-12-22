@@ -125,6 +125,15 @@ public class ChatMessage {
 	}
 
 	/**
+	 * Adds given part to the end of this message.
+	 * 
+	 * @param part
+	 */
+	public void addPart(@NonNull MessagePart part) {
+		parts.add(part);
+	}
+
+	/**
 	 * 
 	 * @return True if and only if this message is pure text.
 	 */

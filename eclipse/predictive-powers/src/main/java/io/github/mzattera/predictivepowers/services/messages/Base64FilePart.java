@@ -28,7 +28,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Base64;
 
-import io.github.mzattera.predictivepowers.services.messages.MessagePart.Type;
 import io.github.mzattera.predictivepowers.util.FileUtil;
 import io.github.mzattera.predictivepowers.util.ImageUtil;
 import lombok.Getter;
@@ -69,7 +68,9 @@ public class Base64FilePart extends FilePart {
 	 */
 	public Base64FilePart(@NonNull File file) throws IOException {
 		super(file);
-		init(super.getInputStream().readAllBytes(), super.getName(), super.getMimeType());
+		try (InputStream s = super.getInputStream()) {
+			init(s.readAllBytes(), super.getName(), super.getMimeType());
+		}
 	}
 
 	/**
@@ -77,7 +78,9 @@ public class Base64FilePart extends FilePart {
 	 */
 	public Base64FilePart(@NonNull File file, String mimeType) throws IOException {
 		super(file, mimeType);
-		init(super.getInputStream().readAllBytes(), super.getName(), mimeType);
+		try (InputStream s = super.getInputStream()) {
+			init(s.readAllBytes(), super.getName(), mimeType);
+		}
 	}
 
 	/**
@@ -86,7 +89,9 @@ public class Base64FilePart extends FilePart {
 	 */
 	public Base64FilePart(@NonNull URL url) throws IOException {
 		super(url);
-		init(super.getInputStream().readAllBytes(), super.getName(), super.getMimeType());
+		try (InputStream s = super.getInputStream()) {
+			init(s.readAllBytes(), super.getName(), super.getMimeType());
+		}
 	}
 
 	/**
@@ -94,12 +99,14 @@ public class Base64FilePart extends FilePart {
 	 */
 	public Base64FilePart(@NonNull URL url, String mimeType) throws IOException {
 		super(url, mimeType);
-		init(super.getInputStream().readAllBytes(), super.getName(), mimeType);
+		try (InputStream s = super.getInputStream()) {
+			init(s.readAllBytes(), super.getName(), mimeType);
+		}
 	}
 
 	/**
-	 * Constructor from image; a name for this file must be provided.
-	 * The image is encoded as base64 PNG.
+	 * Constructor from image; a name for this file must be provided. The image is
+	 * encoded as base64 PNG.
 	 */
 	public Base64FilePart(BufferedImage image, String name) throws IOException {
 		init(ImageUtil.toBytes(image, "png"), name, "image/png");
@@ -154,7 +161,9 @@ public class Base64FilePart extends FilePart {
 	 * "Copy" constructor.
 	 */
 	public Base64FilePart(FilePart file) throws IOException {
-		init(file.getInputStream().readAllBytes(), file.getName(), file.getMimeType());
+		try (InputStream s = file.getInputStream()) {
+			init(s.readAllBytes(), file.getName(), file.getMimeType());
+		}
 	}
 
 	private void init(byte[] bytes, String name, String mimeType) {
@@ -183,7 +192,10 @@ public class Base64FilePart extends FilePart {
 	// TODO URGENT move it out of here
 	public static Base64FilePart forAnthropicImage(FilePart file) throws IOException {
 
-		BufferedImage img = ImageUtil.fromBytes(file.getInputStream());
+		BufferedImage img;
+		try (InputStream s = file.getInputStream()) {
+			img = ImageUtil.fromBytes(s);
+		}
 
 		int w = img.getWidth();
 		int h = img.getHeight();

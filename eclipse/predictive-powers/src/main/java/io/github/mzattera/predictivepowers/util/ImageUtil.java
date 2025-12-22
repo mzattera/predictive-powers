@@ -87,14 +87,17 @@ public final class ImageUtil {
 	 * Reads Java image from a {@link FilePart}.
 	 */
 	public static BufferedImage fromFilePart(FilePart file) throws IOException {
-		return ImageIO.read(file.getInputStream());
+		try (InputStream s = file.getInputStream()) {
+			return ImageIO.read(s);
+		}
 	}
 
 	/**
 	 * Reads Java image from its base64 representation.
 	 */
 	public static BufferedImage fromBase64(String base64Image) throws IOException {
-		return ImageIO.read(new ByteArrayInputStream(Base64.getDecoder().decode(base64Image)));	}
+		return ImageIO.read(new ByteArrayInputStream(Base64.getDecoder().decode(base64Image)));
+	}
 
 	/**
 	 * Reads Java image from a stream.

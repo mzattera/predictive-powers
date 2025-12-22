@@ -18,6 +18,7 @@ package io.github.mzattera.predictivepowers.examples;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
@@ -36,10 +37,10 @@ public class ImageGenerationExample {
 
 		try (
 				// Uncomment this to use DALL-E
-				 AiEndpoint endpoint = new OpenAiEndpoint();
-				 ImageGenerationService svc = endpoint.getImageGenerationService("dall-e-2");
+				AiEndpoint endpoint = new OpenAiEndpoint();
+				ImageGenerationService svc = endpoint.getImageGenerationService("dall-e-2");
 
-				// Uncomment this to use Openjourney
+		// Uncomment this to use Openjourney
 //				AiEndpoint endpoint = new HuggingFaceEndpoint();
 //				ImageGenerationService svc = endpoint.getImageGenerationService();
 		) {
@@ -53,7 +54,9 @@ public class ImageGenerationExample {
 
 	private static void save(FilePart img) throws IOException {
 		File tmp = File.createTempFile("GenAI", ".jpg");
-		ImageUtil.toFile(ImageUtil.fromBytes(img.getInputStream()), tmp);
+		try (InputStream s = img.getInputStream()) {
+			ImageUtil.toFile(ImageUtil.fromBytes(s), tmp);
+		}
 		System.out.println("Image saved as: " + tmp.getCanonicalPath());
 	}
 }

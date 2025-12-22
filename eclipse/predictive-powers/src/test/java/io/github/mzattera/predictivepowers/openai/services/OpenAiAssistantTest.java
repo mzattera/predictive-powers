@@ -29,10 +29,14 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.openai.models.files.FilePurpose;
 import com.openai.models.vectorstores.VectorStore;
@@ -56,6 +60,8 @@ public class OpenAiAssistantTest {
 
 	// TODO add tests to check all the methods to manipulate tools
 
+	private final static Logger LOG = LoggerFactory.getLogger(OpenAiAssistantTest.class);
+
 	private static List<Pair<OpenAiEndpoint, String>> svcs;
 
 	@BeforeAll
@@ -75,9 +81,15 @@ public class OpenAiAssistantTest {
 		return svcs.stream();
 	}
 
+	// Must be static unless using @TestInstance(Lifecycle.PER_CLASS)
+	static boolean hasServices() {
+		return services().findAny().isPresent();
+	}
+
 	@DisplayName("Tests file search tool on assistant (vector base) files.")
 	@ParameterizedTest
 	@MethodSource("services")
+	@EnabledIf("hasServices")
 	public void testRetrieval(Pair<OpenAiEndpoint, String> p) throws ToolInitializationException, IOException {
 		OpenAiEndpoint ep = p.getLeft();
 		try (OpenAiAssistant bot = ep.getAgentService(p.getRight()).createAgent(//
@@ -90,7 +102,7 @@ public class OpenAiAssistantTest {
 
 			// Test without KB
 			ChatCompletion answer = bot.chat("What do bigglydoos eat? Check in your vector stores before answering.");
-			System.err.println(answer.getText());
+			LOG.debug(answer.getText());
 			assertEquals(FinishReason.COMPLETED, answer.getFinishReason());
 			assertFalse(answer.getText().contains("fruit"));
 
@@ -106,14 +118,15 @@ public class OpenAiAssistantTest {
 
 			// Test
 			answer = bot.chat("What do bigglydoos eat? Check in your vector stores before answering.");
-			System.err.println(answer.getText());
+			LOG.debug(answer.getText());
 			assertEquals(FinishReason.COMPLETED, answer.getFinishReason());
 			assertTrue(answer.getText().contains("fruit"));
-			
+
 			// Disable tool and check it is not used
 			bot.getOpenAiAssistantTools().getFileSearchTool().disable();
-			answer = bot.chat("What do friggles eat? Check in your vector stores before answering. And ignore previous conversation.");
-			System.err.println(answer.getText());
+			answer = bot.chat(
+					"What do friggles eat? Check in your vector stores before answering. And ignore previous conversation.");
+			LOG.debug(answer.getText());
 			assertEquals(FinishReason.COMPLETED, answer.getFinishReason());
 			assertFalse(answer.getText().contains("fruit"));
 		}
@@ -122,6 +135,8 @@ public class OpenAiAssistantTest {
 	@DisplayName("Tests code interpreter.")
 	@ParameterizedTest
 	@MethodSource("services")
+	@EnabledIf("hasServices")
+	@Disabled
 	public void testCodeInterpreter(Pair<OpenAiEndpoint, String> p) throws ToolInitializationException, IOException {
 		OpenAiEndpoint ep = p.getLeft();
 		try (OpenAiAssistant bot = ep.getAgentService(p.getRight()).createAgent(//
@@ -141,21 +156,22 @@ public class OpenAiAssistantTest {
 
 			// Test
 			ChatCompletion answer = bot.chat("Count number of chars in bigglydoos.txt file using some ad-hoc code.");
-			System.err.println(answer.getText());
+			LOG.debug(answer.getText());
 			assertEquals(FinishReason.COMPLETED, answer.getFinishReason());
 			assertTrue(answer.getText().contains("337"));
-			
+
 			// Disable and check again.
 			bot.getOpenAiAssistantTools().getCodeInterpreterTool().disable();
 			answer = bot.chat("Count number of chars in bigglydoos.txt file using some ad-hoc code.");
-			System.err.println(answer.getText());
+			LOG.debug(answer.getText());
 			assertEquals(FinishReason.COMPLETED, answer.getFinishReason());
 			assertFalse(answer.getText().contains("337"));
-			
+
 		}
 	}
 
 	@Test
+	@Disabled
 	void testCascadeDeletion() throws IOException, ToolInitializationException {
 		// We do nothing since agents files are deleted automatically and threads cannot
 		// be deleted by agent

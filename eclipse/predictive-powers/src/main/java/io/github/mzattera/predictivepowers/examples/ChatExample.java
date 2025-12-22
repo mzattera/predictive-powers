@@ -28,14 +28,14 @@ public class ChatExample {
 
 		try (
 				// Uncomment the below to use OpenAI API
-				 AiEndpoint endpoint = new OpenAiEndpoint();
-				 ChatService agent = endpoint.getChatService();
+				AiEndpoint endpoint = new OpenAiEndpoint();
+				ChatService agent = endpoint.getChatService();
 
-				// Uncomment the below to use Hugging Face API
-				// AiEndpoint endpoint = new HuggingFaceEndpoint();
-				// ChatService agent = endpoint.getChatService();
-				
-			) {
+		// Uncomment the below to use Hugging Face API
+		// AiEndpoint endpoint = new HuggingFaceEndpoint();
+		// ChatService agent = endpoint.getChatService();
+
+		) {
 
 			// Give instructions to agent
 			agent.setPersonality("You are a very sad and depressed robot. "

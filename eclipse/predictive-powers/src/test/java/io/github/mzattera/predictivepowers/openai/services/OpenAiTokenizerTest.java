@@ -63,7 +63,7 @@ import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.NonNull;
 
 // TODO Re-enable this after a proper tokeniser is implemented for OpenAI
-// If you do, make sure the @EanbledIf aligns with other tests
+// If you do, make sure the @EnabledIf aligns with other tests
 
 @Disabled
 public class OpenAiTokenizerTest {
@@ -186,16 +186,16 @@ public class OpenAiTokenizerTest {
 				.ofAssistant(ChatCompletionAssistantMessageParam.builder().content("I").name("V").build()));
 	}
 
-	/**
-	 * Checks all models have a tokenizer.
-	 */
-	@ParameterizedTest
-	@MethodSource("allCompletionModelsProvider")
-	@DisplayName("Check all models have a tokeniser")
-	void test00(OpenAiModelMetaData md) {
-		assertTrue(md.getTokenizer() != null, "Null tokenizer for model");
-		assertTrue(md.getTokenizer().getEncoding() != null, "Null encoding for model");
-	}
+// Checks all models have a tokenizer.
+// This is already tested when testing model service
+	
+//	@ParameterizedTest
+//	@MethodSource("allCompletionModelsProvider")
+//	@DisplayName("Check all models have a tokeniser")
+//	void test00(OpenAiModelMetaData md) {
+//		assertTrue(md.getTokenizer() != null, "Null tokenizer for model");
+//		assertTrue(md.getTokenizer().getEncoding() != null, "Null encoding for model");
+//	}
 
 	/**
 	 * Length of messages. No tool calls or tool results.

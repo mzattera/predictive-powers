@@ -41,11 +41,28 @@ public final class WebUtil {
 	 * @throws IOException
 	 */
 	public static InputStream getInputStream(@NonNull URL url) throws IOException {
+		return getInputStream(url, -1);
+	}
+
+	/**
+	 * Get a stream connected to given URL this because URL.openStream() sometimes
+	 * cannot read files because agents without an agent ID are blocked.
+	 * 
+	 * @param timeoutMillis Timeout (millisecond) to download content from given
+	 *                      url. If this is <=0 it will be ignored.
+	 * @throws IOException
+	 */
+	public static InputStream getInputStream(@NonNull URL url, int timeoutMillis) throws IOException {
 		// This doesn't work in many cases
 		// return url.openStream();
 
 		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-		connection.setRequestProperty("User-Agent", "proactive-powers Java Library for Agents (https://github.com/mzattera/predictive-powers)");
+		connection.setRequestProperty("User-Agent",
+				"proactive-powers Java Library for Agents (https://github.com/mzattera/predictive-powers)");
+		if (timeoutMillis > 0) {
+			connection.setConnectTimeout(timeoutMillis);
+			connection.setReadTimeout(timeoutMillis);
+		}
 		return connection.getInputStream();
 	}
 }

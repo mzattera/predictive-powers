@@ -50,11 +50,11 @@ public class HuggingFaceImageGenerationService extends AbstractImageGenerationSe
 	@NonNull
 	private ImageGenerationRequest defaultRequest;
 
-	public HuggingFaceImageGenerationService(@NonNull HuggingFaceEndpoint endpoint) {
+	protected HuggingFaceImageGenerationService(@NonNull HuggingFaceEndpoint endpoint) {
 		this(endpoint, DEFAULT_MODEL);
 	}
 
-	public HuggingFaceImageGenerationService(@NonNull HuggingFaceEndpoint endpoint, @NonNull String model) {
+	protected HuggingFaceImageGenerationService(@NonNull HuggingFaceEndpoint endpoint, @NonNull String model) {
 		super.setModel(model);
 		this.endpoint = endpoint;
 		this.defaultRequest = new ImageGenerationRequest().model(model).n(1).parameters(new ImageGenerationRequestParameters());

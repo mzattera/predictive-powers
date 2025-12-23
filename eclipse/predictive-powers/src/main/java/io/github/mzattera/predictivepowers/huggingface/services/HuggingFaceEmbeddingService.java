@@ -78,11 +78,11 @@ public class HuggingFaceEmbeddingService extends AbstractEmbeddingService {
 		defaultRequest.setModel(model);
 	}
 
-	public HuggingFaceEmbeddingService(HuggingFaceEndpoint ep) {
+	protected HuggingFaceEmbeddingService(HuggingFaceEndpoint ep) {
 		this(ep, DEFAULT_MODEL);
 	}
 
-	public HuggingFaceEmbeddingService(HuggingFaceEndpoint ep, @NonNull String model) {
+	protected HuggingFaceEmbeddingService(HuggingFaceEndpoint ep, @NonNull String model) {
 		this.endpoint = ep;
 		this.defaultRequest = new EmbeddingsRequest().truncate(true).truncationDirection(TruncationDirectionEnum.RIGHT).model(model);
 		this.modelService = ep.getModelService();

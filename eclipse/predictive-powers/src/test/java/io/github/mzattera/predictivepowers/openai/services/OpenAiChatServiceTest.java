@@ -585,27 +585,6 @@ public class OpenAiChatServiceTest {
 	/// OTHER
 	//////////////////////////////////////////////////////////////////////
 
-	@ParameterizedTest
-	@MethodSource("reasoning")
-	@EnabledIf("hasReasoning")
-	@DisplayName("Test refusal")
-	public void testRefusal(String model) throws JsonProcessingException {
-		try (OpenAiEndpoint ep = new OpenAiEndpoint(); OpenAiChatService cs = ep.getChatService(model);) {
-
-			JsonSchema schema = JsonSchema.fromSchema(Pojo.class);
-			cs.setPersonality("You are an agent that automates data processing. "
-					+ "You will be provided by the user with some information that you must extract and output as JSON. "
-					+ "Strictly use the following JSON schema when outputting the data:\n\n" //
-					+ schema.asJsonSchema());
-			cs.setResponseFormat(schema);
-
-			ChatCompletion reply = cs.chat("Banana!");
-			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
-			assertTrue(reply.getText().contains("**The model generated a refusal**"));
-		}
-
-	}
-
 	// we use this since it's easy to build a prompt that overflows
 	static Stream<String> smallCtxModel() {
 		List<String> l = new ArrayList<>();

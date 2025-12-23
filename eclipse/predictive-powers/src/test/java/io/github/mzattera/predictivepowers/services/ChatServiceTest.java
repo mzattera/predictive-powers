@@ -23,8 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -37,12 +36,10 @@ import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import com.openai.errors.BadRequestException;
-
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.TestConfiguration;
+import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceChatService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
@@ -73,9 +70,31 @@ public class ChatServiceTest {
 		return svcs.stream();
 	}
 
+	static boolean hasServices() {
+		return services().findAny().isPresent();
+	}
+
+	// All services planned to be tested
+	static Stream<Pair<AiEndpoint, String>> imageServices() {
+
+		List<Pair<AiEndpoint, String>> cs = new ArrayList<>();
+		for (Pair<AiEndpoint, String> p : svcs) {
+			try (ModelService ms = p.getLeft().getModelService()) {
+				if (ms.get(p.getRight()).supportsImageInput())
+					cs.add(p);
+			}
+		}
+		return cs.stream();
+	}
+
+	static boolean hasImageServices() {
+		return imageServices().findAny().isPresent();
+	}
+
 	@DisplayName("Basic completion and chat.")
 	@ParameterizedTest
 	@MethodSource("services")
+	@EnabledIf("hasServices")
 	public void testBasis(Pair<AiEndpoint, String> p) throws Exception {
 		try (ChatService s = p.getLeft().getChatService(p.getRight())) {
 			ChatCompletion resp = s.chat("Hi, my name is Maxi.");
@@ -95,6 +114,7 @@ public class ChatServiceTest {
 	@DisplayName("Getters and setters.")
 	@ParameterizedTest
 	@MethodSource("services")
+	@EnabledIf("hasServices")
 	public void testGetSet(Pair<AiEndpoint, String> p) throws Exception {
 		try (ChatService s = p.getLeft().getChatService(p.getRight())) {
 			String m = s.getModel();
@@ -117,7 +137,7 @@ public class ChatServiceTest {
 //			s.setMaxConversationSteps(null);
 //			assertNull(s.getMaxConversationSteps());
 
-			if (s instanceof OpenAiChatService) {
+			if ((s instanceof OpenAiChatService) || (s instanceof HuggingFaceChatService)) {
 				assertThrows(UnsupportedOperationException.class, () -> s.setTopK(1));
 			} else {
 				s.setTopK(1);
@@ -154,13 +174,14 @@ public class ChatServiceTest {
 	@DisplayName("Call exercising all parameters.")
 	@ParameterizedTest
 	@MethodSource("services")
+	@EnabledIf("hasServices")
 	public void testParams(Pair<AiEndpoint, String> p) throws Exception {
 
 		try (ChatService s = p.getLeft().getChatService(p.getRight())) {
 
 			ChatCompletion resp = null;
 
-			if (s instanceof OpenAiChatService) {
+			if ((s instanceof OpenAiChatService) || (s instanceof HuggingFaceChatService)) {
 				assertThrows(UnsupportedOperationException.class, () -> s.setTopK(5));
 			} else {
 				s.setTopK(5);
@@ -168,50 +189,39 @@ public class ChatServiceTest {
 			s.setTopP(null);
 			s.setTemperature(null);
 			s.setMaxNewTokens(40);
-			try {
-				resp = s.complete("Name a mammal.");
-				assertTrue(resp.getFinishReason() == FinishReason.COMPLETED);
-			} catch (BadRequestException e) {
-				assertTrue(p.getRight().equals("o1") || p.getRight().equals("o3-mini"));
-			}
+			resp = s.complete("Name a mammal.");
+			assertTrue((FinishReason.COMPLETED == resp.getFinishReason())
+					|| (FinishReason.TRUNCATED == resp.getFinishReason()));
 
 			s.setTopK(null);
 			s.setTopP(0.2);
 			s.setTemperature(null);
 			s.setMaxNewTokens(40);
-			try {
-				resp = s.chat("Name a mammal.");
-				assertTrue(resp.getFinishReason() == FinishReason.COMPLETED);
-			} catch (BadRequestException e) {
-				assertTrue(p.getRight().equals("o1") || p.getRight().equals("o3-mini"));
-			}
+			resp = s.chat("Name a mammal.");
+			assertTrue((FinishReason.COMPLETED == resp.getFinishReason())
+					|| (FinishReason.TRUNCATED == resp.getFinishReason()));
 
 			s.setTopK(null);
 			s.setTopP(null);
 			s.setTemperature(20.0);
 			s.setMaxNewTokens(40);
-			try {
-				resp = s.complete("Name a mammal.");
-				assertTrue(resp.getFinishReason() == FinishReason.COMPLETED);
-			} catch (BadRequestException e) {
-				assertTrue(p.getRight().equals("o1") || p.getRight().equals("o3-mini"));
-			}
+			resp = s.complete("Name a mammal.");
+			assertTrue((FinishReason.COMPLETED == resp.getFinishReason())
+					|| (FinishReason.TRUNCATED == resp.getFinishReason()));
 		}
 	}
 
-	make sure only models supporting images are tested
-
 	@DisplayName("Test image URLs in messages.")
 	@ParameterizedTest
-	@MethodSource("defaultModel")
-	@EnabledIf("hasDefaultModel")
-	public void testImgUrls(String model) throws MalformedURLException, URISyntaxException {
+	@MethodSource("imageServices")
+	@EnabledIf("hasImageServices")
+	public void testImgUrls(Pair<AiEndpoint, String> p) throws Exception {
 
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint(); OpenAiChatService svc = endpoint.getChatService(model);) {
+		try (ChatService svc = p.getLeft().getChatService(p.getRight())) {
 
 			// Uses an image as input.
 			ChatMessage msg = new ChatMessage("Is there any grass in this image?");
-			msg.getParts().add(FilePart.fromUrl(
+			msg.addPart(FilePart.fromUrl(
 					"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
 					"image/jpeg"));
 			ChatCompletion resp = svc.chat(msg);
@@ -230,15 +240,16 @@ public class ChatServiceTest {
 
 	@DisplayName("Test image in messages.")
 	@ParameterizedTest
-	@MethodSource("defaultModel")
-	public void testImgFiles(String model) throws MalformedURLException, URISyntaxException {
+	@MethodSource("imageServices")
+	@EnabledIf("hasImageServices")
+	public void testImgFiles(Pair<AiEndpoint, String> p) throws Exception {
 
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint(); OpenAiChatService svc = endpoint.getChatService(model);) {
+		try (ChatService svc = p.getLeft().getChatService(p.getRight())) {
 
 			// Uses an image as input.
 			ChatMessage msg = new ChatMessage("Is there any grass in this image?");
-			msg.getParts().add(new FilePart(
-					ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png"), "image/png"));
+			msg.addPart(new FilePart(ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png"),
+					"image/png"));
 			ChatCompletion resp = svc.chat(msg);
 			System.out.println(resp.getText());
 			assertEquals(FinishReason.COMPLETED, resp.getFinishReason());

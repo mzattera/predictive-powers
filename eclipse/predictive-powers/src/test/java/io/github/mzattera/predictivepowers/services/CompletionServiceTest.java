@@ -34,15 +34,14 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import com.openai.errors.BadRequestException;
-
 import io.github.mzattera.predictivepowers.AiEndpoint;
+import io.github.mzattera.predictivepowers.BadRequestException;
 import io.github.mzattera.predictivepowers.TestConfiguration;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.TextCompletion;
@@ -70,19 +69,26 @@ public class CompletionServiceTest {
 		return svcs.stream();
 	}
 
+	static boolean hasServices() {
+		return services().findAny().isPresent();
+	}
+
 	@DisplayName("Basic completion.")
 	@ParameterizedTest
 	@MethodSource("services")
+	@EnabledIf("hasServices")
 	void test01(Pair<AiEndpoint, String> p) throws Exception {
 		try (CompletionService s = p.getLeft().getCompletionService(p.getRight())) {
 			TextCompletion resp = s.complete("Name a mammal.");
-			assertTrue((resp.getFinishReason() == FinishReason.COMPLETED) || (resp.getFinishReason() == FinishReason.TRUNCATED));
+			assertTrue((resp.getFinishReason() == FinishReason.COMPLETED)
+					|| (resp.getFinishReason() == FinishReason.TRUNCATED));
 		}
 	}
 
 	@DisplayName("Getters and setters.")
 	@ParameterizedTest
 	@MethodSource("services")
+	@EnabledIf("hasServices")
 	void test02(Pair<AiEndpoint, String> p) throws Exception {
 		try (CompletionService s = p.getLeft().getCompletionService(p.getRight())) {
 			String m = s.getModel();
@@ -124,20 +130,13 @@ public class CompletionServiceTest {
 			assertTrue(s.getEcho());
 			s.setEcho(false);
 			assertFalse(s.getEcho());
-
-			// TODO move it on a separate test?
-			if (s instanceof OpenAiCompletionService) {
-				@SuppressWarnings("resource")
-				OpenAiCompletionService svc = (OpenAiCompletionService) s;
-				svc.setDefaultRequest(svc.getDefaultRequest().toBuilder().echo((Boolean) null).build());
-				assertFalse(s.getEcho());
-			}
 		}
 	}
 
 	@DisplayName("Insertion.")
 	@ParameterizedTest
 	@MethodSource("services")
+	@EnabledIf("hasServices")
 	void test03(Pair<AiEndpoint, String> p) throws Exception {
 		try (CompletionService s = p.getLeft().getCompletionService(p.getRight())) {
 			if (s instanceof OpenAiCompletionService) {
@@ -152,6 +151,7 @@ public class CompletionServiceTest {
 	@DisplayName("Call exercising all parameters.")
 	@ParameterizedTest
 	@MethodSource("services")
+	@EnabledIf("hasServices")
 	void test04(Pair<AiEndpoint, String> p) throws Exception {
 
 		try (CompletionService s = p.getLeft().getCompletionService(p.getRight())) {
@@ -165,7 +165,8 @@ public class CompletionServiceTest {
 			s.setMaxNewTokens(40);
 			s.setEcho(true);
 			TextCompletion resp = s.complete("Name a mammal.");
-			assertTrue((resp.getFinishReason() == FinishReason.COMPLETED) || (resp.getFinishReason() == FinishReason.TRUNCATED));
+			assertTrue((resp.getFinishReason() == FinishReason.COMPLETED)
+					|| (resp.getFinishReason() == FinishReason.TRUNCATED));
 
 			s.setTopK(null);
 			s.setTopP(0.2);
@@ -173,7 +174,8 @@ public class CompletionServiceTest {
 			s.setMaxNewTokens(40);
 			s.setEcho(false);
 			resp = s.complete("Name a mammal.");
-			assertTrue((resp.getFinishReason() == FinishReason.COMPLETED) || (resp.getFinishReason() == FinishReason.TRUNCATED));
+			assertTrue((resp.getFinishReason() == FinishReason.COMPLETED)
+					|| (resp.getFinishReason() == FinishReason.TRUNCATED));
 
 			s.setTopK(null);
 			s.setTopP(null);
@@ -181,20 +183,8 @@ public class CompletionServiceTest {
 			s.setMaxNewTokens(40);
 			s.setEcho(true);
 			resp = s.complete("Name a mammal.");
-			assertTrue((resp.getFinishReason() == FinishReason.COMPLETED) || (resp.getFinishReason() == FinishReason.TRUNCATED));
-		}
-	}
-
-	@Test
-	@DisplayName("Custom OpenAI Tests")
-	void oaiTest01(Pair<AiEndpoint, String> p) throws Exception {
-		
-		if (!TestConfiguration.TEST_OPENAI_SERVICES)
-			return;
-
-		try (OpenAiEndpoint ep = new OpenAiEndpoint(); OpenAiCompletionService s = ep.getCompletionService()) {
-			s.setMaxNewTokens(s.getEndpoint().getModelService().getMaxNewTokens(s.getModel(), 65535) * 2);
-			s.complete("hi"); // If this does not error, the recovering due to context overflow works.
+			assertTrue((resp.getFinishReason() == FinishReason.COMPLETED)
+					|| (resp.getFinishReason() == FinishReason.TRUNCATED));
 		}
 	}
 

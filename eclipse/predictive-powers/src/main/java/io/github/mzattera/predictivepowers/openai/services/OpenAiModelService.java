@@ -787,7 +787,7 @@ public class OpenAiModelService extends AbstractModelService {
 	@NonNull
 	private final OpenAiEndpoint endpoint;
 
-	public OpenAiModelService(@NonNull OpenAiEndpoint endpoint) {
+	protected OpenAiModelService(@NonNull OpenAiEndpoint endpoint) {
 		super(MODEL_CONFIG);
 		this.endpoint = endpoint;
 	}

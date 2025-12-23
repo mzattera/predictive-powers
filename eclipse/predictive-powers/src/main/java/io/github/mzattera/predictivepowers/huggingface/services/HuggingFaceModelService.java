@@ -88,7 +88,7 @@ public class HuggingFaceModelService extends AbstractModelService {
 	@Getter
 	protected final HuggingFaceEndpoint endpoint;
 
-	public HuggingFaceModelService(HuggingFaceEndpoint endpoint) {
+	protected HuggingFaceModelService(HuggingFaceEndpoint endpoint) {
 		super(data);
 		this.endpoint = endpoint;
 	}

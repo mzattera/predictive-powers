@@ -119,19 +119,19 @@ public class HuggingFaceChatService extends AbstractAgent {
 		return (maxConversationTokens != Integer.MAX_VALUE);
 	}
 
-	public HuggingFaceChatService(@NonNull HuggingFaceEndpoint ep) {
+	protected HuggingFaceChatService(@NonNull HuggingFaceEndpoint ep) {
 		this(UUID.randomUUID().toString(), ep, DEFAULT_MODEL);
 	}
 
-	public HuggingFaceChatService(@NonNull HuggingFaceEndpoint ep, @NonNull String model) {
+	protected HuggingFaceChatService(@NonNull HuggingFaceEndpoint ep, @NonNull String model) {
 		this(UUID.randomUUID().toString(), ep, model);
 	}
 
-	public HuggingFaceChatService(@NonNull String id, @NonNull HuggingFaceEndpoint ep) {
+	protected HuggingFaceChatService(@NonNull String id, @NonNull HuggingFaceEndpoint ep) {
 		this(id, ep, DEFAULT_MODEL);
 	}
 
-	public HuggingFaceChatService(@NonNull String id, @NonNull HuggingFaceEndpoint ep, @NonNull String model) {
+	protected HuggingFaceChatService(@NonNull String id, @NonNull HuggingFaceEndpoint ep, @NonNull String model) {
 		this.id = id;
 		this.endpoint = ep;
 		this.defaultRequest = new ChatCompletionRequest().model(model).messages(new ArrayList<>());
@@ -170,11 +170,14 @@ public class HuggingFaceChatService extends AbstractAgent {
 
 	@Override
 	public void setTopK(Integer topK) {
-		throw new UnsupportedOperationException();
+		if (topK != null)
+			throw new UnsupportedOperationException();
 	}
 
 	@Override
 	public Double getTopP() {
+		if (defaultRequest.getTopP() == null)
+			return null;
 		return defaultRequest.getTopP().doubleValue();
 	}
 
@@ -364,7 +367,7 @@ public class HuggingFaceChatService extends AbstractAgent {
 				history = tmp;
 			}
 
-			return new ChatCompletion(result.getLeft(), fromHuggingFaceMessage((AssistantMessage) result.getRight()));
+			return buildCompletion(result);
 		} catch (Exception e) {
 			throw HuggingFaceUtil.toEndpointException(e);
 		}
@@ -390,9 +393,7 @@ public class HuggingFaceChatService extends AbstractAgent {
 		try {
 			List<Message> conversation = new ArrayList<>(messages);
 			trimConversation(conversation);
-
-			Pair<FinishReason, Message> result = chatCompletion(conversation);
-			return new ChatCompletion(result.getLeft(), fromHuggingFaceMessage((AssistantMessage) result.getRight()));
+			return buildCompletion(chatCompletion(conversation));
 		} catch (Exception e) {
 			throw HuggingFaceUtil.toEndpointException(e);
 		}
@@ -491,7 +492,12 @@ public class HuggingFaceChatService extends AbstractAgent {
 
 		String refusal = msg.getRefusal();
 		if ((refusal != null) && !refusal.isBlank()) {
-			parts.add(new TextPart("**The model generated a refusal**\n\n" + refusal));
+			msg.setRefusal(refusal);
+		}
+
+		String reasoning = msg.getReasoning();
+		if ((reasoning != null) && !reasoning.isBlank()) {
+			msg.setReasoning(reasoning);
 		}
 
 		List<io.github.mzattera.hfinferenceapi.client.model.ToolCall> toolCalls = msg.getToolCalls();
@@ -592,6 +598,14 @@ public class HuggingFaceChatService extends AbstractAgent {
 		}
 
 		return result;
+	}
+
+	private ChatCompletion buildCompletion(Pair<FinishReason, Message> result) throws JsonProcessingException {
+		ChatMessage botMsg = fromHuggingFaceMessage((AssistantMessage) result.getRight());
+		if (botMsg.getRefusal() != null)
+			return new ChatCompletion(FinishReason.INAPPROPRIATE, botMsg);
+		else
+			return new ChatCompletion(result.getLeft(), botMsg);
 	}
 
 	@Override

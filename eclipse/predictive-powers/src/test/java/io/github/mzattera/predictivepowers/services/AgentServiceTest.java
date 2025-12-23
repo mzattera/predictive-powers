@@ -33,6 +33,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -99,6 +100,10 @@ public class AgentServiceTest {
 
 		return l.stream();
 	}
+	
+	static boolean hasAgents() {
+		return agents().findAny().isPresent();
+	}
 
 	// This is a function that will be accessible to the agent.
 	public static class GetCurrentWeatherTool extends AbstractTool {
@@ -150,6 +155,7 @@ public class AgentServiceTest {
 	 */
 	@ParameterizedTest
 	@MethodSource("agents")
+	@EnabledIf("hasAgents")
 	@DisplayName("Simple Tool Call Test")
 	public void testFunCall(Agent agent) throws Exception {
 
@@ -202,6 +208,7 @@ public class AgentServiceTest {
 
 	@ParameterizedTest
 	@MethodSource("agents")
+	@EnabledIf("hasAgents")
 	@DisplayName("Test Tool Call with no tools")
 	public void testNoTools(Agent agent) throws Exception {
 
@@ -211,6 +218,12 @@ public class AgentServiceTest {
 			agent.addCapability(new Toolset(List.of(new GetCurrentWeatherTool())));
 			agent.clearCapabilities();
 			ChatCompletion reply = agent.chat("How is the weather like in Dallas?");
+			if (reply.hasToolCalls()) {
+				for (ToolCall call:reply.getToolCalls()) {
+					System.out.println(agent.getModel() + " insists in calling tools");
+					System.out.println(JsonSchema.JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(call));
+				}
+			}
 			assertFalse(reply.hasToolCalls());
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
 		} finally {
@@ -275,6 +288,7 @@ public class AgentServiceTest {
 
 	@ParameterizedTest
 	@MethodSource("agents")
+	@EnabledIf("hasAgents")
 	@DisplayName("Test Tool Call with $ref schema")
 	public void testRefParams(Agent agent) throws Exception {
 
@@ -311,6 +325,7 @@ public class AgentServiceTest {
 
 	@ParameterizedTest
 	@MethodSource("agents")
+	@EnabledIf("hasAgents")
 	@DisplayName("Test response with $ref schema")
 	public void testRespFormat(Agent agent) throws Exception {
 

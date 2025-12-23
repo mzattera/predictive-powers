@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
@@ -63,8 +64,13 @@ public class ImageGenerationServiceTest {
 		return svcs.stream();
 	}
 
+	static boolean hasServices() {
+		return services().findAny().isPresent();
+	}
+
 	@ParameterizedTest
 	@MethodSource("services")
+	@EnabledIf("hasServices")
 	public void testGettersSetters(Pair<AiEndpoint, String> p) throws Exception {
 		try (ImageGenerationService s = p.getLeft().getImageGenerationService(p.getRight())) {
 
@@ -82,6 +88,7 @@ public class ImageGenerationServiceTest {
 
 	@ParameterizedTest
 	@MethodSource("services")
+	@EnabledIf("hasServices")
 	public void testCreation(Pair<AiEndpoint, String> p) throws Exception {
 		try (ImageGenerationService s = p.getLeft().getImageGenerationService(p.getRight())) {
 
@@ -102,6 +109,7 @@ public class ImageGenerationServiceTest {
 
 	@ParameterizedTest
 	@MethodSource("services")
+	@EnabledIf("hasServices")
 	public void testVariation(Pair<AiEndpoint, String> p) throws Exception {
 		try (ImageGenerationService s = p.getLeft().getImageGenerationService(p.getRight())) {
 
@@ -113,13 +121,15 @@ public class ImageGenerationServiceTest {
 					2, 512, 512);
 			assertEquals(2, r.size());
 			saveFiles(s, "variation", r);
-		} catch (UnsupportedOperationException e) {
+		} catch (EndpointException e) {
 			// Not always available
+			assertTrue(e.getCause() instanceof UnsupportedOperationException);
 		}
 	}
 
 	@ParameterizedTest
 	@MethodSource("services")
+	@EnabledIf("hasServices")
 	public void testEdit(Pair<AiEndpoint, String> p) throws Exception {
 		try (ImageGenerationService s = p.getLeft().getImageGenerationService(p.getRight())) {
 
@@ -135,8 +145,9 @@ public class ImageGenerationServiceTest {
 					"Add a puppy on the pathway", null, 2, 512, 512);
 			assertEquals(2, r.size());
 			saveFiles(s, "variation", r);
-		} catch (UnsupportedOperationException e) {
+		} catch (EndpointException e) {
 			// Not always available
+			assertTrue(e.getCause() instanceof UnsupportedOperationException);
 		}
 	}
 

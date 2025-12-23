@@ -23,7 +23,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLConnection;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -80,6 +79,7 @@ public final class ExtractionUtil {
 	 * 
 	 * @param url Web page URL.
 	 * @return The content of given web page.
+	 * @throws
 	 * 
 	 * @throws IOException
 	 * @throws SAXException
@@ -117,12 +117,9 @@ public final class ExtractionUtil {
 	 */
 	public static String fromUrl(URL url, int timeoutMillis) throws IOException, SAXException, TikaException {
 
-		URLConnection connection = url.openConnection();
-		if (timeoutMillis > 0) {
-			connection.setConnectTimeout(timeoutMillis);
-			connection.setReadTimeout(timeoutMillis);
+		try (InputStream s = WebUtil.getInputStream(url, timeoutMillis)) {
+			return fromStream(s);
 		}
-		return fromStream(connection.getInputStream());
 	}
 
 	/**

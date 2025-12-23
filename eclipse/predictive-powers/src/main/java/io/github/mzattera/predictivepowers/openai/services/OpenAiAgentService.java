@@ -52,11 +52,11 @@ public class OpenAiAgentService implements AgentService {
 	@Setter
 	private String model = DEFAULT_MODEL;
 
-	public OpenAiAgentService(@NonNull OpenAiEndpoint endpoint) {
+	protected OpenAiAgentService(@NonNull OpenAiEndpoint endpoint) {
 		this(endpoint, DEFAULT_MODEL);
 	}
 
-	public OpenAiAgentService(@NonNull OpenAiEndpoint endpoint, @NonNull String model) {
+	protected OpenAiAgentService(@NonNull OpenAiEndpoint endpoint, @NonNull String model) {
 		this.endpoint = endpoint;
 		this.model = model;
 	}

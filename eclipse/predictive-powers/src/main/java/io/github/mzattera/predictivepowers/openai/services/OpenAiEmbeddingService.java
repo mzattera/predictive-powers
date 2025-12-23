@@ -80,12 +80,12 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 		defaultRequest = defaultRequest.toBuilder().model(model).build();
 	}
 
-	public OpenAiEmbeddingService(OpenAiEndpoint ep) {
+	protected OpenAiEmbeddingService(OpenAiEndpoint ep) {
 		this(ep, DEFAULT_MODEL);
 	}
 
 	@SuppressWarnings("unchecked")
-	public OpenAiEmbeddingService(OpenAiEndpoint ep, @NonNull String model) {
+	protected OpenAiEmbeddingService(OpenAiEndpoint ep, @NonNull String model) {
 		this.endpoint = ep;
 		this.defaultRequest = EmbeddingCreateParams.builder() //
 				.model(model) //

@@ -72,6 +72,6 @@ public abstract class AbstractImageGenerationService implements ImageGenerationS
 	}
 
 	@Override
-	public void close() throws Exception {
+	public void close() throws EndpointException {
 	}
 }

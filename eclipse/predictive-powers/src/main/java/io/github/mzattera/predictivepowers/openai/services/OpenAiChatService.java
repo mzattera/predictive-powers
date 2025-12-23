@@ -130,19 +130,19 @@ public class OpenAiChatService extends AbstractAgent {
 		return (maxConversationTokens != Integer.MAX_VALUE);
 	}
 
-	public OpenAiChatService(@NonNull OpenAiEndpoint ep) {
+	protected OpenAiChatService(@NonNull OpenAiEndpoint ep) {
 		this(UUID.randomUUID().toString(), ep, DEFAULT_MODEL);
 	}
 
-	public OpenAiChatService(@NonNull OpenAiEndpoint ep, @NonNull String model) {
+	protected OpenAiChatService(@NonNull OpenAiEndpoint ep, @NonNull String model) {
 		this(UUID.randomUUID().toString(), ep, model);
 	}
 
-	public OpenAiChatService(@NonNull String id, @NonNull OpenAiEndpoint ep) {
+	protected OpenAiChatService(@NonNull String id, @NonNull OpenAiEndpoint ep) {
 		this(id, ep, DEFAULT_MODEL);
 	}
 
-	public OpenAiChatService(@NonNull String id, @NonNull OpenAiEndpoint ep, @NonNull String model) {
+	protected OpenAiChatService(@NonNull String id, @NonNull OpenAiEndpoint ep, @NonNull String model) {
 		this.id = id;
 		this.endpoint = ep;
 		this.defaultRequest = ChatCompletionCreateParams.builder() //
@@ -185,7 +185,8 @@ public class OpenAiChatService extends AbstractAgent {
 
 	@Override
 	public void setTopK(Integer topK) {
-		throw new UnsupportedOperationException();
+		if (topK != null)
+			throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -440,7 +441,7 @@ public class OpenAiChatService extends AbstractAgent {
 			history.messages(tmp);
 		}
 
-		return new ChatCompletion(result.getLeft(), fromOpenAiMessage(result.getRight()));
+		return buildCompletion(result);
 	}
 
 	@Override
@@ -461,7 +462,8 @@ public class OpenAiChatService extends AbstractAgent {
 		trimConversation(conversation);
 
 		Pair<FinishReason, ChatCompletionMessage> result = chatCompletion(conversation);
-		return new ChatCompletion(result.getLeft(), fromOpenAiMessage(result.getRight()));
+
+		return buildCompletion(result);
 	}
 
 	/**
@@ -507,7 +509,7 @@ public class OpenAiChatService extends AbstractAgent {
 						throw OpenAiUtil.toEndpointException(e); // Context too small anyway
 				} else
 					throw OpenAiUtil.toEndpointException(e); // Not a context length issue
-				
+
 			} catch (Exception e) {
 				throw OpenAiUtil.toEndpointException(e);
 			}
@@ -639,11 +641,12 @@ public class OpenAiChatService extends AbstractAgent {
 				parts.add(new TextPart(transcript));
 			}
 		}
-		if (msg.refusal().isPresent()) {
-			parts.add(new TextPart("**The model generated a refusal**\n\n" + msg.refusal().get()));
-		}
 
-		return new ChatMessage(Author.BOT, parts);
+		ChatMessage result = new ChatMessage(Author.BOT, parts);
+		if (msg.refusal().isPresent()) {
+			result.setRefusal(msg.refusal().get());
+		}
+		return result;
 	}
 
 	/**
@@ -807,6 +810,14 @@ public class OpenAiChatService extends AbstractAgent {
 		}
 
 		return result;
+	}
+
+	private ChatCompletion buildCompletion(Pair<FinishReason, ChatCompletionMessage> result) {
+		ChatMessage botMsg = fromOpenAiMessage(result.getRight());
+		if (botMsg.getRefusal() != null)
+			return new ChatCompletion(FinishReason.INAPPROPRIATE, botMsg);
+		else
+			return new ChatCompletion(result.getLeft(), botMsg);
 	}
 
 	private static ChatCompletionContentPart.File toFile(FilePart file) throws IOException {

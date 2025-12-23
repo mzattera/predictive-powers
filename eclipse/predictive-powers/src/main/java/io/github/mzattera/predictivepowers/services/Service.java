@@ -17,6 +17,7 @@
 package io.github.mzattera.predictivepowers.services;
 
 import io.github.mzattera.predictivepowers.Endpoint;
+import io.github.mzattera.predictivepowers.EndpointException;
 
 /**
  * Marker interface for services.
@@ -30,4 +31,7 @@ public interface Service extends AutoCloseable {
 	 * Endpoint used for this service.
 	 */
 	Endpoint getEndpoint();
+	
+	@Override
+	void close() throws EndpointException;
 }

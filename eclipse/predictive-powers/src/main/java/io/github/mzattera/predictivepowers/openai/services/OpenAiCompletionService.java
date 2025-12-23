@@ -144,12 +144,12 @@ public class OpenAiCompletionService implements CompletionService {
 		defaultRequest = defaultRequest.toBuilder().echo(echo).build();
 	}
 
-	public OpenAiCompletionService(@NonNull OpenAiEndpoint ep) {
+	protected OpenAiCompletionService(@NonNull OpenAiEndpoint ep) {
 		this(ep, DEFAULT_MODEL);
 	}
 
 	@SuppressWarnings("unchecked")
-	public OpenAiCompletionService(@NonNull OpenAiEndpoint ep, @NonNull String model) {
+	protected OpenAiCompletionService(@NonNull OpenAiEndpoint ep, @NonNull String model) {
 		this(ep, CompletionCreateParams.builder() //
 				.model(model) //
 				.prompt(JsonMissing.of()) //
@@ -157,7 +157,7 @@ public class OpenAiCompletionService implements CompletionService {
 				.echo(false).n(1).build());
 	}
 
-	public OpenAiCompletionService(OpenAiEndpoint ep, CompletionCreateParams defaultReq) {
+	public OpenAiCompletionService(OpenAiEndpoint ep, @NonNull CompletionCreateParams defaultReq) {
 		this.endpoint = ep;
 		this.defaultRequest = defaultReq;
 		this.modelService = ep.getModelService();

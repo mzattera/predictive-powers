@@ -84,11 +84,11 @@ public class OpenAiImageGenerationService extends AbstractImageGenerationService
 	private ImageEditParams defaultEditRequest = ImageEditParams.builder().model(DEFAULT_MODEL)
 			.image(MultipartField.of(JsonMissing.of())).prompt(MultipartField.of(JsonMissing.of())).build();
 
-	public OpenAiImageGenerationService(@NonNull OpenAiEndpoint endpoint) {
+	protected OpenAiImageGenerationService(@NonNull OpenAiEndpoint endpoint) {
 		this(endpoint, DEFAULT_MODEL);
 	}
 
-	public OpenAiImageGenerationService(@NonNull OpenAiEndpoint endpoint, @NonNull String model) {
+	protected OpenAiImageGenerationService(@NonNull OpenAiEndpoint endpoint, @NonNull String model) {
 		this.endpoint = endpoint;
 		setModel(model); // Notice: do not use super(model) as it won-t fix default requests
 	}

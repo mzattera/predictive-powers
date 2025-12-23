@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -89,6 +91,17 @@ public class ChatMessage {
 	@NonNull
 	private Author author;
 
+	/**
+	 * In some cases, agents might refuse to generate an answer and provide a reason for the refusal.
+	 * This is optional and can be null.
+	 */
+	private @Nullable String refusal;
+
+	/**
+	 * If agent provided some reasoning for how this message was generated, it is contained here.
+	 */
+	private @Nullable String reasoning;
+	
 	@NonNull
 	private List<MessagePart> parts = new ArrayList<>();
 

@@ -19,7 +19,6 @@
  */
 package io.github.mzattera.predictivepowers.services.messages;
 
-import io.github.mzattera.predictivepowers.services.messages.MessagePart.Type;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

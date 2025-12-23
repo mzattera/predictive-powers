@@ -65,9 +65,9 @@ public class HuggingFaceEndpoint implements AiEndpoint {
 				.connectTimeout(10, TimeUnit.MINUTES).readTimeout(10, TimeUnit.MINUTES);
 
 		// DEBUG code to log traffic
-		HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor(System.out::println);
-		loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
-		httpClientBuilder.addInterceptor(loggingInterceptor);
+//		HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor(System.out::println);
+//		loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+//		httpClientBuilder.addInterceptor(loggingInterceptor);
 
 		apiClient.setHttpClient(httpClientBuilder.build());
 

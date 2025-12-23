@@ -76,6 +76,7 @@ import lombok.Setter;
  * 
  * @author Massimiliano "Maxi" Zattera.
  */
+@SuppressWarnings("deprecation")
 public class EssayWriter implements Closeable {
 
 	// Our internal log; is uses logback, so it can easily be configured.

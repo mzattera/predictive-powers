@@ -12,12 +12,20 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.release>11</maven.compiler.release>	
 		
-		<kotlin.version>2.1.21</kotlin.version>
-		<okhttp.version>4.12.0</okhttp.version>		
+		<kotlin.version>1.9.10</kotlin.version>
+		<sl4j.version>2.0.17</sl4j.version>
 	</properties>
 	
 	<dependencyManagement>
-	  <dependencies>
+	  <dependencies>	
+	    <dependency>
+	      <groupId>org.jetbrains.kotlin</groupId>
+	      <artifactId>kotlin-bom</artifactId>
+	      <version>${kotlin.version}</version>
+	      <type>pom</type>
+	      <scope>import</scope>
+	    </dependency>
+	    
 	    <dependency>
 	      <groupId>com.fasterxml.jackson</groupId>
 	      <artifactId>jackson-bom</artifactId>
@@ -27,47 +35,33 @@
 	    </dependency>
 
 	    <dependency>
-	        <groupId>com.squareup.okhttp3</groupId>
-	        <artifactId>okhttp</artifactId>
-	        <version>${okhttp.version}</version>
-	    </dependency>
-	
-	    <dependency>
-	      <groupId>org.jetbrains.kotlin</groupId>
-	      <artifactId>kotlin-bom</artifactId>
-	      <version>${kotlin.version}</version>
-	      <type>pom</type>
-	      <scope>import</scope>
-	    </dependency>
-
-	    <dependency>
 	      <groupId>com.google.code.gson</groupId>
 	      <artifactId>gson</artifactId>
-	      <version>2.13.2</version>
+	      <version>2.13.1</version>
 	    </dependency>
-	
-	    <dependency>
-	      <groupId>com.google.guava</groupId>
-	      <artifactId>guava</artifactId>
-	      <version>33.1.0-jre</version>
-	    </dependency>
-	
+	    
 	    <dependency>
 	      <groupId>com.google.errorprone</groupId>
 	      <artifactId>error_prone_annotations</artifactId>
 	      <version>2.35.1</version>
 	    </dependency>
-	
+	    	
+	    <dependency>
+	      <groupId>commons-codec</groupId>
+	      <artifactId>commons-codec</artifactId>
+	      <version>1.19.0</version>
+	    </dependency>
 	    <dependency>
 	      <groupId>commons-io</groupId>
 	      <artifactId>commons-io</artifactId>
 	      <version>2.20.0</version>
 	    </dependency>
 	    <dependency>
-	      <groupId>commons-codec</groupId>
-	      <artifactId>commons-codec</artifactId>
-	      <version>1.19.0</version>
+	      <groupId>commons-logging</groupId>
+	      <artifactId>commons-logging</artifactId>
+	      <version>1.3.5</version>
 	    </dependency>
+	    
 	    <dependency>
 	      <groupId>org.apache.commons</groupId>
 	      <artifactId>commons-compress</artifactId>
@@ -84,28 +78,18 @@
 	      <version>4.5.0</version>
 	    </dependency>
 	
-	    <dependency>
-	      <groupId>commons-logging</groupId>
-	      <artifactId>commons-logging</artifactId>
-	      <version>1.3.5</version>
-	    </dependency>
-
 		<dependency>
 		    <groupId>org.apache.logging.log4j</groupId>
 		    <artifactId>log4j-bom</artifactId>
-		    <version>2.25.3</version> <type>pom</type>
+		    <version>2.25.3</version>
+		    <type>pom</type>
 		    <scope>import</scope>
 		</dependency>
 	    <dependency>
 	      <groupId>org.slf4j</groupId>
 	      <artifactId>slf4j-api</artifactId>
-	      <version>2.0.17</version>
+  	      <version>${sl4j.version}</version>
 	    </dependency>
-		<dependency>
-		    <groupId>org.slf4j</groupId>
-		    <artifactId>jcl-over-slf4j</artifactId>
-  		    <version>2.0.17</version>
-		</dependency>
 	  </dependencies>
 	</dependencyManagement>
 
@@ -118,7 +102,7 @@
 			<version>1.18.42</version>
 			<scope>provided</scope>
 		</dependency>
-        
+
 		<!-- Jackson (JSON annotations and bindings) 
 		This is an old version but avoids possible conflicts with transitive dependencies.
 		This is now moved to tools.jackson.core
@@ -127,20 +111,20 @@
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
 		</dependency>
-		
+
 		<!-- JSON schema -->
 		<dependency>
 		    <groupId>com.kjetland</groupId>
 		    <artifactId>mbknor-jackson-jsonschema_2.13</artifactId>
 		    <version>1.0.39</version>
 		</dependency>
-		
+
 		<!-- Hugging Face Client API -->
 		<dependency>
 		  <groupId>io.github.mzattera</groupId>
 		  <artifactId>hf-inference-api</artifactId>
 		  <version>6.0.0</version>
-		</dependency>		
+		</dependency>
 		<!-- This allows to dynamically load Hugging Face tokenizers using DJL
 		tokenizer library -->
 		<dependency>
@@ -148,13 +132,13 @@
 			<artifactId>tokenizers</artifactId>
 			<version>0.36.0</version>
 		</dependency>
-    
+
 		<!-- Official OpenAI Java SDK -->
 		<dependency>
 		  <groupId>com.openai</groupId>
 		  <artifactId>openai-java</artifactId>
 		  <version>2.1.0</version>
-		</dependency>		
+		</dependency>
 		<!-- To access Azure OpenAI Gognitive Services
 		<dependency>
 		    <groupId>com.azure.resourcemanager</groupId>
@@ -167,7 +151,7 @@
 		    <version>1.16.0</version>
 		    <scope>compile</scope>
 		</dependency>
-        -->         
+        -->
 		<!-- Tokens count for OpenAI models -->
 		<dependency>
 			<groupId>com.knuddels</groupId>
@@ -193,7 +177,7 @@
 		    <artifactId>google-api-services-customsearch</artifactId>
 		    <version>v1-rev86-1.25.0</version>
 		</dependency>
-    		
+
 		<!-- Tika is a library to recognize and extract text from a variety of
 		file types -->
 		<dependency>
@@ -219,6 +203,7 @@
 		<dependency>
 		    <groupId>org.slf4j</groupId>
 		    <artifactId>jcl-over-slf4j</artifactId>
+		    <version>${sl4j.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>ch.qos.logback</groupId>

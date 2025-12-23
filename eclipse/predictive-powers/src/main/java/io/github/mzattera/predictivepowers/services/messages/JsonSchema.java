@@ -85,6 +85,7 @@ import lombok.ToString;
  * 
  * @author Massimiliano "Maxi" Zattera
  */
+@SuppressWarnings("deprecation")
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 @Setter
@@ -349,8 +350,8 @@ public class JsonSchema {
 	private final static JsonSchemaGenerator SCHEMA_GENERATOR = new JsonSchemaGenerator(new ObjectMapper());
 
 	/**
-	 * Mapper provided for JSON serialisation via Jackson, if needed.
-	 * Use this to deserialized objects that have been created through some schema.
+	 * Mapper provided for JSON serialisation via Jackson, if needed. Use this to
+	 * deserialized objects that have been created through some schema.
 	 */
 	public static final ObjectMapper JSON_MAPPER;
 	static {

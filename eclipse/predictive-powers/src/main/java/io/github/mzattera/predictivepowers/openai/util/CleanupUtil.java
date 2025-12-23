@@ -16,6 +16,8 @@
 
 package io.github.mzattera.predictivepowers.openai.util;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 import com.openai.client.OpenAIClient;
@@ -40,8 +42,11 @@ public class CleanupUtil {
 
 	public static void main(String[] args) {
 
-		// TODO URGENT Delete vector stores tih names startign with... (see OpenAiAgent test).
-		
+		// TODO URGENT Delete vector stores tih names startign with... (see OpenAiAgent
+		// test).
+
+		boolean forceAgentDelete = false;
+
 		try (Scanner console = new Scanner(System.in)) {
 
 			System.out.print(
@@ -50,6 +55,11 @@ public class CleanupUtil {
 			if (!console.nextLine().equals("yes")) {
 				System.out.print("Aborted.");
 				System.exit(-1);
+			}
+			System.out.print("\n*** Inaddition, do you want to delete *all* ASSISTANTS even if marked as permanent? ***\n");
+			System.out.print("Type \"yes\" if you want to do so: ");
+			if (console.nextLine().equals("yes")) {
+				forceAgentDelete = true;
 			}
 		}
 
@@ -82,30 +92,37 @@ public class CleanupUtil {
 
 			// Delete assistants: assistants file are cascaded deleted
 			System.out.println("Deleting Assistants...");
-			for (Assistant a : cli.beta().assistants().list().autoPager()) {
+			List<Assistant> agents = new ArrayList<>();
+			for (Assistant a : cli.beta().assistants().list().autoPager())
+				agents.add(a);
+
+			for (Assistant a : agents) { // must do this or pager gets crazy when deleting
 				JsonValue def = a.metadata().orElse(Assistant.Metadata.builder().build()) //
 						._additionalProperties().get("_persist");
 				boolean persist = (def.isMissing() || def.isNull()) ? false : "true".equals(def.toString());
 //				boolean persist = false;
 
-				if (persist)
+				if (persist && !forceAgentDelete)
 					System.out.println("\tAssistant is persisted: " + a.id());
 				else
 					try {
-					System.out.println("\tDeleting assistant: " + a.id() + " => "
-							+ cli.beta().assistants().delete(a.id()).deleted());
+						System.out.println("\tDeleting assistant: " + a.id() + " => "
+								+ cli.beta().assistants().delete(a.id()).deleted());
 					} catch (com.openai.errors.NotFoundException e) {
 						// Sometimes happens
-						System.out.println("\tDeleting assistant: " + a.id() + " => NOT FOUND!");						
+						System.out.println("\tDeleting assistant: " + a.id() + " => NOT FOUND!");
 					}
 			}
 
 			// Delete uploaded files
 			System.out.println("Deleting Files...");
-			for (FileObject f : cli.files().list().autoPager()) {
+			List<FileObject> files = new ArrayList<>();
+			for (FileObject f : cli.files().list().autoPager())
+				files.add(f);
+			for (FileObject f : files) { // Must do like this or pager errorsyes
 				System.out.println("\tDeleting file: " + f.id() + " => " + cli.files().delete(f.id()).deleted());
 			}
-			
+
 			System.out.println("\nCleanup completed.yes");
 		} catch (Exception e) {
 			e.printStackTrace(System.err);

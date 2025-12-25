@@ -87,12 +87,15 @@ public interface EmbeddingService extends AiService {
 	List<EmbeddedText> embed(@NonNull Collection<String> text, int chunkSize, int windowSize, int stride)
 			throws EndpointException;
 
-	// TODO add the same methods below but with sliding window for chunking?
-
 	/**
 	 * Same as calling {@link #embed(String)} using content of given file as input.
 	 */
 	List<EmbeddedText> embedFile(@NonNull File file) throws EndpointException;
+
+	/**
+	 * Same as calling {@link #embed(String, int, int, int)} using content of given file as input.
+	 */
+	List<EmbeddedText> embedFile(@NonNull File file, int chunkSize, int windowSize, int stride) throws EndpointException;
 
 	/**
 	 * Same as calling {@link #embed(String)} using content of each file in given
@@ -101,12 +104,28 @@ public interface EmbeddingService extends AiService {
 	Map<File, List<EmbeddedText>> embedFolder(@NonNull File folder) throws EndpointException;
 
 	/**
+	 * Same as calling {@link #embed(String, int, int, int)} using content of each file in given
+	 * folder, including contents of its sub-folders.
+	 */
+	Map<File, List<EmbeddedText>> embedFolder(@NonNull File folder, int chunkSize, int windowSize, int stride) throws EndpointException;
+
+	/**
 	 * Same as calling {@link #embed(String)} using content at given URL.
 	 */
 	List<EmbeddedText> embedURL(@NonNull String url) throws EndpointException;
 
 	/**
+	 * Same as calling {@link #embed(String, int, int, int)} using content at given URL.
+	 */
+	List<EmbeddedText> embedURL(@NonNull String url, int chunkSize, int windowSize, int stride) throws EndpointException;
+
+	/**
 	 * Same as calling {@link #embed(String)} using content at given URL.
 	 */
 	List<EmbeddedText> embedURL(@NonNull URL url) throws EndpointException;
+
+	/**
+	 * Same as calling {@link #embed(String, int, int, int)} using content at given URL.
+	 */
+	List<EmbeddedText> embedURL(@NonNull URL url, int chunkSize, int windowSize, int stride) throws EndpointException;
 }

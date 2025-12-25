@@ -58,7 +58,6 @@ public class ChatCompletion {
 	 *         could contain parts which are not easily representable as text (e.g.
 	 *         a file).
 	 */
-	// TODO consider deprecation
 	public String getText() {
 		return message.getTextContent();
 	}
@@ -82,7 +81,6 @@ public class ChatCompletion {
 	 * 
 	 * @return List of tool calls in the contained message.
 	 */
-	// TODO consider deprecation
 	public List<ToolCall> getToolCalls() {
 		return message.getToolCalls();
 	}
@@ -93,7 +91,6 @@ public class ChatCompletion {
 	 * 
 	 * @return True if last call generated any tool invocation.
 	 */
-	// TODO consider deprecation
 	public boolean hasToolCalls() {
 		return message.hasToolCalls();
 	}

@@ -46,7 +46,6 @@ public class ToolCallResult implements MessagePart {
 	private String toolCallId;
 
 	/** Unique ID of the tool being called. */
-	// TODO Needed?
 	@NonNull
 	private String toolId;
 

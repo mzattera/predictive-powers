@@ -26,6 +26,10 @@
 	      <scope>import</scope>
 	    </dependency>
 	    
+		<!-- Jackson (JSON annotations and bindings) 
+		This is an old version but avoids possible conflicts with transitive dependencies.
+		This is now moved to tools.jackson.core
+		-->
 	    <dependency>
 	      <groupId>com.fasterxml.jackson</groupId>
 	      <artifactId>jackson-bom</artifactId>
@@ -79,17 +83,17 @@
 	    </dependency>
 	
 		<dependency>
+		  <groupId>org.slf4j</groupId>
+		  <artifactId>slf4j-api</artifactId>
+		  <version>${sl4j.version}</version>
+		</dependency>
+		<dependency>
 		    <groupId>org.apache.logging.log4j</groupId>
 		    <artifactId>log4j-bom</artifactId>
 		    <version>2.25.3</version>
 		    <type>pom</type>
 		    <scope>import</scope>
 		</dependency>
-	    <dependency>
-	      <groupId>org.slf4j</groupId>
-	      <artifactId>slf4j-api</artifactId>
-  	      <version>${sl4j.version}</version>
-	    </dependency>
 	  </dependencies>
 	</dependencyManagement>
 
@@ -103,10 +107,6 @@
 			<scope>provided</scope>
 		</dependency>
 
-		<!-- Jackson (JSON annotations and bindings) 
-		This is an old version but avoids possible conflicts with transitive dependencies.
-		This is now moved to tools.jackson.core
-		-->
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
@@ -197,13 +197,13 @@
 			<artifactId>slf4j-api</artifactId>
 		</dependency>
 		<dependency>
-		    <groupId>org.apache.logging.log4j</groupId>
-		    <artifactId>log4j-to-slf4j</artifactId>
-		</dependency>
-		<dependency>
 		    <groupId>org.slf4j</groupId>
 		    <artifactId>jcl-over-slf4j</artifactId>
 		    <version>${sl4j.version}</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.logging.log4j</groupId>
+		    <artifactId>log4j-to-slf4j</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>ch.qos.logback</groupId>

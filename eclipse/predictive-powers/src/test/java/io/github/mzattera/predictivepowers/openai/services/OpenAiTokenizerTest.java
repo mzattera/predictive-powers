@@ -17,7 +17,6 @@
 package io.github.mzattera.predictivepowers.openai.services;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -188,7 +187,7 @@ public class OpenAiTokenizerTest {
 
 // Checks all models have a tokenizer.
 // This is already tested when testing model service
-	
+
 //	@ParameterizedTest
 //	@MethodSource("allCompletionModelsProvider")
 //	@DisplayName("Check all models have a tokeniser")
@@ -431,9 +430,8 @@ public class OpenAiTokenizerTest {
 			@JsonProperty(required = true)
 			public TemperatureUnits unit3;
 
-			// TODO URGENT Add it back and redo tests
-//			@SuppressWarnings("unused")
-//			public boolean bull;
+			@SuppressWarnings("unused")
+			public boolean bull;
 		}
 
 		public GetCurrentWeatherTool() {
@@ -496,7 +494,7 @@ public class OpenAiTokenizerTest {
 		long tokens = counter.count(req);
 		long realTokens = realTokens(req);
 
-		System.out.println("Function description: " +model + "\t" + tokens + "\t" + realTokens);
+		System.out.println("Function description: " + model + "\t" + tokens + "\t" + realTokens);
 		assertEquals(realTokens, tokens);
 	}
 
@@ -524,7 +522,7 @@ public class OpenAiTokenizerTest {
 
 		long tokens = counter.count(req);
 		long realTokens = realTokens(req);
-		System.out.println("Tool description: " +model + "\t" + tokens + "\t" + realTokens);
+		System.out.println("Tool description: " + model + "\t" + tokens + "\t" + realTokens);
 	}
 
 	private final static List<ChatCompletionMessageParam> OTHER_MESSAGES = new ArrayList<>();
@@ -573,7 +571,7 @@ public class OpenAiTokenizerTest {
 
 		long tokens = counter.count(req);
 		long realTokens = realTokens(req);
-		System.out.println("0 params tool calls: " +model + "\t" + tokens + "\t" + realTokens);
+		System.out.println("0 params tool calls: " + model + "\t" + tokens + "\t" + realTokens);
 
 		assertEquals(realTokens, tokens);
 	}

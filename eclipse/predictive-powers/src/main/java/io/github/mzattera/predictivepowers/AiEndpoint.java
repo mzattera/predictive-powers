@@ -36,8 +36,6 @@ import lombok.NonNull;
  */
 public interface AiEndpoint extends Endpoint {
 
-	// TODO always ensure it return service interfaces
-
 	ModelService getModelService();
 
 	CompletionService getCompletionService();

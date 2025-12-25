@@ -131,8 +131,6 @@ public class OpenAiAssistant extends AbstractAgent {
 
 		public final static String ID = "_OpenAiTool$";
 
-		// TODO URGENT Add all tools
-
 		@Getter
 		private final OpenAiFileSearchTool fileSearchTool = new OpenAiFileSearchTool();
 
@@ -635,13 +633,12 @@ public class OpenAiAssistant extends AbstractAgent {
 		// Get agent from server
 		Assistant assistant = getClient().beta().assistants().retrieve(id);
 
-		// TODO URGENT update responseFormat too -> can be in metadata?
+		// TODO WON'T FIX update responseFormat too -> can be in metadata?
 
-		// TODO URGENT handle custom tools...proxies? No, users will need to use same
+		// TODO WON'T FIX handle custom tools...proxies? No, users will need to use same
 		// tool set, if not, last one will win and others will get errors when trying to
 		// call non existing tools
-
-		// TODO URGENT....what about handling of tools? Is it OK not to update them, or shall we use proxies?
+		// ...what about handling of tools? Is it OK not to update them, or shall we use proxies?
 		
 		return assistant;
 	}
@@ -692,7 +689,7 @@ public class OpenAiAssistant extends AbstractAgent {
 							openAiAssistant.metadata().get()._additionalProperties() //
 					).build());
 
-		// TODO URGENT support?
+		// TODO WON'T FIX support?
 //		b.reasoningEffort(???) //
 //		b.toolResources(???); //
 
@@ -721,8 +718,6 @@ public class OpenAiAssistant extends AbstractAgent {
 			}
 		}
 		b.responseFormat(format);
-
-		// TODO URGENT insert built-in tools -> NOT NEEDED as we change data directly
 
 		// Make sure the list of tools is updated
 		// Need to do it here since it depends on the model
@@ -874,10 +869,10 @@ public class OpenAiAssistant extends AbstractAgent {
 		return chat(new ChatMessage(msg));
 	}
 
-	// TODO Runs give you option to override tools: maybe add a method that take a
+	// TODO WON'T FIX Runs give you option to override tools: maybe add a method that take a
 	// list of tools as well
 
-	// TODO does it make sense to have a method the supports specific OpenAI
+	// TODO WON'T FIX does it make sense to have a method the supports specific OpenAI
 	// messages, to support their parameters?
 
 	/**
@@ -914,7 +909,6 @@ public class OpenAiAssistant extends AbstractAgent {
 
 				List<ToolCallResult> results = msg.getToolCallResults();
 				if (results.size() != msg.getParts().size())
-					// TODO Maybe silently ignore?
 					throw new IllegalArgumentException("Tool call results cannot contain other parts in the message.");
 
 				Builder params = RunSubmitToolOutputsParams.builder() //
@@ -958,7 +952,7 @@ public class OpenAiAssistant extends AbstractAgent {
 			// Wait for completion
 			while (RunStatus.QUEUED.equals(run.status()) || RunStatus.IN_PROGRESS.equals(run.status())) {
 
-				// TODO Add asynch method that returns at each run step?
+				// TODO WON'T FIX Add asynch method that returns at each run step?
 				// maybe return run steps as results, instead of messages, so the results can be
 				// progressed easily and caller always looks at ChatMessage?
 				// Or have a onRunProgress() that returns the list of new run steps and
@@ -1060,7 +1054,7 @@ public class OpenAiAssistant extends AbstractAgent {
 		if (msg.hasToolCallResults())
 			throw new IllegalArgumentException("Tool call results should be handled separatly");
 
-		// TODO URGENT support attachment parameters in create run request (or is this
+		// TODO WON'T FIX support attachment parameters in create run request (or is this
 		// an override?)
 
 		List<MessageContentPartParam> content = new ArrayList<>();
@@ -1076,7 +1070,7 @@ public class OpenAiAssistant extends AbstractAgent {
 
 			} else if (part instanceof OpenAiFilePart) {
 
-				// TODO URGENT Tools cannot access image content unless specified. To pass image
+				// TODO WON'T FIX Tools cannot access image content unless specified. To pass image
 				// files to Code Interpreter, add the file ID in the message attachments list to
 				// allow the tool to read and analyze the input. Image URLs cannot be downloaded
 				// in Code Interpreter today.
@@ -1087,7 +1081,7 @@ public class OpenAiAssistant extends AbstractAgent {
 				);
 			} else if (part instanceof FilePart) {
 
-				// TODO Add automatic upload of files?
+				// TODO WON'T FIX Add automatic upload of files?
 				// When creating image files, pass purpose="vision" to allow you to later
 				// download and display the input content.
 				// Tools cannot access image content unless specified. To pass image files to
@@ -1141,7 +1135,7 @@ public class OpenAiAssistant extends AbstractAgent {
 			}
 		}
 
-		// TODO Handle annotations
+		// TODO WON'T FIX  Handle annotations
 		// https://platform.openai.com/docs/assistants/deep-dive?lang=python
 		// However they are not mentioned in the Message API nor available in OpenAI SDK
 

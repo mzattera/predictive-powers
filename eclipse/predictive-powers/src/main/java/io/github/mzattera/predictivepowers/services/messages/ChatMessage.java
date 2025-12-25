@@ -52,11 +52,7 @@ import lombok.ToString;
 @ToString
 public class ChatMessage {
 
-	// TODO URGENT Add parts to support citations/annotations
-
-	// TODO URGENT Add method to deserialize the response and return a POJO, great
-	// in combination w. responseFormat
-	// Add that to the website documentation
+	// TODO Eventually add parts to support citations/annotations or find a6 way to expose original history so to get access to messages...
 
 	/**
 	 * The author (originator) of the message.
@@ -181,7 +177,7 @@ public class ChatMessage {
 				result.append("\n\n");
 			result.append(parts.get(i).getContent());
 		}
-		return result.toString(); // TODO lazy caching
+		return result.toString();
 	}
 
 	/**

@@ -44,9 +44,8 @@ import lombok.ToString;
  */
 public class OpenAiModelService extends AbstractModelService {
 
-	// TODO URGENT: When introducing Azure this need to be changed so deployments
-	// can be mapped
-	// into actual modes to get their parameters
+	// TODO: When introducing Azure this need to be changed so deployments can be
+	// mapped into actual modes to get their parameters
 
 	@ToString(callSuper = true)
 	public static class OpenAiModelMetaData extends ModelMetaData {
@@ -308,10 +307,11 @@ public class OpenAiModelService extends AbstractModelService {
 
 		// Needed because structured output and ctx size are different than gpt-4o
 		MODEL_CONFIG.put("gpt-4o-2024-05-13",
-				new OpenAiModelMetaData.Builder().model("gpt-4o-2024-05-13").tokenizer(OpenAiTokenizer.getTokenizer("gpt-4o"))
-						.contextSize(128_000).maxNewTokens(4096).inputModes(TEXT_IMAGE).outputModes(TEXT_IMAGE)
-						.supportedApis(CHAT_RESPONSES_ASSISTANTS_BATCH_FINE_TUNING).supportedCallType(CallType.TOOLS).structuredOutput(false)
-						.build());
+				new OpenAiModelMetaData.Builder().model("gpt-4o-2024-05-13")
+						.tokenizer(OpenAiTokenizer.getTokenizer("gpt-4o")).contextSize(128_000).maxNewTokens(4096)
+						.inputModes(TEXT_IMAGE).outputModes(TEXT_IMAGE)
+						.supportedApis(CHAT_RESPONSES_ASSISTANTS_BATCH_FINE_TUNING).supportedCallType(CallType.TOOLS)
+						.structuredOutput(false).build());
 
 		// Structured output and max new tokens different than 4o
 		MODEL_CONFIG.put("gpt-4o-audio-preview",
@@ -554,8 +554,8 @@ public class OpenAiModelService extends AbstractModelService {
 		MODEL_CONFIG.put("sora-2-pro",
 				new OpenAiModelMetaData.Builder().model("sora-2-pro")
 						.tokenizer(OpenAiTokenizer.getTokenizer("sora-2-pro")).inputModes(TEXT_IMAGE)
-						.outputModes(List.of(Modality.AUDIO, Modality.VIDEO)).supportedApis(List.of(SupportedApi.VIDEOS))
-						.supportedCallType(CallType.NONE).build());
+						.outputModes(List.of(Modality.AUDIO, Modality.VIDEO))
+						.supportedApis(List.of(SupportedApi.VIDEOS)).supportedCallType(CallType.NONE).build());
 
 		// Audio
 		// TODO URGENT fix tokeniser for this model

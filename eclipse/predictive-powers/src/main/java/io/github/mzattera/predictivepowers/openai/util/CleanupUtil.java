@@ -22,11 +22,15 @@ import java.util.Scanner;
 
 import com.openai.client.OpenAIClient;
 import com.openai.core.JsonValue;
+import com.openai.errors.OpenAIInvalidDataException;
 import com.openai.models.beta.assistants.Assistant;
 import com.openai.models.files.FileObject;
 import com.openai.models.finetuning.jobs.FineTuningJob;
 import com.openai.models.finetuning.jobs.FineTuningJob.Status;
 import com.openai.models.models.Model;
+import com.openai.models.vectorstores.VectorStore;
+import com.openai.models.vectorstores.VectorStoreDeleteParams;
+import com.openai.models.vectorstores.VectorStoreDeleted;
 
 import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
 
@@ -40,10 +44,9 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
  */
 public class CleanupUtil {
 
-	public static void main(String[] args) {
+	public static final String TEST_STORE_PREFIX = "Test_Store_";
 
-		// TODO URGENT Delete vector stores tih names startign with... (see OpenAiAgent
-		// test).
+	public static void main(String[] args) {
 
 		boolean forceAgentDelete = false;
 
@@ -56,7 +59,8 @@ public class CleanupUtil {
 				System.out.print("Aborted.");
 				System.exit(-1);
 			}
-			System.out.print("\n*** Inaddition, do you want to delete *all* ASSISTANTS even if marked as permanent? ***\n");
+			System.out.print(
+					"\n*** Inaddition, do you want to delete *all* ASSISTANTS even if marked as permanent? ***\n");
 			System.out.print("Type \"yes\" if you want to do so: ");
 			if (console.nextLine().equals("yes")) {
 				forceAgentDelete = true;
@@ -123,7 +127,33 @@ public class CleanupUtil {
 				System.out.println("\tDeleting file: " + f.id() + " => " + cli.files().delete(f.id()).deleted());
 			}
 
-			System.out.println("\nCleanup completed.yes");
+			// Delete vector stores created when testing
+			System.out.println("Deleting Vector Stores...");
+			List<VectorStore> stores = new ArrayList<>();
+			for (VectorStore store : cli.vectorStores().list().autoPager()) {
+				try {
+					if ((store.name() != null) && store.name().startsWith(TEST_STORE_PREFIX)) {
+						stores.add(store);
+					} else {
+						System.out.println("\tVector Store " + store.id() + " - " + store.name() + " skipped.");
+					}
+				} catch (OpenAIInvalidDataException e) {
+					// Happens with vectors with no name
+					stores.add(store);
+				}
+			}
+			for (VectorStore store : stores) {
+				VectorStoreDeleteParams deleteParams = VectorStoreDeleteParams.builder().vectorStoreId(store.id())
+						.build();
+				VectorStoreDeleted response = cli.vectorStores().delete(deleteParams);
+				if (response.deleted()) {
+					System.out.println("\tVector Store " + store.id() + " DELETED.");
+				} else {
+					throw new Exception("Cannot delete Vector Store: " + store.id());
+				}
+			}
+
+			System.out.println("\nCleanup completed.");
 		} catch (Exception e) {
 			e.printStackTrace(System.err);
 		}

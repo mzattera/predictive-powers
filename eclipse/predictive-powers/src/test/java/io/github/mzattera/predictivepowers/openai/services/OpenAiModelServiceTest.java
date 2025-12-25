@@ -155,9 +155,6 @@ class OpenAiModelServiceTest {
 			List<String> oaiModels = modelSvc.listModels();
 			for (String model : oaiModels) {
 
-				// TODO URGENT REMOVE
-//				if (!"gpt-5-mini-2025-08-07".equals(model)) continue;
-
 				if (OLD_MODELS.contains(model))
 					continue; // Skip old models
 
@@ -350,9 +347,6 @@ class OpenAiModelServiceTest {
 
 				if (OLD_MODELS.contains(model))
 					continue; // Skip old models
-				
-				// TODO URGENT Remove this
-//				if (!model.startsWith("gpt-5-2025-08-07")) continue;
 
 				OpenAiModelMetaData md = modelSvc.get(model);
 				assertTrue(md != null, "Missing model: " + model);
@@ -446,7 +440,4 @@ class OpenAiModelServiceTest {
 			assertFalse(error, "An error occurred testing model max output lenght; check error console.");
 		} // Close endpoint
 	}
-
-// TODO URGENT Test that vision and audio support are set correctly by sending images & audio
-// If you do, probably you can remove testing audio files
 }

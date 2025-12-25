@@ -78,8 +78,14 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 
 	@Override
 	public List<EmbeddedText> embedFile(@NonNull File file) throws EndpointException {
+		return embedFile(file, defaultChunkTokens, 1, 1);
+	}
+
+	@Override
+	public List<EmbeddedText> embedFile(@NonNull File file, int chunkSize, int windowSize, int stride)
+			throws EndpointException {
 		try {
-			return embed(ExtractionUtil.fromFile(file));
+			return embed(ExtractionUtil.fromFile(file), chunkSize, windowSize, stride);
 		} catch (Exception e) {
 			if (e instanceof EndpointException)
 				throw (EndpointException) e;
@@ -89,6 +95,12 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 
 	@Override
 	public Map<File, List<EmbeddedText>> embedFolder(@NonNull File folder) throws EndpointException {
+		return embedFolder(folder, defaultChunkTokens, 1, 1);
+	}
+
+	@Override
+	public Map<File, List<EmbeddedText>> embedFolder(@NonNull File folder, int chunkSize, int windowSize, int stride)
+			throws EndpointException {
 		try {
 			if (!folder.isDirectory() || !folder.canRead()) {
 				throw new IOException("Cannot read folder: " + folder.getCanonicalPath());
@@ -97,9 +109,9 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 			Map<File, List<EmbeddedText>> result = new HashMap<>();
 			for (File f : folder.listFiles()) {
 				if (f.isFile())
-					result.put(f, embedFile(f));
+					result.put(f, embedFile(f, chunkSize, windowSize, stride));
 				else
-					result.putAll(embedFolder(f));
+					result.putAll(embedFolder(f, chunkSize, windowSize, stride));
 			}
 
 			return result;
@@ -112,8 +124,14 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 
 	@Override
 	public List<EmbeddedText> embedURL(@NonNull String url) throws EndpointException {
+		return embedURL(url, defaultChunkTokens, 1, 1);
+	}
+
+	@Override
+	public List<EmbeddedText> embedURL(@NonNull String url, int chunkSize, int windowSize, int stride)
+			throws EndpointException {
 		try {
-			return embedURL((new URI(url)).toURL());
+			return embedURL((new URI(url)).toURL(), chunkSize, windowSize, stride);
 		} catch (Exception e) {
 			if (e instanceof EndpointException)
 				throw (EndpointException) e;
@@ -123,8 +141,14 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 
 	@Override
 	public List<EmbeddedText> embedURL(@NonNull URL url) throws EndpointException {
+		return embedURL(url, defaultChunkTokens, 1, 1);
+	}
+
+	@Override
+	public List<EmbeddedText> embedURL(@NonNull URL url, int chunkSize, int windowSize, int stride)
+			throws EndpointException {
 		try {
-			return embed(ExtractionUtil.fromUrl(url));
+			return embed(ExtractionUtil.fromUrl(url), chunkSize, windowSize, stride);
 		} catch (Exception e) {
 			if (e instanceof EndpointException)
 				throw (EndpointException) e;

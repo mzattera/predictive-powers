@@ -476,8 +476,6 @@ public class OpenAiChatService extends AbstractAgent {
 	private Pair<FinishReason, ChatCompletionMessage> chatCompletion(List<ChatCompletionMessageParam> messages)
 			throws EndpointException {
 
-		// TODO URGENT Why is this returning a Pair<> instead of a ChatCompletion?
-
 		// This ensures we can track last call messages from defaultRequest, for testing
 		// reasons
 		defaultRequest = defaultRequest.toBuilder().messages(messages).build();
@@ -660,8 +658,6 @@ public class OpenAiChatService extends AbstractAgent {
 	@SuppressWarnings("deprecation")
 	private List<ChatCompletionMessageParam> fromChatMessage(ChatMessage msg) {
 
-		// TODO URGENT add test to check this
-
 		if (msg.hasToolCalls())
 			throw new IllegalArgumentException("Only API can generate tool/function calls.");
 
@@ -723,7 +719,7 @@ public class OpenAiChatService extends AbstractAgent {
 					case IMAGE:
 						// We ensure the image is Base64 encoded unless it is a remote file that we do
 						// not touch (for performance reasons)
-						// TODO URGENT: Scale down to the biggest supported image?
+						// TODO: Scale down to the biggest supported image?
 						if (file.getUrl() != null) {
 							newParts.add(ChatCompletionContentPart.ofImageUrl( //
 									ChatCompletionContentPartImage.builder() //
@@ -736,13 +732,11 @@ public class OpenAiChatService extends AbstractAgent {
 							if (!(file instanceof Base64FilePart))
 								file = new Base64FilePart(file);
 
-							// Notice we do not do any more image down-scaling as now sizes depend on
-							// models.
+							// TODO: Scale down to the biggest supported image? Now it depends on model.
 							newParts.add(ChatCompletionContentPart.ofImageUrl( //
 									ChatCompletionContentPartImage.builder() //
 											.imageUrl( //
 													ChatCompletionContentPartImage.ImageUrl.builder()
-//														// TODO URGENT check if this scale is still OK
 															.url("data:" + file.getMimeType() + ";base64,"
 																	+ ((Base64FilePart) file).getEncodedContent())
 															.build() //

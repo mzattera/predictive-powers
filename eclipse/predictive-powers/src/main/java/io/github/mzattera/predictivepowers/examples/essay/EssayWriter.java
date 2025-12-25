@@ -51,13 +51,13 @@ import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiTokenizer;
-import io.github.mzattera.predictivepowers.services.CompletionService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.EmbeddingService;
 import io.github.mzattera.predictivepowers.services.Link;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.util.ExtractionUtil;
 import io.github.mzattera.predictivepowers.util.FileUtil;
+import io.github.mzattera.predictivepowers.util.StringUtil;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -475,7 +475,7 @@ public class EssayWriter implements Closeable {
 		// using the draft in description
 		Map<String, String> params = new HashMap<>();
 		params.put("description", description);
-		ChatCompletion resp = chatSvc.complete(CompletionService.fillSlots(
+		ChatCompletion resp = chatSvc.complete(StringUtil.fillSlots(
 				"You are tasked with creating the structure of a book based on the provided description. The book should consist of several chapters, each containing a title, a summary, and a list of sections. Each section should have a title and a summary. Please ensure that sections are not nested within each other.\n"
 						+ "\n"
 						+ "If possible, try to make the summaries of the chapters and sections at least 100 words long to provide substantial content for the book's outline.\n"
@@ -596,7 +596,7 @@ public class EssayWriter implements Closeable {
 		List<String> queries;
 		while (true) {
 			try {
-				String reply = chatSvc.complete(CompletionService.fillSlots(prompt, params)).getText();
+				String reply = chatSvc.complete(StringUtil.fillSlots(prompt, params)).getText();
 				queries = JSON_MAPPER.readValue(reply, new TypeReference<List<String>>() {
 				});
 				break;
@@ -767,7 +767,7 @@ public class EssayWriter implements Closeable {
 			params.put("context", c);
 
 			if (((int) (SECTION_LENGTH_TOKENS * 1.5)
-					+ counter.count(CompletionService.fillSlots(prompt, params))) > ctxSize)
+					+ counter.count(StringUtil.fillSlots(prompt, params))) > ctxSize)
 				break;
 			context = c; // Saves last context that would fit
 		}

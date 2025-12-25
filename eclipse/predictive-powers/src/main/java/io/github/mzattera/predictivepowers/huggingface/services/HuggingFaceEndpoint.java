@@ -29,7 +29,6 @@ import io.github.mzattera.predictivepowers.services.CompletionService;
 import lombok.Getter;
 import lombok.NonNull;
 import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
 
 /**
  * This represents a Hugging Face endpoint, from which services can be created.

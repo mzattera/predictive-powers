@@ -62,7 +62,7 @@ public abstract class OpenAiAssistantTool extends AbstractTool {
 
 	@Override
 	public List<ToolParameter> getParameters() {
-		// TODO maybe in a future far far away we implement this...
+		// TODO WON'T FIX maybe in a future far far away we implement this...
 		throw new UnsupportedOperationException();
 	}
 

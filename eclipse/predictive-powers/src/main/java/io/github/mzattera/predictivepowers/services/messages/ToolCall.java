@@ -47,26 +47,6 @@ import lombok.ToString;
 @ToString
 public class ToolCall implements MessagePart {
 
-	/**
-	 * Sometimes it is not possible to create a {@link ToolCall} instance, as we
-	 * have only the tool name. This class is meant to save the name until an
-	 * instance of tool is available.
-	 */
-	// TODO URGENT is this used at all? Yes, by Anthropic, maybe it is not needed
-	@Getter
-	@Setter
-	@ToString
-	public static class ToolCallProxy extends ToolCall {
-		private final @NonNull String toolName;
-
-		public ToolCallProxy(@NonNull String id, @NonNull String toolName, Tool tool, @NonNull Map<String, Object> arguments) {
-			super(id);
-			this.toolName = toolName;
-			setTool(tool);
-			setArguments(arguments);
-		}
-	}
-
 	public static Builder builder() {
 		return new Builder();
 	}

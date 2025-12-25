@@ -379,7 +379,6 @@ public class JsonSchema {
 		} catch (JsonProcessingException e) {
 			// This should never happen as serialization is no problem and we are
 			// de-serializing
-			// TODO see if we need more guards in de-serialization
 			LOG.error("Error de-serializing JSON schema", e);
 			return null;
 		}

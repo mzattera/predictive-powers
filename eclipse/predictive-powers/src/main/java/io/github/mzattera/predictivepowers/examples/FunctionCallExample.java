@@ -124,10 +124,6 @@ public class FunctionCallExample {
 					while (reply.hasToolCalls()) {
 
 						List<ToolCallResult> results = new ArrayList<>();
-
-						// TODO Urgent: display any content that is not a tool call.
-						// Add a method to get all and only concatenated text?
-
 						for (ToolCall call : reply.getToolCalls()) {
 
 							// Print call for illustrative purposes

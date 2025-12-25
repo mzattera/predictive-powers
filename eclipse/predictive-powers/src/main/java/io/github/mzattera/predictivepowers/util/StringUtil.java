@@ -19,6 +19,9 @@
  */
 package io.github.mzattera.predictivepowers.util;
 
+import java.util.Map;
+import java.util.Map.Entry;
+
 /**
  * Utilities to manipulate strings.
  */
@@ -59,5 +62,33 @@ public final class StringUtil {
 
 	    // Capitalize first letter
 	    return result.substring(0, 1).toUpperCase() + result.substring(1);
+	}
+
+	/**
+	 * Replaces 'slots' in a prompt.
+	 * 
+	 * Slots are placeholders inserted in the prompt using a syntax like {{name}}
+	 * where 'name' is a key in the provided Map; these placeholders will be
+	 * replaced with corresponding map value (using {@link Object#toString()}).
+	 * 
+	 * Parameters with a null value will result in a deleted slot, slots without
+	 * corresponding parameters in the map will be ignored (and not replaced).
+	 * 
+	 * @param prompt
+	 * @param parameters
+	 * @return
+	 */
+	public static String fillSlots(String prompt, Map<String, ? extends Object> parameters) {
+		if ((prompt == null) || (parameters == null))
+			return prompt;
+	
+		for (Entry<String, ? extends Object> e : parameters.entrySet()) {
+			String regex = "{{" + e.getKey() + "}}"; // No need to Pattern.quote()
+			if (e.getValue() == null)
+				prompt = prompt.replace(regex, "");
+			else
+				prompt = prompt.replace(regex, e.getValue().toString());
+		}
+		return prompt;
 	}
 }

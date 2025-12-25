@@ -27,7 +27,5 @@ import io.github.mzattera.predictivepowers.services.SearchService;
  */
 public interface SearchEndpoint extends Endpoint {
 
-	// TODO always ensure it return service interfaces
-
 	SearchService getSearchService();
 }

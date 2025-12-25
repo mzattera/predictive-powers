@@ -61,7 +61,7 @@ public class ReactAgent extends OpenAiChatService {
 		public @NonNull String thought;
 	}
 
-	// TODO URGENT Remove actor
+	// TODO Remove actor
 
 	@NoArgsConstructor
 	@JsonSchemaDescription("This represent the final execution step performed by a ReAct agent.")
@@ -256,7 +256,7 @@ public class ReactAgent extends OpenAiChatService {
 		this.reviewer = new CriticModule(this, tools);
 		setTemperature(0d);
 
-		// TODO URGENT Set max output (?)
+		// TODO Set max output (?)
 	}
 
 	public Step execute(@NonNull String command) throws JsonProcessingException {

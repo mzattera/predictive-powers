@@ -278,7 +278,7 @@ public class OpenAiTokenizer implements Tokenizer {
 							sum += encoding.countTokens(functionCall.name());
 							sum += encoding.countTokens(functionCall.arguments());
 
-							// TODO URGENT See how it was doen before
+							// TODO URGENT See how it was done before
 							if (functionCall.arguments().length() == 0)
 								++sum;
 							else
@@ -505,7 +505,7 @@ public class OpenAiTokenizer implements Tokenizer {
 						sum += encoding.countTokens(propertiesKey);
 //						JsonValue v = properties.get(propertiesKey);
 
-						// TODO URGENT Fix one day
+						// TODO URGENT Fix one day, unless OpenAI SDK provides these by default
 //						Iterator<String> fields = v.fieldNames();
 //						while (fields.hasNext()) {
 //							String field = fields.next();

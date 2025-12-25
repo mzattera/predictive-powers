@@ -178,8 +178,6 @@ public final class TestConfiguration {
 
 	public static List<Pair<AiEndpoint, String>> getTTSServices() {
 
-		// TODO Expose as a proper service
-
 		List<Pair<AiEndpoint, String>> result = new ArrayList<>();
 
 		if (TEST_OPENAI_SERVICES)
@@ -188,8 +186,6 @@ public final class TestConfiguration {
 	}
 
 	public static List<Pair<AiEndpoint, String>> getSTTServices() {
-
-		// TODO Expose as a proper service
 
 		List<Pair<AiEndpoint, String>> result = new ArrayList<>();
 

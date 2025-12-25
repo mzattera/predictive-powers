@@ -23,9 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -33,7 +31,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -42,7 +39,6 @@ import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.BadRequestException;
 import io.github.mzattera.predictivepowers.TestConfiguration;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
-import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.TextCompletion;
 
@@ -186,30 +182,5 @@ public class CompletionServiceTest {
 			assertTrue((resp.getFinishReason() == FinishReason.COMPLETED)
 					|| (resp.getFinishReason() == FinishReason.TRUNCATED));
 		}
-	}
-
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// Slot filling
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	// TODO if you move fillSlots() out of CompletionService
-	@Test
-	@DisplayName("Testing CompletionService.fillSlots()")
-	void test90() {
-		Map<String, Object> params = new HashMap<>();
-		params.put("A", null);
-		params.put("A.B", "a.b");
-		params.put("C", Author.BOT);
-
-		assertEquals(null, CompletionService.fillSlots(null, new HashMap<>()));
-		assertEquals("banana", CompletionService.fillSlots("banana", null));
-		assertEquals("", CompletionService.fillSlots("{{A}}", params));
-		assertEquals("a.b", CompletionService.fillSlots("{{A.B}}", params));
-		assertEquals("bot", CompletionService.fillSlots("{{C}}", params));
-		assertEquals(" a.b bot", CompletionService.fillSlots("{{A}} {{A.B}} {{C}}", params));
-		assertEquals(" a.b bot {{D}}", CompletionService.fillSlots("{{A}} {{A.B}} {{C}} {{D}}", params));
-		assertEquals(" a.b bot {{D}} a.b bot {{D}}",
-				CompletionService.fillSlots("{{A}} {{A.B}} {{C}} {{D}}{{A}} {{A.B}} {{C}} {{D}}", params));
 	}
 }

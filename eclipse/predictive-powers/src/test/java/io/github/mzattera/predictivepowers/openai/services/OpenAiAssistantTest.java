@@ -42,6 +42,7 @@ import com.openai.models.files.FilePurpose;
 import com.openai.models.vectorstores.VectorStore;
 
 import io.github.mzattera.predictivepowers.TestConfiguration;
+import io.github.mzattera.predictivepowers.openai.util.CleanupUtil;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
@@ -58,7 +59,7 @@ public class OpenAiAssistantTest {
 	// ** IMPORTANT ** Make sure agents you create for test are not marked with
 	// _isPermanent=true in metadata
 
-	// TODO add tests to check all the methods to manipulate tools
+	// TODO WON'T FIX add tests to check all the methods to manipulate tools
 
 	private final static Logger LOG = LoggerFactory.getLogger(OpenAiAssistantTest.class);
 
@@ -111,7 +112,8 @@ public class OpenAiAssistantTest {
 					FilePurpose.ASSISTANTS);
 
 			// Create a VectorStore for the file
-			VectorStore store = OpenAiVectorStore.create(ep, "Test_Store_" + System.currentTimeMillis(), List.of(file));
+			VectorStore store = OpenAiVectorStore.create(ep, CleanupUtil.TEST_STORE_PREFIX + System.currentTimeMillis(),
+					List.of(file));
 
 			// Enable tool and attach store
 			bot.getOpenAiAssistantTools().getFileSearchTool().enable().addVectorStoreId(store.id());

@@ -95,7 +95,7 @@ public class OpenAiAgentService implements AgentService {
 	 */
 	public OpenAiAssistant createAgent(@NonNull String name, String description, String personality, boolean persist,
 			boolean isDefault) {
-		return createAgent(name, description, this.model, personality, true, false);
+		return createAgent(name, description, this.model, personality, persist, isDefault);
 	}
 
 	/**

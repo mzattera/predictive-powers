@@ -37,7 +37,6 @@ import io.github.mzattera.predictivepowers.examples.react.ReactAgent.Step.Status
 import io.github.mzattera.predictivepowers.examples.react.ReactAgent.ToolCallStep;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.services.Capability.ToolAddedEvent;
-import io.github.mzattera.predictivepowers.services.CompletionService;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.Tool.ToolParameter;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
@@ -47,6 +46,7 @@ import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.JsonSchema;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
+import io.github.mzattera.predictivepowers.util.StringUtil;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -239,12 +239,12 @@ public class ExecutorModule extends OpenAiChatService {
 	 * If true, it will call the reviewer on last step before exiting. We do this to
 	 * save tokens.
 	 */
-	// TODO URGENT have a more elegant way of setting this?
+	// TODO have a more elegant way of setting this?
 	@Getter
 	@Setter
 	private boolean checkLastStep;
 
-	// TODO URGENT move command and steps to the main agent ....everything accessible globally should go there
+	// TODO move command and steps to the main agent ....everything accessible globally should go there
 	
 	/**
 	 * Current command being executed.
@@ -303,12 +303,12 @@ public class ExecutorModule extends OpenAiChatService {
 		}
 		setResponseFormat(Step.class);
 
-		// TODO URGENT Set max output (?)
+		// TODO Set max output (?)
 	}
 
 	public Step execute(@NonNull String command) throws JsonProcessingException {
 
-		// TODO URGENT Need to clarify who does what....
+		// TODO Need to clarify who does what....
 		this.command = command;
 		steps.clear();
 
@@ -318,12 +318,12 @@ public class ExecutorModule extends OpenAiChatService {
 		map.put("context", agent.getContext());
 		map.put("examples", agent.getExamples());
 
-		setPersonality(CompletionService.fillSlots(PROMPT_TEMPLATE, map));
+		setPersonality(StringUtil.fillSlots(PROMPT_TEMPLATE, map));
 
 		Step step = new Step.Builder() //
 				.actor(getId()) //
 				.status(Status.IN_PROGRESS) //
-				.thought(CompletionService.fillSlots(
+				.thought(StringUtil.fillSlots(
 						"I am starting execution of the below user's command in <user_command> tag.\n\n<user_command>\n{{command}}\n</user_command>",
 						map)) //
 				.observation("Execution just started.") //
@@ -340,7 +340,7 @@ public class ExecutorModule extends OpenAiChatService {
 			clearConversation();
 			map.put("steps", JsonSchema.JSON_MAPPER.writerWithView(Step.Views.Compact.class).writeValueAsString(steps));
 			map.put("suggestion", suggestion);
-			String message = CompletionService.fillSlots(instructions, map);
+			String message = StringUtil.fillSlots(instructions, map);
 			ChatCompletion reply = null;
 			Exception ex = null;
 			try {

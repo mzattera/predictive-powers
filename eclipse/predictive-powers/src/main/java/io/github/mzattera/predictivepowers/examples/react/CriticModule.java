@@ -32,11 +32,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.mzattera.predictivepowers.examples.react.ReactAgent.Step;
 import io.github.mzattera.predictivepowers.examples.react.ReactAgent.ToolCallStep;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
-import io.github.mzattera.predictivepowers.services.CompletionService;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.Tool.ToolParameter;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.messages.JsonSchema;
+import io.github.mzattera.predictivepowers.util.StringUtil;
 import lombok.Getter;
 import lombok.NonNull;
 
@@ -168,14 +168,14 @@ class CriticModule extends OpenAiChatService {
 		map.put("context", agent.getContext());
 		map.put("tools", buildToolDescription(tools));
 		map.put("steps", JsonSchema.JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(steps));
-		setPersonality(CompletionService.fillSlots(template, map));
+		setPersonality(StringUtil.fillSlots(template, map));
 //		LOG.info(getPersonality());
 
 		clearConversation();
-		String suggestion = chat(CompletionService.fillSlots("<steps>\\n{{steps}}\\n</steps>", map)).getText();
+		String suggestion = chat(StringUtil.fillSlots("<steps>\\n{{steps}}\\n</steps>", map)).getText();
 		System.err.println("    **** " + suggestion);
 		LOG.debug("    **** Suggestion: " + suggestion);
-		return chat(CompletionService.fillSlots("<steps>\\n{{steps}}\\n</steps>", map)).getText();
+		return chat(StringUtil.fillSlots("<steps>\\n{{steps}}\\n</steps>", map)).getText();
 	}
 
 	private static String buildToolDescription(@NonNull List<Tool> tools) {

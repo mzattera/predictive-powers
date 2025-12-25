@@ -151,7 +151,7 @@ public class ImageGenerationServiceTest {
 		}
 	}
 
-	// add test for non null mask (TODO?)
+	// TODO add test for non null mask
 
 	private void saveFiles(ImageGenerationService service, String prefix, List<FilePart> images) throws IOException {
 		for (FilePart img : images) {

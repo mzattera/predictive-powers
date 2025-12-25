@@ -94,7 +94,7 @@ public class HuggingFaceEmbeddingService extends AbstractEmbeddingService {
 
 		// Tries to get a tokenizer, falling back to char tokenizer :(
 		String model = defaultRequest.getModel();
-		Tokenizer tokenizer = modelService.getTokenizer(model, CharTokenizer.getInstance());
+		Tokenizer tokenizer = modelService.getTokenizer(model, HuggingFaceModelService.TOKENIZER);
 
 		// Chunk accordingly to user's instructions
 		List<String> chunks = new ArrayList<>();

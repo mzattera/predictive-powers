@@ -227,7 +227,7 @@ public class HuggingFaceChatService extends AbstractAgent {
 		} catch (JsonProcessingException e) {
 			throw HuggingFaceUtil.toEndpointException(e);
 		}
-		return modelService.getTokenizer(getModel(), CharTokenizer.getInstance()).count(json);
+		return modelService.getTokenizer(getModel(), HuggingFaceModelService.TOKENIZER).count(json);
 	}
 
 	@Getter
@@ -455,7 +455,7 @@ public class HuggingFaceChatService extends AbstractAgent {
 
 		// Trims down the list of messages accordingly to given limits.
 		int steps = 0;
-		Tokenizer counter = modelService.getTokenizer(getModel(), CharTokenizer.getInstance());
+		Tokenizer counter = modelService.getTokenizer(getModel(), HuggingFaceModelService.TOKENIZER);
 		for (int i = messages.size() - 1; i >= 0; --i) {
 			if (steps >= maxConversationSteps)
 				break;

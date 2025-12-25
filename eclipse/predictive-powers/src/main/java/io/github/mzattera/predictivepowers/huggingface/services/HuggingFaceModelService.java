@@ -40,6 +40,7 @@ import io.github.mzattera.predictivepowers.huggingface.util.HuggingFaceUtil;
 import io.github.mzattera.predictivepowers.services.AbstractModelService;
 import io.github.mzattera.predictivepowers.services.ModelService;
 import io.github.mzattera.predictivepowers.services.messages.JsonSchema;
+import io.github.mzattera.predictivepowers.util.SimpleTokenizer;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -57,6 +58,8 @@ import lombok.ToString;
  *
  */
 public class HuggingFaceModelService extends AbstractModelService {
+
+	private final static Logger LOG = LoggerFactory.getLogger(HuggingFaceModelService.class);
 
 	@Getter
 	@Setter
@@ -76,8 +79,9 @@ public class HuggingFaceModelService extends AbstractModelService {
 		}
 	}
 
-	private final static Logger LOG = LoggerFactory.getLogger(HuggingFaceModelService.class);
-
+	/** Tokeniser to use when no other tokeniser is found */
+	public static final Tokenizer TOKENIZER = new SimpleTokenizer(2.5);
+	
 	/**
 	 * Single instance of the data Map, shared by all instances of this model
 	 * service class.
@@ -111,7 +115,7 @@ public class HuggingFaceModelService extends AbstractModelService {
 	 * @param model
 	 * @return Model meta data filled as much as possible
 	 */
-	public static ModelMetaData load(String model) {
+	private static ModelMetaData load(String model) {
 		ModelMetaData.Builder builder = ModelMetaData.builder().model(model);
 
 		// Remove provider, if any

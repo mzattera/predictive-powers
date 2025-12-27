@@ -16,18 +16,19 @@
 package io.github.mzattera.predictivepowers;
 
 import lombok.Builder;
+import lombok.NonNull;
 
-public class BadRequestException extends EndpointException {
+public class BadRequestException extends RestException {
 
 	private static final long serialVersionUID = 1L;
 
 	@Builder(builderMethodName = "badRequestBuilder")
-	public BadRequestException(String message, String responseBody, Throwable cause, boolean enableSuppression,
+	public BadRequestException(@NonNull String message, String responseBody, Throwable cause, boolean enableSuppression,
 			boolean writableStackTrace) {
 		super(400, message, responseBody, cause, enableSuppression, writableStackTrace);
 	}
 
-	public BadRequestException(int statusCode, String message) {
+	public BadRequestException(@NonNull String message) {
 		super(400, message);
 	}
 }

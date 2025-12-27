@@ -30,7 +30,7 @@ public class GoogleSearchExample {
 				GoogleSearchService service = endpoint.getSearchService();) {
 			
 			// Performs search and shows results.
-			for (Link result : service.search("Massimliano Zattera")) {
+			for (Link result : service.search("Alan Turing")) {
 				System.out.println(result.getTitle() + ": " + result.getUrl());
 			}
 			

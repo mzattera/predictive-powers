@@ -1,34 +1,34 @@
 # predictive-powers
 
-**`predictive-powers` is a library to easily create autonomous [agents](https://mzattera.github.io/predictive-powers/#agents) using generative AI (GenAI) services.
-It has been featured in a chapter of the book
+**`predictive-powers` is a library to easily create autonomous [agents](#agents) using generative AI (GenAI) services.
+An early version of this library has been featured in a chapter of the book
 "[Ultimate ChatGPT Handbook for Enterprises](https://www.amazon.com/Ultimate-ChatGPT-Handbook-Enterprises-Solution-Cycles-ebook/dp/B0CNT9YV57)"
 which I co-authored with Dr. Harald Gunia and Karolina Galinska.**
 
 Advantages of using this library:
 
-  1. Adds an abstraction layer for GenAI capabilities, this allows to plug-in different providers seamlessly
+  1. Adds an abstraction layer for GenAI capabilities, this allows to plug-in different providers seamlessly (see "[Services](#services)" below)
      and reduces amount of code needed to access these capabilities.
      
   2. Hides a lot of the underlying API complexity. For example:
   
-     * Automated handling of context sizes, with exact token calculations.
+     * Automated handling of context sizes.
      
      * Automated handling of chat history, with customizable length.
     
      * Uniform interface to add tools (function calls) to models, regardless the mechanism they use
-     (e.g. single or paralllel function calling for OpenAI models).
+     (e.g. function calling and tool calling for OpenAI models are treated in the same way).
      This includes a modular approach to adding tools to agents. 
     
-     * Multi-part chat messges that support using files, images or tool (function calls) through same API.
-  
-  3. Still allows direct, low-level, access to underlying API from Java.
+     * Multi-part chat messages that support using files and images through same API.
+	 
+	 * Automated scaling down and caching of images in chats, tailored to each service provider, to reduce latency and costs.
 
-  4. Provides access to several capabilities in addition to chat completion, including image generation, STT, TTS, and web search.
+  3. Provides access to several capabilities in addition to chat completion, including image generation, STT, TTS, and web search.
   
-  5. Provides a serializable in-memory vector database.
+  4. Provides a naive serializable in-memory vector database.
 
-  6. Offers methods to easily read, chunk, and embed textual content from web pages and files in different formats (MS Office, PDF, HTML, etc.).
+  5. Offers methods to easily read, chunk, and embed textual content from web pages and files in different formats (MS Office, PDF, HTML, etc.).
   
  
 The below example is a one-liner to chat with GPT.
@@ -38,20 +38,28 @@ More details about the library, including manuals, can be found on the [project 
  ```java
 import java.util.Scanner;
 
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.services.Agent;
+import io.github.mzattera.predictivepowers.AiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.services.ChatService;
 
 public class ChatExample {
 
 	public static void main(String[] args) throws Exception {
 
-		// Get agent and set its personality
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
-				Agent agent = endpoint.getChatService();) {
-			
+		try (
+				// Uncomment the below to use OpenAI API
+				AiEndpoint endpoint = new OpenAiEndpoint();
+				ChatService agent = endpoint.getChatService();
+
+		// Uncomment the below to use Hugging Face API
+		// AiEndpoint endpoint = new HuggingFaceEndpoint();
+		// ChatService agent = endpoint.getChatService();
+
+		) {
+
+			// Give instructions to agent
 			agent.setPersonality("You are a very sad and depressed robot. "
-					+ "Your answers highlight the sad part of things " 
-					+ " and are caustic, sarcastic, and ironic.");
+					+ "Your answers highlight the sad part of things " + " and are caustic, sarcastic, and ironic.");
 
 			// Conversation loop
 			try (Scanner console = new Scanner(System.in)) {
@@ -59,9 +67,9 @@ public class ChatExample {
 					System.out.print("User     > ");
 					String s = console.nextLine();
 					System.out.println("Assistant> " + agent.chat(s).getText());
-				}			
+				}
 			}
-		} // Close resources 
+		} // Close resources
 	}
 }
 ```

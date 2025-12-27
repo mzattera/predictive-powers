@@ -16,21 +16,22 @@
 package io.github.mzattera.predictivepowers;
 
 import lombok.Builder;
+import lombok.NonNull;
 
 /**
  * @author Luna
  */
-public class UnprocessableEntityException extends EndpointException {
+public class UnprocessableEntityException extends RestException {
 
 	private static final long serialVersionUID = 1L;
 
 	@Builder(builderMethodName = "unprocessableEntityExceptionBuilder")
-	public UnprocessableEntityException(String message, String responseBody, Throwable cause, boolean enableSuppression,
-			boolean writableStackTrace) {
+	public UnprocessableEntityException(@NonNull String message, String responseBody, Throwable cause,
+			boolean enableSuppression, boolean writableStackTrace) {
 		super(422, message, responseBody, cause, enableSuppression, writableStackTrace);
 	}
 
-	public UnprocessableEntityException(int statusCode, String message) {
+	public UnprocessableEntityException(@NonNull String message) {
 		super(422, message);
 	}
 }

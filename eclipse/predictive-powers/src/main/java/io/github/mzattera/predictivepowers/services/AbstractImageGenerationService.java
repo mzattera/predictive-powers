@@ -52,9 +52,7 @@ public abstract class AbstractImageGenerationService implements ImageGenerationS
 		try {
 			return createImageVariation(ImageUtil.toFilePart(prompt), n, width, height);
 		} catch (Exception e) {
-			if (e instanceof EndpointException)
-				throw (EndpointException) e;
-			throw new EndpointException(e);
+			throw EndpointException.fromException(e, null);
 		}
 	}
 
@@ -65,9 +63,7 @@ public abstract class AbstractImageGenerationService implements ImageGenerationS
 		try {
 			return createImageEdit(ImageUtil.toFilePart(image), prompt, ImageUtil.toFilePart(mask), n, width, height);
 		} catch (Exception e) {
-			if (e instanceof EndpointException)
-				throw (EndpointException) e;
-			throw new EndpointException(e);
+			throw EndpointException.fromException(e, null);
 		}
 	}
 

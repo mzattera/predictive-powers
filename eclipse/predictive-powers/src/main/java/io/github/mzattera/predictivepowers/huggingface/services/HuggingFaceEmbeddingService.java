@@ -29,7 +29,6 @@ import io.github.mzattera.predictivepowers.services.AbstractEmbeddingService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.ModelService;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
-import io.github.mzattera.predictivepowers.util.CharTokenizer;
 import io.github.mzattera.predictivepowers.util.ChunkUtil;
 import lombok.Getter;
 import lombok.NonNull;
@@ -84,7 +83,8 @@ public class HuggingFaceEmbeddingService extends AbstractEmbeddingService {
 
 	protected HuggingFaceEmbeddingService(HuggingFaceEndpoint ep, @NonNull String model) {
 		this.endpoint = ep;
-		this.defaultRequest = new EmbeddingsRequest().truncate(true).truncationDirection(TruncationDirectionEnum.RIGHT).model(model);
+		this.defaultRequest = new EmbeddingsRequest().truncate(true).truncationDirection(TruncationDirectionEnum.RIGHT)
+				.model(model);
 		this.modelService = ep.getModelService();
 	}
 

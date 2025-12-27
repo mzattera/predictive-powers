@@ -16,21 +16,22 @@
 package io.github.mzattera.predictivepowers;
 
 import lombok.Builder;
+import lombok.NonNull;
 
 /**
  * @author Luna
  */
-public class RateLimitException extends EndpointException {
+public class RateLimitException extends RestException {
 
 	private static final long serialVersionUID = 1L;
 
 	@Builder(builderMethodName = "rateLimitExceptionBuilder")
-	public RateLimitException(String message, String responseBody, Throwable cause, boolean enableSuppression,
+	public RateLimitException(@NonNull String message, String responseBody, Throwable cause, boolean enableSuppression,
 			boolean writableStackTrace) {
 		super(429, message, responseBody, cause, enableSuppression, writableStackTrace);
 	}
 
-	public RateLimitException(int statusCode, String message) {
+	public RateLimitException(@NonNull String message) {
 		super(429, message);
 	}
 }

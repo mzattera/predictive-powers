@@ -17,6 +17,7 @@ package io.github.mzattera.predictivepowers.huggingface.util;
 
 import io.github.mzattera.hfinferenceapi.ApiException;
 import io.github.mzattera.predictivepowers.EndpointException;
+import io.github.mzattera.predictivepowers.RestException;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import lombok.NonNull;
 
@@ -64,7 +65,7 @@ public final class HuggingFaceUtil {
 
 		if (e instanceof ApiException) {
 			ApiException ae = (ApiException) e;
-			return EndpointException.fromHttpException(ae.getCode(), ae, ae.getResponseBody());
+			return RestException.fromHttpException(ae.getCode(), ae, ae.getResponseBody());
 		}
 
 		return new EndpointException(e);
@@ -73,8 +74,7 @@ public final class HuggingFaceUtil {
 	/**
 	 * Translates SDK finish reason into library one.
 	 */
-	public static @NonNull FinishReason fromHuggingFaceApi(
-			String finishReason) {
+	public static @NonNull FinishReason fromHuggingFaceApi(String finishReason) {
 		switch (finishReason) {
 		case "stop":
 		case "tool_calls":

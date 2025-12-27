@@ -16,21 +16,22 @@
 package io.github.mzattera.predictivepowers;
 
 import lombok.Builder;
+import lombok.NonNull;
 
 /**
  * @author Luna
  */
-public class NotFoundException extends EndpointException {
+public class NotFoundException extends RestException {
 
 	private static final long serialVersionUID = 1L;
 
 	@Builder(builderMethodName = "notFoundExceptionBuilder")
-	public NotFoundException(String message, String responseBody, Throwable cause, boolean enableSuppression,
+	public NotFoundException(@NonNull String message, String responseBody, Throwable cause, boolean enableSuppression,
 			boolean writableStackTrace) {
 		super(404, message, responseBody, cause, enableSuppression, writableStackTrace);
 	}
 
-	public NotFoundException(int statusCode, String message) {
+	public NotFoundException(@NonNull String message) {
 		super(404, message);
 	}
 }

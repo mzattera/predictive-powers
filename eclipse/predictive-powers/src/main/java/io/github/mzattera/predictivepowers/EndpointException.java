@@ -15,109 +15,50 @@
  */
 package io.github.mzattera.predictivepowers;
 
-import lombok.Builder;
-import lombok.Getter;
 import lombok.NonNull;
 
 /**
  * Base class for all exceptions thrown when calling an {@link Endpoint} method.
  */
-@Getter
 public class EndpointException extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
 
-	/**
-	 * Status code returned by the Endpoint call, or -1 if not set.
-	 */
-	private final int statusCode;
-
-	/**
-	 * HTTP response body, if available.
-	 */
-	private final String responseBody;
-
-	@Builder
-	public EndpointException(int statusCode, String message, String responseBody, Throwable cause,
-			boolean enableSuppression, boolean writableStackTrace) {
-		super(message, cause, enableSuppression, writableStackTrace);
-		this.statusCode = statusCode;
-		this.responseBody = responseBody;
-	}
-
-	public EndpointException(int statusCode, String message) {
+	public EndpointException(@NonNull String message) {
 		super(message);
-		this.statusCode = statusCode;
-		this.responseBody = null;
-	}
-
-	public EndpointException(int statusCode, String message, String responseBody) {
-		super(message);
-		this.statusCode = statusCode;
-		this.responseBody = responseBody;
-	}
-
-	public EndpointException(Exception e) {
-		this(-1, e.getMessage(), null, e, false, false);
 	}
 
 	/**
+	 * Use {@link #fromException(Exception, String)} to convert a generic exception
+	 * into an EndpoitException. This method is meant to be used when you know cause
+	 * is not an EndpointException already.
 	 * 
-	 * @param statusCode   HTTP error code
-	 * @param cause        The original exception
-	 * @param responseBody The response body, if any
-	 * @return An EndpointException that wraps up another exception caused by some
-	 *         HTTP request error. This can be used by all services to translate
-	 *         specific API exception into EndpointException.
+	 * @param cause
 	 */
-	public static EndpointException fromHttpException(int statusCode, @NonNull Exception cause, String responseBody) {
+	public EndpointException(@NonNull Exception cause) {
+		super(cause);
+	}
+
+	public EndpointException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+		super(message, cause, enableSuppression, writableStackTrace);
+	}
+
+	/**
+	 * @param message Optional message to override cause message.
+	 * 
+	 * @return An EndpointException that wraps up another exception. This can be
+	 *         used by all services to translate any exception into an
+	 *         EndpointException. Notice the input exception is returned if cause is
+	 *         an EndpointException already.
+	 */
+	public static EndpointException fromException(@NonNull Exception cause, String message) {
 
 		if (cause instanceof EndpointException)
 			return (EndpointException) cause;
 
-		switch (statusCode) {
-		case 400:
-			return io.github.mzattera.predictivepowers.BadRequestException.badRequestBuilder() //
-					.cause(cause) //
-					.message(cause.getMessage()) //
-					.responseBody(responseBody).build();
-		case 401:
-			return io.github.mzattera.predictivepowers.UnauthorizedException.unauthorizedExceptionBuilder() //
-					.cause(cause) //
-					.message(cause.getMessage()) //
-					.responseBody(responseBody).build();
-		case 403:
-			return io.github.mzattera.predictivepowers.PermissionDeniedException.permissionDeniedExceptionBuilder() //
-					.cause(cause) //
-					.message(cause.getMessage()) //
-					.responseBody(responseBody).build();
-		case 404:
-			return io.github.mzattera.predictivepowers.NotFoundException.notFoundExceptionBuilder() //
-					.cause(cause) //
-					.message(cause.getMessage()) //
-					.responseBody(responseBody).build();
-		case 422:
-			return io.github.mzattera.predictivepowers.UnprocessableEntityException
-					.unprocessableEntityExceptionBuilder() //
-					.cause(cause) //
-					.message(cause.getMessage()) //
-					.responseBody(responseBody).build();
-		case 429:
-			return io.github.mzattera.predictivepowers.RateLimitException.rateLimitExceptionBuilder() //
-					.cause(cause) //
-					.message(cause.getMessage()) //
-					.responseBody(responseBody).build();
-		case 500:
-			return io.github.mzattera.predictivepowers.InternalServerException.internalServerExceptionBuilder() //
-					.cause(cause) //
-					.message(cause.getMessage()) //
-					.responseBody(responseBody).build();
-		default:
-			return io.github.mzattera.predictivepowers.EndpointException.builder() //
-					.statusCode(statusCode) //
-					.cause(cause) //
-					.message(cause.getMessage()) //
-					.responseBody(responseBody).build();
-		}
+		if (message == null)
+			return new EndpointException(cause.getMessage(), cause, false, false);
+
+		return new EndpointException(message, cause, false, false);
 	}
 }

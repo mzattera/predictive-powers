@@ -82,7 +82,7 @@ public class GoogleSearchService implements SearchService {
 
 			return links;
 		} catch (Exception e) {
-			throw new EndpointException(e);
+			throw EndpointException.fromException(e, null);
 		}
 	}
 

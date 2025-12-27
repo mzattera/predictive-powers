@@ -67,7 +67,6 @@ import io.github.mzattera.predictivepowers.services.messages.MessagePart;
 import io.github.mzattera.predictivepowers.services.messages.TextPart;
 import io.github.mzattera.predictivepowers.services.messages.ToolCall;
 import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
-import io.github.mzattera.predictivepowers.util.CharTokenizer;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;

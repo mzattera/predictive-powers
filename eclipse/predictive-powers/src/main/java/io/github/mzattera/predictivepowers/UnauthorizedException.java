@@ -17,7 +17,7 @@ package io.github.mzattera.predictivepowers;
 
 import lombok.Builder;
 
-public class UnauthorizedException extends EndpointException {
+public class UnauthorizedException extends RestException {
 
 	private static final long serialVersionUID = 1L;
 

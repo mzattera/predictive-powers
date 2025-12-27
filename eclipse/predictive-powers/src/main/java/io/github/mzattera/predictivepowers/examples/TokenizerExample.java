@@ -24,7 +24,7 @@ public class TokenizerExample {
 
 	public static void main(String[] args) throws Exception {
 
-		// Get chat service
+		// Get chat and model service
 		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
 				OpenAiChatService bot = endpoint.getChatService();
 				OpenAiModelService modelService = endpoint.getModelService();) {
@@ -43,8 +43,8 @@ public class TokenizerExample {
 
 			// Set the maximum number of tokens for conversation history and bot reply
 			// Notice in the calculation we consider tokens used by the bot personality
-			bot.setMaxNewTokens(maxNewTokens);
 			bot.setMaxConversationTokens(ctxSize - bot.getBaseTokens() - maxNewTokens);
+			bot.setMaxNewTokens(maxNewTokens);
 
 			// Optionally, you can limit the number of messages
 			// kept in the conversation context; at most these many messages

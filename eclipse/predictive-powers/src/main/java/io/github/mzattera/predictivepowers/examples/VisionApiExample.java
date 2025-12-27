@@ -16,8 +16,9 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
+import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.services.Agent;
+import io.github.mzattera.predictivepowers.services.ChatService;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 
@@ -25,10 +26,9 @@ public class VisionApiExample {
 
 	public static void main(String[] args) throws Exception {
 
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
-				Agent bot = endpoint.getChatService("gpt-4-turbo");) {
+		try (AiEndpoint endpoint = new OpenAiEndpoint(); ChatService bot = endpoint.getChatService("gpt-4-turbo");) {
 
-			// Build the message to send
+			// Build the message to send; start with a text part
 			ChatMessage msg = new ChatMessage("What is depicted in this image?");
 
 			// Provide an URL to the the image to inspect
@@ -36,7 +36,7 @@ public class VisionApiExample {
 					"https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Alan_turing_header.jpg/500px-Alan_turing_header.jpg"));
 
 			// An image can also be created from file
-//			msg.addPart(FilePart.fromFileName("C:\\myImage.png"));
+//			msg.addPart(FilePart.fromFileName("myImage.png"));
 
 			// Interact with the bot and print its response
 			System.out.println(bot.chat(msg).getText());

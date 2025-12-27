@@ -24,10 +24,9 @@ import java.util.Scanner;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaDescription;
 
-import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractTool;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Toolset;
@@ -42,7 +41,7 @@ public class FunctionCallExample {
 	static Random RND = new Random();
 
 	// This is a tool that will be accessible to the agent
-	// Notice it must be public.
+	// Notice it must be declared public for the annotations to be accessible.
 	public static class GetCurrentWeatherTool extends AbstractTool {
 
 		@JsonSchemaDescription("This is a class describing parameters for GetCurrentWeatherTool")
@@ -60,7 +59,7 @@ public class FunctionCallExample {
 			public TemperatureUnits unit;
 		}
 
-		public GetCurrentWeatherTool() throws JsonProcessingException {
+		public GetCurrentWeatherTool() {
 			super("getCurrentWeather", // Function name
 					"Get the current weather in a given city.", // Function description
 					Parameters.class); // Function parameters
@@ -89,22 +88,16 @@ public class FunctionCallExample {
 	public static void main(String[] args) throws Exception {
 
 		try (
-				// This uses OpenAI API =======================================
-				OpenAiEndpoint endpoint = new OpenAiEndpoint();
+		// This uses OpenAI chat completion API
+//				OpenAiEndpoint endpoint = new OpenAiEndpoint();
+//				 Agent agent = endpoint.getChatService();
 
-				// This code uses chat API with parallel function calls (tools)
-				// Agent agent = endpoint.getChatService("gpt-4-1106-preview");
+		// This code uses OpenAI assistants API
+//				Agent agent = endpoint.getAgentService().getAgent();
 
-				// This code uses chat API with single function calls
-				// Agent agent = endpoint.getChatService("gpt-3.5-turbo-0613");
-
-				// This code uses assistants API
-				 Agent agent = endpoint.getAgentService().getAgent();
-
-				// This code uses ANTHROP/C API ===============================
-//			 AnthropicEndpoint endpoint = new AnthropicEndpoint();
-//				Agent agent = endpoint.getChatService();				
-			) {
+				// This code uses Hugging Face API
+				HuggingFaceEndpoint endpoint = new HuggingFaceEndpoint();
+				Agent agent = endpoint.getChatService();) {
 
 			// Set agent personality (instructions)
 			agent.setPersonality("You are an helpful assistant.");

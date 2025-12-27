@@ -62,7 +62,7 @@ public class GoogleEndpoint implements SearchEndpoint {
 			this.client = new Customsearch.Builder(GoogleNetHttpTransport.newTrustedTransport(),
 					GsonFactory.getDefaultInstance(), null).setApplicationName("predictive-powers").build();
 		} catch (GeneralSecurityException | IOException e) {
-			throw EndpointException.builder().cause(e).message("Error instancieting Google Search endpoint").build();
+			throw EndpointException.fromException(e, "Error instancieting Google Search endpoint");
 		}
 	}
 

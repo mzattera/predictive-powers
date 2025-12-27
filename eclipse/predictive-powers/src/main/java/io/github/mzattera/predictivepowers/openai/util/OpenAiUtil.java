@@ -36,6 +36,7 @@ import com.openai.models.FunctionParameters;
 import com.openai.models.images.Image;
 
 import io.github.mzattera.predictivepowers.EndpointException;
+import io.github.mzattera.predictivepowers.RestException;
 import io.github.mzattera.predictivepowers.services.Tool.ToolParameter;
 import io.github.mzattera.predictivepowers.services.messages.Base64FilePart;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
@@ -93,8 +94,7 @@ public final class OpenAiUtil {
 			.compile("This model supports at most ([0-9]+) completion tokens, whereas you provided ([0-9]+)");
 	private static Pattern PATTERN03 = Pattern.compile( // Notice this must be evaluated after PATTERN01
 			"This model's maximum context length is ([0-9]+)");
-	private static Pattern PATTERN04 = Pattern.compile(
-			"Input tokens exceed the configured limit of ([0-9]+) tokens");
+	private static Pattern PATTERN04 = Pattern.compile("Input tokens exceed the configured limit of ([0-9]+) tokens");
 
 	/**
 	 * 
@@ -153,11 +153,16 @@ public final class OpenAiUtil {
 			return (EndpointException) e;
 
 		if (e instanceof OpenAIServiceException) {
+			
 			OpenAIServiceException oaie = (OpenAIServiceException) e;
-			return EndpointException.fromHttpException(oaie.statusCode(), e, oaie.body().toString());
+			if ((oaie instanceof BadRequestException) && oaie.getMessage().contains("Your request was rejected as a result of our safety system")) {
+				// UnprocessableEntityException
+				return RestException.fromHttpException(422, oaie, oaie.body().toString());
+			}
+			return RestException.fromHttpException(oaie.statusCode(), oaie, oaie.body().toString());
 		}
 
-		return new EndpointException(e);
+		return EndpointException.fromException(e, null);
 	}
 
 	/**

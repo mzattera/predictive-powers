@@ -267,6 +267,22 @@ public class DefaultConfigurationExample {
 }
 ```
 
+### Exceptions
+
+In order to allow developers to uniformly handle exceptions regardless underlying provider being used, `predictive-powers` defines the below hierarchy of exceptions. Each time a library method call causes an exception, it is caught and wrapped into one of the below exceptions; the original exception is still accessible with `getCause()`.
+
+| Exception | HTTP Code | Meaning |
+| :--- | :--- | :--- |
+| `EndpointException` | N/A | This is the root class for all exceptions thrown by the library. |
+| `RestException` | Varies | This is an `EndpointException` originating from an error with an HTTP API call. It contains an HTTP error code and has several subclasses, shown below, for specific errors. |
+| `BadRequestException` | 400 | **Bad Request**: The server could not understand the request due to invalid syntax. |
+| `InternalServerException` | 500 | **Internal Server Error**: The server encountered an unexpected condition that prevented it from fulfilling the request. |
+| `NotFoundException` | 404 | **Not Found**: The server can not find the requested resource. |
+| `PermissionDeniedException` | 403 | **Forbidden**: The client does not have access rights to the content; that is, it is unauthorized, so the server is refusing to give the requested resource. |
+| `RateLimitException` | 429 | **Too Many Requests**: The user has sent too many requests in a given amount of time ("rate limiting"). |
+| `UnauthorizedException` | 401 | **Unauthorized**: The client must authenticate itself to get the requested response. |
+| `UnprocessableEntityException` | 422 | **Unprocessable Entity**: The request was well-formed but was unable to be followed due to semantic errors. |
+
 ### <a name="agents"></a>>>===> Agents <===<<
 
 `Agent`s are the highest abstraction provided by the library (and arguably its whole purpose).
@@ -282,11 +298,13 @@ Currently, two implementations of agents are available:
   * `OpenAiChatService` uses OpenAI chat API.
    
   * `OpenAiAssistant` uses OpenAI assistants API.
+   
+  * `HuggingFaceChatService` uses Hugging Face inference API.
   
 `predictive-powers` allows you to use either implementation with no changes in code, as will be shown below. 
 
 You have seen the first example about instantiating and using an agent in a chat in the [quickstart](#chatintroduction); 
-below, we will explain other features available n the library.
+below, we will explain other features available in the library.
 
 #### Multimedia in Conversations
 
@@ -294,39 +312,31 @@ Interaction with agents happens by exchanging `ChatMessage`s. A `ChatMessage` is
 contain text, images or references to files (we will see later how some specialized parts will handle invoking tools
 and returning corresponding results to the agent as well).
 
-The below code invokes GPT vision model to inspect the content of an image. As you can see the image can be
+The below code invokes an OpenAI vision model to inspect the content of an image. As you can see, the image can be
 provided either as a local file or as an URL to an online image.
 
 ```java
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.services.Agent;
+import io.github.mzattera.predictivepowers.AiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.services.ChatService;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
-import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
 
 public class VisionApiExample {
 
-	public static void main(String[] args) throws MalformedURLException, URISyntaxException {
+	public static void main(String[] args) throws Exception {
 
-		// Create agent using GPT vision model
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint()) {
-			Agent bot = endpoint.getChatService("gpt-4-vision-preview", "You are an helpful agent.");
+		try (AiEndpoint endpoint = new OpenAiEndpoint(); ChatService bot = endpoint.getChatService("gpt-4-turbo");) {
 
-			// Build the message to send
-			ChatMessage msg = new ChatMessage("Is there any grass in this image?");
+			// Build the message to send; start with a text part
+			ChatMessage msg = new ChatMessage("What is depicted in this image?");
 
-			// Include the image to inspect from an URL in the message
-			msg.getParts().add(FilePart.fromUrl(
-					"https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg",
-					ContentType.IMAGE));
+			// Provide an URL to the the image to inspect
+			msg.addPart(FilePart.fromUrl(
+					"https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Alan_turing_header.jpg/500px-Alan_turing_header.jpg"));
 
-			// The below shows as you can do the same with a local file image
-//			 msg.getParts().add(
-//			 		new FilePart(new File("YourFileName.jpg"), ContentType.IMAGE)
-//			 );
+			// An image can also be created from file
+//			msg.addPart(FilePart.fromFileName("myImage.png"));
 
 			// Interact with the bot and print its response
 			System.out.println(bot.chat(msg).getText());
@@ -339,49 +349,26 @@ public class VisionApiExample {
 
 #### Tools
 
-Tools are additional functionality that an agent can access at any time, when needed to execute a task.
+Tools are additional functionalities that an agent can access at any time, when needed to execute a task.
 
-In the OpenAI API, there are few tools available to agents using the [assistants](https://platform.openai.com/docs/api-reference/assistants/createAssistant)
- API (retrieval and code interpreter, see below).
-In addition, both assistants and [chat](https://platform.openai.com/docs/api-reference/chat) APIs
-allow developers to write their own tools and access them through a "[function call](https://platform.openai.com/docs/guides/function-calling)" mechanism.
-Currently, there are two different type of function calls:
+`predictive-powers` library provides an abstraction layer on top of function calls,
+allowing you to treat all the models in the same way For example, while using OpneAI models, you do not need to know whether your model 
+uses "old" function call (single function call) mode or the "newest" tool call mode (parallel function calls).
 
-  * "Single" function calling allows you to provide the model with a list of functions to be called, the model calls one function at a time, that is,
-  the model response is either simple text or a single function call.
-    This mode is deprecated and supported on the following models (at the time of writing):
-	  * gpt-4
-	  * gpt-4-0613
-	  * gpt-3.5-turbo
-	  * gpt-3.5-turbo-0613
-	  
-  * "Parallel" function calling (or "tool calls") allows developers to provide a list of tools, of which functions are just a specific case.
-     Models supporting parallel function calls can return multiple tool invocations in a single response,
-	 improving efficiency. 
-     Parallel function calling mode is supported on the following models (at the time of writing):
-	  * gpt-4-1106-preview
-	  * gpt-3.5-turbo-1106
-
-These two modes of operation are not compatible, and they require different ways of accessing them from your API calls;
-trying to use a mode not supported by a model causes errors. This adds complexity to the code that uses function calling and makes 
-more difficult to switch between models. Luckily, `predictive-powers` library provides an abstraction layer on top of function calls,
-allowing you to treat all the models in the same way, regardless whether they support single or parallel function calls.
-
-In `predictive-powers`, a tool must implement the `Tool` interface; the interface exposes method to describe what the tool does and
-what parameters it needs to be invoked. An abstract implementation of `Tool` is available, to provide some boilerplate code (see `AbstractTool`).
+All tool must implement the `Tool` interface which exposes method to describe what the tool does and
+what parameters it needs. An abstract implementation of `Tool` is available, to provide some boilerplate code (see `AbstractTool`).
 
 To allow agents to use tools, they must be wrapped into a `Capability` which needs to
 be attached to the agent. Capabilities allow tools that work together to be grouped into a single functionality.
-Future version of the library will provide a set of out-of-the box capabilities.
 
-An agent with attached capabilities can decide at any time in the conversation to invoke one or more of the tools it can access.
+An agent with attached capabilities can decide at any time to invoke one or more of the tools it can access.
 When this happens, the chat message returned by the agent will contain one or more parts which are instances of `ToolCall`;
 each call will indicate the tool being invoked and the parameters to pass to it. It is the developer's responsibility
 to execute the tool calls and return results to the agent, using a `ToolCallResult`.
 
 The below code exemplifies the entire process of creating a custom tool, making it accessible to an agent, 
 and handling corresponding calls.
-It starts by creating a tool (`GetCurrentWeatherTool`) that returns the weather in a given location, 
+It starts by creating a tool (`GetCurrentWeatherTool`) that returns the weather in a given location 
 provided by the agent. Notice that, to define function parameters, we use schema annotations on 
 an ad-hoc class; alternatively, you can create a list of `ToolParameter`s, if you find that more convenient.
 The code then adds the function to a capability that is attached to the agent.
@@ -390,7 +377,8 @@ when this happens, the function is invoked and its results returned to the agent
 
 Notice how the below code works without change regardless:
 
-  * Whether you use the chat or the assistants API.
+  * The provider you use (OpenAI or Hugging Face)
+  * Whether you use the chat or the assistants API in OpenAI (with `OpenAiChatService` or `OpenAiAgentService`).
   * Whether your model uses single or parallel function calls.
  
  To cause a tool invocation, just ask for the weather in some city. 
@@ -404,11 +392,11 @@ import java.util.Scanner;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaDescription;
 
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractTool;
 import io.github.mzattera.predictivepowers.services.Agent;
-import io.github.mzattera.predictivepowers.services.Capability;
 import io.github.mzattera.predictivepowers.services.Toolset;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
@@ -421,11 +409,11 @@ public class FunctionCallExample {
 	static Random RND = new Random();
 
 	// This is a tool that will be accessible to the agent
-	// Notice it must be public.
+	// Notice it must be declared public for the annotations to be accessible.
 	public static class GetCurrentWeatherTool extends AbstractTool {
 
-		// This is a schema describing the function parameters
-		private static class GetCurrentWeatherParameters {
+		@JsonSchemaDescription("This is a class describing parameters for GetCurrentWeatherTool")
+		public static class Parameters {
 
 			private enum TemperatureUnits {
 				CELSIUS, FARENHEIT
@@ -441,48 +429,49 @@ public class FunctionCallExample {
 
 		public GetCurrentWeatherTool() {
 			super("getCurrentWeather", // Function name
-					"Get the current weather in a given location.", // Function description
-					GetCurrentWeatherParameters.class);
+					"Get the current weather in a given city.", // Function description
+					Parameters.class); // Function parameters
 		}
 
 		@Override
 		public ToolCallResult invoke(@NonNull ToolCall call) throws Exception {
-			
+
 			// Tool implementation goes here.
 			// In this example we simply return a random temperature.
-			
+
 			if (!isInitialized())
 				throw new IllegalStateException("Tool must be initialized.");
-			
+
 			String location = getString("location", call.getArguments());
 			return new ToolCallResult(call, "Temperature in " + location + " is " + (RND.nextInt(10) + 20) + "°C");
 		}
-	}
+	} // GetCurrentWeatherTool class
 
 	// List of functions available to the agent (for now it is only 1).
-	private final static Collection<Class<?>> TOOLS = new ArrayList<>();
+	private final static Collection<Class<?>> tools = new ArrayList<>();
 	static {
-		TOOLS.add(GetCurrentWeatherTool.class);
+		tools.add(GetCurrentWeatherTool.class);
 	}
-
-	// Capability providing the functions to the agent
-	private final static Capability DEFAULT_CAPABILITY = new Toolset(TOOLS);
 
 	public static void main(String[] args) throws Exception {
 
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
+		try (
+		// This uses OpenAI chat completion API
+//				OpenAiEndpoint endpoint = new OpenAiEndpoint();
+//				 Agent agent = endpoint.getChatService();
 
-		// Create the agent
-//			Agent agent = endpoint.getChatService("gpt-4-1106-preview"); // This uses chat API with parallel function calls (tools)
-//			Agent agent = endpoint.getChatService("gpt-3.5-turbo-0613"); // This uses chat API with single function calls
-				Agent agent = endpoint.getAgentService().getAgent(); // This uses assistants API
-		) {
+		// This code uses OpenAI assistants API
+//				Agent agent = endpoint.getAgentService().getAgent();
+
+				// This code uses Hugging Face API
+				HuggingFaceEndpoint endpoint = new HuggingFaceEndpoint();
+				Agent agent = endpoint.getChatService();) {
 
 			// Set agent personality (instructions)
 			agent.setPersonality("You are an helpful assistant.");
 
 			// Tell the agent which tools it can use, by providing a capability
-			agent.addCapability(DEFAULT_CAPABILITY);
+			agent.addCapability(new Toolset(List.of(new GetCurrentWeatherTool())));
 
 			// Conversation loop
 			try (Scanner console = new Scanner(System.in)) {
@@ -496,11 +485,9 @@ public class FunctionCallExample {
 					while (reply.hasToolCalls()) {
 
 						List<ToolCallResult> results = new ArrayList<>();
-
 						for (ToolCall call : reply.getToolCalls()) {
-						
-							// The agent generated one or more tool calls,
-							// print them for illustrative purposes
+
+							// Print call for illustrative purposes
 							System.out.println("CALL " + " > " + call);
 
 							// Execute call, handling errors nicely
@@ -508,15 +495,17 @@ public class FunctionCallExample {
 							try {
 								result = call.execute();
 							} catch (Exception e) {
-								result = new ToolCallResult(call, "Error: " + e.getMessage());
+								result = new ToolCallResult(call, e);
 							}
 							results.add(result);
 						}
 
 						// Pass results back to the agent
-						// Notice this might generate other tool calls, hence the loop
+						// Notice this might in principle generate
+						// other tool calls, hence the loop
 						reply = agent.chat(new ChatMessage(results));
-					}
+
+					} // while we serviced all calls
 
 					System.out.println("Assistant> " + reply.getText());
 				}
@@ -533,7 +522,11 @@ Below is an example of a conversation.
  
 #### Using existing tools (files & retrieval)
 
-TODO: Explain how to use agents tool (like retrieval).
+The OpenAI assistants API provides some "server-side" tools that are available to agents. These tools are exposed through a capability in `OpenAiAssistant` which is accessible via `getOpenAiAssistantTools()` method.
+The capability allows you to access and configure each tool. Notice these tools cannot be added or removed from agent's capabilities, but they can be individually enabled and disabled.
+
+Please refer to JavaDocs for more details.
+ 
  
 ### <a name="kb"></a>Knowledge Base
  
@@ -542,61 +535,24 @@ TODO: Explain how to use agents tool (like retrieval).
  The knowledge base provides methods to search text based on embedding similarity or other filtering criteria.
  Each knowledge base can be partitioned into domains, which can be searched separately, to improve performance.
  
- Some examples about how to use a knowledge base can be found [below](#oracle).
+ The library provides a naive in-memory implementation of a knowledge base.
   
 
 ### Tokens and Model Metadata
 
-Some services, namely those using OpenAI GPT models, have limits on number of tokens in input and output.
+LLMs have limits on number of tokens they accept as input or produce as output.
 
-`ModelService`s provide metadata about models, including maximum context size and suitable tokenizers for each model.
+`ModelService`s provide metadata about models, including maximum context size and suitable `Tokenizer` for each model.
 Normally, developers do not need to care about these details as services will handle them transparently. However, in order for services to do so,
-proper model data needs to be available to the `ModelService`. This means that, in case you create a new model (e.g. by training an existing OpenAI one), you need to make its data known to the 
+proper model data needs to be available to the `ModelService`. This means that, in case you create a new model (e.g. by training an existing one), you need to make its data known to the 
 corresponding `ModelService` by "registering" the model with `ModelService.put(String,ModelData)`; please refer to the JavaDoc for details.
 
-`CharTokenizer` and `SimpleTokenizer` provide naive tokenizers that can be used when an approximate count of token is enough, and no specific tokenizer is available for a model.
-
-Below an example showing how to count tokens in a string and how to get context size for a model.
-
-```java
-	// Notice same code will work using HuggingFaceEndpoint
-	try (AiEndpoint endpoint = new OpenAiEndpoint()) {
-			
-		// Get a tokenizer for a model, GPT-4 in this example
-		Tokenizer counter = endpoint.getModelService().getTokenizer("gpt-4");
-			
-		// Counts tokens in a string
-		int tokens = counter.count("Hello World");
-			
-		// Get model context size
-		int contextSize = endpoint.getModelService().getContextSize("gpt-4");
-
-		// ....
-			
-	} // Close endpoint
-```
-
-#### Tokens in OpenAI API
-
-There are some additional considerations about token calculation when using the OpenAI API.
-
-  * For OpenAI, the `OpenAiTokenizer` class provides exact calculation of tokens for calling chat API; this includes calculating size of a request which includes not only 
-  a prompt, but also function calls, their results, tool descriptions, and images. This is all handled transparently by the class methods `count(List<OpenAiChatMessage>)`
-  and `count(ChatCompletionsRequest)`.
-
-  * The method `getBaseTokens()` in `OpenAiChatService` allows you to calculate tokens which are consumed at each call by the system message and tool descriptions.
+For `ChatService`s, the method `getBaseTokens()` allows you to calculate tokens which are consumed at each call by the system messages (the instructions, or personality of the agent) and tool descriptions.
   
-  * If you leave the number of tokens allocated for the response unlimited in `OpenAiChatService` using `setMaxNewTokens(null)`, the service will automatically use all of the available
-  context for the response. Notice that this will cause unnecessary high costs if you do not need such long answers as OpenAI will bill
-  based on the allocated response length, regardless whether it is completely filled or not. For this reason, 
-  the service sets by default a reasonable limit to reply size. Alternatively, you can set your own limits, as shown in the example below.
-
 The below code exemplifies how to set limits to the length of requests and replies when using `OpenAiChatService`.
-The code works regardless the model being used and whether the service will later use tools descriptions
-(which must be sent at each call if the service is provided with access to any tool).
    
 ```java
-// Get chat service 
+// Get chat and model service
 try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
 		OpenAiChatService bot = endpoint.getChatService();
 		OpenAiModelService modelService = endpoint.getModelService();) {
@@ -615,21 +571,23 @@ try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
 
 	// Set the maximum number of tokens for conversation history and bot reply
 	// Notice in the calculation we consider tokens used by the bot personality
-	bot.setMaxNewTokens(maxNewTokens);
 	bot.setMaxConversationTokens(ctxSize - bot.getBaseTokens() - maxNewTokens);
+	bot.setMaxNewTokens(maxNewTokens);
 
 	// Optionally, you can limit the number of messages
 	// kept in the conversation context; at most these many messages
 	// from conversation history will be sent to the API at each
 	// conversation exchange
 	bot.setMaxConversationSteps(50);
-			
+
 	// From now on, service will manage conversation to respect those limits
 
 	// ...
 
 } // Close resources
 ```
+
+`CharTokenizer` and `SimpleTokenizer` provide naive tokenizers that can be used when an approximate count of token is enough, and no specific tokenizer is available for a model.
 
 ### Chunking
 
@@ -642,215 +600,21 @@ In case you need to split text in chunks, `ChunkUtil` class provides several met
 Below some code examples. Their code can be found in the 
 [example package](https://github.com/mzattera/predictive-powers/tree/master/eclipse/predictive-powers/src/main/java/io/github/mzattera/predictivepowers/examples).
 
- 
-### <a name="oracle"></a>All-knowing Oracle (Retrieval-Augmented Generation)
- 
-An oracle is a service that can answer questions about a domain.
- 
-In the below example, we create an oracle by ingesting a web page into a knowledge base, then we get some questions answered.
-If you type "explain" the oracle will give an explanation about last provided answer.
- 
-Notice the service is automatically storing the explanation and the context used to build the answer.
- 
-We also show here how you can easily switch between OpenAI and Hugging Face services.
- 
-```java
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.util.List;
-import java.util.Scanner;
-
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.tika.exception.TikaException;
-import org.xml.sax.SAXException;
-
-import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
-import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.services.EmbeddedText;
-import io.github.mzattera.predictivepowers.services.EmbeddingService;
-import io.github.mzattera.predictivepowers.services.QnAPair;
-import io.github.mzattera.predictivepowers.services.QuestionAnsweringService;
-
-public class OracleExample {
-
-	public static void main(String[] args) throws Exception {
-
-		// Uncomment the below to use OpenAI services for the oracle
-		AiEndpoint endpoint = new OpenAiEndpoint();
-
-		// Uncomment the below to use Hugging Face services for the oracle
-		// Endpoint endpoint = new HuggingFaceEndpoint();
-
-		// Question answering service
-		try (endpoint;
-				QuestionAnsweringService answerSvc = endpoint.getQuestionAnsweringService();
-				) {
-
-			try (Scanner console = new Scanner(System.in)) {
-
-				// Get the web page you are interested in
-				System.out.print("Web Page Url: ");
-				String pageUrl = console.nextLine();
-				System.out.println("Reading page " + pageUrl + "...\n");
-
-				// Read the page text, embed it, and store it into a knowledge base
-				EmbeddingService embeddingService = endpoint.getEmbeddingService();
-				KnowledgeBase knowledgeBase = new KnowledgeBase();
-				knowledgeBase.insert(embeddingService.embedURL(pageUrl));
-
-				// Loop to reads questions from user and answer them
-				QnAPair answer = null;
-				while (true) {
-
-					// Get user question
-					System.out.print("Your Question: ");
-					String question = console.nextLine();
-
-					// Does user want an explanation?
-					if (question.toLowerCase().equals("explain")) {
-						if (answer == null)
-							continue;
-						System.out.println();
-						System.out.println(answer.getExplanation());
-						System.out.println();
-						continue;
-					}
-
-					// If not, answer the question
-					// Create context by finding similar text in the web page
-					List<Pair<EmbeddedText, Double>> context = knowledgeBase
-							.search(embeddingService.embed(question).get(0), 15, 0);
-
-					// Use the context when answering
-					answer = answerSvc.answerWithEmbeddings(question, context);
-
-					System.out.println("My Answer: " + answer.getAnswer() + "\n");
-				}
-			}
-		} // closes resources
-	}
-}
-```
- 
- This will produce the below output:
- 
-![Example of a conversation with the oracle about the city of Padua](./img/Oracle.PNG)
- 
- 
-### FAQ Creation
-
-The below code demonstrates the `QuestionExtractionService` capabilities by downloading a PDF file containing Credit Suisse financial statement for 2022 and creating some FAQ, based on its content.
-
-```java
-import java.util.List;
-
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiQuestionExtractionService;
-import io.github.mzattera.predictivepowers.services.QnAPair;
-import io.github.mzattera.util.ChunkUtil;
-import io.github.mzattera.util.ExtractionUtil;
-
-public class FaqExample {
-
-	public static void main(String[] args) throws Exception {
-
-		// Our query generation service
-		try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
-				OpenAiQuestionExtractionService q = endpoint.getQuestionExtractionService();) {
-
-			// Download Credit Suisse financial statement 2022 PDF and extract its text
-			// We keep only one piece of 750 characters.
-			String statment = ChunkUtil.split(ExtractionUtil.fromUrl(
-					"https://www.credit-suisse.com/media/assets/corporate/docs/about-us/investor-relations/financial-disclosures/financial-reports/csg-ar-2022-en.pdf"),
-					1000).get(3);
-
-			// Get some FAQs and print them
-			List<QnAPair> QnA = q.getQuestions(statment);
-			for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
-				System.out.println(QnA.get(i).toString());
-			}
-			System.out.println();
-
-			// fill-the-gap questions
-			QnA = q.getFillQuestions(statment);
-			for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
-				System.out.println(QnA.get(i).toString());
-			}
-			System.out.println();
-
-			// true/false questions
-			QnA = q.getTFQuestions(statment);
-			for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
-				System.out.println(QnA.get(i).toString());
-			}
-			System.out.println();
-
-			// multiple choice questions
-			QnA = q.getMCQuestions(statment);
-			for (int i = 0; (i < 3) & (i < QnA.size()); ++i) {
-				System.out.println(QnA.get(i).toString());
-			}
-			System.out.println();
-		}
-	} // closes respurces
-}
-```
-
-This code will produce an output similar to the below:
-
-```console
-Question: What was announced by Credit Suisse in October 2022?
-Answer:   In October 2022, Credit Suisse announced a strategic plan to create a new Credit Suisse, centered on their core strengths – their leading Wealth Management and Swiss Bank franchises, with strong capabilities in Asset Management and Markets – and returning to their heritage and cultural values.
-Question: What are the strategic priorities of Credit Suisse?
-Answer:   The strategic priorities of Credit Suisse focus on the restructuring of their Investment Bank, the strengthening and reallocation of their capital, and the accelerated cost transformation.
-Question: What is the goal of Credit Suisse's transformation?
-Answer:   The goal of Credit Suisse's transformation is to re-establish Credit Suisse as a solid, reliable, and trusted partner with a strong value proposition for all their stakeholders.
-
-
-Question: The year 2022 was a turning point for Credit Suisse.
-Answer:   true
-Question: Credit Suisse's strategy focuses on strengthening and reallocating its capital.
-Answer:   true
-Question: Credit Suisse is primarily a retail bank.
-Answer:   false
-
-Question: What was announced by Credit Suisse in October 2022?
- [X] 1. A clear strategy for the future
- [ ] 2. A merger with another bank
- [ ] 3. The resignation of the CEO
- [ ] 4. A decline in profits
- [ ] 5. The closure of all branches
-Question: What are the core strengths of Credit Suisse according to the message?
- [X] 1. Leading Wealth Management and Swiss Bank franchises, with strong capabilities in Asset Management and Markets
- [ ] 2. Investment Bank and Corporate Banking
- [ ] 3. Retail Banking and Insurance
- [ ] 4. Real Estate and Construction
- [ ] 5. Energy and Resources
-Question: What is Credit Suisse's aim through its strategic, cultural and operational transformation?
- [ ] 1. To become the biggest bank in the world
- [X] 2. To re-establish itself as a solid, reliable and trusted partner with a strong value proposition for all its stakeholders
- [ ] 3. To focus on short-term profits
- [ ] 4. To reduce its workforce
- [ ] 5. To increase its involvement in risky investments
-```
- 
-  
+   
 ### <a name="imgGen"></a>Image Generation
 
 The below code generates two images using an `ImageGenerationService`;  notice how same code invokes DALL-E or Openjourney respectively.
 
 ```java
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.endpoint.HuggingFaceEndpoint;
-import io.github.mzattera.predictivepowers.openai.endpoint.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.ImageGenerationService;
-import io.github.mzattera.util.ImageUtil;
+import io.github.mzattera.predictivepowers.services.messages.FilePart;
+import io.github.mzattera.predictivepowers.util.ImageUtil;
 
 public class ImageGenerationExample {
 
@@ -861,29 +625,28 @@ public class ImageGenerationExample {
 
 	public static void main(String[] args) throws Exception {
 
-		// DALL-E image generation
-		try (AiEndpoint endpoint = new OpenAiEndpoint();
-				ImageGenerationService svc = endpoint.getImageGenerationService();) {
+		try (
+				// Uncomment this to use DALL-E
+				AiEndpoint endpoint = new OpenAiEndpoint();
+				ImageGenerationService svc = endpoint.getImageGenerationService("dall-e-2");
 
+				// Uncomment this to use Hugging Face
+//				AiEndpoint endpoint = new HuggingFaceEndpoint();
+//				ImageGenerationService svc = endpoint.getImageGenerationService();
+		) {
 			// Generates image
-			BufferedImage img = svc.createImage(PROMPT, 1, 1024, 1024).get(0);
+			FilePart img = svc.createImage(PROMPT, 1, 1024, 1024).get(0);
 
 			// Saves it in a temporary file
 			save(img);
 		}
-
-		// Openjourney (notice is same code as above)
-		try (AiEndpoint endpoint = new HuggingFaceEndpoint();
-				ImageGenerationService svc = endpoint.getImageGenerationService();) {
-			BufferedImage img = svc.createImage(PROMPT, 1, 1024, 1024).get(0);
-			save(img);
-		}
-
 	}
 
-	private static void save(BufferedImage img) throws IOException {
+	private static void save(FilePart img) throws IOException {
 		File tmp = File.createTempFile("GenAI", ".jpg");
-		ImageUtil.toFile(tmp, img);
+		try (InputStream s = img.getInputStream()) {
+			ImageUtil.toFile(ImageUtil.fromBytes(s), tmp);
+		}
 		System.out.println("Image saved as: " + tmp.getCanonicalPath());
 	}
 }
@@ -901,7 +664,7 @@ It will produce something like:
 The below example, shows how to perform a simple search using a `GoogleSearchService`.
 
 ```java
-import io.github.mzattera.predictivepowers.google.endpoint.GoogleEndpoint;
+import io.github.mzattera.predictivepowers.google.services.GoogleEndpoint;
 import io.github.mzattera.predictivepowers.google.services.GoogleSearchService;
 import io.github.mzattera.predictivepowers.services.Link;
 
@@ -915,7 +678,7 @@ public class GoogleSearchExample {
 				GoogleSearchService service = endpoint.getSearchService();) {
 			
 			// Performs search and shows results.
-			for (Link result : service.search("Massimliano Zattera")) {
+			for (Link result : service.search("Alan Turing")) {
 				System.out.println(result.getTitle() + ": " + result.getUrl());
 			}
 			

@@ -40,7 +40,7 @@ public class ImageGenerationExample {
 				AiEndpoint endpoint = new OpenAiEndpoint();
 				ImageGenerationService svc = endpoint.getImageGenerationService("dall-e-2");
 
-		// Uncomment this to use Openjourney
+				// Uncomment this to use Hugging Face
 //				AiEndpoint endpoint = new HuggingFaceEndpoint();
 //				ImageGenerationService svc = endpoint.getImageGenerationService();
 		) {

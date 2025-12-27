@@ -16,21 +16,22 @@
 package io.github.mzattera.predictivepowers;
 
 import lombok.Builder;
+import lombok.NonNull;
 
 /**
  * @author Luna
  */
-public class PermissionDeniedException extends EndpointException {
+public class PermissionDeniedException extends RestException {
 
 	private static final long serialVersionUID = 1L;
 
 	@Builder(builderMethodName = "permissionDeniedExceptionBuilder")
-	public PermissionDeniedException(String message, String responseBody, Throwable cause, boolean enableSuppression,
-			boolean writableStackTrace) {
+	public PermissionDeniedException(@NonNull String message, String responseBody, Throwable cause,
+			boolean enableSuppression, boolean writableStackTrace) {
 		super(403, message, responseBody, cause, enableSuppression, writableStackTrace);
 	}
 
-	public PermissionDeniedException(int statusCode, String message) {
+	public PermissionDeniedException(@NonNull String message) {
 		super(403, message);
 	}
 }

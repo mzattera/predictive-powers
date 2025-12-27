@@ -16,21 +16,22 @@
 package io.github.mzattera.predictivepowers;
 
 import lombok.Builder;
+import lombok.NonNull;
 
 /**
  * @author Luna
  */
-public class InternalServerException extends EndpointException {
+public class InternalServerException extends RestException {
 
 	private static final long serialVersionUID = 1L;
 
 	@Builder(builderMethodName = "internalServerExceptionBuilder")
-	public InternalServerException(String message, String responseBody, Throwable cause, boolean enableSuppression,
-			boolean writableStackTrace) {
+	public InternalServerException(@NonNull String message, String responseBody, Throwable cause,
+			boolean enableSuppression, boolean writableStackTrace) {
 		super(500, message, responseBody, cause, enableSuppression, writableStackTrace);
 	}
 
-	public InternalServerException(int statusCode, String message) {
+	public InternalServerException(@NonNull String message) {
 		super(500, message);
 	}
 }

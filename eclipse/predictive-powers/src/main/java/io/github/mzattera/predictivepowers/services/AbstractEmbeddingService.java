@@ -87,9 +87,7 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 		try {
 			return embed(ExtractionUtil.fromFile(file), chunkSize, windowSize, stride);
 		} catch (Exception e) {
-			if (e instanceof EndpointException)
-				throw (EndpointException) e;
-			throw new EndpointException(e);
+			throw EndpointException.fromException(e, null);
 		}
 	}
 
@@ -116,9 +114,7 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 
 			return result;
 		} catch (Exception e) {
-			if (e instanceof EndpointException)
-				throw (EndpointException) e;
-			throw new EndpointException(e);
+			throw EndpointException.fromException(e, null);
 		}
 	}
 
@@ -133,9 +129,7 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 		try {
 			return embedURL((new URI(url)).toURL(), chunkSize, windowSize, stride);
 		} catch (Exception e) {
-			if (e instanceof EndpointException)
-				throw (EndpointException) e;
-			throw new EndpointException(e);
+			throw EndpointException.fromException(e, null);
 		}
 	}
 
@@ -150,9 +144,7 @@ public abstract class AbstractEmbeddingService implements EmbeddingService {
 		try {
 			return embed(ExtractionUtil.fromUrl(url), chunkSize, windowSize, stride);
 		} catch (Exception e) {
-			if (e instanceof EndpointException)
-				throw (EndpointException) e;
-			throw new EndpointException(e);
+			throw EndpointException.fromException(e, null);
 		}
 	}
 

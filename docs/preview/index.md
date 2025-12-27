@@ -5,7 +5,7 @@ They are updated as the implementation progresses and, as such, might be slightl
 
 **If you are using latest release of the library, please refer to the [release documentation](../).**
 
-**`predictive-powers` is a library to easily create autonomous [agents](#agents) using generative AI (GenAI) services.
+**`predictive-powers` is a Java library to easily create autonomous [agents](#agents) using generative AI (GenAI) services.
 An early version of this library has been featured in a chapter of the book
 "[Ultimate ChatGPT Handbook for Enterprises](https://www.amazon.com/Ultimate-ChatGPT-Handbook-Enterprises-Solution-Cycles-ebook/dp/B0CNT9YV57)"
 which I co-authored with Dr. Harald Gunia and Karolina Galinska.**
@@ -42,7 +42,11 @@ Advantages of using this library:
 `predictive-powers` requires Java 11 or higher. It can be added to your project as a Maven dependency:
 
 ```
-TODO add Maven Link
+<dependency>
+    <groupId>io.github.mzattera</groupId>
+    <artifactId>predictive-powers</artifactId>
+    <version>0.6.0</version>
+</dependency>
 ```
 
 ### Installation

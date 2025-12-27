@@ -6,6 +6,7 @@
 	<artifactId>predictive-powers</artifactId>
 	<version>0.6.0</version>
 	<name>predictive-powers</name>
+    <url>https://github.com/mzattera/predictive-powers</url>
 	<description>A Java library to (easily) create GenAI-powered autonomous
 		agents</description>
 	<properties>

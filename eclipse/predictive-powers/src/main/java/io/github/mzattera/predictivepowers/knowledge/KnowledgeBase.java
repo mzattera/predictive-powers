@@ -247,8 +247,6 @@ public class KnowledgeBase implements Serializable, AutoCloseable {
 
 	/**
 	 * Removes given text from all domains.
-	 * 
-	 * @param e
 	 */
 	public void delete(String txt) {
 		delete(EmbeddedText.builder().text(txt).model("").embedding(new ArrayList<>()).build());
@@ -258,7 +256,6 @@ public class KnowledgeBase implements Serializable, AutoCloseable {
 	 * Removes given text from a specific domain.
 	 * 
 	 * @param domain Removes only from this domain.
-	 * @param e
 	 */
 	public void delete(String domain, String txt) {
 		delete(domain, EmbeddedText.builder().text(txt).model("").embedding(new ArrayList<>()).build());

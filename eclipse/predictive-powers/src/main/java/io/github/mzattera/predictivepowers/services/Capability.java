@@ -140,13 +140,13 @@ public interface Capability extends AutoCloseable {
 	/**
 	 * Add one tool to the list of tools available from this capability. If the
 	 * capability is already initialized, the tool is also initialized. This will
-	 * trigger {@link Listener#onToolAdded(Tool)}.
+	 * trigger {@link Listener#onToolAdded(ToolAddedEvent)}.
 	 */
 	void putTool(@NonNull Tool tool) throws ToolInitializationException;
 
 	/**
 	 * Remove one tool from list of tools provided by this capability; the tool is
-	 * automatically closed. This will trigger {@link Listener#onToolRemoved(Tool)}
+	 * automatically closed. This will trigger {@link Listener#onToolRemoved(ToolRemovedEvent)}
 	 * before the tool is closed.
 	 * 
 	 * @param id The unique ID for the tool.
@@ -155,14 +155,14 @@ public interface Capability extends AutoCloseable {
 
 	/**
 	 * Remove one tool from list of tools provided by this capability; the tool is
-	 * automatically closed. This will trigger {@link Listener#onToolRemoved(Tool)}
+	 * automatically closed. This will trigger {@link Listener#onToolRemoved(ToolRemovedEvent)}
 	 * before the tool is closed.
 	 */
 	void removeTool(@NonNull Tool tool);
 
 	/**
 	 * Remove all tools from this capability; all tools are automatically closed.
-	 * This will trigger {@link Listener#onToolRemoved(Tool)} for each tool.
+	 * This will trigger {@link Listener#onToolRemoved(ToolRemovedEvent)} for each tool.
 	 */
 	void clear();
 
@@ -177,7 +177,7 @@ public interface Capability extends AutoCloseable {
 	 * by the capability can be used.
 	 * 
 	 * This will in turn initialize the tools in the capability and trigger
-	 * {@link Listener#onToolAdded(Tool)} for each tool in the capability.
+	 * {@link Listener#onToolAdded(ToolAddedEvent)} for each tool in the capability.
 	 * 
 	 * @param The agent to which this capability is attached.
 	 * @throws ToolInitializationException If any tool failed to initialize, or the

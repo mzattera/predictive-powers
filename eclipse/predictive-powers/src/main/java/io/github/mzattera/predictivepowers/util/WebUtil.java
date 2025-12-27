@@ -49,7 +49,7 @@ public final class WebUtil {
 	 * cannot read files because agents without an agent ID are blocked.
 	 * 
 	 * @param timeoutMillis Timeout (millisecond) to download content from given
-	 *                      url. If this is <=0 it will be ignored.
+	 *                      url. If this is less than or equal to 0 it will be ignored.
 	 * @throws IOException
 	 */
 	public static InputStream getInputStream(@NonNull URL url, int timeoutMillis) throws IOException {

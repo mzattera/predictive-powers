@@ -4,8 +4,8 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.github.mzattera</groupId>
 	<artifactId>predictive-powers</artifactId>
-	<version>0.6.0.preview</version>
-	<name>PredictivePowers</name>
+	<version>0.6.0</version>
+	<name>predictive-powers</name>
 	<description>A Java library to (easily) create GenAI-powered autonomous
 		agents</description>
 	<properties>
@@ -14,10 +14,54 @@
 		
 		<kotlin.version>1.9.10</kotlin.version>
 		<sl4j.version>2.0.17</sl4j.version>
+        <junit-version>5.10.3</junit-version>
+        <java.version>11</java.version>
 	</properties>
-	
+		
+    <licenses>
+        <license>
+            <name>Apache License Version 2.0, January 2004</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    
+    <developers>
+        <developer>
+            <name>Massimiliano &quot;Maxi&quot; Zattera</name>
+            <email>b2fjava@gmail.com</email>
+            <organization>io.github.mzattera</organization>
+            <organizationUrl>https://github.com/mzattera</organizationUrl>
+        </developer>
+    </developers>	
+    	
+	<scm>
+	    <connection>scm:git:https://github.com/mzattera/predictive-powers.git</connection>
+	    <developerConnection>scm:git:https://github.com:mzattera/predictive-powers.git</developerConnection>
+	    <url>https://github.com/mzattera/predictive-powers</url>
+	</scm>
+
+	<distributionManagement>
+	    <snapshotRepository>
+	        <id>central</id>
+	        <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+	    </snapshotRepository>
+	    <repository>
+	        <id>central</id>
+	        <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+	    </repository>
+	</distributionManagement>
+				    
 	<dependencyManagement>
-	  <dependencies>	
+	<dependencies>
+        <dependency>
+            <groupId>org.junit</groupId>
+            <artifactId>junit-bom</artifactId>
+            <version>${junit-version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+        
 	    <dependency>
 	      <groupId>org.jetbrains.kotlin</groupId>
 	      <artifactId>kotlin-bom</artifactId>
@@ -99,6 +143,12 @@
 
 	<dependencies>
 
+		<dependency>
+	        <groupId>org.junit.jupiter</groupId>
+	        <artifactId>junit-jupiter</artifactId>
+	        <scope>test</scope>
+	    </dependency>
+    
 		<!-- lombok (POJO annotations) -->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
@@ -191,6 +241,18 @@
 			<version>3.2.3</version>
 		</dependency>
 
+		<!-- These are used by Maven and Tika -->
+		<dependency>
+		    <groupId>javax.xml.bind</groupId>
+		    <artifactId>jaxb-api</artifactId>
+		    <version>2.3.1</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.glassfish.jaxb</groupId>
+		    <artifactId>jaxb-runtime</artifactId>
+		    <version>2.3.1</version>
+		</dependency>
+		
 		<!-- Logging, including support for dependencies using sl4j -->
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -214,40 +276,122 @@
 	</dependencies>
 	
 	<build>
-	    <pluginManagement>
-	        <plugins>
-	            <plugin>
-	                <groupId>org.apache.maven.plugins</groupId>
-	                <artifactId>maven-dependency-plugin</artifactId>
-	                <version>3.8.0</version>
-	            </plugin>
-	            <plugin>
-	                <groupId>org.apache.maven.plugins</groupId>
-	                <artifactId>maven-assembly-plugin</artifactId>
-	                <version>3.8.0</version>
-	            </plugin>
-	        </plugins>
-	    </pluginManagement>
-	
 	    <plugins>
 	        <plugin>
 	            <groupId>org.apache.maven.plugins</groupId>
-	            <artifactId>maven-assembly-plugin</artifactId>
+	            <artifactId>maven-compiler-plugin</artifactId>
+	            <version>3.12.1</version>
 	            <configuration>
-	                <descriptorRefs>
-	                    <descriptorRef>jar-with-dependencies</descriptorRef>
-	                </descriptorRefs>
-	            </configuration>
+	                <source>${java.version}</source>
+	                <target>${java.version}</target>
+	                </configuration>
+	        </plugin>
+	
+	        <plugin>
+	            <groupId>org.apache.maven.plugins</groupId>
+	            <artifactId>maven-source-plugin</artifactId>
+	            <version>3.3.0</version>
 	            <executions>
 	                <execution>
-	                    <id>make-assembly</id>
-	                    <phase>package</phase>
+	                    <id>attach-sources</id>
 	                    <goals>
-	                        <goal>single</goal>
+	                        <goal>jar-no-fork</goal>
 	                    </goals>
 	                </execution>
 	            </executions>
 	        </plugin>
-	    </plugins>
+	
+	        <plugin>
+	            <groupId>org.apache.maven.plugins</groupId>
+	            <artifactId>maven-javadoc-plugin</artifactId>
+	            <version>3.6.3</version>
+	            <executions>
+	                <execution>
+	                    <id>attach-javadocs</id>
+	                    <goals>
+	                        <goal>jar</goal>
+	                    </goals>
+	                </execution>
+	            </executions>
+	            <configuration>
+	                <doclint>none</doclint>
+	                <tags>
+	                    <tag>
+	                        <name>http.response.details</name>
+	                        <placement>a</placement>
+	                        <head>Http Response Details:</head>
+	                    </tag>
+	                </tags>
+	            </configuration>
+	        </plugin>
+	
+	        <plugin>
+	            <groupId>org.sonatype.central</groupId>
+	            <artifactId>central-publishing-maven-plugin</artifactId>
+	            <version>0.9.0</version>
+	            <extensions>true</extensions>
+	            <configuration>
+	                <publishingServerId>central</publishingServerId>
+	            </configuration>
+	        </plugin>
+	        
+	        <plugin>
+	            <groupId>org.apache.maven.plugins</groupId>
+	            <artifactId>maven-enforcer-plugin</artifactId>
+	            <version>3.4.1</version>
+	            <executions>
+	                <execution>
+	                    <id>enforce-maven</id>
+	                    <goals>
+	                        <goal>enforce</goal>
+	                    </goals>
+	                    <configuration>
+	                        <rules>
+	                            <requireMavenVersion>
+	                                <version>3.2.5</version> </requireMavenVersion>
+	                        </rules>
+	                    </configuration>
+	                </execution>
+	            </executions>
+	        </plugin>
+	        
+	        <plugin>
+	            <groupId>org.apache.maven.plugins</groupId>
+	            <artifactId>maven-surefire-plugin</artifactId>
+	            <version>3.2.5</version> <configuration>
+	                </configuration>
+	        </plugin>
+        </plugins>
 	</build>
+
+	<profiles>
+	    <profile>
+	        <id>release</id>
+	        <build>
+	            <plugins>
+	                <plugin>
+	                    <groupId>org.apache.maven.plugins</groupId>
+	                    <artifactId>maven-gpg-plugin</artifactId>
+	                    <version>3.2.1</version>
+	                    <executions>
+	                        <execution>
+	                            <id>sign-artifacts</id>
+	                            <phase>verify</phase>
+	                            <goals>
+	                                <goal>sign</goal>
+	                            </goals>
+	                            <configuration>
+	                                <gpgArguments>
+	                                    <arg>--pinentry-mode</arg>
+	                                    <arg>loopback</arg>
+	                                </gpgArguments>
+	                            </configuration>
+	                        </execution>
+	                    </executions>
+	                </plugin>
+	            </plugins>
+	        </build>
+	    </profile>
+	</profiles>
+
 </project>

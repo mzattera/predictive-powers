@@ -881,7 +881,7 @@ public class OpenAiAssistant extends AbstractAgent {
 	 * Note that this method supports only image files attached to the message,
 	 * either as {@link OpenAiFilePart} or {@link FilePart}s with an URL. If you
 	 * want files to be available in the File Search tool, you need to add them to
-	 * any vector store attached to {@link #getOpenAiAssistantTool()}.
+	 * any vector store attached to {@link #getOpenAiAssistantTools()}.
 	 * </p>
 	 * 
 	 */

@@ -40,8 +40,6 @@ public final class StringUtil {
 	 *
 	 * @param input the CamelCase input string
 	 * @return a space-separated string
-	 * 
-	 * @author Luna
 	 */
 	public static String camelCaseToWords(String input) {
 	    if (input == null || input.isEmpty()) {

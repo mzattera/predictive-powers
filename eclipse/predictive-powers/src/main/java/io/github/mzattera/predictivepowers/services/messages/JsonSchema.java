@@ -463,7 +463,7 @@ public class JsonSchema {
 	 * This is a helper to create model objects for other libraries (namely OpenAI
 	 * SDK).
 	 * 
-	 * @param string If true uses strict mode (see below).
+	 * @param strict If true uses strict mode (see below).
 	 * 
 	 * @see <a href=
 	 *      "https://platform.openai.com/docs/guides/function-calling?api-mode=chat#additional-configurations">strict
@@ -598,7 +598,7 @@ public class JsonSchema {
 
 	/**
 	 * Converts a class which schema describes parameters for a {@link Tool} into a
-	 * list of {@link ToolParameters}.
+	 * list of {@link ToolParameter}s.
 	 * 
 	 * Developers can use Jackson annotations in the class definition describing the
 	 * parameters for the tool, then use this method to create corresponding list of

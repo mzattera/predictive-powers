@@ -169,7 +169,6 @@ public final class ImageUtil {
 	 * Reads an image from the input stream, pads it with black borders to make it
 	 * square, and returns it as a PNG-encoded byte array.
 	 *
-	 * @author Luna
 	 * @param inputStream the input stream containing the image data
 	 * @return the squared image as a PNG byte array
 	 * @throws IOException if reading or writing fails

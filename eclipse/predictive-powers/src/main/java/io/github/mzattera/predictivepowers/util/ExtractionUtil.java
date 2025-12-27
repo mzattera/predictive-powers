@@ -108,7 +108,7 @@ public final class ExtractionUtil {
 	 * @param url           Web page URL.
 	 * 
 	 * @param timeoutMillis Timeout (millisecond) to download content from given
-	 *                      url. If this is <=0 it will be ignored.
+	 *                      url. If this is less than or equal to 0 it will be ignored.
 	 * @return The content of given web page.
 	 * 
 	 * @throws IOException

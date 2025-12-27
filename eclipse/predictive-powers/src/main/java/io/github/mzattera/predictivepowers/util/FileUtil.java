@@ -51,10 +51,10 @@ public final class FileUtil {
 	/**
 	 * Returns a file on given folder.
 	 * 
-	 * @param input  If this is a folder, it is the folder where the returned file
+	 * @param folder  If this is a folder, it is the folder where the returned file
 	 *               resides. If it is a file, the returned file will be in same
 	 *               folder of this one.
-	 * @param string
+	 * @param fileName
 	 * @return A File that is in same folder as input but has given filename.
 	 */
 	public static File newFile(@NonNull String folder, @NonNull String fileName) {
@@ -62,12 +62,12 @@ public final class FileUtil {
 	}
 
 	/**
-	 * Returns a file on given folder.
+	 * Returns a file in given folder.
 	 * 
-	 * @param input  If this is a folder, it is the folder where the returned file
+	 * @param folder  If this is a folder, it is the folder where the returned file
 	 *               resides. If it is a file, the returned file will be in same
 	 *               folder of this one.
-	 * @param string
+	 * @param fileName
 	 * @return A File that is in same folder as input but has given filename.
 	 */
 	public static File newFile(@NonNull File folder, @NonNull String fileName) {
@@ -141,7 +141,6 @@ public final class FileUtil {
 	/**
 	 * Reads content of a file, assumed to be a UTF-8 string.
 	 * 
-	 * @param fileName
 	 * @return
 	 * @throws IOException
 	 */
@@ -187,8 +186,6 @@ public final class FileUtil {
 	/**
 	 * Write text to given file, in UTF-8 encoding.
 	 * 
-	 * @param fileName
-	 * @param text
 	 * @throws IOException
 	 * 
 	 */

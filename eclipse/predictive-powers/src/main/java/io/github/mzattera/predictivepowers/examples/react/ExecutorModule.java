@@ -34,8 +34,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 
 import io.github.mzattera.predictivepowers.examples.react.ReactAgent.Step;
 import io.github.mzattera.predictivepowers.examples.react.ReactAgent.Step.Status;
+import io.github.mzattera.predictivepowers.openai.OpenAiChatService;
 import io.github.mzattera.predictivepowers.examples.react.ReactAgent.ToolCallStep;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
 import io.github.mzattera.predictivepowers.services.Capability.ToolAddedEvent;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.Tool.ToolParameter;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.openai.services;
+package io.github.mzattera.predictivepowers.openai;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -35,6 +35,8 @@ import com.openai.models.images.ImageModel;
 
 import io.github.mzattera.predictivepowers.BadRequestException;
 import io.github.mzattera.predictivepowers.TestConfiguration;
+import io.github.mzattera.predictivepowers.openai.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.OpenAiImageGenerationService;
 import io.github.mzattera.predictivepowers.services.ImageGenerationService;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.util.FileUtil;

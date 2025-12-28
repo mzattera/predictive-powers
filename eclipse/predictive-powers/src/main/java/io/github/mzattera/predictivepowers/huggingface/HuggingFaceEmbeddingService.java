@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.mzattera.predictivepowers.huggingface.services;
+package io.github.mzattera.predictivepowers.huggingface;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,7 +24,6 @@ import io.github.mzattera.hfinferenceapi.client.model.EmbeddingData;
 import io.github.mzattera.hfinferenceapi.client.model.EmbeddingsRequest;
 import io.github.mzattera.hfinferenceapi.client.model.EmbeddingsRequest.TruncationDirectionEnum;
 import io.github.mzattera.predictivepowers.EndpointException;
-import io.github.mzattera.predictivepowers.huggingface.util.HuggingFaceUtil;
 import io.github.mzattera.predictivepowers.services.AbstractEmbeddingService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.ModelService;
@@ -91,43 +90,46 @@ public class HuggingFaceEmbeddingService extends AbstractEmbeddingService {
 	@Override
 	public List<EmbeddedText> embed(@NonNull Collection<String> text, int chunkSize, int windowSize, int stride)
 			throws EndpointException {
+		try {
+			// Tries to get a tokenizer, falling back to char tokenizer :(
+			String model = defaultRequest.getModel();
+			Tokenizer tokenizer = modelService.getTokenizer(model, HuggingFaceModelService.FALLBACK_TOKENIZER);
 
-		// Tries to get a tokenizer, falling back to char tokenizer :(
-		String model = defaultRequest.getModel();
-		Tokenizer tokenizer = modelService.getTokenizer(model, HuggingFaceModelService.TOKENIZER);
+			// Chunk accordingly to user's instructions
+			List<String> chunks = new ArrayList<>();
+			for (String t : text)
+				chunks.addAll(ChunkUtil.split(t, chunkSize, windowSize, stride, tokenizer));
 
-		// Chunk accordingly to user's instructions
-		List<String> chunks = new ArrayList<>();
-		for (String t : text)
-			chunks.addAll(ChunkUtil.split(t, chunkSize, windowSize, stride, tokenizer));
-
-		// Make sure no chunk is bigger than model's supported size
-		int modelSize = modelService.getContextSize(model, -1);
-		if (modelSize > 0) {
-			List<String> tmp = new ArrayList<>(chunks.size() * 2);
-			for (String c : chunks)
-				tmp.addAll(ChunkUtil.split(c, modelSize, tokenizer));
-			chunks = tmp;
-		}
-
-		// Embed as many pieces you can in a single call
-		List<String> input = new ArrayList<>();
-		List<EmbeddedText> result = new ArrayList<>();
-		while (chunks.size() > 0) {
-			input.add(chunks.remove(0));
-			if (input.size() == MAX_INPUTS_PER_CALL) {
-				// too many tokens, embed what you have
-				result.addAll(embed(input));
-				input.clear();
+			// Make sure no chunk is bigger than model's supported size
+			int modelSize = modelService.getContextSize(model, -1);
+			if (modelSize > 0) {
+				List<String> tmp = new ArrayList<>(chunks.size() * 2);
+				for (String c : chunks)
+					tmp.addAll(ChunkUtil.split(c, modelSize, tokenizer));
+				chunks = tmp;
 			}
-		}
 
-		// last bit
-		if (input.size() > 0) {
-			result.addAll(embed(input));
-		}
+			// Embed as many pieces you can in a single call
+			List<String> input = new ArrayList<>();
+			List<EmbeddedText> result = new ArrayList<>();
+			while (chunks.size() > 0) {
+				input.add(chunks.remove(0));
+				if (input.size() == MAX_INPUTS_PER_CALL) {
+					// too many tokens, embed what you have
+					result.addAll(embed(input));
+					input.clear();
+				}
+			}
 
-		return result;
+			// last bit
+			if (input.size() > 0) {
+				result.addAll(embed(input));
+			}
+
+			return result;
+		} catch (Exception e) {
+			throw HuggingFaceUtil.toEndpointException(e);
+		}
 	}
 
 	private List<EmbeddedText> embed(List<String> input) throws EndpointException {

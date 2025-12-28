@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.mzattera.predictivepowers.openai.services;
+package io.github.mzattera.predictivepowers.openai;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -69,7 +69,6 @@ import com.openai.models.beta.threads.runs.RunSubmitToolOutputsParams.Builder;
 import com.openai.models.beta.threads.runs.RunSubmitToolOutputsParams.ToolOutput;
 
 import io.github.mzattera.predictivepowers.EndpointException;
-import io.github.mzattera.predictivepowers.openai.util.OpenAiUtil;
 import io.github.mzattera.predictivepowers.services.AbstractAgent;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Capability;
@@ -865,8 +864,12 @@ public class OpenAiAssistant extends AbstractAgent {
 	private Message usrMsg;
 
 	@Override
-	public ChatCompletion chat(String msg) {
+	public ChatCompletion chat(String msg)  throws EndpointException {
+		try {
 		return chat(new ChatMessage(msg));
+		} catch (Exception e) {
+			throw OpenAiUtil.toEndpointException(e);
+		}
 	}
 
 	// TODO WON'T FIX Runs give you option to override tools: maybe add a method that take a

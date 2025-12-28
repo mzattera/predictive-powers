@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.huggingface.services;
+package io.github.mzattera.predictivepowers.huggingface;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +23,6 @@ import io.github.mzattera.hfinferenceapi.client.model.ImageGenerationRequest;
 import io.github.mzattera.hfinferenceapi.client.model.ImageGenerationRequestParameters;
 import io.github.mzattera.hfinferenceapi.client.model.ImageGenerationResponseDataInner;
 import io.github.mzattera.predictivepowers.EndpointException;
-import io.github.mzattera.predictivepowers.huggingface.util.HuggingFaceUtil;
 import io.github.mzattera.predictivepowers.services.AbstractImageGenerationService;
 import io.github.mzattera.predictivepowers.services.messages.Base64FilePart;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
@@ -70,9 +69,9 @@ public class HuggingFaceImageGenerationService extends AbstractImageGenerationSe
 	public List<FilePart> createImage(@NonNull String prompt, int n, int width, int height) throws EndpointException {
 
 		String model = defaultRequest.getModel();
-		List<FilePart> result = new ArrayList<>();
 
 		try {
+			List<FilePart> result = new ArrayList<>();
 			String[] parts = HuggingFaceUtil.parseModel(model);
 			defaultRequest.setModel(parts[0]);
 			defaultRequest.setPrompt(prompt);

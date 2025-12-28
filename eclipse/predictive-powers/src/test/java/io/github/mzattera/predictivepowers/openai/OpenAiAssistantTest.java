@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.openai.services;
+package io.github.mzattera.predictivepowers.openai;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -42,7 +42,11 @@ import com.openai.models.files.FilePurpose;
 import com.openai.models.vectorstores.VectorStore;
 
 import io.github.mzattera.predictivepowers.TestConfiguration;
-import io.github.mzattera.predictivepowers.openai.util.CleanupUtil;
+import io.github.mzattera.predictivepowers.openai.CleanupUtil;
+import io.github.mzattera.predictivepowers.openai.OpenAiAssistant;
+import io.github.mzattera.predictivepowers.openai.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.OpenAiFilePart;
+import io.github.mzattera.predictivepowers.openai.OpenAiVectorStore;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.mzattera.predictivepowers.huggingface.util;
+package io.github.mzattera.predictivepowers.huggingface;
 
 import io.github.mzattera.hfinferenceapi.ApiException;
 import io.github.mzattera.predictivepowers.EndpointException;
@@ -74,7 +74,7 @@ public final class HuggingFaceUtil {
 	/**
 	 * Translates SDK finish reason into library one.
 	 */
-	public static @NonNull FinishReason fromHuggingFaceApi(String finishReason) {
+	public static @NonNull FinishReason fromHuggingFaceFinishReason(String finishReason) {
 		switch (finishReason) {
 		case "stop":
 		case "tool_calls":

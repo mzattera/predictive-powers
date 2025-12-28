@@ -32,8 +32,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
 import io.github.mzattera.predictivepowers.TestConfiguration;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.OpenAiEmbeddingService;
+import io.github.mzattera.predictivepowers.openai.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.util.ResourceUtil;
 

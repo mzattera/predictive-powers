@@ -26,7 +26,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaDescription;
 
-import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.huggingface.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.services.AbstractTool;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Toolset;

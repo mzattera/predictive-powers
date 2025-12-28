@@ -17,7 +17,7 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers.openai.services;
+package io.github.mzattera.predictivepowers.openai;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,7 +28,6 @@ import com.openai.models.beta.assistants.AssistantCreateParams;
 import com.openai.models.beta.assistants.AssistantCreateParams.Metadata;
 
 import io.github.mzattera.predictivepowers.EndpointException;
-import io.github.mzattera.predictivepowers.openai.util.OpenAiUtil;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.AgentService;
 import lombok.Getter;
@@ -73,12 +72,14 @@ public class OpenAiAgentService implements AgentService {
 	}
 
 	@Override
-	public OpenAiAssistant createAgent(@NonNull String name, String description, String personality) {
+	public OpenAiAssistant createAgent(@NonNull String name, String description, String personality)
+			throws EndpointException {
 		return createAgent(name, description, this.model, personality, true, false);
 	}
 
 	@Override
-	public Agent createAgent(@NonNull String name, String description, String personality, String model) {
+	public Agent createAgent(@NonNull String name, String description, String personality, String model)
+			throws EndpointException {
 		return createAgent(name, description, model, personality, true, false);
 	}
 
@@ -94,7 +95,7 @@ public class OpenAiAgentService implements AgentService {
 	 * @return
 	 */
 	public OpenAiAssistant createAgent(@NonNull String name, String description, String personality, boolean persist,
-			boolean isDefault) {
+			boolean isDefault) throws EndpointException {
 		return createAgent(name, description, this.model, personality, persist, isDefault);
 	}
 

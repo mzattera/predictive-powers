@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.openai.services;
+package io.github.mzattera.predictivepowers.openai;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,7 +32,6 @@ import com.openai.models.images.ImageModel;
 import com.openai.models.images.ImagesResponse;
 
 import io.github.mzattera.predictivepowers.EndpointException;
-import io.github.mzattera.predictivepowers.openai.util.OpenAiUtil;
 import io.github.mzattera.predictivepowers.services.AbstractImageGenerationService;
 import io.github.mzattera.predictivepowers.services.messages.Base64FilePart;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;

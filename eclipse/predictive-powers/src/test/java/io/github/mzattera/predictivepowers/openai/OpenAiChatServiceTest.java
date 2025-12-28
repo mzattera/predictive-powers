@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.openai.services;
+package io.github.mzattera.predictivepowers.openai;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -58,7 +58,10 @@ import com.openai.models.chat.completions.ChatCompletionUserMessageParam;
 
 import io.github.mzattera.predictivepowers.TestConfiguration;
 import io.github.mzattera.predictivepowers.examples.FunctionCallExample.GetCurrentWeatherTool;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.CallType;
+import io.github.mzattera.predictivepowers.openai.OpenAiChatService;
+import io.github.mzattera.predictivepowers.openai.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.OpenAiModelService;
+import io.github.mzattera.predictivepowers.openai.OpenAiModelService.OpenAiModelMetaData.CallType;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;

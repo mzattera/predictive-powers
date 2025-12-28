@@ -18,29 +18,36 @@ package io.github.mzattera.predictivepowers.services;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.services.ModelService.ModelMetaData.Modality;
-import lombok.AccessLevel;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
 /**
  * Abstract {@link ModelService} that can be sub-classed to create other
  * services faster (hopefully).
  * 
- * The constructor requires a Map to map models into their metadata, this allows
- * more flexibility for subclasses to implement a singleton repository of data,
- * using a thread safe Map, etc.
+ * This class is thread-safe.
  * 
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class AbstractModelService implements ModelService {
 
 	@NonNull
-	protected final Map<String, ModelMetaData> data;
+	protected final Map<String, ModelMetaData> data = new ConcurrentHashMap<>();
+
+	protected AbstractModelService() {
+	}
+
+	/**
+	 * Builds a new instance by copying data from given map.
+	 */
+	protected AbstractModelService(Map<String, ? extends ModelMetaData> data) {
+		this.data.putAll(data);
+	}
 
 	/**
 	 * @return null, as there is no model associated with this service.
@@ -55,9 +62,9 @@ public abstract class AbstractModelService implements ModelService {
 	 */
 	@Override
 	public void setModel(@NonNull String model) {
-		throw new UnsupportedOperationException();
+		throw new EndpointException(new UnsupportedOperationException());
 	}
-	
+
 	@Override
 	public ModelMetaData get(@NonNull String model) {
 		return data.get(model);

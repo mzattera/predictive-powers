@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.huggingface.services;
+package io.github.mzattera.predictivepowers.huggingface;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -87,9 +87,15 @@ public class HuggingFaceEndpoint implements AiEndpoint {
 		this.client = client;
 	}
 
+	/**
+	 * One instance per endpoint, so user can register new models which will be
+	 * valid for all services for the endpoint
+	 */
+	private final HuggingFaceModelService modelService = new HuggingFaceModelService(this);
+
 	@Override
 	public HuggingFaceModelService getModelService() {
-		return new HuggingFaceModelService(this);
+		return modelService;
 	}
 
 	@Override

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.mzattera.predictivepowers.openai.services;
+package io.github.mzattera.predictivepowers.openai;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,7 +30,6 @@ import com.openai.models.embeddings.EmbeddingCreateParams;
 import com.openai.models.embeddings.EmbeddingCreateParams.EncodingFormat;
 
 import io.github.mzattera.predictivepowers.EndpointException;
-import io.github.mzattera.predictivepowers.openai.util.OpenAiUtil;
 import io.github.mzattera.predictivepowers.services.AbstractEmbeddingService;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.ModelService;
@@ -97,77 +96,76 @@ public class OpenAiEmbeddingService extends AbstractEmbeddingService {
 	@Override
 	public List<EmbeddedText> embed(@NonNull Collection<String> text, int chunkSize, int windowSize, int stride)
 			throws EndpointException {
+		try {
+			String model = defaultRequest.model().toString();
+			int modelSize = modelService.getContextSize(model);
+			Tokenizer tokenizer = modelService.getTokenizer(model);
 
-		String model = defaultRequest.model().toString();
-		int modelSize = modelService.getContextSize(model);
-		Tokenizer tokenizer = modelService.getTokenizer(model);
+			// Chunk accordingly to user's instructions
+			List<String> chunks = new ArrayList<>();
+			for (String t : text)
+				chunks.addAll(ChunkUtil.split(t, chunkSize, windowSize, stride, tokenizer));
 
-		// Chunk accordingly to user's instructions
-		List<String> chunks = new ArrayList<>();
-		for (String t : text)
-			chunks.addAll(ChunkUtil.split(t, chunkSize, windowSize, stride, tokenizer));
+			// Make sure no chunk is bigger than model's supported size
+			List<String> tmp = new ArrayList<>(chunks.size() * 2);
+			for (String c : chunks)
+				tmp.addAll(ChunkUtil.split(c, modelSize, tokenizer));
+			chunks = tmp;
 
-		// Make sure no chunk is bigger than model's supported size
-		List<String> tmp = new ArrayList<>(chunks.size() * 2);
-		for (String c : chunks)
-			tmp.addAll(ChunkUtil.split(c, modelSize, tokenizer));
-		chunks = tmp;
+			// Notice ChunkUtil removes empty strings already
 
-		// Notice ChunkUtil removes empty strings already
+			// Embed as many pieces you can in a single call
+			List<String> input = new ArrayList<>();
+			List<EmbeddedText> result = new ArrayList<>();
+			StringBuilder sb = new StringBuilder();
+			while (chunks.size() > 0) {
+				String s = chunks.remove(0);
 
-		// Embed as many pieces you can in a single call
-		List<String> input = new ArrayList<>();
-		List<EmbeddedText> result = new ArrayList<>();
-		StringBuilder sb = new StringBuilder();
-		while (chunks.size() > 0) {
-			String s = chunks.remove(0);
-
-			sb.append(s);
-			// We have at most 2048 inputs or 300K tokens (with a 20tk overhead per input)
-			// ..somehow the prompt token calculation counts even more tokens; 128K seems to
-			// provide a very safe limit
-			// https://platform.openai.com/docs/api-reference/embeddings/create
-			if ((input.size() == 2048) || ((tokenizer.count(sb.toString()) + 20 * input.size()) > 128_000)) {
-				// too many tokens, embed what you have
-				result.addAll(embed(input));
-				input.clear();
-				sb.setLength(0);
 				sb.append(s);
+				// We have at most 2048 inputs or 300K tokens (with a 20tk overhead per input)
+				// ..somehow the prompt token calculation counts even more tokens; 128K seems to
+				// provide a very safe limit
+				// https://platform.openai.com/docs/api-reference/embeddings/create
+				if ((input.size() == 2048) || ((tokenizer.count(sb.toString()) + 20 * input.size()) > 128_000)) {
+					// too many tokens, embed what you have
+					result.addAll(embed(input));
+					input.clear();
+					sb.setLength(0);
+					sb.append(s);
+				}
+
+				// add to next request
+				input.add(s);
 			}
 
-			// add to next request
-			input.add(s);
-		}
-
-		// last bit
-		if (input.size() > 0) {
-			result.addAll(embed(input));
-		}
-
-		return result;
-	}
-
-	private List<EmbeddedText> embed(List<String> input) throws EndpointException {
-
-		try {
-			List<EmbeddedText> result = new ArrayList<>();
-
-			EmbeddingCreateParams req = defaultRequest.toBuilder().inputOfArrayOfStrings(input).build();
-			CreateEmbeddingResponse res = endpoint.getClient().embeddings().create(req);
-			LOG.info("Called OpenAI Embedding Service: " + res.usage());
-
-			for (Embedding e : res.data()) {
-				int index = (int) e.index();
-				EmbeddedText et = EmbeddedText.builder() //
-						.text(input.get(index)) //
-						.embedding(e.embedding().stream().map(f -> f.doubleValue()).collect(Collectors.toList())) //
-						.model(res.model()).build();
-				result.add(et);
+			// last bit
+			if (input.size() > 0) {
+				result.addAll(embed(input));
 			}
 
 			return result;
 		} catch (Exception e) {
 			throw OpenAiUtil.toEndpointException(e);
 		}
+	}
+
+	private List<EmbeddedText> embed(List<String> input) {
+
+		List<EmbeddedText> result = new ArrayList<>();
+
+		EmbeddingCreateParams req = defaultRequest.toBuilder().inputOfArrayOfStrings(input).build();
+		CreateEmbeddingResponse res = endpoint.getClient().embeddings().create(req);
+		LOG.info("Called OpenAI Embedding Service: " + res.usage());
+
+		for (Embedding e : res.data()) {
+			int index = (int) e.index();
+			EmbeddedText et = EmbeddedText.builder() //
+					.text(input.get(index)) //
+					.embedding(e.embedding().stream().map(f -> f.doubleValue()).collect(Collectors.toList())) //
+					.model(res.model()).build();
+			result.add(et);
+		}
+
+		return result;
 	}
 }

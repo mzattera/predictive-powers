@@ -16,9 +16,9 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
-import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService;
+import io.github.mzattera.predictivepowers.openai.OpenAiChatService;
+import io.github.mzattera.predictivepowers.openai.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.OpenAiModelService;
 
 public class TokenizerExample {
 

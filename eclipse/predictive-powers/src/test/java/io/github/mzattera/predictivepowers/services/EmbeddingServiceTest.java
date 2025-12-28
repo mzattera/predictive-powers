@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.TestConfiguration;
-import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceEmbeddingService;
+import io.github.mzattera.predictivepowers.huggingface.HuggingFaceEmbeddingService;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.util.ExtractionUtil;
 import io.github.mzattera.predictivepowers.util.ResourceUtil;

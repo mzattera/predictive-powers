@@ -16,16 +16,14 @@
 
 package io.github.mzattera.predictivepowers.services;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.services.ModelService.ModelMetaData.Modality;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Singular;
+import lombok.experimental.SuperBuilder;
 
 /**
  * Instances of this interface provide services to list available models end
@@ -59,66 +57,20 @@ public interface ModelService extends AiService {
 	 * 
 	 * Notice some of the fields might be missing or make no sense for a model.
 	 * 
+	 * This class is unmodifiable, to ensure model services can be made thread safe.
+	 * 
 	 * @author Massimiliano "Maxi" Zattera.
 	 *
 	 */
 	@Getter
-	@Setter(AccessLevel.PROTECTED)
-	@ToString
-	public static class ModelMetaData {
+	@SuperBuilder(toBuilder = true) // Allows creating a builder from an existing instance
+	public class ModelMetaData {
 
 		/**
 		 * Input/Output modalities a model supports.
 		 */
 		public enum Modality {
 			TEXT, IMAGE, AUDIO, EMBEDDINGS, VIDEO
-		}
-
-		public static Builder builder() {
-			return new Builder();
-		}
-
-		public static final class Builder {
-			private final ModelMetaData meta = new ModelMetaData();
-
-			private Builder() {
-			}
-
-			public Builder model(String model) {
-				meta.model = java.util.Objects.requireNonNull(model, "model mandatory");
-				return this;
-			}
-
-			public Builder tokenizer(Tokenizer tokenizer) {
-				meta.tokenizer = tokenizer;
-				return this;
-			}
-
-			public Builder contextSize(Integer ctx) {
-				meta.contextSize = ctx;
-				return this;
-			}
-
-			public Builder maxNewTokens(Integer max) {
-				meta.maxNewTokens = max;
-				return this;
-			}
-
-			public Builder addInputMode(Modality mode) {
-				meta.inputModes.add(java.util.Objects.requireNonNull(mode));
-				return this;
-			}
-
-			public Builder addOutputMode(Modality mode) {
-				meta.outputModes.add(java.util.Objects.requireNonNull(mode));
-				return this;
-			}
-
-			public ModelMetaData build() {
-				if (meta.model == null)
-					throw new IllegalStateException("model mancante");
-				return meta;
-			}
 		}
 
 		/**
@@ -147,15 +99,12 @@ public interface ModelService extends AiService {
 		private Integer maxNewTokens;
 
 		/** The input modes this model supports */
-		@NonNull
-		private List<Modality> inputModes = new ArrayList<>();
+		@Singular("inputMode")
+		private final @NonNull List<Modality> inputModes;
 
 		/** The output modes this model supports */
-		@NonNull
-		private List<Modality> outputModes = new ArrayList<>();
-
-		protected ModelMetaData() {
-		}
+		@Singular("outputMode")
+		private final @NonNull List<Modality> outputModes;
 
 		public boolean supportsImageInput() {
 			return inputModes.contains(Modality.IMAGE);

@@ -25,10 +25,10 @@ import java.util.List;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
-import io.github.mzattera.predictivepowers.google.services.GoogleEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceEndpoint;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.google.GoogleEndpoint;
+import io.github.mzattera.predictivepowers.huggingface.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.openai.OpenAiChatService;
+import io.github.mzattera.predictivepowers.openai.OpenAiEndpoint;
 
 /**
  * This class is used to configure which JUnit tests are active.

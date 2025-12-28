@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.openai.services;
+package io.github.mzattera.predictivepowers.openai;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,9 +80,10 @@ public class OpenAiEndpoint implements AiEndpoint {
 		this.client = client;
 	}
 
-	// Model service is state-less, we do not need to create a new model service
-	// each
-	// time.
+	/**
+	 * One instance per endpoint, so user can register new models which will be
+	 * valid for all services for the endpoint
+	 */
 	private final OpenAiModelService modelService = new OpenAiModelService(this);
 
 	@Override

@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.github.mzattera</groupId>
 	<artifactId>predictive-powers</artifactId>
-	<version>0.6.0</version>
+	<version>0.7.0</version>
 	<name>predictive-powers</name>
     <url>https://github.com/mzattera/predictive-powers</url>
 	<description>A Java library to (easily) create GenAI-powered autonomous
@@ -184,6 +184,13 @@
 			<version>0.36.0</version>
 		</dependency>
 
+		<!-- Ollama Client API -->
+		<dependency>
+		  <groupId>io.github.mzattera</groupId>
+		  <artifactId>ollama-client-api</artifactId>
+		  <version>0.1.0</version>
+		</dependency>
+
 		<!-- Official OpenAI Java SDK -->
 		<dependency>
 		  <groupId>com.openai</groupId>
@@ -253,7 +260,7 @@
 		    <artifactId>jaxb-runtime</artifactId>
 		    <version>2.3.1</version>
 		</dependency>
-		
+
 		<!-- Logging, including support for dependencies using sl4j -->
 		<dependency>
 			<groupId>org.slf4j</groupId>

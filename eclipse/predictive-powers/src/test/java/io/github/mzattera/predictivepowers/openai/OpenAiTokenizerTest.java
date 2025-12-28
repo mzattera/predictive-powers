@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.openai.services;
+package io.github.mzattera.predictivepowers.openai;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -49,9 +49,13 @@ import com.openai.models.chat.completions.ChatCompletionMessageToolCall;
 import com.openai.models.chat.completions.ChatCompletionToolMessageParam;
 import com.openai.models.chat.completions.ChatCompletionUserMessageParam;
 
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.CallType;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
+import io.github.mzattera.predictivepowers.openai.OpenAiChatService;
+import io.github.mzattera.predictivepowers.openai.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.OpenAiModelService;
+import io.github.mzattera.predictivepowers.openai.OpenAiTokenizer;
+import io.github.mzattera.predictivepowers.openai.OpenAiModelService.OpenAiModelMetaData;
+import io.github.mzattera.predictivepowers.openai.OpenAiModelService.OpenAiModelMetaData.CallType;
+import io.github.mzattera.predictivepowers.openai.OpenAiModelService.OpenAiModelMetaData.SupportedApi;
 import io.github.mzattera.predictivepowers.services.AbstractTool;
 import io.github.mzattera.predictivepowers.services.Capability;
 import io.github.mzattera.predictivepowers.services.ModelService.ModelMetaData.Modality;

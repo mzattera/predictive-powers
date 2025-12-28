@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.google.services;
+package io.github.mzattera.predictivepowers.google;
 
 import java.net.URI;
 import java.util.ArrayList;

@@ -17,7 +17,7 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers.openai.services;
+package io.github.mzattera.predictivepowers.openai;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;

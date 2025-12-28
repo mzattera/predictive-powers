@@ -20,8 +20,8 @@ import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceEndpoint;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.huggingface.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.openai.OpenAiEndpoint;
 
 public class AiEndpointExample {
 

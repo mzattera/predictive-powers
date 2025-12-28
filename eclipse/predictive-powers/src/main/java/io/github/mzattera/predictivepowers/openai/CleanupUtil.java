@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.openai.util;
+package io.github.mzattera.predictivepowers.openai;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,8 +31,6 @@ import com.openai.models.models.Model;
 import com.openai.models.vectorstores.VectorStore;
 import com.openai.models.vectorstores.VectorStoreDeleteParams;
 import com.openai.models.vectorstores.VectorStoreDeleted;
-
-import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
 
 /**
  * Deletes all files and all model fine-tunes.

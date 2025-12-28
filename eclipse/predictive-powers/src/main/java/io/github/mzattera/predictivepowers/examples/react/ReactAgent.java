@@ -29,8 +29,8 @@ import com.fasterxml.jackson.annotation.JsonView;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaDescription;
 
-import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.OpenAiChatService;
+import io.github.mzattera.predictivepowers.openai.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.messages.JsonSchema;

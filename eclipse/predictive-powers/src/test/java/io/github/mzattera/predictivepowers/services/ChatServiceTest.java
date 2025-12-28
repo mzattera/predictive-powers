@@ -38,8 +38,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.TestConfiguration;
-import io.github.mzattera.predictivepowers.huggingface.services.HuggingFaceChatService;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
+import io.github.mzattera.predictivepowers.huggingface.HuggingFaceChatService;
+import io.github.mzattera.predictivepowers.openai.OpenAiChatService;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;

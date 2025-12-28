@@ -45,12 +45,12 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 
 import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.examples.essay.EssayWriter.Essay.Section;
-import io.github.mzattera.predictivepowers.google.services.GoogleEndpoint;
+import io.github.mzattera.predictivepowers.google.GoogleEndpoint;
 import io.github.mzattera.predictivepowers.knowledge.KnowledgeBase;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiChatService;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiEmbeddingService;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiTokenizer;
+import io.github.mzattera.predictivepowers.openai.OpenAiChatService;
+import io.github.mzattera.predictivepowers.openai.OpenAiEmbeddingService;
+import io.github.mzattera.predictivepowers.openai.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.OpenAiTokenizer;
 import io.github.mzattera.predictivepowers.services.EmbeddedText;
 import io.github.mzattera.predictivepowers.services.EmbeddingService;
 import io.github.mzattera.predictivepowers.services.Link;

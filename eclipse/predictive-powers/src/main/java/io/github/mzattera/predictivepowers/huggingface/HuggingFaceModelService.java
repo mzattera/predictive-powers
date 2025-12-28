@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.huggingface.services;
+package io.github.mzattera.predictivepowers.huggingface;
 
 import java.io.InputStream;
 import java.net.URI;
@@ -24,8 +24,6 @@ import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,9 +34,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import ai.djl.repository.Artifact;
 import ai.djl.repository.MRL;
 import ai.djl.repository.Repository;
-import io.github.mzattera.predictivepowers.huggingface.util.HuggingFaceUtil;
+import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.services.AbstractModelService;
 import io.github.mzattera.predictivepowers.services.ModelService;
+import io.github.mzattera.predictivepowers.services.ModelService.ModelMetaData.ModelMetaDataBuilder;
 import io.github.mzattera.predictivepowers.services.messages.JsonSchema;
 import io.github.mzattera.predictivepowers.util.SimpleTokenizer;
 import lombok.Builder;
@@ -79,33 +78,28 @@ public class HuggingFaceModelService extends AbstractModelService {
 		}
 	}
 
-	/** Tokeniser to use when no other tokeniser is found */
-	public static final Tokenizer TOKENIZER = new SimpleTokenizer(2.5);
-	
-	/**
-	 * Single instance of the data Map, shared by all instances of this model
-	 * service class.
-	 */
-	private final static Map<String, ModelMetaData> data = new ConcurrentHashMap<>();
+	/** Tokenizer to use when no other tokenizer is found */
+	public static final Tokenizer FALLBACK_TOKENIZER = new SimpleTokenizer(2.5);
 
 	@NonNull
 	@Getter
 	protected final HuggingFaceEndpoint endpoint;
 
 	protected HuggingFaceModelService(HuggingFaceEndpoint endpoint) {
-		super(data);
 		this.endpoint = endpoint;
 	}
 
 	@Override
 	public ModelMetaData get(@NonNull String model) {
-		ModelMetaData result = data.get(model);
-		if (result == null) {
-			result = load(model);
-			put(model, result);
+		synchronized (data) {
+			ModelMetaData result = data.get(model);
+			if (result == null) {
+				result = load(model);
+				put(model, result);
+				return result;
+			}
 			return result;
 		}
-		return result;
 	}
 
 	/**
@@ -116,7 +110,7 @@ public class HuggingFaceModelService extends AbstractModelService {
 	 * @return Model meta data filled as much as possible
 	 */
 	private static ModelMetaData load(String model) {
-		ModelMetaData.Builder builder = ModelMetaData.builder().model(model);
+		ModelMetaDataBuilder<?, ?> builder = ModelMetaData.builder().model(model);
 
 		// Remove provider, if any
 		model = HuggingFaceUtil.parseModel(model)[0];
@@ -218,27 +212,27 @@ public class HuggingFaceModelService extends AbstractModelService {
 		return null;
 	}
 
-	private static void detectModalities(JsonNode config, ModelMetaData.Builder builder) {
+	private static void detectModalities(JsonNode config, ModelMetaDataBuilder<?, ?> builder) {
 		String modelType = config.path("model_type").asText("").toLowerCase();
 		String arch = config.path("architectures").path(0).asText("").toLowerCase();
 
 		// Structural Check
 		if (config.has("vision_config"))
-			builder.addInputMode(ModelMetaData.Modality.IMAGE);
+			builder.inputMode(ModelMetaData.Modality.IMAGE);
 		if (config.has("audio_config"))
-			builder.addInputMode(ModelMetaData.Modality.AUDIO);
+			builder.inputMode(ModelMetaData.Modality.AUDIO);
 
 		// Logical Check
 		if (arch.contains("forcausallm") || arch.contains("seq2seq") || config.has("vocab_size")) {
-			builder.addInputMode(ModelMetaData.Modality.TEXT);
-			builder.addOutputMode(ModelMetaData.Modality.TEXT);
+			builder.inputMode(ModelMetaData.Modality.TEXT);
+			builder.outputMode(ModelMetaData.Modality.TEXT);
 		}
 
 		// Specialized Mapping
 		if (modelType.equals("whisper"))
-			builder.addInputMode(ModelMetaData.Modality.AUDIO);
+			builder.inputMode(ModelMetaData.Modality.AUDIO);
 		if (modelType.contains("clip") || modelType.contains("llava"))
-			builder.addInputMode(ModelMetaData.Modality.IMAGE);
+			builder.inputMode(ModelMetaData.Modality.IMAGE);
 	}
 
 	private static Integer findFirstInt(JsonNode node, String... keys) {
@@ -253,8 +247,8 @@ public class HuggingFaceModelService extends AbstractModelService {
 	 * Unsupported, as there are too many.
 	 */
 	@Override
-	public List<String> listModels() {
-		throw new UnsupportedOperationException();
+	public List<String> listModels() throws EndpointException {
+		throw new EndpointException(new UnsupportedOperationException());
 
 		// Theoretically we could implement this with
 		// https://huggingface.co/docs/hub/api#get-apimodels

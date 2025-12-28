@@ -16,8 +16,8 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
-import io.github.mzattera.predictivepowers.google.services.GoogleEndpoint;
-import io.github.mzattera.predictivepowers.google.services.GoogleSearchService;
+import io.github.mzattera.predictivepowers.google.GoogleEndpoint;
+import io.github.mzattera.predictivepowers.google.GoogleSearchService;
 import io.github.mzattera.predictivepowers.services.Link;
 
 public class GoogleSearchExample {

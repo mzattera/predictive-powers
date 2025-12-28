@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.mzattera.predictivepowers.huggingface.services;
+package io.github.mzattera.predictivepowers.huggingface;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -50,7 +50,6 @@ import io.github.mzattera.hfinferenceapi.client.model.TextContentPart;
 import io.github.mzattera.hfinferenceapi.client.model.ToolMessage;
 import io.github.mzattera.hfinferenceapi.client.model.UserMessage;
 import io.github.mzattera.predictivepowers.EndpointException;
-import io.github.mzattera.predictivepowers.huggingface.util.HuggingFaceUtil;
 import io.github.mzattera.predictivepowers.services.AbstractAgent;
 import io.github.mzattera.predictivepowers.services.Capability.ToolAddedEvent;
 import io.github.mzattera.predictivepowers.services.Capability.ToolRemovedEvent;
@@ -226,7 +225,7 @@ public class HuggingFaceChatService extends AbstractAgent {
 		} catch (JsonProcessingException e) {
 			throw HuggingFaceUtil.toEndpointException(e);
 		}
-		return modelService.getTokenizer(getModel(), HuggingFaceModelService.TOKENIZER).count(json);
+		return modelService.getTokenizer(getModel(), HuggingFaceModelService.FALLBACK_TOKENIZER).count(json);
 	}
 
 	@Getter
@@ -328,7 +327,7 @@ public class HuggingFaceChatService extends AbstractAgent {
 	}
 
 	@Override
-	public ChatCompletion chat(ChatMessage msg) {
+	public ChatCompletion chat(ChatMessage msg) throws EndpointException {
 		try {
 			return chat(fromChatMessage(msg));
 		} catch (IOException e) {
@@ -355,7 +354,7 @@ public class HuggingFaceChatService extends AbstractAgent {
 			Pair<FinishReason, Message> result = chatCompletion(conversation);
 
 			// Add messages and response to history
-			msg.stream().forEach(history::add);
+			history.addAll(msg);
 			history.add(result.getRight());
 
 			// Make sure history is of desired length
@@ -405,19 +404,14 @@ public class HuggingFaceChatService extends AbstractAgent {
 	 * personality is NOT considered, but can be injected as first message in the
 	 * list.
 	 */
-	private Pair<FinishReason, Message> chatCompletion(
-			List<io.github.mzattera.hfinferenceapi.client.model.Message> messages) throws EndpointException {
+	private Pair<FinishReason, Message> chatCompletion(List<Message> messages) {
 
-		try {
-			defaultRequest.setMessages(messages);
-			ChatCompletionResponse resp = endpoint.getClient().chatCompletion(defaultRequest);
+		defaultRequest.setMessages(messages);
+		ChatCompletionResponse resp = endpoint.getClient().chatCompletion(defaultRequest);
 
-			Choice choice = resp.getChoices().get(0);
-			return new ImmutablePair<>(HuggingFaceUtil.fromHuggingFaceApi(choice.getFinishReason()),
-					choice.getMessage());
-		} catch (Exception e) {
-			throw HuggingFaceUtil.toEndpointException(e);
-		}
+		Choice choice = resp.getChoices().get(0);
+		return new ImmutablePair<>(HuggingFaceUtil.fromHuggingFaceFinishReason(choice.getFinishReason()),
+				choice.getMessage());
 	}
 
 	/**
@@ -435,8 +429,7 @@ public class HuggingFaceChatService extends AbstractAgent {
 	 */
 	private void trimConversation(List<Message> messages) throws JsonProcessingException {
 
-		// Remove tool call results left on top without corresponding calls, or this
-		// will cause HTTP 400 error for tools (it does not create issues for functions)
+		// Remove tool call results left on top without corresponding calls
 		int firstNonToolIndex = 0;
 		for (Message m : messages) {
 			if (m.getRole() == RoleEnum.TOOL) {
@@ -454,7 +447,7 @@ public class HuggingFaceChatService extends AbstractAgent {
 
 		// Trims down the list of messages accordingly to given limits.
 		int steps = 0;
-		Tokenizer counter = modelService.getTokenizer(getModel(), HuggingFaceModelService.TOKENIZER);
+		Tokenizer counter = modelService.getTokenizer(getModel(), HuggingFaceModelService.FALLBACK_TOKENIZER);
 		for (int i = messages.size() - 1; i >= 0; --i) {
 			if (steps >= maxConversationSteps)
 				break;

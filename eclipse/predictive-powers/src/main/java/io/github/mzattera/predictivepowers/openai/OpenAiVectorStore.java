@@ -17,7 +17,7 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers.openai.services;
+package io.github.mzattera.predictivepowers.openai;
 
 import java.util.List;
 import java.util.stream.Collectors;

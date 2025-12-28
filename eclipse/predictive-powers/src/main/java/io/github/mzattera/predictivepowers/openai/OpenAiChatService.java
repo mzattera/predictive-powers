@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.mzattera.predictivepowers.openai.services;
+package io.github.mzattera.predictivepowers.openai;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.openai.core.JsonMissing;
 import com.openai.core.JsonValue;
 import com.openai.errors.OpenAIServiceException;
@@ -54,8 +53,7 @@ import com.openai.models.chat.completions.ChatCompletionToolMessageParam;
 import com.openai.models.chat.completions.ChatCompletionUserMessageParam;
 
 import io.github.mzattera.predictivepowers.EndpointException;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiModelService.OpenAiModelMetaData.CallType;
-import io.github.mzattera.predictivepowers.openai.util.OpenAiUtil;
+import io.github.mzattera.predictivepowers.openai.OpenAiModelService.OpenAiModelMetaData.CallType;
 import io.github.mzattera.predictivepowers.services.AbstractAgent;
 import io.github.mzattera.predictivepowers.services.Capability.ToolAddedEvent;
 import io.github.mzattera.predictivepowers.services.Capability.ToolRemovedEvent;
@@ -408,8 +406,12 @@ public class OpenAiChatService extends AbstractAgent {
 	}
 
 	@Override
-	public ChatCompletion chat(ChatMessage msg) {
-		return chat(fromChatMessage(msg));
+	public ChatCompletion chat(ChatMessage msg) throws EndpointException {
+		try {
+			return chat(fromChatMessage(msg));
+		} catch (Exception e) {
+			throw OpenAiUtil.toEndpointException(e);
+		}
 	}
 
 	/**
@@ -421,32 +423,41 @@ public class OpenAiChatService extends AbstractAgent {
 	 */
 	public ChatCompletion chat(List<ChatCompletionMessageParam> msg) throws EndpointException {
 
-		// Add messages to conversation and trims it
-		List<ChatCompletionMessageParam> conversation = new ArrayList<>(history.build().messages());
-		conversation.addAll(msg);
-		trimConversation(conversation);
+		try {
+			// Add messages to conversation and trims it
+			List<ChatCompletionMessageParam> conversation = new ArrayList<>(history.build().messages());
+			conversation.addAll(msg);
+			trimConversation(conversation);
 
-		// Create response
-		Pair<FinishReason, ChatCompletionMessage> result = chatCompletion(conversation);
+			// Create response
+			Pair<FinishReason, ChatCompletionMessage> result = chatCompletion(conversation);
 
-		// Add messages and response to history
-		msg.stream().forEach(history::addMessage);
-		history.addMessage(result.getRight());
+			// Add messages and response to history
+			msg.stream().forEach(history::addMessage);
+			history.addMessage(result.getRight());
 
-		// Make sure history is of desired length
-		List<ChatCompletionMessageParam> tmp = new ArrayList<>(history.build().messages());
-		int toTrim = tmp.size() - maxHistoryLength;
-		if (toTrim > 0) {
-			tmp.subList(0, toTrim).clear();
-			history.messages(tmp);
+			// Make sure history is of desired length
+			List<ChatCompletionMessageParam> tmp = new ArrayList<>(history.build().messages());
+			int toTrim = tmp.size() - maxHistoryLength;
+			if (toTrim > 0) {
+				tmp.subList(0, toTrim).clear();
+				history.messages(tmp);
+			}
+
+			return buildCompletion(result);
+
+		} catch (Exception e) {
+			throw OpenAiUtil.toEndpointException(e);
 		}
-
-		return buildCompletion(result);
 	}
 
 	@Override
 	public ChatCompletion complete(ChatMessage prompt) throws EndpointException {
-		return complete(fromChatMessage(prompt));
+		try {
+			return complete(fromChatMessage(prompt));
+		} catch (Exception e) {
+			throw OpenAiUtil.toEndpointException(e);
+		}
 	}
 
 	/**
@@ -458,12 +469,16 @@ public class OpenAiChatService extends AbstractAgent {
 	 */
 	public ChatCompletion complete(List<ChatCompletionMessageParam> messages) throws EndpointException {
 
-		List<ChatCompletionMessageParam> conversation = new ArrayList<>(messages);
-		trimConversation(conversation);
+		try {
+			List<ChatCompletionMessageParam> conversation = new ArrayList<>(messages);
+			trimConversation(conversation);
 
-		Pair<FinishReason, ChatCompletionMessage> result = chatCompletion(conversation);
+			Pair<FinishReason, ChatCompletionMessage> result = chatCompletion(conversation);
 
-		return buildCompletion(result);
+			return buildCompletion(result);
+		} catch (Exception e) {
+			throw OpenAiUtil.toEndpointException(e);
+		}
 	}
 
 	/**
@@ -474,7 +489,7 @@ public class OpenAiChatService extends AbstractAgent {
 	 * list.
 	 */
 	private Pair<FinishReason, ChatCompletionMessage> chatCompletion(List<ChatCompletionMessageParam> messages)
-			throws EndpointException {
+			{
 
 		// This ensures we can track last call messages from defaultRequest, for testing
 		// reasons
@@ -507,9 +522,6 @@ public class OpenAiChatService extends AbstractAgent {
 						throw OpenAiUtil.toEndpointException(e); // Context too small anyway
 				} else
 					throw OpenAiUtil.toEndpointException(e); // Not a context length issue
-
-			} catch (Exception e) {
-				throw OpenAiUtil.toEndpointException(e);
 			}
 		} // Until call succeeds
 
@@ -577,14 +589,9 @@ public class OpenAiChatService extends AbstractAgent {
 
 	/**
 	 * Turns an ChatCompletionMessageParam returned by API into a ChatMessage.
-	 * 
-	 * @param msg
-	 * @return
-	 * @throws JsonProcessingException
-	 * @throws JsonMappingException
 	 */
 	@SuppressWarnings("deprecation")
-	private ChatMessage fromOpenAiMessage(ChatCompletionMessage msg) {
+	private ChatMessage fromOpenAiMessage(ChatCompletionMessage msg) throws JsonProcessingException {
 
 		if (msg.functionCall().isPresent()) {
 
@@ -593,15 +600,11 @@ public class OpenAiChatService extends AbstractAgent {
 			List<ToolCall> calls = new ArrayList<>();
 			ChatCompletionMessage.FunctionCall funCall = msg.functionCall().get();
 			ToolCall toolCall;
-			try {
-				toolCall = ToolCall.builder() //
-						.id(funCall.name()) //
-						.tool(toolMap.get(funCall.name())) //
-						.arguments(funCall.arguments()) //
-						.build();
-			} catch (JsonProcessingException e) {
-				throw new IllegalArgumentException(e);
-			}
+			toolCall = ToolCall.builder() //
+					.id(funCall.name()) //
+					.tool(toolMap.get(funCall.name())) //
+					.arguments(funCall.arguments()) //
+					.build();
 			calls.add(toolCall);
 			return new ChatMessage(Author.BOT, calls);
 		}
@@ -612,15 +615,11 @@ public class OpenAiChatService extends AbstractAgent {
 			List<ToolCall> calls = new ArrayList<>();
 			for (ChatCompletionMessageToolCall call : msg.toolCalls().get()) {
 				ToolCall toolCall;
-				try {
-					toolCall = ToolCall.builder() //
-							.id(call.id()) //
-							.tool(toolMap.get(call.function().name())) //
-							.arguments(call.function().arguments()) //
-							.build();
-				} catch (JsonProcessingException e) {
-					throw new IllegalArgumentException(e);
-				}
+				toolCall = ToolCall.builder() //
+						.id(call.id()) //
+						.tool(toolMap.get(call.function().name())) //
+						.arguments(call.function().arguments()) //
+						.build();
 				calls.add(toolCall);
 			}
 			return new ChatMessage(Author.BOT, calls);
@@ -652,11 +651,13 @@ public class OpenAiChatService extends AbstractAgent {
 	 * ChatCompletionMessageParam that is used for the OpenAi API. This is meant for
 	 * abstraction and easier interoperability of agents.
 	 * 
+	 * @throws IOException
+	 * 
 	 * @throws IllegalArgumentException if the message is not in a format supported
 	 *                                  directly by OpenAI API.
 	 */
 	@SuppressWarnings("deprecation")
-	private List<ChatCompletionMessageParam> fromChatMessage(ChatMessage msg) {
+	private List<ChatCompletionMessageParam> fromChatMessage(ChatMessage msg) throws IOException {
 
 		if (msg.hasToolCalls())
 			throw new IllegalArgumentException("Only API can generate tool/function calls.");
@@ -712,70 +713,66 @@ public class OpenAiChatService extends AbstractAgent {
 				));
 
 			} else if (part instanceof FilePart) {
-				try {
-					FilePart file = (FilePart) part;
+				FilePart file = (FilePart) part;
 
-					switch (file.getContentType()) {
-					case IMAGE:
-						// We ensure the image is Base64 encoded unless it is a remote file that we do
-						// not touch (for performance reasons)
-						// TODO: Scale down to the biggest supported image?
-						if (file.getUrl() != null) {
-							newParts.add(ChatCompletionContentPart.ofImageUrl( //
-									ChatCompletionContentPartImage.builder() //
-											.imageUrl( //
-													ChatCompletionContentPartImage.ImageUrl.builder()
-															.url(file.getUrl().toString()).build() //
-											).build() //
-							));
-						} else { // No image URL available
-							if (!(file instanceof Base64FilePart))
-								file = new Base64FilePart(file);
-
-							// TODO: Scale down to the biggest supported image? Now it depends on model.
-							newParts.add(ChatCompletionContentPart.ofImageUrl( //
-									ChatCompletionContentPartImage.builder() //
-											.imageUrl( //
-													ChatCompletionContentPartImage.ImageUrl.builder()
-															.url("data:" + file.getMimeType() + ";base64,"
-																	+ ((Base64FilePart) file).getEncodedContent())
-															.build() //
-											).build() //
-							));
-						}
-						break;
-					case AUDIO:
-						ChatCompletionContentPartInputAudio.InputAudio.Format frmt;
-						switch (file.getFormat().toLowerCase()) {
-						case "wav":
-							frmt = ChatCompletionContentPartInputAudio.InputAudio.Format.WAV;
-							break;
-						case "mp3":
-							frmt = ChatCompletionContentPartInputAudio.InputAudio.Format.MP3;
-							break;
-						default:
-							// TODO Maybe convert ?!
-							throw new IllegalArgumentException("Unsupported audio format: " + file.getFormat());
-						}
-
+				switch (file.getContentType()) {
+				case IMAGE:
+					// We ensure the image is Base64 encoded unless it is a remote file that we do
+					// not touch (for performance reasons)
+					// TODO: Scale down to the biggest supported image?
+					if (file.getUrl() != null) {
+						newParts.add(ChatCompletionContentPart.ofImageUrl( //
+								ChatCompletionContentPartImage.builder() //
+										.imageUrl( //
+												ChatCompletionContentPartImage.ImageUrl.builder()
+														.url(file.getUrl().toString()).build() //
+										).build() //
+						));
+					} else { // No image URL available
 						if (!(file instanceof Base64FilePart))
 							file = new Base64FilePart(file);
 
-						newParts.add(ChatCompletionContentPart.ofInputAudio( //
-								ChatCompletionContentPartInputAudio.builder() //
-										.inputAudio( //
-												ChatCompletionContentPartInputAudio.InputAudio.builder() //
-														.data(((Base64FilePart) file).getEncodedContent()) //
-														.format(frmt).build() //
+						// TODO: Scale down to the biggest supported image? Now it depends on model.
+						newParts.add(ChatCompletionContentPart.ofImageUrl( //
+								ChatCompletionContentPartImage.builder() //
+										.imageUrl( //
+												ChatCompletionContentPartImage.ImageUrl.builder()
+														.url("data:" + file.getMimeType() + ";base64,"
+																+ ((Base64FilePart) file).getEncodedContent())
+														.build() //
 										).build() //
 						));
+					}
+					break;
+				case AUDIO:
+					ChatCompletionContentPartInputAudio.InputAudio.Format frmt;
+					switch (file.getFormat().toLowerCase()) {
+					case "wav":
+						frmt = ChatCompletionContentPartInputAudio.InputAudio.Format.WAV;
+						break;
+					case "mp3":
+						frmt = ChatCompletionContentPartInputAudio.InputAudio.Format.MP3;
 						break;
 					default:
-						newParts.add(ChatCompletionContentPart.ofFile(toFile(file)));
-						break;
+						// TODO Maybe convert ?!
+						throw new IllegalArgumentException("Unsupported audio format: " + file.getFormat());
 					}
-				} catch (IOException e) {
-					throw new IllegalArgumentException("Error accessing file", e);
+
+					if (!(file instanceof Base64FilePart))
+						file = new Base64FilePart(file);
+
+					newParts.add(ChatCompletionContentPart.ofInputAudio( //
+							ChatCompletionContentPartInputAudio.builder() //
+									.inputAudio( //
+											ChatCompletionContentPartInputAudio.InputAudio.builder() //
+													.data(((Base64FilePart) file).getEncodedContent()) //
+													.format(frmt).build() //
+									).build() //
+					));
+					break;
+				default:
+					newParts.add(ChatCompletionContentPart.ofFile(toFile(file)));
+					break;
 				}
 			} else
 				throw new IllegalArgumentException("Unsupported message part: " + part.getClass().getName());
@@ -806,7 +803,8 @@ public class OpenAiChatService extends AbstractAgent {
 		return result;
 	}
 
-	private ChatCompletion buildCompletion(Pair<FinishReason, ChatCompletionMessage> result) {
+	private ChatCompletion buildCompletion(Pair<FinishReason, ChatCompletionMessage> result)
+			throws JsonProcessingException {
 		ChatMessage botMsg = fromOpenAiMessage(result.getRight());
 		if (botMsg.getRefusal() != null)
 			return new ChatCompletion(FinishReason.INAPPROPRIATE, botMsg);

@@ -16,8 +16,8 @@
 
 package io.github.mzattera.predictivepowers.examples;
 
-import io.github.mzattera.predictivepowers.openai.services.OpenAiCompletionService;
-import io.github.mzattera.predictivepowers.openai.services.OpenAiEndpoint;
+import io.github.mzattera.predictivepowers.openai.OpenAiCompletionService;
+import io.github.mzattera.predictivepowers.openai.OpenAiEndpoint;
 
 public class DefaultConfigurationExample {
 

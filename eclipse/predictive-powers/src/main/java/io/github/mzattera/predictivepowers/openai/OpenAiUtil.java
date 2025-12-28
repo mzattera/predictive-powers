@@ -17,7 +17,7 @@
 /**
  * 
  */
-package io.github.mzattera.predictivepowers.openai.util;
+package io.github.mzattera.predictivepowers.openai;
 
 import java.io.IOException;
 import java.net.URI;

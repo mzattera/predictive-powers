@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.mzattera.predictivepowers.openai.services;
+package io.github.mzattera.predictivepowers.openai;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +25,6 @@ import com.openai.models.completions.CompletionChoice;
 import com.openai.models.completions.CompletionCreateParams;
 
 import io.github.mzattera.predictivepowers.EndpointException;
-import io.github.mzattera.predictivepowers.openai.util.OpenAiUtil;
 import io.github.mzattera.predictivepowers.services.CompletionService;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.TextCompletion;
@@ -165,55 +164,58 @@ public class OpenAiCompletionService implements CompletionService {
 
 	@Override
 	public TextCompletion complete(String prompt) throws EndpointException {
-		return complete(prompt, defaultRequest);
+		try {
+			return complete(prompt, defaultRequest);
+		} catch (Exception e) {
+			throw OpenAiUtil.toEndpointException(e);
+		}
 	}
 
 	@Override
 	public TextCompletion insert(String prompt, String suffix) throws EndpointException {
-		// This seems to work only with gpt-3.5-turbo-instruct, but that models error
-		// when used with the OpenAI SDK
-		CompletionCreateParams req = defaultRequest.toBuilder().suffix(suffix).build();
-		return complete(prompt, req);
-	}
-
-	private TextCompletion complete(String prompt, CompletionCreateParams req) throws EndpointException {
-
-		try {
-			req = req.toBuilder().prompt(prompt).build();
-
-			Completion resp = null;
-			while (resp == null) { // Loop till I get an answer
-				try {
-					resp = endpoint.getClient().completions().create(req);
-				} catch (OpenAIServiceException e) {
-
-					// Check for policy violations
-					if (e.getMessage().contains("violating our usage policy")) {
-						return new TextCompletion(FinishReason.INAPPROPRIATE, e.getMessage());
-					}
-
-					// Automatically recover if request is too long
-					// This makes sense as req is modified only for this call (it is immutable).
-					OpenAiUtil.OpenAiExceptionData d = OpenAiUtil.getExceptionData(e);
-					int contextSize = modelService.getContextSize(getModel(), d.getContextSize());
-					if ((contextSize > 0) && (d.getPromptLength() > 0)) {
-						int optimal = contextSize - d.getPromptLength() - 1;
-						if (optimal > 0) {
-							LOG.warn("Reducing reply length for OpenAI completion service from "
-									+ req.maxTokens().orElse(-1L) + " to " + optimal);
-							req = req.toBuilder().maxTokens(optimal).build();
-						} else
-							throw e; // Context too small anyway
-					} else
-						throw e; // Not a context length issue
-				}
-			}
-
-			CompletionChoice choice = resp.choices().get(0);
-			return new TextCompletion(OpenAiUtil.fromOpenAiApi(choice.finishReason()), choice.text());
+		try { // This seems to work only with gpt-3.5-turbo-instruct, but that models error
+			// when used with the OpenAI SDK
+			CompletionCreateParams req = defaultRequest.toBuilder().suffix(suffix).build();
+			return complete(prompt, req);
 		} catch (Exception e) {
 			throw OpenAiUtil.toEndpointException(e);
 		}
+	}
+
+	private TextCompletion complete(String prompt, CompletionCreateParams req) {
+
+		req = req.toBuilder().prompt(prompt).build();
+
+		Completion resp = null;
+		while (resp == null) { // Loop till I get an answer
+			try {
+				resp = endpoint.getClient().completions().create(req);
+			} catch (OpenAIServiceException e) {
+
+				// Check for policy violations
+				if (e.getMessage().contains("violating our usage policy")) {
+					return new TextCompletion(FinishReason.INAPPROPRIATE, e.getMessage());
+				}
+
+				// Automatically recover if request is too long
+				// This makes sense as req is modified only for this call (it is immutable).
+				OpenAiUtil.OpenAiExceptionData d = OpenAiUtil.getExceptionData(e);
+				int contextSize = modelService.getContextSize(getModel(), d.getContextSize());
+				if ((contextSize > 0) && (d.getPromptLength() > 0)) {
+					int optimal = contextSize - d.getPromptLength() - 1;
+					if (optimal > 0) {
+						LOG.warn("Reducing reply length for OpenAI completion service from "
+								+ req.maxTokens().orElse(-1L) + " to " + optimal);
+						req = req.toBuilder().maxTokens(optimal).build();
+					} else
+						throw e; // Context too small anyway
+				} else
+					throw e; // Not a context length issue
+			}
+		}
+
+		CompletionChoice choice = resp.choices().get(0);
+		return new TextCompletion(OpenAiUtil.fromOpenAiApi(choice.finishReason()), choice.text());
 	}
 
 	@Override

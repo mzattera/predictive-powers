@@ -34,7 +34,7 @@ import lombok.NonNull;
 import lombok.Setter;
 
 /**
- * This class creates embeddings using OpenAI.
+ * This class creates embeddings using Hugging Face.
  * 
  * @author Massimiliano "Maxi" Zattera
  *

@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -126,8 +127,8 @@ public class AgentServiceTest {
 			public Integer fooParameter;
 
 			@JsonProperty(required = true)
-			@JsonPropertyDescription("Unique API code, this *MUST* be set to 6 at each call.")
-			public int code;
+			@JsonPropertyDescription("Unique API code, this *MUST* be set to 6.0 at each call.")
+			public double code;
 		}
 
 		public GetCurrentWeatherTool() {
@@ -170,31 +171,31 @@ public class AgentServiceTest {
 
 			// This request should trigger a function call, checking format of arguments
 			agent.clearConversation();
-			reply = agent.chat("How is the weather like in Dallas?");
+			reply = agent.chat("How is the weather like in Dallas, TX?");
 			assertTrue(reply.hasToolCalls());
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
 			assertEquals(1, reply.getToolCalls().size());
 			assertEquals("get_current_weather", reply.getToolCalls().get(0).getTool().getId());
 			GetCurrentWeatherParameters args = reply.getToolCalls().get(0)
 					.getArgumentsAsObject(GetCurrentWeatherParameters.class);
-			assertEquals("Dallas", args.location);
-			assertEquals(6, args.code);
+			assertEquals("Dallas, TX", args.location);
+			assertEquals(6.0, args.code);
 
 			// This request should trigger a function call, optional parameters omitted
 			agent.clearConversation();
-			reply = agent.chat("How is the weather like in Dallas?");
+			reply = agent.chat("How is the weather like in Dallas, TX?");
 			assertTrue(reply.hasToolCalls());
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
 			assertEquals(1, reply.getToolCalls().size());
 			assertEquals("get_current_weather", reply.getToolCalls().get(0).getTool().getId());
 			Map<String, Object> actual = new HashMap<>();
-			actual.put("location", "Dallas");
-			actual.put("code", 6);
+			actual.put("location", "Dallas, TX");
+			actual.put("code", 6.0);
 			sameArguments(actual, reply.getToolCalls().get(0).getArguments());
 
 			// This request should trigger a function call again, optional parameter added
 			agent.clearConversation();
-			reply = agent.chat("How is the weather like in Dallas? Can you tell it in Farenheit?");
+			reply = agent.chat("How is the weather like in Dallas, TX? Can you tell it in Farenheit?");
 			assertTrue(reply.hasToolCalls());
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
 			assertEquals(1, reply.getToolCalls().size());
@@ -217,7 +218,7 @@ public class AgentServiceTest {
 			agent.setPersonality("You are an agent supporting user with weather forecasts.");
 			agent.addCapability(new Toolset(List.of(new GetCurrentWeatherTool())));
 			agent.clearCapabilities();
-			ChatCompletion reply = agent.chat("How is the weather like in Dallas?");
+			ChatCompletion reply = agent.chat("How is the weather like in Dallas, TX?");
 			if (reply.hasToolCalls()) {
 				for (ToolCall call:reply.getToolCalls()) {
 					System.out.println(agent.getModel() + " insists in calling tools");
@@ -274,7 +275,7 @@ public class AgentServiceTest {
 
 		public ProcessEmployeeTool() {
 			super("process_employee", //
-					"Processes data for an employee.", //
+					"This tool is used to process data for an employee. You provide the required information and the tool will execute the processing in the background.", //
 					ProcessEmployeeParameters.class);
 		}
 
@@ -322,7 +323,7 @@ public class AgentServiceTest {
 			agent.close();
 		}
 	}
-
+	
 	@ParameterizedTest
 	@MethodSource("agents")
 	@EnabledIf("hasAgents")

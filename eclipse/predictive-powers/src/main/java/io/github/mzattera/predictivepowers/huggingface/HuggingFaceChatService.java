@@ -26,7 +26,6 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.openai.models.chat.completions.ChatCompletionMessageParam;
 
 import io.github.mzattera.hfinferenceapi.client.model.AssistantMessage;
 import io.github.mzattera.hfinferenceapi.client.model.ChatCompletionRequest;
@@ -336,8 +335,8 @@ public class HuggingFaceChatService extends AbstractAgent {
 	}
 
 	/**
-	 * Chats using a list of {@link ChatCompletionMessageParam}s, so individual
-	 * message parameters can be set.
+	 * Chats using a list of {@link Message}s, so individual message parameters can
+	 * be set.
 	 * 
 	 * Notice that this list will be processed accordingly to conversation limits
 	 * before being sent and that personality, if any, will be added on top.
@@ -381,11 +380,10 @@ public class HuggingFaceChatService extends AbstractAgent {
 	}
 
 	/**
-	 * Chats using a list of {@link ChatCompletionMessageParam}s, so individual
-	 * message parameters can be set. This method ignores and does not affect
-	 * conversation history, still, this list will be processed accordingly to
-	 * conversation limits before being sent and that personality, if any, will be
-	 * added on top.
+	 * Chats using a list of {@link Message}s, so individual message parameters can
+	 * be set. This method ignores and does not affect conversation history, still,
+	 * this list will be processed accordingly to conversation limits before being
+	 * sent and that personality, if any, will be added on top.
 	 */
 	public ChatCompletion complete(List<Message> messages) throws EndpointException {
 		try {

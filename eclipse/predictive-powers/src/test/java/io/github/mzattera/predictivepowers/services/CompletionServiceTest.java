@@ -37,7 +37,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.BadRequestException;
+import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.TestConfiguration;
+import io.github.mzattera.predictivepowers.ollama.services.OllamaCompletionService;
 import io.github.mzattera.predictivepowers.openai.OpenAiCompletionService;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.TextCompletion;
@@ -96,7 +98,7 @@ public class CompletionServiceTest {
 			assertTrue(p.getLeft() == s.getEndpoint());
 
 			if (s instanceof OpenAiCompletionService) {
-				assertThrows(UnsupportedOperationException.class, () -> s.setTopK(1));
+				assertThrows(EndpointException.class, () -> s.setTopK(1));
 			} else {
 				s.setTopK(1);
 				assertEquals(1, s.getTopK());
@@ -110,7 +112,7 @@ public class CompletionServiceTest {
 			assertNull(s.getTopP());
 
 			s.setTemperature(3.0);
-			assertEquals(3.0, s.getTemperature());
+			assertEquals(3.0, Math.round(s.getTemperature() * 10000.0) / 10000.0);
 			s.setTemperature(null);
 			assertNull(s.getTemperature());
 			s.setTemperature(1.0);
@@ -122,8 +124,12 @@ public class CompletionServiceTest {
 
 			// We assume there is no echo by default
 			assertFalse(s.getEcho());
-			s.setEcho(true);
-			assertTrue(s.getEcho());
+			if (s instanceof OllamaCompletionService) {
+				assertThrows(EndpointException.class, () -> s.setEcho(true));
+			} else {
+				s.setEcho(true);
+				assertTrue(s.getEcho());
+			}
 			s.setEcho(false);
 			assertFalse(s.getEcho());
 		}
@@ -135,7 +141,7 @@ public class CompletionServiceTest {
 	@EnabledIf("hasServices")
 	void test03(Pair<AiEndpoint, String> p) throws Exception {
 		try (CompletionService s = p.getLeft().getCompletionService(p.getRight())) {
-			if (s instanceof OpenAiCompletionService) {
+			if ((s instanceof OpenAiCompletionService) || (s instanceof OllamaCompletionService)) {
 				assertThrows(BadRequestException.class, () -> s.insert("Mount Everest is ", " meters high."));
 			} else {
 				TextCompletion resp = s.insert("Mount Everest is ", " meters high.");
@@ -151,18 +157,24 @@ public class CompletionServiceTest {
 	void test04(Pair<AiEndpoint, String> p) throws Exception {
 
 		try (CompletionService s = p.getLeft().getCompletionService(p.getRight())) {
+			TextCompletion resp = null;
+
 			if (s instanceof OpenAiCompletionService) {
-				assertThrows(UnsupportedOperationException.class, () -> s.setTopK(5));
+				assertThrows(EndpointException.class, () -> s.setTopK(5));
 			} else {
 				s.setTopK(5);
 			}
 			s.setTopP(null);
 			s.setTemperature(null);
 			s.setMaxNewTokens(40);
-			s.setEcho(true);
-			TextCompletion resp = s.complete("Name a mammal.");
-			assertTrue((resp.getFinishReason() == FinishReason.COMPLETED)
-					|| (resp.getFinishReason() == FinishReason.TRUNCATED));
+			if (s instanceof OllamaCompletionService) {
+				assertThrows(EndpointException.class, () -> s.setEcho(true));
+			} else {
+				s.setEcho(true);
+				resp = s.complete("Name a mammal.");
+				assertTrue((resp.getFinishReason() == FinishReason.COMPLETED)
+						|| (resp.getFinishReason() == FinishReason.TRUNCATED));
+			}
 
 			s.setTopK(null);
 			s.setTopP(0.2);
@@ -177,10 +189,14 @@ public class CompletionServiceTest {
 			s.setTopP(null);
 			s.setTemperature(20.0);
 			s.setMaxNewTokens(40);
-			s.setEcho(true);
-			resp = s.complete("Name a mammal.");
-			assertTrue((resp.getFinishReason() == FinishReason.COMPLETED)
-					|| (resp.getFinishReason() == FinishReason.TRUNCATED));
+			if (s instanceof OllamaCompletionService) {
+				assertThrows(EndpointException.class, () -> s.setEcho(true));
+			} else {
+				s.setEcho(true);
+				resp = s.complete("Name a mammal.");
+				assertTrue((resp.getFinishReason() == FinishReason.COMPLETED)
+						|| (resp.getFinishReason() == FinishReason.TRUNCATED));
+			}
 		}
 	}
 }

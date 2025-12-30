@@ -27,6 +27,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import io.github.mzattera.predictivepowers.google.GoogleEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.HuggingFaceEndpoint;
+import io.github.mzattera.predictivepowers.ollama.services.OllamaEndpoint;
 import io.github.mzattera.predictivepowers.openai.OpenAiChatService;
 import io.github.mzattera.predictivepowers.openai.OpenAiEndpoint;
 
@@ -35,11 +36,13 @@ import io.github.mzattera.predictivepowers.openai.OpenAiEndpoint;
  */
 public final class TestConfiguration {
 
-	public final static boolean TEST_GOOGLE_SERVICES = true;
+	public final static boolean TEST_GOOGLE_SERVICES = false;
 
-	public final static boolean TEST_HF_SERVICES = true;
+	public final static boolean TEST_HF_SERVICES = false;
 
-	public final static boolean TEST_OPENAI_SERVICES = true;
+	public final static boolean TEST_OPENAI_SERVICES = false;
+
+	public final static boolean TEST_OLLAMA_SERVICES = true;
 
 	public static final boolean TEST_KNOWLEDGE_BASE = false;
 
@@ -50,6 +53,8 @@ public final class TestConfiguration {
 			result.add(new OpenAiEndpoint());
 		if (TEST_HF_SERVICES)
 			result.add(new HuggingFaceEndpoint());
+		if (TEST_OLLAMA_SERVICES)
+			result.add(new OllamaEndpoint());
 
 		return result;
 	}
@@ -70,7 +75,7 @@ public final class TestConfiguration {
 		for (AiEndpoint ep : getAiEndpoints()) {
 			try {
 				result.add(new ImmutablePair<>(ep, ep.getEmbeddingService().getModel()));
-			} catch (UnsupportedOperationException e) {
+			} catch (EndpointException e) {
 				// Some endpoints might miss that
 			}
 		}
@@ -85,7 +90,7 @@ public final class TestConfiguration {
 		for (AiEndpoint ep : getAiEndpoints()) {
 			try {
 				result.add(new ImmutablePair<>(ep, ep.getCompletionService().getModel()));
-			} catch (UnsupportedOperationException e) {
+			} catch (EndpointException e) {
 				// Some endpoints might miss that
 			}
 		}
@@ -122,7 +127,7 @@ public final class TestConfiguration {
 				} else {
 					result.add(new ImmutablePair<>(ep, ep.getChatService().getModel()));
 				}
-			} catch (UnsupportedOperationException e) {
+			} catch (EndpointException e) {
 				// Some endpoints might miss that
 			}
 		}
@@ -137,7 +142,7 @@ public final class TestConfiguration {
 		for (AiEndpoint ep : getAiEndpoints()) {
 			try {
 				result.add(new ImmutablePair<>(ep, ep.getAgentService().getModel()));
-			} catch (UnsupportedOperationException e) {
+			} catch (EndpointException e) {
 				// Some endpoints might miss that
 			}
 		}
@@ -168,7 +173,7 @@ public final class TestConfiguration {
 				} else {
 					result.add(new ImmutablePair<>(ep, ep.getImageGenerationService().getModel()));
 				}
-			} catch (UnsupportedOperationException e) {
+			} catch (EndpointException e) {
 				// Some endpoints might miss that
 			}
 		}

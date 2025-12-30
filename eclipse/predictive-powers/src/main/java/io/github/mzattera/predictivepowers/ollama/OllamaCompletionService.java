@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.mzattera.predictivepowers.ollama.services;
+package io.github.mzattera.predictivepowers.ollama;
 
 import io.github.mzattera.ollama.client.model.GenerateRequest;
 import io.github.mzattera.ollama.client.model.GenerateResponse;

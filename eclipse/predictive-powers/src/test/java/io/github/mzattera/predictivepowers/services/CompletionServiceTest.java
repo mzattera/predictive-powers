@@ -39,7 +39,7 @@ import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.BadRequestException;
 import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.TestConfiguration;
-import io.github.mzattera.predictivepowers.ollama.services.OllamaCompletionService;
+import io.github.mzattera.predictivepowers.ollama.OllamaCompletionService;
 import io.github.mzattera.predictivepowers.openai.OpenAiCompletionService;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.TextCompletion;

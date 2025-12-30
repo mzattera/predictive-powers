@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.ollama.services;
+package io.github.mzattera.predictivepowers.ollama;
 
 import java.util.concurrent.TimeUnit;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import io.github.mzattera.ollama.ApiClient;
 import io.github.mzattera.ollama.client.api.OllamaApi;
@@ -30,7 +27,6 @@ import io.github.mzattera.predictivepowers.services.ImageGenerationService;
 import lombok.Getter;
 import lombok.NonNull;
 import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
 
 /**
  * This represents an Ollama API endpoint, from which services can be created.
@@ -55,9 +51,9 @@ public class OllamaEndpoint implements AiEndpoint {
 				.connectTimeout(10, TimeUnit.MINUTES).readTimeout(10, TimeUnit.MINUTES);
 
 		// Interceptors for debug
-		HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor(System.out::println);
-		loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
-		httpClientBuilder.addInterceptor(loggingInterceptor);
+//		HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor(System.out::println);
+//		loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+//		httpClientBuilder.addInterceptor(loggingInterceptor);
 
 		apiClient.setHttpClient(httpClientBuilder.build());
 		this.client = new OllamaApi(apiClient);

@@ -32,7 +32,6 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.condition.EnabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -101,7 +100,7 @@ public class AgentServiceTest {
 
 		return l.stream();
 	}
-	
+
 	static boolean hasAgents() {
 		return agents().findAny().isPresent();
 	}
@@ -220,9 +219,10 @@ public class AgentServiceTest {
 			agent.clearCapabilities();
 			ChatCompletion reply = agent.chat("How is the weather like in Dallas, TX?");
 			if (reply.hasToolCalls()) {
-				for (ToolCall call:reply.getToolCalls()) {
+				for (ToolCall call : reply.getToolCalls()) {
 					System.out.println(agent.getModel() + " insists in calling tools");
-					System.out.println(JsonSchema.JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(call));
+					System.out
+							.println(JsonSchema.JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(call));
 				}
 			}
 			assertFalse(reply.hasToolCalls());
@@ -323,7 +323,7 @@ public class AgentServiceTest {
 			agent.close();
 		}
 	}
-	
+
 	@ParameterizedTest
 	@MethodSource("agents")
 	@EnabledIf("hasAgents")

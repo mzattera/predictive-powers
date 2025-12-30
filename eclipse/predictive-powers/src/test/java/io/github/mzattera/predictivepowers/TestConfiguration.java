@@ -27,7 +27,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import io.github.mzattera.predictivepowers.google.GoogleEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.HuggingFaceEndpoint;
-import io.github.mzattera.predictivepowers.ollama.services.OllamaEndpoint;
+import io.github.mzattera.predictivepowers.ollama.OllamaEndpoint;
 import io.github.mzattera.predictivepowers.openai.OpenAiChatService;
 import io.github.mzattera.predictivepowers.openai.OpenAiEndpoint;
 

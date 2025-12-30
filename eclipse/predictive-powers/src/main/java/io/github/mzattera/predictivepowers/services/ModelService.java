@@ -23,6 +23,7 @@ import io.github.mzattera.predictivepowers.services.ModelService.ModelMetaData.M
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Singular;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -64,6 +65,7 @@ public interface ModelService extends AiService {
 	 */
 	@Getter
 	@SuperBuilder(toBuilder = true) // Allows creating a builder from an existing instance
+	@ToString
 	public class ModelMetaData {
 
 		/**

@@ -64,13 +64,11 @@ public class OpenAiModelService extends AbstractModelService {
 			TRANSCRIPTION, TRANSLATION, MODERATION, COMPLETIONS, VIDEOS
 		}
 
-		@Getter
 		@lombok.Builder.Default
-		private @NonNull CallType supportedCallType = CallType.NONE;
+		private final @NonNull CallType supportedCallType = CallType.NONE;
 
-		@Getter
 		@Singular("supportedApi")
-		private @NonNull List<SupportedApi> supportedApis;
+		private final @NonNull List<SupportedApi> supportedApis;
 
 		public boolean supportsApi(SupportedApi api) {
 			return supportedApis.contains(api);
@@ -92,7 +90,7 @@ public class OpenAiModelService extends AbstractModelService {
 		}
 
 		@lombok.Builder.Default
-		private boolean strictModeToolCall = true;
+		private final boolean strictModeToolCall = true;
 
 		/**
 		 * 

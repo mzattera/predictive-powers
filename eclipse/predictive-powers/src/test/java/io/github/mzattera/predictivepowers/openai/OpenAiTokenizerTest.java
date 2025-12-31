@@ -49,10 +49,6 @@ import com.openai.models.chat.completions.ChatCompletionMessageToolCall;
 import com.openai.models.chat.completions.ChatCompletionToolMessageParam;
 import com.openai.models.chat.completions.ChatCompletionUserMessageParam;
 
-import io.github.mzattera.predictivepowers.openai.OpenAiChatService;
-import io.github.mzattera.predictivepowers.openai.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.OpenAiModelService;
-import io.github.mzattera.predictivepowers.openai.OpenAiTokenizer;
 import io.github.mzattera.predictivepowers.openai.OpenAiModelService.OpenAiModelMetaData;
 import io.github.mzattera.predictivepowers.openai.OpenAiModelService.OpenAiModelMetaData.CallType;
 import io.github.mzattera.predictivepowers.openai.OpenAiModelService.OpenAiModelMetaData.SupportedApi;

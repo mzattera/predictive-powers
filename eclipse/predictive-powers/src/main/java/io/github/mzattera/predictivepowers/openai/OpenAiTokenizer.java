@@ -33,7 +33,7 @@ import com.openai.models.chat.completions.ChatCompletionMessageParam;
 import com.openai.models.chat.completions.ChatCompletionMessageToolCall;
 import com.openai.models.chat.completions.ChatCompletionTool;
 
-import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
+import io.github.mzattera.predictivepowers.services.ModelService.AbstractTokenizer;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
@@ -45,7 +45,7 @@ import lombok.ToString;
  *
  */
 @ToString
-public class OpenAiTokenizer implements Tokenizer {
+public class OpenAiTokenizer extends AbstractTokenizer {
 
 	@Getter
 	@NonNull

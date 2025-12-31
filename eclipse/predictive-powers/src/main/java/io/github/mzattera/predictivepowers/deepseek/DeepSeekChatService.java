@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.github.mzattera.predictivepowers.openai;
+package io.github.mzattera.predictivepowers.deepseek;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -28,41 +29,32 @@ import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.openai.core.JsonMissing;
-import com.openai.core.JsonValue;
-import com.openai.errors.OpenAIServiceException;
 import com.openai.models.FunctionDefinition;
 import com.openai.models.ResponseFormatJsonObject;
-import com.openai.models.ResponseFormatJsonSchema;
 import com.openai.models.chat.completions.ChatCompletion.Choice;
-import com.openai.models.chat.completions.ChatCompletionAudio;
 import com.openai.models.chat.completions.ChatCompletionContentPart;
-import com.openai.models.chat.completions.ChatCompletionContentPartImage;
-import com.openai.models.chat.completions.ChatCompletionContentPartInputAudio;
 import com.openai.models.chat.completions.ChatCompletionContentPartText;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
 import com.openai.models.chat.completions.ChatCompletionCreateParams.Builder;
-import com.openai.models.chat.completions.ChatCompletionCreateParams.Function;
 import com.openai.models.chat.completions.ChatCompletionCreateParams.ResponseFormat;
-import com.openai.models.chat.completions.ChatCompletionDeveloperMessageParam;
-import com.openai.models.chat.completions.ChatCompletionFunctionMessageParam;
 import com.openai.models.chat.completions.ChatCompletionMessage;
 import com.openai.models.chat.completions.ChatCompletionMessageParam;
 import com.openai.models.chat.completions.ChatCompletionMessageToolCall;
+import com.openai.models.chat.completions.ChatCompletionSystemMessageParam;
 import com.openai.models.chat.completions.ChatCompletionTool;
 import com.openai.models.chat.completions.ChatCompletionToolMessageParam;
 import com.openai.models.chat.completions.ChatCompletionUserMessageParam;
 
 import io.github.mzattera.predictivepowers.EndpointException;
-import io.github.mzattera.predictivepowers.openai.OpenAiModelService.OpenAiModelMetaData.CallType;
+import io.github.mzattera.predictivepowers.openai.OpenAiUtil;
 import io.github.mzattera.predictivepowers.services.AbstractAgent;
 import io.github.mzattera.predictivepowers.services.Capability.ToolAddedEvent;
 import io.github.mzattera.predictivepowers.services.Capability.ToolRemovedEvent;
+import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import io.github.mzattera.predictivepowers.services.Tool;
-import io.github.mzattera.predictivepowers.services.messages.Base64FilePart;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
-import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.JsonSchema;
 import io.github.mzattera.predictivepowers.services.messages.MessagePart;
@@ -74,26 +66,21 @@ import lombok.NonNull;
 import lombok.Setter;
 
 /**
- * OpenAI chat service.
- * 
- * This is currently implemented using Chat Completions API.
- * 
- * The service supports both function and tool calls transparently (it will
- * handle either, based on which model is used).
+ * DeepSeek chat service using their chat completion API.
  * 
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public class OpenAiChatService extends AbstractAgent {
+public class DeepSeekChatService extends AbstractAgent {
 
 	// TODO add "slot filling" capabilities: fill a slot in the prompt based on
 	// values from a Map this is done partially
 
-	private final static Logger LOG = LoggerFactory.getLogger(OpenAiChatService.class);
+	private final static Logger LOG = LoggerFactory.getLogger(DeepSeekChatService.class);
 
-	public static final String DEFAULT_MODEL = "gpt-4o";
+	public static final String DEFAULT_MODEL = "deepseek-chat";
 
-	private final OpenAiModelService modelService;
+	private final DeepSeekModelService modelService;
 
 	@Getter
 	@Setter
@@ -128,19 +115,19 @@ public class OpenAiChatService extends AbstractAgent {
 		return (maxConversationTokens != Integer.MAX_VALUE);
 	}
 
-	protected OpenAiChatService(@NonNull OpenAiEndpoint ep) {
+	protected DeepSeekChatService(@NonNull DeepSeekEndpoint ep) {
 		this(UUID.randomUUID().toString(), ep, DEFAULT_MODEL);
 	}
 
-	protected OpenAiChatService(@NonNull OpenAiEndpoint ep, @NonNull String model) {
+	protected DeepSeekChatService(@NonNull DeepSeekEndpoint ep, @NonNull String model) {
 		this(UUID.randomUUID().toString(), ep, model);
 	}
 
-	protected OpenAiChatService(@NonNull String id, @NonNull OpenAiEndpoint ep) {
+	protected DeepSeekChatService(@NonNull String id, @NonNull DeepSeekEndpoint ep) {
 		this(id, ep, DEFAULT_MODEL);
 	}
 
-	protected OpenAiChatService(@NonNull String id, @NonNull OpenAiEndpoint ep, @NonNull String model) {
+	protected DeepSeekChatService(@NonNull String id, @NonNull DeepSeekEndpoint ep, @NonNull String model) {
 		this.id = id;
 		this.endpoint = ep;
 		this.defaultRequest = ChatCompletionCreateParams.builder() //
@@ -151,7 +138,7 @@ public class OpenAiChatService extends AbstractAgent {
 
 	@Getter
 	@NonNull
-	protected final OpenAiEndpoint endpoint;
+	protected final DeepSeekEndpoint endpoint;
 
 	@Override
 	public String getModel() {
@@ -231,12 +218,18 @@ public class OpenAiChatService extends AbstractAgent {
 		Builder b = defaultRequest.toBuilder().messages(new ArrayList<>());
 		if (personality != null)
 			// must add a system message on top with personality
-			b.addMessage(ChatCompletionMessageParam.ofDeveloper( //
-					ChatCompletionDeveloperMessageParam.builder() //
+			b.addMessage(ChatCompletionMessageParam.ofSystem( //
+					ChatCompletionSystemMessageParam.builder() //
 							.content(personality).build() //
 			));
 
-		return modelService.getTokenizer(getModel()).count(b.build());
+		try {
+			return modelService.getTokenizer(getModel(), DeepSeekModelService.FALLBACK_TOKENIZER)
+					.countAsJson(defaultRequest);
+		} catch (JsonProcessingException e) {
+			LOG.warn("Error serializing request: " + defaultRequest);
+			return 0;
+		}
 	}
 
 	@Getter
@@ -254,31 +247,11 @@ public class OpenAiChatService extends AbstractAgent {
 		if (responseFormat == null) {
 			defaultRequest = defaultRequest.toBuilder().responseFormat(JsonMissing.of()).build();
 			return;
+		} else { // Only supports setting this flag; still, you shoudl provide an example of the
+					// output format in the prompt
+			defaultRequest = defaultRequest.toBuilder()
+					.responseFormat(ResponseFormat.ofJsonObject(ResponseFormatJsonObject.builder().build())).build();
 		}
-
-		ChatCompletionCreateParams.ResponseFormat format = null;
-		if (modelService.supportsStructuredOutput(getModel(), false)) { // guard
-			format = ResponseFormat.ofJsonSchema( //
-					ResponseFormatJsonSchema.builder() //
-							.jsonSchema( //
-									ResponseFormatJsonSchema.JsonSchema.builder() //
-											.name(responseFormat.getTitle() == null ? "NoName"
-													: responseFormat.getTitle().replaceAll("[^a-zA-Z0-9_-]", "")) //
-											.description(responseFormat.getDescription() == null ? "No description"
-													: responseFormat.getDescription()) //
-											.schema(JsonValue.from(responseFormat.asMap(true))) //
-											.build() //
-							).build());
-
-			System.out.println("*** " + getModel() + " -> structured");
-
-		} else {
-			format = ResponseFormat.ofJsonObject(ResponseFormatJsonObject.builder().build());
-
-			System.out.println("*** " + getModel() + " -> JSON");
-		}
-
-		defaultRequest = defaultRequest.toBuilder().responseFormat(format).build();
 	}
 
 	// Because of how SDK is built, we cannot have a List<> containing both request
@@ -321,11 +294,11 @@ public class OpenAiChatService extends AbstractAgent {
 
 	@Getter
 	@Setter
-	private String name = "OpenAI Chat " + getId();
+	private String name = "DeepSeek Chat " + getId();
 
 	@Getter
 	@Setter
-	private String description = "An agent instance using OpenAI Chat Completions API";
+	private String description = "An agent instance using DeepSeek Chat Completions API";
 
 	/**
 	 * This is called when a new tool is made available.
@@ -353,36 +326,14 @@ public class OpenAiChatService extends AbstractAgent {
 	 * @throws UnsupportedOperationException if the model does not support function
 	 *                                       calls.
 	 */
-	@SuppressWarnings({ "unchecked", "deprecation" })
+	@SuppressWarnings({ "unchecked" })
 	private void setDefaultTools() {
 
 		Builder b = defaultRequest.toBuilder();
 		if (toolMap.size() == 0) { // No tools / functions used
-			b.functions(JsonMissing.of());
 			b.tools(JsonMissing.of());
-			defaultRequest = b.build();
-			return;
-		}
-
-		// Fallback in case we do not have model meta
-		CallType type = modelService.getSupportedCallType(getModel(), CallType.TOOLS);
-		boolean strict = modelService.supportsStrictModeToolCall(getModel(), false);
-
-		List<Tool> tools = new ArrayList<>(toolMap.values());
-		switch (type) {
-		case FUNCTIONS:
-			List<Function> funcs = new ArrayList<>(tools.size());
-			for (Tool t : tools) {
-				Function f = Function.builder() //
-						.name(t.getId()) //
-						.description(t.getDescription()) //
-						.parameters(OpenAiUtil.toFunctionParameters(t.getParameters(), false)).build();
-				funcs.add(f);
-			}
-			b.functions(funcs);
-			b.tools(JsonMissing.of());
-			break;
-		case TOOLS:
+		} else {
+			List<Tool> tools = new ArrayList<>(toolMap.values());
 			List<ChatCompletionTool> tls = new ArrayList<>(tools.size());
 			for (Tool t : tools) {
 				ChatCompletionTool f = ChatCompletionTool.builder() //
@@ -390,16 +341,12 @@ public class OpenAiChatService extends AbstractAgent {
 								FunctionDefinition.builder() //
 										.name(t.getId()) //
 										.description(t.getDescription()) //
-										.strict(strict)
-										.parameters(OpenAiUtil.toFunctionParameters(t.getParameters(), strict)).build() //
+										.strict(false)
+										.parameters(OpenAiUtil.toFunctionParameters(t.getParameters(), false)).build() //
 						).build();
 				tls.add(f);
 			}
-			b.functions(JsonMissing.of());
 			b.tools(tls);
-			break;
-		default:
-			throw new UnsupportedOperationException("Current model does not support function calling.");
 		}
 
 		defaultRequest = b.build();
@@ -488,43 +435,14 @@ public class OpenAiChatService extends AbstractAgent {
 	 * personality is NOT considered, but can be injected as first message in the
 	 * list.
 	 */
-	private Pair<FinishReason, ChatCompletionMessage> chatCompletion(List<ChatCompletionMessageParam> messages)
-			{
+	private Pair<FinishReason, ChatCompletionMessage> chatCompletion(List<ChatCompletionMessageParam> messages) {
 
 		// This ensures we can track last call messages from defaultRequest, for testing
 		// reasons
 		defaultRequest = defaultRequest.toBuilder().messages(messages).build();
 		ChatCompletionCreateParams req = defaultRequest;
 
-		com.openai.models.chat.completions.ChatCompletion resp = null;
-		while (resp == null) {
-			try {
-				resp = endpoint.getClient().chat().completions().create(req);
-			} catch (OpenAIServiceException e) {
-
-				// Check for policy violations
-				if (e.getMessage().contains("violating our usage policy")) {
-					return new ImmutablePair<>(FinishReason.INAPPROPRIATE,
-							ChatCompletionMessage.builder().content(e.getMessage()).build());
-				}
-
-				// Automatically recover if request is too long
-				// This makes sense as req is modified only for this call (it is immutable).
-				OpenAiUtil.OpenAiExceptionData d = OpenAiUtil.getExceptionData(e);
-				int contextSize = modelService.getContextSize(getModel(), d.getContextSize());
-				if ((contextSize > 0) && (d.getPromptLength() > 0)) {
-					int optimal = contextSize - d.getPromptLength() - 1;
-					if (optimal > 0) {
-						LOG.warn("Reducing reply length for OpenAI completion service from "
-								+ req.maxCompletionTokens().orElse(-1L) + " to " + optimal);
-						req = req.toBuilder().maxCompletionTokens(optimal).build();
-					} else
-						throw OpenAiUtil.toEndpointException(e); // Context too small anyway
-				} else
-					throw OpenAiUtil.toEndpointException(e); // Not a context length issue
-			}
-		} // Until call succeeds
-
+		com.openai.models.chat.completions.ChatCompletion resp = endpoint.getClient().chat().completions().create(req);
 		Choice choice = resp.choices().get(0);
 		return new ImmutablePair<>(OpenAiUtil.fromOpenAiApi(choice.finishReason()), choice.message());
 	}
@@ -537,10 +455,12 @@ public class OpenAiChatService extends AbstractAgent {
 	 * Notice the personality is always and automatically added to the trimmed list
 	 * (if set).
 	 * 
+	 * @throws JsonProcessingException
+	 * 
 	 * @throws IllegalArgumentException if no message can be added because of
 	 *                                  context size limitations.
 	 */
-	private void trimConversation(List<ChatCompletionMessageParam> messages) {
+	private void trimConversation(List<ChatCompletionMessageParam> messages) throws JsonProcessingException {
 
 		// Remove tool call results left on top without corresponding calls, or this
 		// will cause HTTP 400 error for tools (it does not create issues for functions)
@@ -561,13 +481,13 @@ public class OpenAiChatService extends AbstractAgent {
 
 		// Trims down the list of messages accordingly to given limits.
 		int steps = 0;
-		OpenAiTokenizer counter = modelService.getTokenizer(getModel());
+		Tokenizer counter = modelService.getTokenizer(getModel(), DeepSeekModelService.FALLBACK_TOKENIZER);
 		for (int i = messages.size() - 1; i >= 0; --i) {
 			if (steps >= maxConversationSteps)
 				break;
 
 			if (isMaxConversationTokensSet()) { // We do not invoke the tokenizer if we do not have to
-				int tok = counter.count(messages.subList(i, messages.size()));
+				int tok = counter.countAsJson(messages.subList(i, messages.size()));
 				if (tok > maxConversationTokens) {
 					break;
 				}
@@ -581,8 +501,8 @@ public class OpenAiChatService extends AbstractAgent {
 
 		if (personality != null)
 			// must add a system message on top with personality
-			messages.add(0, ChatCompletionMessageParam.ofDeveloper( //
-					ChatCompletionDeveloperMessageParam.builder() //
+			messages.add(0, ChatCompletionMessageParam.ofSystem( //
+					ChatCompletionSystemMessageParam.builder() //
 							.content(personality).build() //
 			));
 	}
@@ -590,24 +510,9 @@ public class OpenAiChatService extends AbstractAgent {
 	/**
 	 * Turns an ChatCompletionMessageParam returned by API into a ChatMessage.
 	 */
-	@SuppressWarnings("deprecation")
+	@SuppressWarnings("unchecked")
 	private ChatMessage fromOpenAiMessage(ChatCompletionMessage msg) throws JsonProcessingException {
 
-		if (msg.functionCall().isPresent()) {
-
-			// The model returned a function call, transparently translate it into a message
-			// with a single tool call
-			List<ToolCall> calls = new ArrayList<>();
-			ChatCompletionMessage.FunctionCall funCall = msg.functionCall().get();
-			ToolCall toolCall;
-			toolCall = ToolCall.builder() //
-					.id(funCall.name()) //
-					.tool(toolMap.get(funCall.name())) //
-					.arguments(funCall.arguments()) //
-					.build();
-			calls.add(toolCall);
-			return new ChatMessage(Author.BOT, calls);
-		}
 		if (msg.toolCalls().isPresent()) {
 
 			// The model returned a set of tool calls, transparently translate that into a
@@ -630,18 +535,14 @@ public class OpenAiChatService extends AbstractAgent {
 			// Normal (text) message
 			parts.add(new TextPart(msg.content().get()));
 		}
-		if (msg.audio().isPresent()) { // Agent returned audio response, let's add it as a new part
-			ChatCompletionAudio audio = msg.audio().get();
-			parts.add(new Base64FilePart(audio.data(), audio.id(), "audio"));
-			String transcript = audio.transcript();
-			if ((transcript != null) && !transcript.isBlank()) {
-				parts.add(new TextPart(transcript));
-			}
-		}
-
 		ChatMessage result = new ChatMessage(Author.BOT, parts);
 		if (msg.refusal().isPresent()) {
 			result.setRefusal(msg.refusal().get());
+		}
+		if (msg._additionalProperties().containsKey("reasoning_content")) {
+			Optional<String> reasoning = msg._additionalProperties().get("reasoning_content").asString();
+			if (reasoning.isPresent())
+				result.setReasoning(reasoning.get());
 		}
 		return result;
 	}
@@ -656,7 +557,6 @@ public class OpenAiChatService extends AbstractAgent {
 	 * @throws IllegalArgumentException if the message is not in a format supported
 	 *                                  directly by OpenAI API.
 	 */
-	@SuppressWarnings("deprecation")
 	private List<ChatCompletionMessageParam> fromChatMessage(ChatMessage msg) throws IOException {
 
 		if (msg.hasToolCalls())
@@ -665,117 +565,32 @@ public class OpenAiChatService extends AbstractAgent {
 		List<ChatCompletionMessageParam> result = new ArrayList<>();
 
 		if (msg.hasToolCallResults()) {
-
-			// Transparently handles function and tool calls
-
 			List<ToolCallResult> results = msg.getToolCallResults();
 			if (results.size() != msg.getParts().size())
 				throw new IllegalArgumentException(
 						"Tool/function call results cannot contain other parts in the message.");
 
-			switch (modelService.getSupportedCallType(getModel())) {
-			case FUNCTIONS:
-				if (results.size() != 1)
-					throw new IllegalArgumentException("Model supports only single function calls.");
-
-				result.add(ChatCompletionMessageParam.ofFunction( //
-						ChatCompletionFunctionMessageParam.builder() //
-								.content(results.get(0).getResult().toString()) //
-								.name(results.get(0).getToolId()).build() //
+			for (ToolCallResult r : results) {
+				result.add(ChatCompletionMessageParam.ofTool( //
+						ChatCompletionToolMessageParam.builder() //
+								.content(r.getResult().toString()) //
+								.toolCallId(r.getToolCallId()).build() //
 				));
-				break;
-			case TOOLS:
-				for (ToolCallResult r : results) {
-					result.add(ChatCompletionMessageParam.ofTool( //
-							ChatCompletionToolMessageParam.builder() //
-									.content(r.getResult().toString()) //
-									.toolCallId(r.getToolCallId()).build() //
-					));
-				}
-				break;
-			default:
-				throw new IllegalArgumentException("Model " + getModel() + " does not support function calling.");
 			}
 
 			return result;
 		}
 
-		// Check remaining parts are images or text.
-		// API will fail if the model does not support them eventually (e.g. using an
-		// image for a model that is not a vision model).
-
 		List<ChatCompletionContentPart> newParts = new ArrayList<>(msg.getParts().size());
 		for (MessagePart part : msg.getParts()) {
-
 			if (part instanceof TextPart) {
 				newParts.add(ChatCompletionContentPart.ofText( //
 						ChatCompletionContentPartText.builder().text(part.getContent()).build() //
 				));
 
-			} else if (part instanceof FilePart) {
-				FilePart file = (FilePart) part;
-
-				switch (file.getContentType()) {
-				case IMAGE:
-					// We ensure the image is Base64 encoded unless it is a remote file that we do
-					// not touch (for performance reasons)
-					// TODO: Scale down to the biggest supported image?
-					if (file.getUrl() != null) {
-						newParts.add(ChatCompletionContentPart.ofImageUrl( //
-								ChatCompletionContentPartImage.builder() //
-										.imageUrl( //
-												ChatCompletionContentPartImage.ImageUrl.builder()
-														.url(file.getUrl().toString()).build() //
-										).build() //
-						));
-					} else { // No image URL available
-						if (!(file instanceof Base64FilePart))
-							file = new Base64FilePart(file);
-
-						// TODO: Scale down to the biggest supported image? Now it depends on model.
-						newParts.add(ChatCompletionContentPart.ofImageUrl( //
-								ChatCompletionContentPartImage.builder() //
-										.imageUrl( //
-												ChatCompletionContentPartImage.ImageUrl.builder()
-														.url("data:" + file.getMimeType() + ";base64,"
-																+ ((Base64FilePart) file).getEncodedContent())
-														.build() //
-										).build() //
-						));
-					}
-					break;
-				case AUDIO:
-					ChatCompletionContentPartInputAudio.InputAudio.Format frmt;
-					switch (file.getFormat().toLowerCase()) {
-					case "wav":
-						frmt = ChatCompletionContentPartInputAudio.InputAudio.Format.WAV;
-						break;
-					case "mp3":
-						frmt = ChatCompletionContentPartInputAudio.InputAudio.Format.MP3;
-						break;
-					default:
-						// TODO Maybe convert ?!
-						throw new IllegalArgumentException("Unsupported audio format: " + file.getFormat());
-					}
-
-					if (!(file instanceof Base64FilePart))
-						file = new Base64FilePart(file);
-
-					newParts.add(ChatCompletionContentPart.ofInputAudio( //
-							ChatCompletionContentPartInputAudio.builder() //
-									.inputAudio( //
-											ChatCompletionContentPartInputAudio.InputAudio.builder() //
-													.data(((Base64FilePart) file).getEncodedContent()) //
-													.format(frmt).build() //
-									).build() //
-					));
-					break;
-				default:
-					newParts.add(ChatCompletionContentPart.ofFile(toFile(file)));
-					break;
-				}
-			} else
+			} else {
 				throw new IllegalArgumentException("Unsupported message part: " + part.getClass().getName());
+			}
 		} // for each part
 
 		// Now builds the message out of its parts
@@ -792,8 +607,8 @@ public class OpenAiChatService extends AbstractAgent {
 					.collect(Collectors.toList());
 			if (txtParts.size() != newParts.size())
 				throw new IllegalArgumentException("DEVELOPER messages can only contain text");
-			result.add(ChatCompletionMessageParam.ofDeveloper( //
-					ChatCompletionDeveloperMessageParam.builder().contentOfArrayOfContentParts(txtParts).build() //
+			result.add(ChatCompletionMessageParam.ofSystem( //
+					ChatCompletionSystemMessageParam.builder().contentOfArrayOfContentParts(txtParts).build() //
 			));
 			break;
 		default:
@@ -810,27 +625,6 @@ public class OpenAiChatService extends AbstractAgent {
 			return new ChatCompletion(FinishReason.INAPPROPRIATE, botMsg);
 		else
 			return new ChatCompletion(result.getLeft(), botMsg);
-	}
-
-	private static ChatCompletionContentPart.File toFile(FilePart file) throws IOException {
-		if (file instanceof OpenAiFilePart) {
-			return ChatCompletionContentPart.File.builder() //
-					.file(ChatCompletionContentPart.File.FileObject.builder() //
-							.filename(file.getName()) //
-							.fileId(((OpenAiFilePart) file).getFileId()).build() //
-					).build();
-		} else {
-			if (!(file instanceof Base64FilePart))
-				file = new Base64FilePart(file);
-
-			return ChatCompletionContentPart.File.builder() //
-					.file(ChatCompletionContentPart.File.FileObject.builder() //
-							.filename(file.getName()) //
-							.fileData("data:" + file.getMimeType() + ";base64,"
-									+ ((Base64FilePart) file).getEncodedContent())
-							.build() //
-					).build();
-		}
 	}
 
 	@Override

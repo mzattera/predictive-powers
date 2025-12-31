@@ -67,7 +67,7 @@ public class HuggingFaceModelService extends AbstractModelService {
 	@RequiredArgsConstructor
 //	@AllArgsConstructor
 	@ToString
-	public static class HuggingFaceTokenizer implements Tokenizer {
+	public static class HuggingFaceTokenizer extends AbstractTokenizer {
 
 		@NonNull
 		private final ai.djl.huggingface.tokenizers.HuggingFaceTokenizer tokenizer;

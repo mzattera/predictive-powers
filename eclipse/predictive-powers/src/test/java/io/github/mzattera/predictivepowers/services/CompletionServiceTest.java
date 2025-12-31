@@ -77,6 +77,8 @@ public class CompletionServiceTest {
 	@EnabledIf("hasServices")
 	void test01(Pair<AiEndpoint, String> p) throws Exception {
 		try (CompletionService s = p.getLeft().getCompletionService(p.getRight())) {
+			s.setTemperature(0.0);
+
 			TextCompletion resp = s.complete("Name a mammal.");
 			assertTrue((resp.getFinishReason() == FinishReason.COMPLETED)
 					|| (resp.getFinishReason() == FinishReason.TRUNCATED));
@@ -89,6 +91,8 @@ public class CompletionServiceTest {
 	@EnabledIf("hasServices")
 	void test02(Pair<AiEndpoint, String> p) throws Exception {
 		try (CompletionService s = p.getLeft().getCompletionService(p.getRight())) {
+			s.setTemperature(0.0);
+
 			String m = s.getModel();
 			assertNotNull(m);
 			s.setModel("pippo");
@@ -141,6 +145,8 @@ public class CompletionServiceTest {
 	@EnabledIf("hasServices")
 	void test03(Pair<AiEndpoint, String> p) throws Exception {
 		try (CompletionService s = p.getLeft().getCompletionService(p.getRight())) {
+			s.setTemperature(0.0);
+
 			if ((s instanceof OpenAiCompletionService) || (s instanceof OllamaCompletionService)) {
 				assertThrows(BadRequestException.class, () -> s.insert("Mount Everest is ", " meters high."));
 			} else {
@@ -157,6 +163,8 @@ public class CompletionServiceTest {
 	void test04(Pair<AiEndpoint, String> p) throws Exception {
 
 		try (CompletionService s = p.getLeft().getCompletionService(p.getRight())) {
+			s.setTemperature(0.0);
+
 			TextCompletion resp = null;
 
 			if (s instanceof OpenAiCompletionService) {

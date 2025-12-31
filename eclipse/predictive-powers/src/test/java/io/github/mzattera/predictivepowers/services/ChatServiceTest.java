@@ -37,7 +37,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import io.github.mzattera.predictivepowers.AiEndpoint;
+import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.TestConfiguration;
+import io.github.mzattera.predictivepowers.deepseek.DeepSeekChatService;
 import io.github.mzattera.predictivepowers.huggingface.HuggingFaceChatService;
 import io.github.mzattera.predictivepowers.openai.OpenAiChatService;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
@@ -97,6 +99,8 @@ public class ChatServiceTest {
 	@EnabledIf("hasServices")
 	public void testBasis(Pair<AiEndpoint, String> p) throws Exception {
 		try (ChatService s = p.getLeft().getChatService(p.getRight())) {
+			s.setTemperature(0.0);
+			
 			ChatCompletion resp = s.chat("Hi, my name is Maxi.");
 			assertTrue(resp.getFinishReason() == FinishReason.COMPLETED);
 			resp = s.chat("Can you please repeat my name?");
@@ -117,6 +121,8 @@ public class ChatServiceTest {
 	@EnabledIf("hasServices")
 	public void testGetSet(Pair<AiEndpoint, String> p) throws Exception {
 		try (ChatService s = p.getLeft().getChatService(p.getRight())) {
+			s.setTemperature(0.0);
+			
 			String m = s.getModel();
 			assertNotNull(m);
 			s.setModel("pippo");
@@ -137,8 +143,8 @@ public class ChatServiceTest {
 //			s.setMaxConversationSteps(null);
 //			assertNull(s.getMaxConversationSteps());
 
-			if ((s instanceof OpenAiChatService) || (s instanceof HuggingFaceChatService)) {
-				assertThrows(UnsupportedOperationException.class, () -> s.setTopK(1));
+			if ((s instanceof OpenAiChatService) || (s instanceof HuggingFaceChatService) || (s instanceof DeepSeekChatService)) {
+				assertThrows(EndpointException.class, () -> s.setTopK(1));
 			} else {
 				s.setTopK(1);
 				assertEquals(1, s.getTopK());
@@ -178,11 +184,13 @@ public class ChatServiceTest {
 	public void testParams(Pair<AiEndpoint, String> p) throws Exception {
 
 		try (ChatService s = p.getLeft().getChatService(p.getRight())) {
+			s.setTemperature(0.0);
+			
 
 			ChatCompletion resp = null;
 
-			if ((s instanceof OpenAiChatService) || (s instanceof HuggingFaceChatService)) {
-				assertThrows(UnsupportedOperationException.class, () -> s.setTopK(5));
+			if ((s instanceof OpenAiChatService) || (s instanceof HuggingFaceChatService) || (s instanceof DeepSeekChatService)) {
+				assertThrows(EndpointException.class, () -> s.setTopK(5));
 			} else {
 				s.setTopK(5);
 			}
@@ -218,7 +226,8 @@ public class ChatServiceTest {
 	public void testImgUrls(Pair<AiEndpoint, String> p) throws Exception {
 
 		try (ChatService svc = p.getLeft().getChatService(p.getRight())) {
-
+			svc.setTemperature(0.0);
+			
 			// Uses an image as input.
 			ChatMessage msg = new ChatMessage("Is there any grass in this image?");
 			msg.addPart(FilePart.fromUrl(
@@ -245,7 +254,8 @@ public class ChatServiceTest {
 	public void testImgFiles(Pair<AiEndpoint, String> p) throws Exception {
 
 		try (ChatService svc = p.getLeft().getChatService(p.getRight())) {
-
+			svc.setTemperature(0.0);
+			
 			// Uses an image as input.
 			ChatMessage msg = new ChatMessage("Is there any grass in this image?");
 			msg.addPart(new FilePart(ResourceUtil.getResourceFile("Gfp-wisconsin-madison-the-nature-boardwalk-LOW.png"),

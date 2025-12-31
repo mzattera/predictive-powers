@@ -24,6 +24,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -77,7 +79,7 @@ import lombok.Setter;
  */
 public class HuggingFaceChatService extends AbstractAgent {
 
-//	private final static Logger LOG = LoggerFactory.getLogger(HuggingFaceChatService.class);
+	private final static Logger LOG = LoggerFactory.getLogger(HuggingFaceChatService.class);
 
 	public static final String DEFAULT_MODEL = "openai/gpt-oss-120b";
 
@@ -168,7 +170,7 @@ public class HuggingFaceChatService extends AbstractAgent {
 	@Override
 	public void setTopK(Integer topK) {
 		if (topK != null)
-			throw new UnsupportedOperationException();
+			throw new EndpointException(new UnsupportedOperationException());
 	}
 
 	@Override
@@ -218,13 +220,12 @@ public class HuggingFaceChatService extends AbstractAgent {
 			// must add a system message on top with personality
 			defaultRequest.addMessagesItem(new DeveloperMessage().content(new MessageContent(personality)));
 
-		String json;
 		try {
-			json = JsonSchema.JSON_MAPPER.writer().writeValueAsString(defaultRequest);
+			return modelService.getTokenizer(getModel(), HuggingFaceModelService.FALLBACK_TOKENIZER).countAsJson(defaultRequest);
 		} catch (JsonProcessingException e) {
-			throw HuggingFaceUtil.toEndpointException(e);
+			LOG.warn("Error serializing request: " + defaultRequest);
+			return 0;
 		}
-		return modelService.getTokenizer(getModel(), HuggingFaceModelService.FALLBACK_TOKENIZER).count(json);
 	}
 
 	@Getter
@@ -451,8 +452,7 @@ public class HuggingFaceChatService extends AbstractAgent {
 				break;
 
 			if (isMaxConversationTokensSet()) { // We do not invoke the tokenizer if we do not have to
-				int tok = counter.count(
-						JsonSchema.JSON_MAPPER.writer().writeValueAsString(messages.subList(i, messages.size())));
+				int tok = counter.countAsJson(messages.subList(i, messages.size()));
 				if (tok > maxConversationTokens) {
 					break;
 				}

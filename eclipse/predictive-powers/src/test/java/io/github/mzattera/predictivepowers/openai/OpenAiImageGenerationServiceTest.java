@@ -35,8 +35,6 @@ import com.openai.models.images.ImageModel;
 
 import io.github.mzattera.predictivepowers.BadRequestException;
 import io.github.mzattera.predictivepowers.TestConfiguration;
-import io.github.mzattera.predictivepowers.openai.OpenAiEndpoint;
-import io.github.mzattera.predictivepowers.openai.OpenAiImageGenerationService;
 import io.github.mzattera.predictivepowers.services.ImageGenerationService;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.util.FileUtil;
@@ -101,7 +99,7 @@ public class OpenAiImageGenerationServiceTest {
 	public void oaiTest03() throws Exception {
 
 		System.out.println("Active Threads: " + Thread.activeCount());
-		
+
 		try (OpenAiEndpoint ep = new OpenAiEndpoint();
 				OpenAiImageGenerationService oaies = ep.getImageGenerationService("dall-e-2")) {
 

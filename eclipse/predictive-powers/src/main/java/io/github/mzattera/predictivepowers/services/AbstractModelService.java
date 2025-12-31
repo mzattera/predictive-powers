@@ -50,6 +50,14 @@ public abstract class AbstractModelService implements ModelService {
 	}
 
 	/**
+	 * Builds a new instance by copying data from given map.
+	 */
+	public AbstractModelService(List<? extends ModelMetaData> models) {
+		for (ModelMetaData model:models) 
+			this.data.put(model.getModel(), model);
+	}
+
+	/**
 	 * @return null, as there is no model associated with this service.
 	 */
 	@Override

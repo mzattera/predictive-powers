@@ -16,6 +16,7 @@
 
 package io.github.mzattera.predictivepowers.util;
 
+import io.github.mzattera.predictivepowers.services.ModelService.AbstractTokenizer;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import lombok.Getter;
 import lombok.NonNull;
@@ -31,7 +32,7 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-public class SimpleTokenizer implements Tokenizer {
+public class SimpleTokenizer extends AbstractTokenizer {
 
 	/**
 	 * How many characters in a token (on average).

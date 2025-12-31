@@ -82,7 +82,7 @@ public class OpenAiCompletionService implements CompletionService {
 	@Override
 	public void setTopK(Integer topK) {
 		if (topK != null)
-			throw new UnsupportedOperationException();
+			throw new EndpointException(new UnsupportedOperationException());
 	}
 
 	@Override
@@ -110,19 +110,11 @@ public class OpenAiCompletionService implements CompletionService {
 			defaultRequest = defaultRequest.toBuilder().temperature(temperature / 50).build();
 	}
 
-	/**
-	 * This service will try to calculate this so to allow the longest possible
-	 * output, if it is null.
-	 */
 	@Override
 	public Integer getMaxNewTokens() {
 		return defaultRequest.maxTokens().isEmpty() ? null : defaultRequest.maxTokens().get().intValue();
 	}
 
-	/**
-	 * This service will try to calculate this so to allow the longest possible
-	 * output, if it is null.
-	 */
 	@SuppressWarnings("unchecked")
 	@Override
 	public void setMaxNewTokens(Integer maxNewTokens) {

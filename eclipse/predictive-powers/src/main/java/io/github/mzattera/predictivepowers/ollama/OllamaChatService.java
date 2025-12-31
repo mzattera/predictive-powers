@@ -450,8 +450,7 @@ public class OllamaChatService extends AbstractAgent {
 				break;
 
 			if (isMaxConversationTokensSet()) { // We do not invoke the tokenizer if we do not have to
-				int tok = counter.count(
-						JsonSchema.JSON_MAPPER.writer().writeValueAsString(messages.subList(i, messages.size())));
+				int tok = counter.countAsJson(messages.subList(i, messages.size()));
 				if (tok > maxConversationTokens) {
 					break;
 				}

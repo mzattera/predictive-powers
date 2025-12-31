@@ -16,6 +16,7 @@
 
 package io.github.mzattera.predictivepowers.util;
 
+import io.github.mzattera.predictivepowers.services.ModelService.AbstractTokenizer;
 import io.github.mzattera.predictivepowers.services.ModelService.Tokenizer;
 import lombok.NonNull;
 
@@ -29,7 +30,7 @@ import lombok.NonNull;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-public class CharTokenizer implements Tokenizer {
+public class CharTokenizer extends AbstractTokenizer {
 
 	private CharTokenizer() {
 	}

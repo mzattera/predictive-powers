@@ -18,8 +18,11 @@ package io.github.mzattera.predictivepowers.services;
 
 import java.util.List;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 import io.github.mzattera.predictivepowers.EndpointException;
 import io.github.mzattera.predictivepowers.services.ModelService.ModelMetaData.Modality;
+import io.github.mzattera.predictivepowers.services.messages.JsonSchema;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Singular;
@@ -51,6 +54,28 @@ public interface ModelService extends AiService {
 		 * @return Number of tokens in given text.
 		 */
 		int count(@NonNull String text);
+		
+		/**
+		 * 
+		 * @param obj
+		 * @return Number of tokens to encode JSON serialization of given object.
+		 * @throws JsonProcessingException If an error happens on serialization.
+		 */
+		int countAsJson(@NonNull Object obj) throws JsonProcessingException;
+	}
+
+	/**
+	 * Abstract implementation of a Tokenizer.
+	 * 
+	 * @author Massimiliano "Maxi" Zattera
+	 *
+	 */
+	public abstract class AbstractTokenizer implements Tokenizer {
+		
+		@Override
+		public int countAsJson(@NonNull Object obj) throws JsonProcessingException {
+			return count(JsonSchema.JSON_MAPPER.writer().writeValueAsString(obj));
+		}			
 	}
 
 	/**

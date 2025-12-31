@@ -207,7 +207,7 @@ public class OpenAiCompletionService implements CompletionService {
 		}
 
 		CompletionChoice choice = resp.choices().get(0);
-		return new TextCompletion(OpenAiUtil.fromOpenAiApi(choice.finishReason()), choice.text());
+		return new TextCompletion(OpenAiUtil.fromOpenAiApi(choice.finishReason().asString()), choice.text());
 	}
 
 	@Override

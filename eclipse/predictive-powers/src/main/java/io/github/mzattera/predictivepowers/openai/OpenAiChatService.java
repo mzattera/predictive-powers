@@ -526,7 +526,7 @@ public class OpenAiChatService extends AbstractAgent {
 		} // Until call succeeds
 
 		Choice choice = resp.choices().get(0);
-		return new ImmutablePair<>(OpenAiUtil.fromOpenAiApi(choice.finishReason()), choice.message());
+		return new ImmutablePair<>(OpenAiUtil.fromOpenAiApi(choice.finishReason().asString()), choice.message());
 	}
 
 	/**

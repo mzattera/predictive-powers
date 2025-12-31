@@ -444,7 +444,7 @@ public class DeepSeekChatService extends AbstractAgent {
 
 		com.openai.models.chat.completions.ChatCompletion resp = endpoint.getClient().chat().completions().create(req);
 		Choice choice = resp.choices().get(0);
-		return new ImmutablePair<>(OpenAiUtil.fromOpenAiApi(choice.finishReason()), choice.message());
+		return new ImmutablePair<>(OpenAiUtil.fromOpenAiApi(choice.finishReason().asString()), choice.message());
 	}
 
 	/**

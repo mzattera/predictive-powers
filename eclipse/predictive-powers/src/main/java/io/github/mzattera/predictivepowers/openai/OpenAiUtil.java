@@ -169,32 +169,16 @@ public final class OpenAiUtil {
 	 * Translates SDK finish reason into library one.
 	 */
 	public static FinishReason fromOpenAiApi(
-			com.openai.models.chat.completions.ChatCompletion.Choice.FinishReason finishReason) {
-		switch (finishReason.value()) {
-		case STOP:
-		case TOOL_CALLS:
-		case FUNCTION_CALL:
+			String finishReason) {
+		switch (finishReason) {
+		case "stop":
+		case "tool_calls":
+		case "function_call":
 			return FinishReason.COMPLETED;
-		case LENGTH:
+		case "length":
+		case "insufficient_system_resource": // This to support DeepSeek API
 			return FinishReason.TRUNCATED;
-		case CONTENT_FILTER:
-			return FinishReason.INAPPROPRIATE;
-		default:
-			throw new IllegalArgumentException("Unrecognized finish reason: " + finishReason);
-		}
-	}
-
-	/**
-	 * Translates SDK finish reason into library one.
-	 */
-	public static @NonNull FinishReason fromOpenAiApi(
-			com.openai.models.completions.CompletionChoice.FinishReason finishReason) {
-		switch (finishReason.value()) {
-		case STOP:
-			return FinishReason.COMPLETED;
-		case LENGTH:
-			return FinishReason.TRUNCATED;
-		case CONTENT_FILTER:
+		case "content_filter":
 			return FinishReason.INAPPROPRIATE;
 		default:
 			throw new IllegalArgumentException("Unrecognized finish reason: " + finishReason);

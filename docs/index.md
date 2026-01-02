@@ -52,7 +52,7 @@ Advantages of using this library:
 
 Library source can be found as a [Maven](https://maven.apache.org/) project inside the `eclipse` folder.
 
-The code depends, among others, on [Lomboc](https://projectlombok.org/) which is correctly referenced within the `pom.xml` file for this project.
+The code depends, among others, on [Lombok](https://projectlombok.org/) which is correctly referenced within the `pom.xml` file for this project.
 However, to have Lomboc to work in the Eclipse editor, you need to install it inside Eclipse (or any other IDE you are using), as explained on Lomboc website.
 
 To avoid passing any API keys explicitly in code, the library can read them from the operating system environment.

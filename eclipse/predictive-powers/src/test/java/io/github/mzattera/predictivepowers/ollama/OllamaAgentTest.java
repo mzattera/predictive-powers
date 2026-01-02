@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 Massimiliano "Maxi" Zattera
+ * Copyright 2023 Massimiliano "Maxi" Zattera
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.github.mzattera.predictivepowers.services;
+package io.github.mzattera.predictivepowers.ollama;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -26,26 +26,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.condition.EnabledIf;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kjetland.jackson.jsonSchema.annotations.JsonSchemaDescription;
 
-import io.github.mzattera.predictivepowers.AiEndpoint;
-import io.github.mzattera.predictivepowers.TestConfiguration;
-import io.github.mzattera.predictivepowers.services.AgentServiceTest.GetCurrentWeatherTool.GetCurrentWeatherParameters;
+import io.github.mzattera.ollama.client.model.ThinkSetting;
+import io.github.mzattera.predictivepowers.ollama.OllamaAgentTest.GetCurrentWeatherTool.GetCurrentWeatherParameters;
+import io.github.mzattera.predictivepowers.services.AbstractTool;
 import io.github.mzattera.predictivepowers.services.AgentServiceTest.ProcessEmployeeTool.ProcessEmployeeParameters;
+import io.github.mzattera.predictivepowers.services.ToolInitializationException;
+import io.github.mzattera.predictivepowers.services.Toolset;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
@@ -55,55 +52,36 @@ import io.github.mzattera.predictivepowers.services.messages.ToolCallResult;
 import lombok.NonNull;
 import lombok.ToString;
 
-/**
- * Tests chat services.
- * 
- * @author Massimiliano "Maxi" Zattera.
- */
-public class AgentServiceTest {
+public class OllamaAgentTest {
 
-	// As chat services might also be agent services, we check both
+	private static final String INSTRUCTIONS = "You are a halpful agent.";
 
-	private static List<Pair<AiEndpoint, String>> agtSvcs;
-	private static List<Pair<AiEndpoint, String>> chatSvcs;
+	private static final String[] MODELS_8GB = new String[] { "granite3.2-vision:2b", "granite3.3:2b", "llama3.2:3b",
+			"ministral-3:3b", "qwen3:4b", "qwen3-vl:4b" };
+
+	private static final String MODEL = "qwen3-vl:8b";
+
+	private static Object THINK = false;
+	
+	// TODO URGENT add this approach to Ollama chat service
+	private static String BLOCKER = (THINK == null) ? "" : ""; // NON SERVE A NIENTE
+
+	private static final double TEMPERATURE = 0.0;
+	private static final int CTX_SIZE = 4 * 1024;
+
+	private static OllamaEndpoint ep;
 
 	@BeforeAll
 	static void init() {
-		agtSvcs = TestConfiguration.getAgentServices();
-		chatSvcs = TestConfiguration.getChatServices();
+		ep = new OllamaEndpoint();
 	}
 
 	@AfterAll
 	static void tearDown() {
-		TestConfiguration.close(agtSvcs.stream().map(p -> p.getLeft()).collect(Collectors.toList()));
-		TestConfiguration.close(chatSvcs.stream().map(p -> p.getLeft()).collect(Collectors.toList()));
-	}
-
-	// Some chat services are agents, test their agent capabilities
-	static Stream<Agent> agents() {
-		List<Agent> l = new ArrayList<>();
-
-		// Add agents
-		for (Pair<AiEndpoint, String> p : agtSvcs) {
-			// Cretes brand new agent or that will interfere with previous setting e.g. tools
-			l.add(p.getLeft().getAgentService(p.getRight()).createAgent("TestAgent", "A test agent", "Yoou are a nice and suppotive agent"));
+		try {
+			ep.close();
+		} catch (Exception e) {
 		}
-
-		// Add chat services that are agents too
-		for (Pair<AiEndpoint, String> p : chatSvcs) {
-			try (ChatService cs = p.getLeft().getChatService(p.getRight())) {
-				if (cs instanceof Agent)
-					l.add((Agent) cs);
-			} catch (Exception e) {
-				// Catch exception on closing
-			}
-		}
-
-		return l.stream();
-	}
-
-	static boolean hasAgents() {
-		return agents().findAny().isPresent();
 	}
 
 	// This is a function that will be accessible to the agent.
@@ -133,7 +111,7 @@ public class AgentServiceTest {
 
 		public GetCurrentWeatherTool() {
 			super("get_current_weather", //
-					"Get the current weather in a given location.", //
+					"Get the current weather in a given location. Do not use it to get any other information.", //
 					GetCurrentWeatherParameters.class);
 		}
 
@@ -154,25 +132,55 @@ public class AgentServiceTest {
 	 * @throws InstantiationException
 	 * @throws JsonProcessingException
 	 */
-	@ParameterizedTest
-	@MethodSource("agents")
-	@EnabledIf("hasAgents")
-	@DisplayName("Simple Tool Call Test")
-	public void testFunCall(Agent agent) throws Exception {
+	@Test
+	@DisplayName("Tool but not Call")
+	public void testNoFunCall() throws Exception {
 
-		try {
-			agent.setTemperature(0.0);
-			agent.setPersonality("You are an agent supporting user with weather forecasts.");
+		try (OllamaChatService agent = ep.getChatService(MODEL)) {
+//		try (OpenAiEndpoint ep = new OpenAiEndpoint(); OpenAiChatService agent = ep.getChatService();) {
+			agent.setTemperature(TEMPERATURE);
+			agent.setMaxConversationTokens(CTX_SIZE);
+			agent.setPersonality(INSTRUCTIONS);
+			if (THINK != null) {
+				agent.getDefaultRequest().setThink(new ThinkSetting(false));
+				agent.setPersonality(agent.getPersonality() + BLOCKER);
+				;
+			}
 			agent.addCapability(new Toolset(List.of(new GetCurrentWeatherTool())));
 
 			// Casual chat should not trigger any function call
-			ChatCompletion reply = agent.chat("Where is Dallas?");
+			ChatCompletion reply = agent.chat("Where is Dallas located?");
 			assertFalse(reply.hasToolCalls());
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
+		}
+	}
+
+	/**
+	 * Tests Function Calling.
+	 * 
+	 * @throws Exception
+	 * 
+	 * @throws ToolInitializationException
+	 * @throws InstantiationException
+	 * @throws JsonProcessingException
+	 */
+	@Test
+	@DisplayName("Simple Tool Call Test")
+	public void testSimpleFunCall() throws Exception {
+
+		try (OllamaChatService agent = ep.getChatService(MODEL)) {
+			agent.setTemperature(TEMPERATURE);
+			agent.setMaxConversationTokens(CTX_SIZE);
+			agent.setPersonality(INSTRUCTIONS);
+			if (THINK != null) {
+				agent.getDefaultRequest().setThink(new ThinkSetting(false));
+				agent.setPersonality(agent.getPersonality() + BLOCKER);
+				;
+			}
+			agent.addCapability(new Toolset(List.of(new GetCurrentWeatherTool())));
 
 			// This request should trigger a function call, checking format of arguments
-			agent.clearConversation();
-			reply = agent.chat("How is the weather like in Dallas, TX?");
+			ChatCompletion reply = agent.chat("How is the weather like in Dallas, TX?");
 			assertTrue(reply.hasToolCalls());
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
 			assertEquals(1, reply.getToolCalls().size());
@@ -181,10 +189,35 @@ public class AgentServiceTest {
 					.getArgumentsAsObject(GetCurrentWeatherParameters.class);
 			assertEquals("Dallas, TX", args.location);
 			assertEquals("XyF", args.code);
+		}
+	}
+
+	/**
+	 * Tests Function Calling.
+	 * 
+	 * @throws Exception
+	 * 
+	 * @throws ToolInitializationException
+	 * @throws InstantiationException
+	 * @throws JsonProcessingException
+	 */
+	@Test
+	@DisplayName("Tool Call w.o. Optionla params")
+	public void testFunCallNoOpt() throws Exception {
+
+		try (OllamaChatService agent = ep.getChatService(MODEL)) {
+			agent.setTemperature(TEMPERATURE);
+			agent.setMaxConversationTokens(CTX_SIZE);
+			agent.setPersonality(INSTRUCTIONS);
+			if (THINK != null) {
+				agent.getDefaultRequest().setThink(new ThinkSetting(false));
+				agent.setPersonality(agent.getPersonality() + BLOCKER);
+				;
+			}
+			agent.addCapability(new Toolset(List.of(new GetCurrentWeatherTool())));
 
 			// This request should trigger a function call, optional parameters omitted
-			agent.clearConversation();
-			reply = agent.chat("How is the weather like in Dallas, TX?");
+			ChatCompletion reply = agent.chat("How is the weather like in Dallas, TX?");
 			assertTrue(reply.hasToolCalls());
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
 			assertEquals(1, reply.getToolCalls().size());
@@ -203,34 +236,42 @@ public class AgentServiceTest {
 			assertEquals("get_current_weather", reply.getToolCalls().get(0).getTool().getId());
 			actual.put("unit", "FARENHEIT");
 			sameArguments(actual, reply.getToolCalls().get(0).getArguments());
-		} finally {
-			agent.close();
 		}
 	}
 
-	@ParameterizedTest
-	@MethodSource("agents")
-	@EnabledIf("hasAgents")
-	@DisplayName("Test Tool Call with no tools")
-	public void testNoTools(Agent agent) throws Exception {
+	/**
+	 * Tests Function Calling.
+	 * 
+	 * @throws Exception
+	 * 
+	 * @throws ToolInitializationException
+	 * @throws InstantiationException
+	 * @throws JsonProcessingException
+	 */
+	@Test
+	@DisplayName("Tool Call w. Optional params")
+	public void testFunCall() throws Exception {
 
-		try {
-			agent.setTemperature(0.0);
-			agent.setPersonality("You are an agent supporting user with weather forecasts.");
+		try (OllamaChatService agent = ep.getChatService(MODEL)) {
+			agent.setTemperature(TEMPERATURE);
+			agent.setMaxConversationTokens(CTX_SIZE);
+			agent.setPersonality(INSTRUCTIONS);
 			agent.addCapability(new Toolset(List.of(new GetCurrentWeatherTool())));
-			agent.clearCapabilities();
-			ChatCompletion reply = agent.chat("How is the weather like in Dallas, TX?");
-			if (reply.hasToolCalls()) {
-				for (ToolCall call : reply.getToolCalls()) {
-					System.out.println(agent.getModel() + " insists in calling tools");
-					System.out
-							.println(JsonSchema.JSON_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(call));
-				}
+			if (THINK != null) {
+				agent.getDefaultRequest().setThink(new ThinkSetting(false));
+				agent.setPersonality(agent.getPersonality() + BLOCKER);
+				;
 			}
-			assertFalse(reply.hasToolCalls());
+			Map<String, Object> actual = new HashMap<>();
+			actual.put("location", "Dallas, TX");
+			actual.put("code", "XyF");
+			actual.put("unit", "FARENHEIT");
+			ChatCompletion reply = agent.chat("How is the weather like in Dallas, TX? Can you tell it in Farenheit?");
+			assertTrue(reply.hasToolCalls());
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
-		} finally {
-			agent.close();
+			assertEquals(1, reply.getToolCalls().size());
+			assertEquals("get_current_weather", reply.getToolCalls().get(0).getTool().getId());
+			sameArguments(actual, reply.getToolCalls().get(0).getArguments());
 		}
 	}
 
@@ -289,17 +330,21 @@ public class AgentServiceTest {
 		}
 	}
 
-	@ParameterizedTest
-	@MethodSource("agents")
-	@EnabledIf("hasAgents")
+	@Test
 	@DisplayName("Test Tool Call with $ref schema")
-	public void testRefParams(Agent agent) throws Exception {
+	public void testRefParams() throws Exception {
 
-		try {
-			agent.setTemperature(0.0);
+		try (OllamaChatService agent = ep.getChatService(MODEL)) {
+			agent.setTemperature(TEMPERATURE);
+			agent.setMaxConversationTokens(CTX_SIZE);
 			agent.setPersonality("You are an agent that automates processing of employee data. "
 					+ "You will be provided with some employee information that you must process using the tools at your disposal.");
 			agent.addCapability(new Toolset(List.of(new ProcessEmployeeTool())));
+			if (THINK != null) {
+				agent.getDefaultRequest().setThink(new ThinkSetting(false));
+				agent.setPersonality(agent.getPersonality() + BLOCKER);
+				;
+			}
 
 			ChatCompletion reply = agent.chat("Extract employee data from this text, then process them: "
 					+ "John Doe is our employee with employee number #34522; he is 55 and married to Susan Doe, she is not an employee.");
@@ -321,25 +366,27 @@ public class AgentServiceTest {
 			}
 			reply = agent.chat(new ChatMessage(results));
 			assertEquals(FinishReason.COMPLETED, reply.getFinishReason());
-		} finally {
-			agent.close();
 		}
 	}
 
-	@ParameterizedTest
-	@MethodSource("agents")
-	@EnabledIf("hasAgents")
+	@Test
 	@DisplayName("Test response with $ref schema")
-	public void testRespFormat(Agent agent) throws Exception {
+	public void testRespFormat() throws Exception {
 
-		try {
-			agent.setTemperature(0.0);
+		try (OllamaChatService agent = ep.getChatService(MODEL)) {
+			agent.setTemperature(TEMPERATURE);
+			agent.setMaxConversationTokens(CTX_SIZE);
 			JsonSchema schema = JsonSchema.fromSchema(ProcessEmployeeParameters.class);
 			agent.setPersonality("You are an agent that automates processing of employee data. "
 					+ "You will be provided with some employee information that you must extract and output as JSON. "
 					+ "Use the following JSON schema when outputting the data:\n\n" //
 					+ schema.asJsonSchema());
 			agent.setResponseFormat(schema);
+			if (THINK != null) {
+				agent.getDefaultRequest().setThink(new ThinkSetting(false));
+				agent.setPersonality(agent.getPersonality() + BLOCKER);
+				;
+			}
 
 			ChatCompletion reply = agent.chat("Extract employee data from this text, then output them: "
 					+ "John Doe is our employee with employee number #34522. "
@@ -354,8 +401,6 @@ public class AgentServiceTest {
 			assertEquals("John", params.employee.firstName);
 			assertEquals("Doe", params.employee.lastName);
 			assertEquals(55, params.employee.age);
-		} finally {
-			agent.close();
 		}
 	}
 

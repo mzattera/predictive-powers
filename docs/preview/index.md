@@ -271,6 +271,74 @@ public class DefaultConfigurationExample {
 }
 ```
 
+ 
+### <a name="kb"></a>Knowledge Base
+ 
+ A knowledge base is a vector database storing text embeddings; any number of properties (in the form of a `Map`) can be attached to each embedding. 
+ 
+ The knowledge base provides methods to search text based on embedding similarity or other filtering criteria.
+ Each knowledge base can be partitioned into domains, which can be searched separately, to improve performance.
+ 
+ The library provides a naive in-memory implementation of a knowledge base.
+ 
+ 
+### Tokens and Model Metadata
+
+
+LLMs have limits on number of tokens they accept as input or produce as output.
+
+`ModelService`s provide metadata about models, including maximum context size and suitable `Tokenizer` for each model.
+Normally, developers do not need to care about these details as services will handle them transparently. However, in order for services to do so,
+proper model data needs to be available to the `ModelService`. This means that, in case you create a new model (e.g. by training an existing one), you need to make its data known to the 
+corresponding `ModelService` by "registering" the model with `ModelService.put(String,ModelData)`; please refer to the JavaDoc for details.
+
+For `ChatService`s, the method `getBaseTokens()` allows you to calculate tokens which are consumed at each call by the system messages (the instructions, or personality of the agent) and tool descriptions.
+  
+The below code exemplifies how to set limits to the length of requests and replies when using `OpenAiChatService`.
+   
+```java
+// Get chat and model service
+try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
+		OpenAiChatService bot = endpoint.getChatService();
+		OpenAiModelService modelService = endpoint.getModelService();) {
+
+	// Set bot personality (instructions - system message)
+	bot.setPersonality("You are an helpful and kind assistant.");
+
+	// Number of tokens in bot context
+	String model = bot.getModel();
+	int ctxSize = modelService.getContextSize(model);
+
+	// Let's keep 1/4th of the tokens for bot replies
+	// Notice that some models have a limit on
+	// maximum number of generated tokens that can be smaller
+	int maxNewTokens = Math.min(ctxSize / 4, modelService.getMaxNewTokens(model));
+
+	// Set the maximum number of tokens for conversation history and bot reply
+	// Notice in the calculation we consider tokens used by the bot personality
+	bot.setMaxConversationTokens(ctxSize - bot.getBaseTokens() - maxNewTokens);
+	bot.setMaxNewTokens(maxNewTokens);
+
+	// Optionally, you can limit the number of messages
+	// kept in the conversation context; at most these many messages
+	// from conversation history will be sent to the API at each
+	// conversation exchange
+	bot.setMaxConversationSteps(50);
+
+	// From now on, service will manage conversation to respect those limits
+
+	// ...
+
+} // Close resources
+```
+
+`CharTokenizer` and `SimpleTokenizer` provide naive tokenizers that can be used when an approximate count of token is enough, and no specific tokenizer is available for a model.
+
+### Chunking
+
+In case you need to split text in chunks, `ChunkUtil` class provides several methods, including those supporting sliding windows and overlaps.
+
+
 ### Exceptions
 
 In order to allow developers to uniformly handle exceptions regardless underlying provider being used, `predictive-powers` defines the below hierarchy of exceptions. Each time a library method call causes an exception, it is caught and wrapped into one of the below exceptions; the original exception is still accessible with `getCause()`.
@@ -530,75 +598,9 @@ The OpenAI assistants API provides some "server-side" tools that are available t
 The capability allows you to access and configure each tool. Notice these tools cannot be added or removed from agent's capabilities, but they can be individually enabled and disabled.
 
 Please refer to JavaDocs for more details.
- 
- 
-### <a name="kb"></a>Knowledge Base
- 
- A knowledge base is a vector database storing text embeddings; any number of properties (in the form of a `Map`) can be attached to each embedding. 
- 
- The knowledge base provides methods to search text based on embedding similarity or other filtering criteria.
- Each knowledge base can be partitioned into domains, which can be searched separately, to improve performance.
- 
- The library provides a naive in-memory implementation of a knowledge base.
+
   
-
-### Tokens and Model Metadata
-
-LLMs have limits on number of tokens they accept as input or produce as output.
-
-`ModelService`s provide metadata about models, including maximum context size and suitable `Tokenizer` for each model.
-Normally, developers do not need to care about these details as services will handle them transparently. However, in order for services to do so,
-proper model data needs to be available to the `ModelService`. This means that, in case you create a new model (e.g. by training an existing one), you need to make its data known to the 
-corresponding `ModelService` by "registering" the model with `ModelService.put(String,ModelData)`; please refer to the JavaDoc for details.
-
-For `ChatService`s, the method `getBaseTokens()` allows you to calculate tokens which are consumed at each call by the system messages (the instructions, or personality of the agent) and tool descriptions.
   
-The below code exemplifies how to set limits to the length of requests and replies when using `OpenAiChatService`.
-   
-```java
-// Get chat and model service
-try (OpenAiEndpoint endpoint = new OpenAiEndpoint();
-		OpenAiChatService bot = endpoint.getChatService();
-		OpenAiModelService modelService = endpoint.getModelService();) {
-
-	// Set bot personality (instructions - system message)
-	bot.setPersonality("You are an helpful and kind assistant.");
-
-	// Number of tokens in bot context
-	String model = bot.getModel();
-	int ctxSize = modelService.getContextSize(model);
-
-	// Let's keep 1/4th of the tokens for bot replies
-	// Notice that some models have a limit on
-	// maximum number of generated tokens that can be smaller
-	int maxNewTokens = Math.min(ctxSize / 4, modelService.getMaxNewTokens(model));
-
-	// Set the maximum number of tokens for conversation history and bot reply
-	// Notice in the calculation we consider tokens used by the bot personality
-	bot.setMaxConversationTokens(ctxSize - bot.getBaseTokens() - maxNewTokens);
-	bot.setMaxNewTokens(maxNewTokens);
-
-	// Optionally, you can limit the number of messages
-	// kept in the conversation context; at most these many messages
-	// from conversation history will be sent to the API at each
-	// conversation exchange
-	bot.setMaxConversationSteps(50);
-
-	// From now on, service will manage conversation to respect those limits
-
-	// ...
-
-} // Close resources
-```
-
-`CharTokenizer` and `SimpleTokenizer` provide naive tokenizers that can be used when an approximate count of token is enough, and no specific tokenizer is available for a model.
-
-### Chunking
-
-In case you need to split text in chunks, `ChunkUtil` class provides several methods, including those supporting sliding windows and overlaps.
-
-
-
 ## <a name="examples"></a>3. - Examples (Recipies)
  
 Below some code examples. Their code can be found in the 

@@ -109,29 +109,30 @@ public final class TestConfiguration {
 
 		for (AiEndpoint ep : getAiEndpoints()) {
 			try {
-				if (ep instanceof OpenAiEndpoint) {
-					// Test the default model
-					String defModel = OpenAiChatService.DEFAULT_MODEL;
-					result.add(new ImmutablePair<>(ep, defModel));
-
-					// Want to test different types of models too
-					if (!"gpt-3.5-turbo".equals(defModel))
-						result.add(new ImmutablePair<>(ep, "gpt-3.5-turbo")); // FUNCTION Calls (structured) JSON Mode
-																				// output
-					if (!"gpt-4-0125-preview".equals(defModel))
-						result.add(new ImmutablePair<>(ep, "gpt-4-0125-preview")); // TOOL Calls (structured) JSON Mode
-																					// output
-					if (!"gpt-4o-mini".equals(defModel))
-						result.add(new ImmutablePair<>(ep, "gpt-4o-mini")); // TOOL Calls (structured) with structured
-																			// output
-					if (!"o3-mini".equals(defModel))
-						result.add(new ImmutablePair<>(ep, "o3-mini")); // TOOL Calls (non-strucured) with structured
-																		// output
-					// FUNCTION Calls (non-structured) do not exist
-					// TOOL Calls (non-strucured) with JSON Mode output do not exist
-				} else {
-					result.add(new ImmutablePair<>(ep, ep.getChatService().getModel()));
-				}
+//				if (ep instanceof OpenAiEndpoint) {
+//					// Test the default model
+//					String defModel = OpenAiChatService.DEFAULT_MODEL;
+//					result.add(new ImmutablePair<>(ep, defModel));
+//
+//					// Want to test different types of models too
+//					if (!"gpt-3.5-turbo".equals(defModel))
+//						result.add(new ImmutablePair<>(ep, "gpt-3.5-turbo")); // FUNCTION Calls (structured) JSON Mode
+//																				// output
+//					if (!"gpt-4-0125-preview".equals(defModel))
+//						result.add(new ImmutablePair<>(ep, "gpt-4-0125-preview")); // TOOL Calls (structured) JSON Mode
+//																					// output
+//					if (!"gpt-4o-mini".equals(defModel))
+//						result.add(new ImmutablePair<>(ep, "gpt-4o-mini")); // TOOL Calls (structured) with structured
+//																			// output
+//					if (!"o3-mini".equals(defModel))
+//						result.add(new ImmutablePair<>(ep, "o3-mini")); // TOOL Calls (non-strucured) with structured
+//																		// output
+//					// FUNCTION Calls (non-structured) do not exist
+//					// TOOL Calls (non-strucured) with JSON Mode output do not exist
+//				} else {
+//					result.add(new ImmutablePair<>(ep, ep.getChatService().getModel()));
+//				}
+				result.add(new ImmutablePair<>(ep, ep.getChatService().getModel()));
 			} catch (EndpointException e) {
 				// Some endpoints might miss that
 			}

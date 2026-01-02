@@ -27,6 +27,7 @@ import io.github.mzattera.predictivepowers.services.ImageGenerationService;
 import lombok.Getter;
 import lombok.NonNull;
 import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 
 /**
  * This represents an Ollama API endpoint, from which services can be created.
@@ -51,9 +52,9 @@ public class OllamaEndpoint implements AiEndpoint {
 				.connectTimeout(10, TimeUnit.MINUTES).readTimeout(10, TimeUnit.MINUTES);
 
 		// Interceptors for debug
-//		HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor(System.out::println);
-//		loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
-//		httpClientBuilder.addInterceptor(loggingInterceptor);
+		HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor(System.out::println);
+		loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+		httpClientBuilder.addInterceptor(loggingInterceptor);
 
 		apiClient.setHttpClient(httpClientBuilder.build());
 		this.client = new OllamaApi(apiClient);

@@ -1,20 +1,2 @@
-# Site settings
-title: predictive-powers
-description: A Java library to (easily) create GenAI-powered autonomous agents.
-
-remote_theme: pages-themes/slate@v0.2.0
-
-# Markdown Settings
-kramdown:
-  input: GFM
-  syntax_highlighter: rouge
-  # This automatically creates clickable # anchor links for your ## titles
-  auto_ids: true 
-
-# Highlighting theme (Native Jekyll)
-highlighter: rouge
-
-# Exclude the preview folder from the main build if you want 
-# it to be a separate "hidden" site
-exclude: [preview/index.md]
+remote_theme: pages-themes/architect@v0.2.0
     

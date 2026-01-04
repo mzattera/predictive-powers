@@ -108,7 +108,10 @@ public class Toolset implements Capability {
 		this.id = id;
 		this.description = (description == null ? "Capability: " + id : description);
 		this.tools = new HashMap<>();
-		tools.forEach(t -> this.tools.put(t.getId(), t));
+		for (Tool t : tools) {
+			this.tools.put(t.getId(), t);
+			t.setCapability(this);
+		}
 	}
 
 	@Override
@@ -148,6 +151,7 @@ public class Toolset implements Capability {
 
 		// If all went well, add the tool
 		tools.put(tool.getId(), tool);
+		tool.setCapability(this);
 	}
 
 	@Override
@@ -160,9 +164,9 @@ public class Toolset implements Capability {
 	@Override
 	public void removeTool(@NonNull Tool tool) {
 
-		if(tools.remove(tool.getId()) == null)
-				return;
-		
+		if (tools.remove(tool.getId()) == null)
+			return;
+
 		ToolRemovedEvent evt = new ToolRemovedEvent(tool);
 		listeners.forEach(l -> l.onToolRemoved(evt));
 

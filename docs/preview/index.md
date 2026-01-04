@@ -145,25 +145,25 @@ The examples below shows how to create endpoint instances.
 ```java
 [...]
 
-		AiEndpoint endpoint;
+AiEndpoint endpoint;
 
-		// Creates a HuggingFaceEndpoint
-		// Get API key from OS environment variable "HUGGING_FACE_API_KEY"
-		endpoint = new HuggingFaceEndpoint();
+// Creates a HuggingFaceEndpoint
+// Get API key from OS environment variable "HUGGING_FACE_API_KEY"
+endpoint = new HuggingFaceEndpoint();
 
-		// Creates a OpenAiEndpoint
+// Creates a OpenAiEndpoint
 
-		// Get API key from OS environment variable "OPENAI_API_KEY"
-		endpoint = new OpenAiEndpoint();
+// Get API key from OS environment variable "OPENAI_API_KEY"
+endpoint = new OpenAiEndpoint();
 
-		// Pass API key explicitly (NOT the best practice)
-		endpoint = new OpenAiEndpoint("sk-H0a...Yo1");
+// Pass API key explicitly (NOT the best practice)
+endpoint = new OpenAiEndpoint("sk-H0a...Yo1");
 
-		// Build endpoint from an existing API client
-		// The client is created reading API key from OS environment
-		OpenAIClient cli = OpenAIOkHttpClient.fromEnv();
-		// Client can be configured here...
-		endpoint = new OpenAiEndpoint(cli);
+// Build endpoint from an existing API client
+// The client is created reading API key from OS environment
+OpenAIClient cli = OpenAIOkHttpClient.fromEnv();
+// Client can be configured here...
+endpoint = new OpenAiEndpoint(cli);
 		
 [...]
 ```
@@ -215,10 +215,10 @@ This table shows which services are supported by `AiEndpoint`s:
 
 | Endpoint | AgentService | ChatService | CompletionService | EmbeddingService | ImageGenerationService | ModelService |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| OpenAiEndpoint | Yes, using the [Assistants](https://platform.openai.com/docs/api-reference/assistants) API. | Yes, using the [Chat Completions](https://platform.openai.com/docs/api-reference/chat) API. Notice `OpenAiChatService` is an implementation of an `Agent` (can use tools). | Yes, using the [Completions](https://platform.openai.com/docs/api-reference/completions) API (Legacy).  | Yes  | Yes | Yes |
-| HuggingFaceEndpoint | No | Yes | No | Yes | Yes | Yes. It won't list all of the available models on HF, but will return metadata for available models including proper tokenizers, if available. |
-| OllamaEndpoint | No | Yes, Notice `OllamaChatService` is an implementation of an `Agent` (can use tools). | Yes | Yes | No | Yes. The service can list models available locally and provide corresponding metadata. However, notice that no tokenisers are available for the models. |
-| DeepSeekEndpoint | No | Yes. Notice `DeepSeekChatService` is an implementation of an `Agent` (can use tools). | No | No | No | Yes |
+| OpenAiEndpoint | Yes, using the [Assistants](https://platform.openai.com/docs/api-reference/assistants) API. | Yes, using the [Chat Completions](https://platform.openai.com/docs/api-reference/chat) API. `OpenAiChatService` is an implementation of an `Agent` (can use tools). | Yes, using the [Completions](https://platform.openai.com/docs/api-reference/completions) API (Legacy).  | Yes  | Yes | Yes |
+| HuggingFaceEndpoint | No | Yes | No | Yes | Yes | Yes. It will not list all of the available models on HF, but will return metadata for available models including proper tokenizers, when available. |
+| OllamaEndpoint | No | Yes. `OllamaChatService` is an implementation of an `Agent` (can use tools). | Yes | Yes | No | Yes. The service can list models available locally and provide corresponding metadata. However, no tokenizers are available for the models. |
+| DeepSeekEndpoint | No | Yes. `DeepSeekChatService` is an implementation of an `Agent` (can use tools). | No | No | No | Yes |
      	   
 The below example shows how to get the `CompletionService` to complete a sentence.
 

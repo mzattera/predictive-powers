@@ -40,9 +40,9 @@ public final class TestConfiguration {
 
 	public final static boolean TEST_HF_SERVICES = false;
 
-	public final static boolean TEST_OPENAI_SERVICES = false;
+	public final static boolean TEST_OPENAI_SERVICES = true;
 
-	public final static boolean TEST_OLLAMA_SERVICES = true;
+	public final static boolean TEST_OLLAMA_SERVICES = false;
 
 	public final static boolean TEST_DEEPSEEK_SERVICES = false;
 

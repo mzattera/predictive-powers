@@ -659,7 +659,7 @@ public class OpenAiAssistant extends AbstractAgent {
 				.instructions(openAiAssistant.instructions()) //
 				.topP(openAiAssistant.topP()) //
 				.temperature(openAiAssistant.temperature()) //
-//				.tools(openAiAssistant.tools()) //
+				.tools(new ArrayList<>()) // Must do or it will not clear the list eventually
 		; //
 
 		// Copies tools parameters

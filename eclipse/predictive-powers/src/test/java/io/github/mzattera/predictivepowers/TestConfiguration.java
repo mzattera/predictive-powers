@@ -29,7 +29,6 @@ import io.github.mzattera.predictivepowers.deepseek.DeepSeekEndpoint;
 import io.github.mzattera.predictivepowers.google.GoogleEndpoint;
 import io.github.mzattera.predictivepowers.huggingface.HuggingFaceEndpoint;
 import io.github.mzattera.predictivepowers.ollama.OllamaEndpoint;
-import io.github.mzattera.predictivepowers.openai.OpenAiChatService;
 import io.github.mzattera.predictivepowers.openai.OpenAiEndpoint;
 
 /**
@@ -41,11 +40,11 @@ public final class TestConfiguration {
 
 	public final static boolean TEST_HF_SERVICES = false;
 
-	public final static boolean TEST_OPENAI_SERVICES = true;
+	public final static boolean TEST_OPENAI_SERVICES = false;
 
-	public final static boolean TEST_OLLAMA_SERVICES = false;
+	public final static boolean TEST_OLLAMA_SERVICES = true;
 
-	public final static boolean TEST_DEEPSEEK_SERVICES = true;
+	public final static boolean TEST_DEEPSEEK_SERVICES = false;
 
 	public static final boolean TEST_KNOWLEDGE_BASE = false;
 

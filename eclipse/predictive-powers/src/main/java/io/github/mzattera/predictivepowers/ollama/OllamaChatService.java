@@ -35,6 +35,7 @@ import io.github.mzattera.ollama.client.model.Message;
 import io.github.mzattera.ollama.client.model.Message.RoleEnum;
 import io.github.mzattera.ollama.client.model.RequestOptions;
 import io.github.mzattera.ollama.client.model.SystemMessage;
+import io.github.mzattera.ollama.client.model.ThinkSetting;
 import io.github.mzattera.ollama.client.model.ToolMessage;
 import io.github.mzattera.ollama.client.model.UserMessage;
 import io.github.mzattera.predictivepowers.EndpointException;
@@ -69,7 +70,7 @@ public class OllamaChatService extends AbstractAgent {
 
 	// TODO URGENT we do not have such a6 thing...either we take the first or
 	// pretend user specifies a model
-	public static final String DEFAULT_MODEL = "ministral-3:3b";
+	public static final String DEFAULT_MODEL = "qwen3:8b";
 
 	private final OllamaModelService modelService;
 
@@ -128,6 +129,7 @@ public class OllamaChatService extends AbstractAgent {
 //				.numPredict(8000);
 		this.defaultRequest = new ChatRequest() //
 				.model(model) //
+				.think(new ThinkSetting(false)) //
 				.options(options);
 		this.modelService = endpoint.getModelService();
 	}

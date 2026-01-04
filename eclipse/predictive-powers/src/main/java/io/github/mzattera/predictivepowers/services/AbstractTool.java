@@ -181,7 +181,7 @@ public abstract class AbstractTool implements Tool {
 		return getDouble(name, args.get(name));
 	}
 
-	protected static double getDouble(String name, Object value) {
+	private static double getDouble(String name, Object value) {
 		try {
 			return Double.parseDouble(value.toString());
 		} catch (Exception e) {

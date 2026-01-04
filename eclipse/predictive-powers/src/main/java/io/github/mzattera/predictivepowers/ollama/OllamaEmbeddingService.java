@@ -42,7 +42,7 @@ public class OllamaEmbeddingService extends AbstractEmbeddingService {
 
 	// TODO URGENT we do not have such a6 thing...either we take the first or
 	// pretend user specifies a model
-	public static final String DEFAULT_MODEL = "embeddinggemma:300m";
+	public static final String DEFAULT_MODEL = "qllama/bge-m3:q4_k_m";
 
 	/** How many strings we can embed at once */
 	public static final int MAX_INPUTS_PER_CALL = 1024;

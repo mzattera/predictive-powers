@@ -1,3 +1,11 @@
+---
+layout: default
+title: predictive-powers PRE-RELEASE
+collection: preview
+nav_order: 1
+nav_exclude: true 
+---
+
 # predictive-powers PRE-RELEASE
 
 **These instructions refer to latest version of the code available in the repository (pre-release).
@@ -212,14 +220,12 @@ Unsurprisingly (?), `SearchEndpoint` provides only one service:
 
 This table shows which services are supported by `AiEndpoint`s:
 
-<div style="overflow-x: auto;">
 | Endpoint | AgentService | ChatService | CompletionService | EmbeddingService | ImageGenerationService | ModelService |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | OpenAiEndpoint | Yes, using the [Assistants](https://platform.openai.com/docs/api-reference/assistants) API. | Yes, using the [Chat Completions](https://platform.openai.com/docs/api-reference/chat) API. `OpenAiChatService` is an implementation of an `Agent` (can use tools). | Yes, using the [Completions](https://platform.openai.com/docs/api-reference/completions) API (Legacy).  | Yes  | Yes | Yes |
 | HuggingFaceEndpoint | No | Yes | No | Yes | Yes | Yes. It will not list all of the available models on HF, but will return metadata for available models including proper tokenizers, when available. |
 | OllamaEndpoint | No | Yes. `OllamaChatService` is an implementation of an `Agent` (can use tools). | Yes | Yes | No | Yes. The service can list models available locally and provide corresponding metadata. However, no tokenizers are available for the models. |
 | DeepSeekEndpoint | No | Yes. `DeepSeekChatService` is an implementation of an `Agent` (can use tools). | No | No | No | Yes. No proper tokenizer available. |
-</div>
 
 The below example shows how to get the `CompletionService` to complete a sentence.
 

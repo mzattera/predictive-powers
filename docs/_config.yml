@@ -2,37 +2,19 @@
 title: predictive-powers
 description: A Java library to (easily) create GenAI-powered autonomous agents.
 
-# Theme settings
-remote_theme: just-the-docs/just-the-docs
+remote_theme: pages-themes/slate@v0.2.0
 
-collections:
-  preview:
-    output: true
-    permalink: /preview/:path/
-
-just_the_docs:
-  # This tells the theme to treat collections as 
-  # independent navigation structures
-  collections:
-    preview:
-      name: "Pre-Release Docs"
-      nav_exclude: true # Hide the whole collection from the MAIN nav
-
-# Color Scheme (Dark mode is often better for long code reading)
-color_scheme: dark 
-
-# Syntax Highlighting
+# Markdown Settings
 kramdown:
+  input: GFM
   syntax_highlighter: rouge
+  # This automatically creates clickable # anchor links for your ## titles
+  auto_ids: true 
 
-# Table of Contents depth
-toc_min_heading_level: 2
-toc_max_heading_level: 5
+# Highlighting theme (Native Jekyll)
+highlighter: rouge
 
-# Auxiliary Links (Top right of the page)
-aux_links:
-  "View on GitHub":
-    - https://github.com/mzattera/predictive-powers
-  "Latest Release": "/"
-  "Pre-Release (preview)": "/preview/"    
+# Exclude the preview folder from the main build if you want 
+# it to be a separate "hidden" site
+exclude: [preview/index.md]
     

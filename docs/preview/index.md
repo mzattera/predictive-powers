@@ -45,7 +45,7 @@ Advantages of using this library:
 <dependency>
     <groupId>io.github.mzattera</groupId>
     <artifactId>predictive-powers</artifactId>
-    <version>0.6.0</version>
+    <version>0.7.0</version>
 </dependency>
 ```
 
@@ -53,8 +53,8 @@ Advantages of using this library:
 
 Library source can be found as a [Maven](https://maven.apache.org/) project inside the `eclipse` folder.
 
-The code depends, among others, on [Lomboc](https://projectlombok.org/) which is correctly referenced within the `pom.xml` file for this project.
-However, to have Lomboc to work in the Eclipse editor, you need to install it inside Eclipse (or any other IDE you are using), as explained on Lomboc website.
+The code depends, among others, on [Lombok](https://projectlombok.org/) which is correctly referenced within the `pom.xml` file for this project.
+However, to have Lombok to work in the Eclipse editor, you need to install it inside Eclipse (or any other IDE you are using), as explained on Lombok website.
 
 To avoid passing any API keys explicitly in code, the library can read them from the operating system environment.
 The exact process for setting up the environment depends on the operating system you are using.
@@ -122,24 +122,25 @@ The library leverages existing API clients such as [OpenAI Java SDK](https://git
 
 An `Endpoint` uses an API client to provide some capabilities in form of services.
 
-Normally, you can create an endpoint either from it default constructor (which typically reads configuration parameters from the environment) or by passing an API client. Latter option allows you to configure an API client accordingly to your needs (e.g. setting up a proxy) before using it. Endpoints normally provide a `getClient()` method to access underlying API client.
+Normally, you can create an endpoint either from it default constructor (which typically reads configuration parameters from the environment) or by passing an API client. Latter option allows you to configure an API client accordingly to your needs (e.g. setting up a proxy) before using it; this configuration is client specific and you should refer to corresponding documentation if you need to do advanced configuration for the client.
+Endpoints provide a `getClient()` method to access underlying API client.
 
 Currently, there are two types of endpoints:
 
   * `AiEndpoint`: provides generative AI capabilities, like text and image generation.
-    An example is `OpenAiEndpoint` that provides access to OpenAI services on top of the OpenAI API.
     
   * `SearchEndpoint`: provides Internet search capabilities.
-    Currently, the only example of `SearchEndpoint` is `GoogleSearchService` which allows performing web searches using Google.
+    The only available `SearchEndpoint` is `GoogleSearchService` which allows performing web searches using Google (see [below](#googleendpoint)).
 
-#### OpenAiEndpoint and HuggingFaceEndpoint
+Currently, following `AiEndpoint`s are available:
 
-`OpenAiEndpoint` and `HuggingFaceEndpoint` are the currently available endpoints that provide GenAi capabilities.
+  * `OpenAiEndpoint`: provides access to OpenAI services on top of the [OpenAI API](https://platform.openai.com/docs/api-reference/introduction).
+  * `HuggingFaceEndpoint`: provides access to Hugging Face Inference API. Since this API seems to be evolving and the online documentation is fragmented and contradictory,
+     this is a best-effort attempt to provide basic functionalities.
+  * `OllamaEndpoint`: Provides access to [Ollama](https://ollama.com/) running on localhost.
+  * `DeepSeekEndpoint`: Provides access to [DeepSeek API](https://api-docs.deepseek.com/).
 
-To create those, you need to provide an API key for corresponding API.
-Alternatively, you can use the default constructor to read the keys from operating system environment variables.
-
-The example below shows how to create instances of these endpoints.
+The examples below shows how to create endpoint instances.
 
 ```java
 [...]
@@ -167,7 +168,7 @@ The example below shows how to create instances of these endpoints.
 [...]
 ```
 
-#### GoogleEndpoint
+#### <a name="googleendpoint"></a>GoogleEndpoint
 
 `GoogleEndpoint` is, currently, the sole implementation of `SearchEndpoint` available; as such, it provides methods to perform a web search, namely by using Google as search engine.
 
@@ -184,11 +185,11 @@ Alternatively, you can use the default constructor which will try to read these 
 
 ### <a name="services"></a>Services
 
-Once the endpoint is created, it can be used to access "services" which are high-level capabilities.
-Services abstract capabilities, allowing you to use different providers (endpoints) to perform a task.
+Once an endpoint is created, it can be used to access "services" which are high-level abstractions for capabilities provided by the endpoint.
+Services allow you to use different providers (endpoints) regardless their specific implementation of each of these capabilities.
 For [example](#imgGen), one could use an `OpenAiEndpoint` to obtain an `ImageGenerationService` instance to generate images using OpenAI models;
 alternatively, getting the `ImageGenerationService` instance through an `HuggingFaceEndpoint` will provide the same service,
-through same interface, using models hosted on Hugging Face.
+through same interface, using models hosted on Hugging Face. The code you write to generate the images will not change, regardless which provider you are using.
 
 Currently, following services are provided by `AiEndpoint`s:
 
@@ -198,9 +199,8 @@ Currently, following services are provided by `AiEndpoint`s:
 	 
   * `ChatService`: handles conversations with a chatbot, taking care of its personality and conversation history.
 	 
-  * `AgentService`: allows you to access agents; these are chatbot capable of tool calling. The library handles transparently the details of tool call mechanisms providing an uniform interfce across providers.
-  
-	 In current implementation, OpenAI agents are created and their configuration stored server-side through the assistants API.
+  * `AgentService`: allows you to access [`Agent`s](#agents); these are chatbot capable of tool calling. This service assumes agents are permanently stored somewhere and it might be discontinued in newer versions of the library.
+  The library handles transparently the details of tool call mechanisms providing an uniform interface across providers. Notice that some `CompletionService`s support tool calling as well (see below).
      	 
   * `EmbeddingService`: provide service to embed text, including automated chunking.
 	 
@@ -209,9 +209,18 @@ Currently, following services are provided by `AiEndpoint`s:
 Unsurprisingly (?), `SearchEndpoint` provides only one service:
   
   * `SearchService`: searches the Internet for data.
+
+This table shows which services are supported by `AiEndpoint`s:
+
+
+| Endpoint | AgentService | ChatService | CompletionService | EmbeddingService | ImageGenerationService | ModelService |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| OpenAiEndpoint | Yes, using the [Assistants](https://platform.openai.com/docs/api-reference/assistants) API. | Yes, using the [Chat Completions](https://platform.openai.com/docs/api-reference/chat) API. Notice `OpenAiChatService` is an implementation of an `Agent` (can use tools). | Yes, using the [Completions](https://platform.openai.com/docs/api-reference/completions) API (Legacy).  | Yes  | Yes | Yes |
+| HuggingFaceEndpoint | No | Yes | No | Yes | Yes | Yes. It won't list all of the available models on HF, but will return metadata for available models including proper tokenizers, if available. |
+| OllamaEndpoint | No | Yes, Notice `OllamaChatService` is an implementation of an `Agent` (can use tools). | Yes | Yes | No | Yes. The service can list models available locally and provide corresponding metadata. However, notice that no tokenisers are available for the models. |
+| DeepSeekEndpoint | No | Yes. Notice `DeepSeekChatService` is an implementation of an `Agent` (can use tools). | No | No | No | Yes |
      	   
 The below example shows how to get the `CompletionService` to complete a sentence.
-Notice how service abstraction allows you to switch between two different service providers, only by changing a single line of code.
 
 ```java
 package io.github.mzattera.predictivepowers.examples;
@@ -231,9 +240,6 @@ public class CompletionExample {
 	}
 }
 ```
-
-As different service providers expose different capabilities at different levels of maturity, concrete service implementations
-might provide additional functionalities not available in their corresponding service interface; please refer to JavaDoc for details.
 
 Below we provide some [examples](#examples) about using services.
 
@@ -361,19 +367,8 @@ In order to allow developers to uniformly handle exceptions regardless underlyin
 
 Using underlying services, agents are able to hold a conversation with the user, 
 supporting different media types in addition to plain text messages (e.g. images or files).
-Moreover, they can use "tools" to complete tasks. An example of a tool is the "retrieval" tool
-available to OpenAI assistant that allows agents to search content in their knowledge base.
+Moreover, they can use "tools" to complete tasks.
 This library allows you to easily create your own tools that the agent will invoke when needed.
-
-Currently, two implementations of agents are available:
-
-  * `OpenAiChatService` uses OpenAI chat API.
-   
-  * `OpenAiAssistant` uses OpenAI assistants API.
-   
-  * `HuggingFaceChatService` uses Hugging Face inference API.
-  
-`predictive-powers` allows you to use either implementation with no changes in code, as will be shown below. 
 
 You have seen the first example about instantiating and using an agent in a chat in the [quickstart](#chatintroduction); 
 below, we will explain other features available in the library.
@@ -427,7 +422,7 @@ Tools are additional functionalities that an agent can access at any time, when 
 allowing you to treat all the models in the same way For example, while using OpneAI models, you do not need to know whether your model 
 uses "old" function call (single function call) mode or the "newest" tool call mode (parallel function calls).
 
-All tool must implement the `Tool` interface which exposes method to describe what the tool does and
+All tool must implement the `Tool` interface which exposes methods to describe what the tool does and
 what parameters it needs. An abstract implementation of `Tool` is available, to provide some boilerplate code (see `AbstractTool`).
 
 To allow agents to use tools, they must be wrapped into a `Capability` which needs to
@@ -447,13 +442,10 @@ The code then adds the function to a capability that is attached to the agent.
 Finally, the code includes a conversation loop where it checks whether the agent issues any tool call;
 when this happens, the function is invoked and its results returned to the agent.
 
-Notice how the below code works without change regardless:
+Notice how the below code works without change regardless the provider being used and the underlying details of the API (
+e.g. whether you use the chat or the assistants API in OpenAI).
 
-  * The provider you use (OpenAI or Hugging Face)
-  * Whether you use the chat or the assistants API in OpenAI (with `OpenAiChatService` or `OpenAiAgentService`).
-  * Whether your model uses single or parallel function calls.
- 
- To cause a tool invocation, just ask for the weather in some city. 
+To cause a tool invocation, just ask for the weather in some city. 
  
  ```java
 import java.util.ArrayList;

@@ -27,6 +27,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
+import javax.annotation.Nullable;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.openai.core.MultipartField;
 import com.openai.core.http.HttpResponse;
@@ -47,7 +49,7 @@ import lombok.ToString;
  */
 @Getter
 @ToString
-public class OpenAiFilePart extends FilePart {
+public final class OpenAiFilePart extends FilePart {
 
 	@NonNull
 	private final String fileId;
@@ -97,9 +99,6 @@ public class OpenAiFilePart extends FilePart {
 			FileContentParams params = FileContentParams.builder().fileId(fileId).build();
 			try (HttpResponse response = endpoint.getClient().files().content(params)) {
 				Files.copy(response.body(), tmp.toPath(), StandardCopyOption.REPLACE_EXISTING);
-			} catch (Exception e) {
-				System.out.println("Something went wrong!");
-				throw new RuntimeException(e);
 			}
 
 			return new FileInputStream(tmp);
@@ -115,11 +114,12 @@ public class OpenAiFilePart extends FilePart {
 		this(openAiFile, null, null);
 	}
 
-	public OpenAiFilePart(@NonNull File openAiFile, String mimeType) {
+	public OpenAiFilePart(@NonNull File openAiFile, @Nullable String mimeType) {
 		this(openAiFile, mimeType, null);
 	}
 
-	public OpenAiFilePart(@NonNull File openAiFile, String mimeType, OpenAiEndpoint endpoint) {
+	public OpenAiFilePart(@NonNull File openAiFile, @Nullable String mimeType, OpenAiEndpoint endpoint) {
+		super(mimeType);
 		this.fileId = openAiFile.file().fileId().get();
 		this.openAiFile = openAiFile;
 		this.endpoint = endpoint;
@@ -129,15 +129,15 @@ public class OpenAiFilePart extends FilePart {
 		this(fileId, null, null);
 	}
 
-	public OpenAiFilePart(@NonNull String fileId, String mimeType) {
+	public OpenAiFilePart(@NonNull String fileId, @Nullable String mimeType) {
 		this(fileId, mimeType, null);
 	}
 
-	public OpenAiFilePart(@NonNull String fileId, String mimeType, OpenAiEndpoint endpoint) {
+	public OpenAiFilePart(@NonNull String fileId, @Nullable String mimeType, OpenAiEndpoint endpoint) {
+		super(mimeType);
 		this.fileId = fileId;
 		this.openAiFile = null;
 		this.endpoint = endpoint;
-		setMimeType(mimeType);
 	}
 
 	/**

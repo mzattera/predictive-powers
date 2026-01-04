@@ -20,14 +20,10 @@ import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
-import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
-import lombok.experimental.SuperBuilder;
 
 /**
  * This class encapsulates a {@link ChatMessage} response from a service.
@@ -38,19 +34,13 @@ import lombok.experimental.SuperBuilder;
  * 
  * @author Massimiliano "Maxi" Zattera.
  */
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @RequiredArgsConstructor
-@SuperBuilder
 @Getter
-@Setter
 @ToString
-public class ChatCompletion {
+public final class ChatCompletion {
 
-	@NonNull
-	private FinishReason finishReason;
-
-	@NonNull
-	private ChatMessage message;
+	private final @NonNull FinishReason finishReason;
+	private final @NonNull ChatMessage message;
 
 	/**
 	 * 

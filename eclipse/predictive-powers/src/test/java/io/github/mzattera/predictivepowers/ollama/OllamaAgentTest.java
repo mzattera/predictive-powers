@@ -56,13 +56,10 @@ public class OllamaAgentTest {
 
 	private static final String INSTRUCTIONS = "You are a halpful agent.";
 
-	private static final String[] MODELS_8GB = new String[] { "granite3.2-vision:2b", "granite3.3:2b", "llama3.2:3b",
-			"ministral-3:3b", "qwen3:4b", "qwen3-vl:4b" };
-
 	private static final String MODEL = "qwen3:8b";
 
 	private static Object THINK = false;
-	
+
 	// TODO URGENT add this approach to Ollama chat service
 	private static String BLOCKER = (THINK == null) ? "" : ""; // NON SERVE A NIENTE
 

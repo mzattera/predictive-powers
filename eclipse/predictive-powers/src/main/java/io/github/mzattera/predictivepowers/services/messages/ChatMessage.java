@@ -16,6 +16,7 @@
 package io.github.mzattera.predictivepowers.services.messages;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,12 +28,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.ChatService;
 import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
-import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
+import lombok.Singular;
 import lombok.ToString;
 
 /**
@@ -42,17 +41,17 @@ import lombok.ToString;
  * different contents (e.g. some text, a file for an image, a tool invocation
  * and its results, etc.).
  * 
+ * This class is immutable as along as all provided MessageParts are.
+ * 
  * @author Massmiliano "Maxi" Zattera.
  *
  */
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@RequiredArgsConstructor
 @Getter
-@Setter
 @ToString
-public class ChatMessage {
+public final class ChatMessage {
 
-	// TODO Eventually add parts to support citations/annotations or find a6 way to expose original history so to get access to messages...
+	// TODO Eventually add parts to support citations/annotations or find a6 way to
+	// expose original history so to get access to messages...
 
 	/**
 	 * The author (originator) of the message.
@@ -84,62 +83,49 @@ public class ChatMessage {
 		}
 	}
 
-	@NonNull
-	private Author author;
+	private @NonNull final Author author;
 
 	/**
-	 * In some cases, agents might refuse to generate an answer and provide a reason for the refusal.
-	 * This is optional and can be null.
+	 * In some cases, agents might refuse to generate an answer and provide a reason
+	 * for the refusal. This is optional and can be null.
 	 */
-	private @Nullable String refusal;
+	private final @Nullable String refusal;
 
 	/**
-	 * If agent provided some reasoning for how this message was generated, it is contained here.
+	 * If agent provided some reasoning for how this message was generated, it is
+	 * contained here.
 	 */
-	private @Nullable String reasoning;
-	
-	@NonNull
-	private List<MessagePart> parts = new ArrayList<>();
+	private final @Nullable String reasoning;
 
-	public void setParts(List<? extends MessagePart> parts) {
-		this.parts.addAll(parts);
+	private final @NonNull List<MessagePart> parts;
+
+	@Builder(toBuilder = true)
+	private ChatMessage(@NonNull Author author, @Nullable String refusal, @Nullable String reasoning,
+			@Singular("addPart") @NonNull List<? extends MessagePart> parts) {
+
+		if (parts.size() == 0)
+			throw new IllegalArgumentException("A message cannot be empty");
+
+		this.author = author;
+		this.refusal = refusal;
+		this.reasoning = reasoning;
+		this.parts = Collections.unmodifiableList(new ArrayList<>(parts));
 	}
 
-	public ChatMessage(String content) {
-		this(Author.USER, content);
+	public ChatMessage(@NonNull String content) {
+		this(Author.USER, null, null, List.of(new TextPart(content)));
 	}
 
-	public ChatMessage(@NonNull MessagePart part) {
-		this(Author.USER, part);
+	public ChatMessage(@NonNull Author author, @NonNull String content) {
+		this(author, null, null, List.of(new TextPart(content)));
 	}
 
 	public ChatMessage(@NonNull List<? extends MessagePart> parts) {
-		this(Author.USER, parts);
-	}
-
-	public ChatMessage(@NonNull Author author, String content) {
-		this.author = author;
-		if (content != null)
-			parts.add(new TextPart(content));
-	}
-
-	public ChatMessage(@NonNull Author author, @NonNull MessagePart part) {
-		this.author = author;
-		this.parts.add(part);
+		this(Author.USER, null, null, parts);
 	}
 
 	public ChatMessage(@NonNull Author author, @NonNull List<? extends MessagePart> parts) {
-		this.author = author;
-		this.parts.addAll(parts);
-	}
-
-	/**
-	 * Adds given part to the end of this message.
-	 * 
-	 * @param part
-	 */
-	public void addPart(@NonNull MessagePart part) {
-		parts.add(part);
+		this(author, null, null, parts);
 	}
 
 	/**
@@ -214,7 +200,7 @@ public class ChatMessage {
 		return parts.stream() //
 				.filter(FilePart.class::isInstance) //
 				.map(FilePart.class::cast) //
-				.filter(f -> f.getContentType() == type).collect(Collectors.toList());
+				.filter(f -> f.getContentType() == type).collect(Collectors.toUnmodifiableList());
 	}
 
 	/**
@@ -236,7 +222,7 @@ public class ChatMessage {
 		return parts.stream() //
 				.filter(ToolCall.class::isInstance) //
 				.map(ToolCall.class::cast) //
-				.collect(Collectors.toList());
+				.collect(Collectors.toUnmodifiableList());
 	}
 
 	/**
@@ -258,6 +244,6 @@ public class ChatMessage {
 		return parts.stream() //
 				.filter(ToolCallResult.class::isInstance) //
 				.map(ToolCallResult.class::cast) //
-				.collect(Collectors.toList());
+				.collect(Collectors.toUnmodifiableList());
 	}
 }

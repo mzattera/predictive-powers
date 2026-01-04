@@ -27,13 +27,13 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Base64;
 
+import javax.annotation.Nullable;
+
 import io.github.mzattera.predictivepowers.util.FileUtil;
 import io.github.mzattera.predictivepowers.util.ImageUtil;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 import lombok.ToString;
-import lombok.experimental.SuperBuilder;
 
 /**
  * This is a {@link FilePart} that contains the base64 encoding of a file.
@@ -41,20 +41,20 @@ import lombok.experimental.SuperBuilder;
  * {@link #isLocalFile()} returns true, as the file content is stored in this
  * object.
  * 
+ * This class is immutable.
+ * 
  * @author Massimiliano "Maxi" Zattera.
  */
-@SuperBuilder
 @Getter
-@Setter
 @ToString
-public class Base64FilePart extends FilePart {
+public final class Base64FilePart extends FilePart {
 
 	/** Content encoded as base64, */
 	@Getter
-	private String encodedContent;
+	private final @NonNull String encodedContent;
 
 	@Getter
-	private String name;
+	private final String name;
 
 	@Override
 	public Type getType() {
@@ -66,19 +66,17 @@ public class Base64FilePart extends FilePart {
 	 * type.
 	 */
 	public Base64FilePart(@NonNull File file) throws IOException {
-		super(file);
-		try (InputStream s = super.getInputStream()) {
-			init(s.readAllBytes(), super.getName(), super.getMimeType());
-		}
+		this(file, null);
 	}
 
 	/**
 	 * Constructor from file.
 	 */
-	public Base64FilePart(@NonNull File file, String mimeType) throws IOException {
+	public Base64FilePart(@NonNull File file, @Nullable String mimeType) throws IOException {
 		super(file, mimeType);
+		this.name = super.getName();
 		try (InputStream s = super.getInputStream()) {
-			init(s.readAllBytes(), super.getName(), mimeType);
+			this.encodedContent = Base64.getEncoder().encodeToString(s.readAllBytes());
 		}
 	}
 
@@ -87,19 +85,17 @@ public class Base64FilePart extends FilePart {
 	 * type.
 	 */
 	public Base64FilePart(@NonNull URL url) throws IOException {
-		super(url);
-		try (InputStream s = super.getInputStream()) {
-			init(s.readAllBytes(), super.getName(), super.getMimeType());
-		}
+		this(url, null);
 	}
 
 	/**
 	 * Constructor from URL.
 	 */
-	public Base64FilePart(@NonNull URL url, String mimeType) throws IOException {
+	public Base64FilePart(@NonNull URL url, @Nullable String mimeType) throws IOException {
 		super(url, mimeType);
+		this.name = super.getName();
 		try (InputStream s = super.getInputStream()) {
-			init(s.readAllBytes(), super.getName(), mimeType);
+			this.encodedContent = Base64.getEncoder().encodeToString(s.readAllBytes());
 		}
 	}
 
@@ -107,71 +103,70 @@ public class Base64FilePart extends FilePart {
 	 * Constructor from image; a name for this file must be provided. The image is
 	 * encoded as base64 PNG.
 	 */
-	public Base64FilePart(BufferedImage image, String name) throws IOException {
-		init(ImageUtil.toBytes(image, "png"), name, "image/png");
+	public Base64FilePart(@NonNull BufferedImage image, @Nullable String name) throws IOException {
+		super("image/png");
+		this.name = name;
+		this.encodedContent = Base64.getEncoder().encodeToString(ImageUtil.toBytes(image, "png"));
 	}
 
 	/**
 	 * Constructor from encoded content; a name for this file must be provided.
 	 * Notice the content is inspected to determine MIME type.
 	 */
-	public Base64FilePart(String encodedContent, String name) {
-		init(Base64.getDecoder().decode(encodedContent), name, null);
+	public Base64FilePart(@NonNull String encodedContent, @Nullable String name) {
+		this(encodedContent, name, FileUtil.getMimeType(Base64.getDecoder().decode(encodedContent)));
 	}
 
 	/**
 	 * Constructor from encoded content; a name for this file must be provided.
 	 */
-	public Base64FilePart(String encodedContent, String name, String mimeType) {
-		init(Base64.getDecoder().decode(encodedContent), name, mimeType);
+	public Base64FilePart(@NonNull String encodedContent, @Nullable String name, @Nullable String mimeType) {
+		super(mimeType);
+		this.name = name;
+		this.encodedContent = encodedContent;
 	}
 
 	/**
 	 * Constructor from stream content; a name for this file must be provided.
 	 * Notice the content is inspected to determine MIME type.
 	 */
-	public Base64FilePart(InputStream in, String name) throws IOException {
-		init(in.readAllBytes(), name, null);
+	public Base64FilePart(@NonNull InputStream in, @Nullable String name) throws IOException {
+		this(in.readAllBytes(), name);
 	}
 
 	/**
 	 * Constructor from stream content; a name for this file must be provided
 	 */
-	public Base64FilePart(InputStream in, String name, String mimeType) throws IOException {
-		init(in.readAllBytes(), name, mimeType);
+	public Base64FilePart(@NonNull InputStream in, @Nullable String name, @Nullable String mimeType)
+			throws IOException {
+		this(in.readAllBytes(), name, mimeType);
 	}
 
 	/**
 	 * Constructor from byte content; a name for this file must be provided. Notice
 	 * the content is inspected to determine MIME type.
 	 */
-	public Base64FilePart(byte[] bytes, String name) {
-		init(bytes, name, null);
+	public Base64FilePart(@NonNull byte[] bytes, @Nullable String name) {
+		this(bytes, name, FileUtil.getMimeType(bytes));
 	}
 
 	/**
 	 * Constructor from byte content; a name for this file must be provided.
 	 */
 	public Base64FilePart(byte[] bytes, String name, String mimeType) {
-		init(bytes, name, mimeType);
+		super(mimeType);
+		this.name = name;
+		this.encodedContent = Base64.getEncoder().encodeToString(bytes);
 	}
 
 	/**
 	 * "Copy" constructor.
 	 */
-	public Base64FilePart(FilePart file) throws IOException {
+	public Base64FilePart(@NonNull FilePart file) throws IOException {
+		super(file.getMimeType());
+		this.name = file.getName();
 		try (InputStream s = file.getInputStream()) {
-			init(s.readAllBytes(), file.getName(), file.getMimeType());
-		}
-	}
-
-	private void init(byte[] bytes, String name, String mimeType) {
-		this.name = name;
-		this.encodedContent = Base64.getEncoder().encodeToString(bytes);
-		if (mimeType == null) {
-			this.setMimeType(FileUtil.getMimeType(bytes));
-		} else {
-			this.setMimeType(mimeType);
+			this.encodedContent = Base64.getEncoder().encodeToString(s.readAllBytes());
 		}
 	}
 

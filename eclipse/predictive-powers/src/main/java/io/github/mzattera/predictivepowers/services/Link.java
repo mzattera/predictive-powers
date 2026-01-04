@@ -22,10 +22,8 @@ import java.net.URL;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 
 /**
  * A link to a web page, including its URL, an optional title and other parameters.
@@ -34,9 +32,7 @@ import lombok.Setter;
  *
  */
 @Getter
-@Setter
 @Builder
-@NoArgsConstructor
 @RequiredArgsConstructor
 @AllArgsConstructor
 public class Link implements Serializable {

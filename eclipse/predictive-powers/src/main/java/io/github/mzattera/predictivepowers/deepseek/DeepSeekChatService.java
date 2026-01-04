@@ -55,6 +55,7 @@ import io.github.mzattera.predictivepowers.services.Tool;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage.ChatMessageBuilder;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.JsonSchema;
 import io.github.mzattera.predictivepowers.services.messages.MessagePart;
@@ -535,16 +536,16 @@ public class DeepSeekChatService extends AbstractAgent {
 			// Normal (text) message
 			parts.add(new TextPart(msg.content().get()));
 		}
-		ChatMessage result = new ChatMessage(Author.BOT, parts);
+		ChatMessageBuilder b = ChatMessage.builder().author(Author.BOT).parts(parts);
 		if (msg.refusal().isPresent()) {
-			result.setRefusal(msg.refusal().get());
+			b.refusal(msg.refusal().get());
 		}
 		if (msg._additionalProperties().containsKey("reasoning_content")) {
 			Optional<String> reasoning = msg._additionalProperties().get("reasoning_content").asString();
 			if (reasoning.isPresent())
-				result.setReasoning(reasoning.get());
+				b.reasoning(reasoning.get());
 		}
-		return result;
+		return b.build();
 	}
 
 	/**

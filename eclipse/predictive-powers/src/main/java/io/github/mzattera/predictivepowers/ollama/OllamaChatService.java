@@ -48,6 +48,7 @@ import io.github.mzattera.predictivepowers.services.messages.Base64FilePart;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage.ChatMessageBuilder;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.services.messages.FilePart.ContentType;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
@@ -506,11 +507,11 @@ public class OllamaChatService extends AbstractAgent {
 			}
 		}
 
-		ChatMessage result = new ChatMessage(Author.BOT, parts);
+		ChatMessageBuilder b = ChatMessage.builder().author(Author.BOT).parts(parts);
 		if (msg.getThinking() != null)
-			result.setReasoning(msg.getThinking());
+			b.reasoning(msg.getThinking());
 
-		return result;
+		return b.build();
 	}
 
 	/**

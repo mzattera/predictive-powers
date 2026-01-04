@@ -1,11 +1,3 @@
----
-layout: default
-title: predictive-powers PRE-RELEASE
-collection: preview
-nav_order: 1
-nav_exclude: true 
----
-
 # predictive-powers PRE-RELEASE
 
 **These instructions refer to latest version of the code available in the repository (pre-release).

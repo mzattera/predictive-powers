@@ -18,19 +18,17 @@ package io.github.mzattera.predictivepowers.services.messages;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import io.github.mzattera.predictivepowers.services.Agent;
 import io.github.mzattera.predictivepowers.services.Tool;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 
 /**
@@ -40,12 +38,10 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera
  *
  */
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@RequiredArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
-@Setter
 @ToString
-public class ToolCall implements MessagePart {
+public final class ToolCall implements MessagePart {
 
 	public static Builder builder() {
 		return new Builder();
@@ -57,17 +53,28 @@ public class ToolCall implements MessagePart {
 	 * @author Luna
 	 */
 	public static final class Builder {
-		private String id;
+		private @NonNull String id;
 		private Tool tool;
-		private Map<String, Object> arguments = new HashMap<>();
+		private @NonNull String toolId;
+		private @NonNull Map<String, Object> arguments = new HashMap<>();
 
 		public Builder id(@NonNull String id) {
 			this.id = id;
 			return this;
 		}
 
-		public Builder tool(Tool tool) {
+		public Builder tool(@NonNull Tool tool) {
+			if ((toolId != null) && (!toolId.equals(tool.getId())))
+				throw new IllegalArgumentException("Provided Tool must have same ID that was provided");
 			this.tool = tool;
+			this.toolId = tool.getId();
+			return this;
+		}
+
+		public Builder toolId(@NonNull String toolId) {
+			if ((tool != null) && (!toolId.equals(tool.getId())))
+				throw new IllegalArgumentException("Provided Tool ID conflicts with provided ID");
+			this.toolId = toolId;
 			return this;
 		}
 
@@ -88,41 +95,47 @@ public class ToolCall implements MessagePart {
 			return this;
 		}
 
+		public Builder addArgument(@NonNull String name, Object value) throws JsonProcessingException {
+			this.arguments.put(name, value);
+			return this;
+		}
+
 		public ToolCall build() {
-			ToolCall tc = new ToolCall();
-			tc.setId(Objects.requireNonNull(id, "id must not be null"));
-			tc.setTool(tool);
-			tc.setArguments(arguments);
-			return tc;
+			return new ToolCall(id, tool, toolId, Map.copyOf(arguments));
 		}
 	}
 
 	/**
 	 * Unique ID for this tool call.
 	 */
-	@NonNull
-	private String id;
+	private final @NonNull String id;
 
 	/**
-	 * The tool being called. Notice it is not always guaranteed this to be set
-	 * correctly, as some services might not be able to retrieve the proper Tool
-	 * instance; this depends on the service generating the call. If this field is
-	 * null, developers need to map this call to the proper tool externally from the
-	 * service.
+	 * The {@link Tool} being called.
+	 * 
+	 * Notice this can be null. If this happen, the developer should map this call to the proper tool.
 	 */
-	private Tool tool;
+	@JsonIgnore
+	private final transient Tool tool;
+
+	/**
+	 * The ID of the {@link Tool} being called.
+	 * 
+	 * Notice this is always provided.
+	 */
+	private final @NonNull String toolId;
 
 	/**
 	 * Arguments to use in the call, as name/value pairs.
 	 */
-	@NonNull
-	private Map<String, Object> arguments = new HashMap<>();
-	
+	// TODO URGENT This can probably be a Map<String,String> that will be immutable
+	// ensuring deep immutability
+	private final @NonNull Map<String, Object> arguments;
+
 	@Override
 	public Type getType() {
 		return Type.TOOL_CALL;
 	}
-	
 
 	/**
 	 * 

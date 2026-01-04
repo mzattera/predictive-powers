@@ -20,7 +20,9 @@ import io.github.mzattera.predictivepowers.AiEndpoint;
 import io.github.mzattera.predictivepowers.openai.OpenAiEndpoint;
 import io.github.mzattera.predictivepowers.services.ChatService;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
+import io.github.mzattera.predictivepowers.services.messages.TextPart;
 
 public class VisionApiExample {
 
@@ -28,15 +30,15 @@ public class VisionApiExample {
 
 		try (AiEndpoint endpoint = new OpenAiEndpoint(); ChatService bot = endpoint.getChatService("gpt-4-turbo");) {
 
-			// Build the message to send; start with a text part
-			ChatMessage msg = new ChatMessage("What is depicted in this image?");
-
-			// Provide an URL to the the image to inspect
-			msg.addPart(FilePart.fromUrl(
-					"https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Alan_turing_header.jpg/500px-Alan_turing_header.jpg"));
-
-			// An image can also be created from file
-//			msg.addPart(FilePart.fromFileName("myImage.png"));
+			// Build the message to send; start with a text part, then add an image URL.
+			// An image could also be created from file
+			// ... .addPart(FilePart.fromFileName("myImage.png"));
+			ChatMessage msg = ChatMessage.builder() //
+					.author(Author.USER)
+					.addPart(new TextPart("What is depicted in this image?")) //
+					.addPart(FilePart.fromUrl(
+							"https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Alan_turing_header.jpg/500px-Alan_turing_header.jpg")) //
+					.build();
 
 			// Interact with the bot and print its response
 			System.out.println(bot.chat(msg).getText());

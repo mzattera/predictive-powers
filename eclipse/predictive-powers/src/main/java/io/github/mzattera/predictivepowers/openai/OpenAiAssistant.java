@@ -79,6 +79,7 @@ import io.github.mzattera.predictivepowers.services.ToolInitializationException;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage.ChatMessageBuilder;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.JsonSchema;
@@ -637,8 +638,9 @@ public class OpenAiAssistant extends AbstractAgent {
 		// TODO WON'T FIX handle custom tools...proxies? No, users will need to use same
 		// tool set, if not, last one will win and others will get errors when trying to
 		// call non existing tools
-		// ...what about handling of tools? Is it OK not to update them, or shall we use proxies?
-		
+		// ...what about handling of tools? Is it OK not to update them, or shall we use
+		// proxies?
+
 		return assistant;
 	}
 
@@ -864,18 +866,20 @@ public class OpenAiAssistant extends AbstractAgent {
 	private Message usrMsg;
 
 	@Override
-	public ChatCompletion chat(String msg)  throws EndpointException {
+	public ChatCompletion chat(String msg) throws EndpointException {
 		try {
-		return chat(new ChatMessage(msg));
+			return chat(new ChatMessage(msg));
 		} catch (Exception e) {
 			throw OpenAiUtil.toEndpointException(e);
 		}
 	}
 
-	// TODO WON'T FIX Runs give you option to override tools: maybe add a method that take a
+	// TODO WON'T FIX Runs give you option to override tools: maybe add a method
+	// that take a
 	// list of tools as well
 
-	// TODO WON'T FIX does it make sense to have a method the supports specific OpenAI
+	// TODO WON'T FIX does it make sense to have a method the supports specific
+	// OpenAI
 	// messages, to support their parameters?
 
 	/**
@@ -1057,7 +1061,8 @@ public class OpenAiAssistant extends AbstractAgent {
 		if (msg.hasToolCallResults())
 			throw new IllegalArgumentException("Tool call results should be handled separatly");
 
-		// TODO WON'T FIX support attachment parameters in create run request (or is this
+		// TODO WON'T FIX support attachment parameters in create run request (or is
+		// this
 		// an override?)
 
 		List<MessageContentPartParam> content = new ArrayList<>();
@@ -1073,7 +1078,8 @@ public class OpenAiAssistant extends AbstractAgent {
 
 			} else if (part instanceof OpenAiFilePart) {
 
-				// TODO WON'T FIX Tools cannot access image content unless specified. To pass image
+				// TODO WON'T FIX Tools cannot access image content unless specified. To pass
+				// image
 				// files to Code Interpreter, add the file ID in the message attachments list to
 				// allow the tool to read and analyze the input. Image URLs cannot be downloaded
 				// in Code Interpreter today.
@@ -1138,14 +1144,14 @@ public class OpenAiAssistant extends AbstractAgent {
 			}
 		}
 
-		// TODO WON'T FIX  Handle annotations
+		// TODO WON'T FIX Handle annotations
 		// https://platform.openai.com/docs/assistants/deep-dive?lang=python
 		// However they are not mentioned in the Message API nor available in OpenAI SDK
 
-		ChatMessage result = new ChatMessage(Author.BOT, parts); 
-		if (refusal.size()>0)
-			result.setRefusal(String.join("\n", refusal));
-		return result;
+		ChatMessageBuilder b = ChatMessage.builder().author(Author.BOT).parts(parts);
+		if (refusal.size() > 0)
+			b.refusal(String.join("\n", refusal));
+		return b.build();
 	}
 
 	/**

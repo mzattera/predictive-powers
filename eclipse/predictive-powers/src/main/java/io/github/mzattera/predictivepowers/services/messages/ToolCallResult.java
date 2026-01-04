@@ -16,15 +16,14 @@
 
 package io.github.mzattera.predictivepowers.services.messages;
 
-import lombok.AccessLevel;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
-import lombok.experimental.SuperBuilder;
 
 /**
  * This holds the results of a {@link ToolCall}. It is used to pass results from
@@ -33,28 +32,21 @@ import lombok.experimental.SuperBuilder;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@RequiredArgsConstructor
-@SuperBuilder
 @Getter
-@Setter
 @ToString
-public class ToolCallResult implements MessagePart {
+public final class ToolCallResult implements MessagePart {
 
 	/** Unique ID for corresponding tool invocation. */
-	@NonNull
-	private String toolCallId;
+	private final @NonNull String toolCallId;
 
 	/** Unique ID of the tool being called. */
-	@NonNull
-	private String toolId;
+	private final @NonNull String toolId;
 
 	/** Result of calling the tool. */
-	private Object result;
+	private final Object result;
 
 	/** True if the result is an error. */
-	@Builder.Default
-	private boolean isError = false;
+	private final boolean isError;
 
 	@Override
 	public Type getType() {
@@ -62,25 +54,38 @@ public class ToolCallResult implements MessagePart {
 	}
 
 	public ToolCallResult(@NonNull ToolCall call, String result) {
-		toolCallId = call.getId();
-		toolId = call.getTool().getId();
-		this.result = result;
+		this(call.getId(), call.getToolId(), result, false);
 	}
 
-	public ToolCallResult(String toolCallId, String toolId, String result) {
+	public ToolCallResult(@NonNull String toolCallId, @NonNull String toolId, String result) {
+		this(toolCallId, toolId, result, false);
+	}
+
+	public ToolCallResult(ToolCall call, Exception e) {
+		this(call.getId(), call.getToolId(), "ERROR: " + e.getMessage(), true);
+	}
+
+	@Builder
+	public ToolCallResult(@NonNull String toolCallId, @NonNull String toolId, Object result, boolean isError) {
 		this.toolCallId = toolCallId;
 		this.toolId = toolId;
-		this.result = result;
+		this.isError = isError;
+		this.result = makeImmutable(result);
 	}
-	
-	public ToolCallResult(ToolCall call, Exception e) {
-		this(call, "Error: " + e.getMessage());
-		isError = true;
+
+	private static Object makeImmutable(Object obj) {
+		if (obj instanceof List) {
+			return List.copyOf((List<?>) obj);
+		} else if (obj instanceof Map) {
+			return Map.copyOf((Map<?, ?>) obj);
+		} else if (obj instanceof Set) {
+			return Set.copyOf((Set<?>) obj);
+		}
+		return obj;
 	}
 
 	@Override
 	public String getContent() {
-		return ("ToolCallResult(" + (isError ? "*ERROR* " : "") + (result == null ? "" : result.toString()) + ")");
+		return ("ToolCallResult(" + (result == null ? "" : result.toString()) + ")");
 	}
-
 }

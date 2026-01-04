@@ -17,12 +17,9 @@
 package io.github.mzattera.predictivepowers.services.messages;
 
 import io.github.mzattera.predictivepowers.services.CompletionService;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.NonNull;
-import lombok.Setter;
+import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 /**
@@ -35,16 +32,11 @@ import lombok.ToString;
  * @author Massimiliano "Maxi" Zattera.
  *
  */
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Getter
-@Setter
 @ToString
 public class TextCompletion {
 
-	@NonNull
-	private FinishReason finishReason;
-
-	@NonNull
-	private String text;
+	private final @NonNull FinishReason finishReason;
+	private final @NonNull String text;
 }

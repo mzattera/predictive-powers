@@ -62,6 +62,7 @@ import io.github.mzattera.predictivepowers.services.messages.Base64FilePart;
 import io.github.mzattera.predictivepowers.services.messages.ChatCompletion;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage;
 import io.github.mzattera.predictivepowers.services.messages.ChatMessage.Author;
+import io.github.mzattera.predictivepowers.services.messages.ChatMessage.ChatMessageBuilder;
 import io.github.mzattera.predictivepowers.services.messages.FilePart;
 import io.github.mzattera.predictivepowers.services.messages.FinishReason;
 import io.github.mzattera.predictivepowers.services.messages.JsonSchema;
@@ -488,8 +489,7 @@ public class OpenAiChatService extends AbstractAgent {
 	 * personality is NOT considered, but can be injected as first message in the
 	 * list.
 	 */
-	private Pair<FinishReason, ChatCompletionMessage> chatCompletion(List<ChatCompletionMessageParam> messages)
-			{
+	private Pair<FinishReason, ChatCompletionMessage> chatCompletion(List<ChatCompletionMessageParam> messages) {
 
 		// This ensures we can track last call messages from defaultRequest, for testing
 		// reasons
@@ -639,11 +639,12 @@ public class OpenAiChatService extends AbstractAgent {
 			}
 		}
 
-		ChatMessage result = new ChatMessage(Author.BOT, parts);
+		ChatMessageBuilder b = ChatMessage.builder().author(Author.BOT).parts(parts);
 		if (msg.refusal().isPresent()) {
-			result.setRefusal(msg.refusal().get());
+			b.refusal(msg.refusal().get());
 		}
-		return result;
+		return b.build();
+
 	}
 
 	/**

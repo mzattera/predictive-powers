@@ -13,10 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/**
- * 
- */
 package io.github.mzattera.predictivepowers.services.messages;
 
 import java.io.File;
@@ -28,13 +24,14 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 
+import javax.annotation.Nullable;
+
 import org.apache.tika.mime.MimeTypes;
 
 import io.github.mzattera.predictivepowers.util.FileUtil;
 import io.github.mzattera.predictivepowers.util.WebUtil;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.experimental.SuperBuilder;
 
 /**
  * This is a {@link MessagePart} that contains reference to a file.
@@ -42,9 +39,10 @@ import lombok.experimental.SuperBuilder;
  * The file can be a local file, accessible via a {@link File}, or a file on the
  * web accessible through a {@link URL} or a file stored in some file service.
  * 
+ * This class is immutable.
+ * 
  * @author Massimiliano "Maxi" Zattera.
  */
-@SuperBuilder
 @Getter
 public class FilePart implements MessagePart {
 
@@ -70,38 +68,33 @@ public class FilePart implements MessagePart {
 	/**
 	 * MIME type for the file contents.
 	 */
-	@NonNull
-	private String mimeType;
-
-	protected void setMimeType(String mimeType) {
-		this.mimeType = (mimeType == null ? MimeTypes.OCTET_STREAM : mimeType);
-		this.contentType = ContentType.fromMimeType(mimeType);
-	}
+	private final @NonNull String mimeType;
 
 	/**
 	 * Enumeration containing the generic MIME type of the file.
 	 */
-	@NonNull
-	private ContentType contentType;
+	private final @NonNull ContentType contentType;
 
 	/**
 	 * If this is a local file, this points to the file itself.
 	 */
-	private final File file;
+	private final @Nullable File file;
 
 	/**
 	 * If this is a remote file, this is its URL.
 	 */
-	private final URL url;
+	private final @Nullable URL url;
 
 	@Override
 	public Type getType() {
 		return Type.FILE;
 	}
 
-	protected FilePart() {
+	protected FilePart(@Nullable String mimeType) {
 		this.file = null;
 		this.url = null;
+		this.mimeType = (mimeType == null ? MimeTypes.OCTET_STREAM : mimeType);
+		this.contentType = ContentType.fromMimeType(mimeType);
 	}
 
 	/**
@@ -115,7 +108,7 @@ public class FilePart implements MessagePart {
 	 * Constructor. Notice the file is inspected if mimeType==null to determine its
 	 * content type.
 	 */
-	public FilePart(@NonNull File file, String mimeType) {
+	public FilePart(@NonNull File file, @Nullable String mimeType) {
 		this.file = file;
 		this.url = null;
 		if (!file.isFile() || !file.canRead())
@@ -135,7 +128,7 @@ public class FilePart implements MessagePart {
 	 * Constructor. Notice the file is inspected if mimeType==null to determine its
 	 * content type.
 	 */
-	public static FilePart fromFileName(@NonNull String fileName, String mimeType) {
+	public static FilePart fromFileName(@NonNull String fileName, @Nullable String mimeType) {
 		return new FilePart(new File(fileName), mimeType);
 	}
 
@@ -151,7 +144,7 @@ public class FilePart implements MessagePart {
 	 * Constructor. Notice the content at given URL is inspected to determine its
 	 * content type if mimeType==null.
 	 */
-	public FilePart(@NonNull URL url, String mimeType) {
+	public FilePart(@NonNull URL url, @Nullable String mimeType) {
 		this.file = null;
 		this.url = url;
 		this.mimeType = (mimeType == null ? FileUtil.getMimeType(url) : mimeType);
@@ -170,7 +163,7 @@ public class FilePart implements MessagePart {
 	 * Constructor. Notice the content at given URL is inspected to determine its
 	 * content type if mimeType==null.
 	 */
-	public static FilePart fromUrl(@NonNull String url, String mimeType)
+	public static FilePart fromUrl(@NonNull String url, @Nullable String mimeType)
 			throws MalformedURLException, URISyntaxException {
 		return new FilePart((new URI(url)).toURL(), mimeType);
 	}
@@ -215,7 +208,7 @@ public class FilePart implements MessagePart {
 	public InputStream getInputStream() throws IOException {
 		if (file != null)
 			return new FileInputStream(file);
-		if (url != null) 
+		if (url != null)
 			return WebUtil.getInputStream(url);
 		return null;
 	}
